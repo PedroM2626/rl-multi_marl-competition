@@ -31,18 +31,26 @@ from marl_arena.ui.dashboard import build_overlay_text
 
 
 class CapsuleVisual(Entity):
-    def __init__(self, agent) -> None:
-        super().__init__(position=Vec3(*agent.position))
+    _team_hsv = {
+        "Equipe 1": (0.0, 0.73, 0.92),
+        "Equipe 2": (220.0, 0.74, 0.95),
+        "Equipe 3": (145.0, 0.72, 0.92),
+    }
+
+    def __init__(self, agent, **kwargs) -> None:
+        super().__init__(position=Vec3(*agent.position), **kwargs)
         self.agent = agent
-        tint = color.rgba(
-            int(agent.color_rgb[0] * 255),
-            int(agent.color_rgb[1] * 255),
-            int(agent.color_rgb[2] * 255),
-            255,
-        )
-        Entity(parent=self, model="cube", scale=(0.7, 1.2, 0.7), color=tint, y=0.0)
-        Entity(parent=self, model="sphere", scale=(0.72, 0.72, 0.72), color=tint, y=0.74)
-        Entity(parent=self, model="sphere", scale=(0.72, 0.72, 0.72), color=tint, y=-0.74)
+        hue, base_sat, base_val = self._team_hsv[agent.team_name]
+        agent_idx = int(agent.agent_id.split("-")[1]) - 1
+        sat_scale = 0.60 + agent_idx * 0.20
+        val_scale = 0.60 + agent_idx * 0.18
+        alive_color = color.color(hue, sat_scale, val_scale)
+        dead_color = color.color(hue, sat_scale * 0.25, val_scale * 0.30)
+        self._alive_color = alive_color
+        self._dead_color = dead_color
+        Entity(parent=self, model="cube", scale=(0.7, 1.2, 0.7), color=alive_color, y=0.0)
+        Entity(parent=self, model="sphere", scale=(0.72, 0.72, 0.72), color=alive_color, y=0.74)
+        Entity(parent=self, model="sphere", scale=(0.72, 0.72, 0.72), color=alive_color, y=-0.74)
         self.label = Text(
             text=f"{agent.team_name[-1]}-{agent.agent_id}",
             world_parent=self,
@@ -55,22 +63,17 @@ class CapsuleVisual(Entity):
     def sync(self) -> None:
         self.position = Vec3(*self.agent.position)
         self.rotation_y = self.agent.heading_deg
-        alpha = 1.0 if self.agent.alive else 0.18
+        current_color = self._alive_color if self.agent.alive else self._dead_color
         for child in self.children:
             if hasattr(child, "color"):
-                child.color = color.rgba(child.color.r, child.color.g, child.color.b, int(alpha * 255))
+                child.color = current_color
 
 
 class ObstacleVisual(Entity):
-    def __init__(self, obstacle) -> None:
-        super().__init__(position=Vec3(*obstacle.position))
+    def __init__(self, obstacle, **kwargs) -> None:
+        super().__init__(position=Vec3(*obstacle.position), **kwargs)
         self.obstacle = obstacle
-        tint = color.rgba(
-            int(obstacle.color_rgb[0] * 255),
-            int(obstacle.color_rgb[1] * 255),
-            int(obstacle.color_rgb[2] * 255),
-            255,
-        )
+        tint = color.color(0.0, 0.0, 0.55)
         Entity(parent=self, model="cube", scale=tuple(obstacle.size), color=tint)
         label_text = obstacle.obstacle_type.replace("_", " ").title()
         self.label = Text(
