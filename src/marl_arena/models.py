@@ -82,6 +82,19 @@ class TransitionRecord:
 
 
 @dataclass
+class ProjectileSnapshot:
+    projectile_id: int
+    position: np.ndarray
+    direction: np.ndarray
+    team_name: str
+    team_color: tuple[float, float, float]
+    age: float
+    hit: bool
+    obstacle_hit: bool
+    hit_position: tuple[float, float, float]
+
+
+@dataclass
 class MatchResult:
     winner_team: str
     duration_seconds: float

@@ -89,12 +89,72 @@ class ObstacleVisual(Entity):
         self.position = Vec3(*self.obstacle.position)
 
 
+class ProjectileExplosion(Entity):
+    _team_hues = {
+        "Equipe 1": 0.0,
+        "Equipe 2": 220.0,
+        "Equipe 3": 145.0,
+    }
+
+    def __init__(self, hit_data, **kwargs) -> None:
+        pos = hit_data["position"]
+        team_name = hit_data.get("team_name", "")
+        hue = self._team_hues.get(team_name, 180.0)
+        self._elapsed = 0.0
+        self._duration = 0.5
+        super().__init__(position=Vec3(pos[0], pos[1], pos[2]), **kwargs)
+        self._ring = Entity(
+            parent=self,
+            model="sphere",
+            scale=(0.0, 0.0, 0.0),
+            color=color.color(hue, 0.9, 1.0),
+        )
+        self._core = Entity(
+            parent=self,
+            model="sphere",
+            scale=(0.3, 0.3, 0.3),
+            color=color.color(hue, 0.6, 1.0),
+        )
+
+    def update(self) -> None:
+        self._elapsed += time.dt
+        progress = min(self._elapsed / self._duration, 1.0)
+        ring_scale = progress * 2.5
+        self._ring.scale = (ring_scale, ring_scale * 0.3, ring_scale)
+        self._core.scale = (0.3 * (1.0 - progress * 0.9), 0.3 * (1.0 - progress * 0.9), 0.3 * (1.0 - progress * 0.9))
+        if self._elapsed >= self._duration:
+            destroy(self)
+
+
+class ProjectileVisual(Entity):
+    _team_hues = {
+        "Equipe 1": 0.0,
+        "Equipe 2": 220.0,
+        "Equipe 3": 145.0,
+    }
+
+    def __init__(self, snapshot, **kwargs) -> None:
+        self.snapshot = snapshot
+        hue = self._team_hues.get(getattr(snapshot, "team_name", ""), 180.0)
+        proj_color = color.color(hue, 0.85, 1.0)
+        trail_color = color.color(hue, 0.60, 1.0)
+        super().__init__(position=Vec3(*snapshot.position), color=proj_color, **kwargs)
+        Entity(parent=self, model="sphere", scale=(0.25, 0.25, 0.7), color=proj_color)
+        Entity(parent=self, model="sphere", scale=(0.17, 0.17, 0.45), color=trail_color)
+
+    def sync(self, snapshot) -> None:
+        self.snapshot = snapshot
+        self.position = Vec3(*snapshot.position)
+
+
 class ArenaApp:
     def __init__(self) -> None:
         self.metrics = MetricsStore()
         self.simulation = ArenaSimulation()
         self.agent_visuals: dict[str, CapsuleVisual] = {}
         self.obstacle_visuals: dict[str, ObstacleVisual] = {}
+        self.projectile_visuals: dict[int, ProjectileVisual] = {}
+        self.explosions: list[ProjectileExplosion] = []
         self.match_banner: Text | None = None
         self.finished = False
         self._build_scene()
@@ -151,6 +211,12 @@ class ArenaApp:
         if self.match_banner is not None:
             destroy(self.match_banner)
             self.match_banner = None
+        for visual in self.projectile_visuals.values():
+            destroy(visual)
+        self.projectile_visuals.clear()
+        for exp in self.explosions:
+            destroy(exp)
+        self.explosions.clear()
         self.simulation.reset_match()
         self._spawn_obstacle_visuals()
         self._spawn_agent_visuals()
@@ -180,6 +246,23 @@ class ArenaApp:
             visual.sync()
         for visual in self.agent_visuals.values():
             visual.sync()
+        active_ids = set()
+        to_create = []
+        for snapshot in self.simulation.build_projectile_snapshots():
+            active_ids.add(snapshot.projectile_id)
+            if snapshot.projectile_id in self.projectile_visuals:
+                self.projectile_visuals[snapshot.projectile_id].sync(snapshot)
+            else:
+                to_create.append(snapshot)
+        for snapshot in to_create:
+            self.projectile_visuals[snapshot.projectile_id] = ProjectileVisual(snapshot)
+        stale_ids = set(self.projectile_visuals.keys()) - active_ids
+        for pid in stale_ids:
+            destroy(self.projectile_visuals.pop(pid))
+        for hit_data in self.simulation.pending_obstacle_hits:
+            self.explosions.append(ProjectileExplosion(hit_data))
+        self.simulation.pending_obstacle_hits.clear()
+        self.explosions = [e for e in self.explosions if e is not None]
         self.overlay.text = build_overlay_text(self.simulation)
 
 

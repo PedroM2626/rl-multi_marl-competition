@@ -10,7 +10,7 @@ import numpy as np
 from marl_arena.config import CONFIG
 from marl_arena.controllers import CTDEController, CTEController, DTEController
 from marl_arena.controllers.base import ControllerContext, normalize
-from marl_arena.models import AgentSnapshot, MatchResult, ObstacleSnapshot, TeamMetrics, TransitionRecord
+from marl_arena.models import AgentSnapshot, MatchResult, ObstacleSnapshot, ProjectileSnapshot, TeamMetrics, TransitionRecord
 
 
 TEAM_DEFINITIONS = (
@@ -93,6 +93,32 @@ class SimObstacle:
         )
 
 
+@dataclass
+class ProjectileState:
+    projectile_id: int
+    position: np.ndarray
+    velocity: np.ndarray
+    team_name: str
+    team_color: tuple[float, float, float]
+    age: float
+    hit: bool
+    obstacle_hit: bool
+    hit_position: np.ndarray
+
+    def snapshot(self) -> ProjectileSnapshot:
+        return ProjectileSnapshot(
+            projectile_id=self.projectile_id,
+            position=self.position.copy(),
+            direction=self.velocity.copy(),
+            team_name=self.team_name,
+            team_color=self.team_color,
+            age=self.age,
+            hit=self.hit,
+            obstacle_hit=self.obstacle_hit,
+            hit_position=tuple(self.hit_position.tolist()) if self.hit_position is not None else (0.0, 0.0, 0.0),
+        )
+
+
 class ArenaSimulation:
     def __init__(self, seed: int | None = None) -> None:
         self.config = CONFIG
@@ -111,7 +137,10 @@ class ArenaSimulation:
         self.match_index = 0
         self.agents: List[SimAgent] = []
         self.obstacles: List[SimObstacle] = []
+        self.projectiles: List[ProjectileState] = []
+        self._projectile_id_counter: int = 0
         self.match_time = 0.0
+        self.pending_obstacle_hits: List[Dict[str, object]] = []
         self.step_index = 0
         self.trajectory_rows: List[Dict[str, float]] = []
         self.last_match_result: MatchResult | None = None
@@ -218,6 +247,9 @@ class ArenaSimulation:
                     heading_deg=self.rng.uniform(0.0, 360.0),
                 )
                 self.agents.append(agent)
+        self.projectiles.clear()
+        self._projectile_id_counter = 0
+        self.pending_obstacle_hits.clear()
 
     def live_team_counts(self) -> Dict[str, int]:
         counts = {team_name: 0 for team_name, _, _, _ in TEAM_DEFINITIONS}
@@ -231,6 +263,9 @@ class ArenaSimulation:
 
     def build_obstacle_snapshots(self) -> List[ObstacleSnapshot]:
         return [obstacle.snapshot() for obstacle in self.obstacles]
+
+    def build_projectile_snapshots(self) -> List[ProjectileSnapshot]:
+        return [proj.snapshot() for proj in self.projectiles]
 
     def _apply_jump_and_gravity(self, agent: SimAgent, dt: float) -> None:
         ground_y = 1.0
@@ -338,6 +373,27 @@ class ArenaSimulation:
                 return True
         return False
 
+    def _projectile_hits_obstacle(
+        self, start: np.ndarray, direction: np.ndarray, max_distance: float
+    ) -> tuple[bool, np.ndarray]:
+        step_size = 0.25
+        current = start.copy()
+        direction_norm = normalize(direction)
+        distance_accumulated = 0.0
+        for _ in range(int(max_distance / step_size) + 1):
+            for obstacle in self.obstacles:
+                half = obstacle.size * 0.5
+                if (
+                    abs(current[0] - obstacle.position[0]) <= half[0] + 0.1
+                    and abs(current[2] - obstacle.position[2]) <= half[2] + 0.1
+                ):
+                    return True, current.copy()
+            current = current + direction_norm * step_size
+            distance_accumulated += step_size
+            if distance_accumulated >= max_distance:
+                break
+        return False, current.copy()
+
     def _record_trajectory(self) -> None:
         team_counts = self.live_team_counts()
         for team_name, team_metrics in self.cumulative_metrics.items():
@@ -431,6 +487,23 @@ class ArenaSimulation:
             agent.last_shot_at = self.match_time
             target = self._pick_hit_target(agent, decision.aim_direction)
             team_metrics = self.cumulative_metrics[agent.team_name]
+            projectile_velocity = decision.aim_direction * self.config.shoot_range * 2.5
+            projectile_pos = agent.position.copy()
+            projectile_pos[1] = 1.0
+            self.projectiles.append(
+                ProjectileState(
+                    projectile_id=self._projectile_id_counter,
+                    position=projectile_pos,
+                    velocity=projectile_velocity,
+                    team_name=agent.team_name,
+                    team_color=agent.color_rgb,
+                    age=0.0,
+                    hit=False,
+                    obstacle_hit=False,
+                    hit_position=np.zeros(3, dtype=float),
+                )
+            )
+            self._projectile_id_counter += 1
             if target is None:
                 agent.misses += 1
                 team_metrics.shots_missed += 1
@@ -444,6 +517,34 @@ class ArenaSimulation:
             team_metrics.shots_hit += 1
             hit_status[target.agent_id] = True
             scored_status[agent.agent_id] = True
+
+        expired_projectiles: List[ProjectileState] = []
+        for proj in self.projectiles:
+            if proj.obstacle_hit:
+                expired_projectiles.append(proj)
+                continue
+            proj.age += dt
+            proj.position += proj.velocity * dt
+            if proj.age > 3.0:
+                expired_projectiles.append(proj)
+                continue
+            max_travel = float(np.linalg.norm(proj.velocity)) * dt * 10.0
+            hit_obstacle, hit_pos = self._projectile_hits_obstacle(
+                proj.position - proj.velocity * dt, proj.velocity, max_travel
+            )
+            if hit_obstacle:
+                proj.obstacle_hit = True
+                proj.hit_position = hit_pos
+                proj.position = hit_pos
+                self.pending_obstacle_hits.append(
+                    {
+                        "position": hit_pos.copy(),
+                        "team_name": proj.team_name,
+                        "team_color": proj.team_color,
+                    }
+                )
+                expired_projectiles.append(proj)
+        self.projectiles = [p for p in self.projectiles if p not in expired_projectiles]
 
         post_snapshots = self.build_snapshots()
         for team_name, controller in self.controllers.items():
