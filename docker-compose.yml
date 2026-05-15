@@ -1,0 +1,11 @@
+services:
+  marl-headless:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rl-multi-marl-headless
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    command: python scripts/headless_batch.py

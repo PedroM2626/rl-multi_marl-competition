@@ -1,0 +1,4 @@
+ursina==6.1.2
+numpy==2.2.6
+matplotlib==3.10.3
+python-dotenv==1.0.1
