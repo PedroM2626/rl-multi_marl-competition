@@ -209,7 +209,7 @@ class RLTeamController(BaseTeamController):
                 global_obs,
                 agent_slot,
             )
-            return action_to_decision(self, agent, agent_list, action_index)
+            return action_to_decision(self, agent, agent_list, action_index, context.shoot_range)
 
         if self.paradigm == "CTDE":
             assert isinstance(self.actor, ActorNetwork)
@@ -236,7 +236,7 @@ class RLTeamController(BaseTeamController):
                 local_obs,
                 global_obs,
             )
-            return action_to_decision(self, agent, agent_list, action_index)
+            return action_to_decision(self, agent, agent_list, action_index, context.shoot_range)
 
         assert isinstance(self.actor, ActorNetwork)
         obs_tensor = torch.tensor(local_obs, dtype=torch.float32, device=self.device).unsqueeze(0)
@@ -252,7 +252,7 @@ class RLTeamController(BaseTeamController):
                 log_prob_value = 0.0
                 value_estimate = float(value.item())
         self._record_step(agent.agent_id, action_index, log_prob_value, value_estimate, local_obs)
-        return action_to_decision(self, agent, agent_list, action_index)
+        return action_to_decision(self, agent, agent_list, action_index, context.shoot_range)
 
     def finish_episode(self) -> PPOStats | None:
         last_value = 0.0

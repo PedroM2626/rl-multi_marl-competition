@@ -151,7 +151,7 @@ class ProjectileVisual(Entity):
 class ArenaApp:
     def __init__(self) -> None:
         self.metrics = MetricsStore()
-        self.simulation = ArenaSimulation()
+        self.simulation = ArenaSimulation(domain_randomization=False)
         set_rl_training(self.simulation.controllers, False)
         self.agent_visuals: dict[str, CapsuleVisual] = {}
         self.obstacle_visuals: dict[str, ObstacleVisual] = {}
@@ -164,7 +164,7 @@ class ArenaApp:
         self._spawn_agent_visuals()
 
     def _build_scene(self) -> None:
-        arena_size = self.simulation.config.arena_size
+        arena_size = self.simulation.match_variant.arena_size
         arena_half = arena_size * 0.5
         window.title = "RL Multi MARL Competition"
         window.borderless = False

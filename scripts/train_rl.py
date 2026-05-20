@@ -17,39 +17,70 @@ from marl_arena.systems.simulation import ArenaSimulation
 
 def main() -> None:
     metrics = MetricsStore()
-    simulation = ArenaSimulation()
+    simulation = ArenaSimulation(domain_randomization=True)
     set_rl_training(simulation.controllers, True)
-    total_matches = CONFIG.rl_train_matches
+    target_steps = CONFIG.rl_train_total_steps
+    dt = CONFIG.sim_step_dt
     training_log: list[dict[str, object]] = []
+    last_saved_steps = 0
+    last_logged_steps = 0
 
-    print(f"Iniciando treino PPO por {total_matches} partidas | device={CONFIG.rl_device}")
-    for match_number in range(1, total_matches + 1):
-        while True:
-            if simulation.step(0.1):
-                break
+    print(
+        f"Treino PPO | alvo={target_steps:,} steps | dt={dt} | "
+        f"domain_randomization={simulation.domain_randomization} | device={CONFIG.rl_device}"
+    )
+
+    while simulation.total_env_steps < target_steps:
+        finished = simulation.step(dt)
+        if not finished:
+            continue
+
         result = simulation.finish_match()
-        metrics.record_match(result, simulation.cumulative_metrics)
-        simulation.reset_match()
+        if simulation.match_index % CONFIG.rl_metrics_every_matches == 0:
+            metrics.record_match(result, simulation.cumulative_metrics)
 
-        if match_number % CONFIG.rl_save_every == 0 or match_number == total_matches:
-            save_rl_checkpoints(simulation.controllers)
-            print(f"[{match_number}/{total_matches}] checkpoints salvos em {CONFIG.rl_checkpoint_dir}")
-
-        if match_number % 10 == 0 or match_number == 1:
+        if simulation.total_env_steps - last_logged_steps >= CONFIG.rl_log_every_steps:
+            last_logged_steps = simulation.total_env_steps
             summary = {
                 team_metrics.team_name: team_metrics.as_summary()
                 for team_metrics in simulation.cumulative_metrics.values()
             }
-            training_log.append({"match": match_number, "winner": result.winner_team, "summary": summary})
+            training_log.append(
+                {
+                    "env_steps": simulation.total_env_steps,
+                    "matches": simulation.match_index,
+                    "winner": result.winner_team,
+                    "variant": simulation.match_variant.summary(),
+                    "summary": summary,
+                }
+            )
             print(
-                f"Partida {match_number} | vencedora={result.winner_team} | "
+                f"steps={simulation.total_env_steps:,}/{target_steps:,} | partidas={simulation.match_index} | "
+                f"vencedora={result.winner_team} | variant={simulation.match_variant.variant_id} | "
                 f"win_rates={{k: round(v['win_rate'], 3) for k, v in summary.items()}}"
             )
 
+        if simulation.total_env_steps - last_saved_steps >= CONFIG.rl_save_every_steps:
+            last_saved_steps = simulation.total_env_steps
+            save_rl_checkpoints(simulation.controllers)
+            print(f"[save] checkpoints em {CONFIG.rl_checkpoint_dir} (@ {simulation.total_env_steps:,} steps)")
+
+        simulation.reset_match()
+
+    save_rl_checkpoints(simulation.controllers)
     log_path = CONFIG.rl_checkpoint_dir / "training_log.json"
     with log_path.open("w", encoding="utf-8") as handle:
-        json.dump(training_log, handle, indent=2)
-    print(f"Treino finalizado. Log: {log_path}")
+        json.dump(
+            {
+                "target_steps": target_steps,
+                "completed_steps": simulation.total_env_steps,
+                "matches_played": simulation.match_index,
+                "entries": training_log,
+            },
+            handle,
+            indent=2,
+        )
+    print(f"Treino finalizado em {simulation.total_env_steps:,} steps | log: {log_path}")
 
 
 if __name__ == "__main__":

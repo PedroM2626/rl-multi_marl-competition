@@ -12,12 +12,12 @@ from marl_arena.config import CONFIG
 from marl_arena.controllers.base import ControllerContext, normalize
 from marl_arena.controllers.rl_controller import build_controllers, finish_rl_episode
 from marl_arena.models import AgentSnapshot, MatchResult, ObstacleSnapshot, ProjectileSnapshot, TeamMetrics, TransitionRecord
-
-
-TEAM_DEFINITIONS = (
-    ("Equipe 1", "CTE", np.array([-10.0, 1.0, -10.0], dtype=float), (0.92, 0.25, 0.25)),
-    ("Equipe 2", "DTE", np.array([10.0, 1.0, -10.0], dtype=float), (0.25, 0.55, 0.95)),
-    ("Equipe 3", "CTDE", np.array([0.0, 1.0, 10.0], dtype=float), (0.25, 0.88, 0.45)),
+from marl_arena.systems.match_variant import (
+    AGENT_FORMATION_OFFSETS,
+    TEAM_META,
+    MatchVariant,
+    create_default_variant,
+    sample_training_variant,
 )
 
 AGENT_RADIUS = 0.58
@@ -128,17 +128,23 @@ class ProjectileState:
 
 
 class ArenaSimulation:
-    def __init__(self, seed: int | None = None) -> None:
+    def __init__(self, seed: int | None = None, domain_randomization: bool | None = None) -> None:
         self.config = CONFIG
         self.seed = self.config.random_seed if seed is None else seed
         self.rng = random.Random(self.seed)
         self.np_rng = np.random.default_rng(self.seed)
+        self.domain_randomization = (
+            self.config.domain_randomization if domain_randomization is None else domain_randomization
+        )
         self.controllers = build_controllers(self.seed)
         self.cumulative_metrics = {
             team_name: TeamMetrics(team_name=team_name, paradigm=paradigm)
-            for team_name, paradigm, _, _ in TEAM_DEFINITIONS
+            for team_name, paradigm, _ in TEAM_META
         }
         self.match_index = 0
+        self.variant_counter = 0
+        self.total_env_steps = 0
+        self.match_variant: MatchVariant = create_default_variant(self.config)
         self.agents: List[SimAgent] = []
         self.obstacles: List[SimObstacle] = []
         self.projectiles: List[ProjectileState] = []
@@ -150,80 +156,29 @@ class ArenaSimulation:
         self.last_match_result: MatchResult | None = None
         self.reset_match()
 
+    def _sample_next_variant(self) -> MatchVariant:
+        self.variant_counter += 1
+        if self.domain_randomization:
+            return sample_training_variant(self.rng, self.config, self.variant_counter)
+        return create_default_variant(self.config, self.variant_counter)
+
     def _create_obstacles(self) -> List[SimObstacle]:
-        return [
-            SimObstacle(
-                obstacle_id="fixed-central-wall",
-                obstacle_type="barreira_fixa",
-                base_position=np.array([0.0, 1.5, -1.0], dtype=float),
-                size=np.array([2.0, 3.0, 10.0], dtype=float),
-                color_rgb=(0.60, 0.58, 0.56),
-            ),
-            SimObstacle(
-                obstacle_id="fixed-east-block",
-                obstacle_type="barreira_fixa",
-                base_position=np.array([8.0, 1.5, 5.0], dtype=float),
-                size=np.array([7.0, 3.0, 2.4], dtype=float),
-                color_rgb=(0.54, 0.52, 0.50),
-            ),
-            SimObstacle(
-                obstacle_id="fixed-west-pillar",
-                obstacle_type="barreira_fixa",
-                base_position=np.array([-8.0, 1.5, 6.0], dtype=float),
-                size=np.array([2.8, 3.0, 2.8], dtype=float),
-                color_rgb=(0.52, 0.50, 0.48),
-            ),
-            SimObstacle(
-                obstacle_id="moving-north-sweeper",
-                obstacle_type="obstaculo_movel",
-                base_position=np.array([0.0, 1.0, 13.5], dtype=float),
-                size=np.array([4.0, 2.0, 1.6], dtype=float),
-                color_rgb=(0.93, 0.74, 0.25),
-                movement_axis=np.array([1.0, 0.0, 0.0], dtype=float),
-                movement_amplitude=7.0,
-                movement_speed=0.8,
-                phase_offset=0.0,
-            ),
-            SimObstacle(
-                obstacle_id="moving-south-sweeper",
-                obstacle_type="obstaculo_movel",
-                base_position=np.array([0.0, 1.0, -12.0], dtype=float),
-                size=np.array([4.6, 2.0, 1.6], dtype=float),
-                color_rgb=(0.95, 0.66, 0.24),
-                movement_axis=np.array([1.0, 0.0, 0.0], dtype=float),
-                movement_amplitude=6.0,
-                movement_speed=0.65,
-                phase_offset=1.4,
-            ),
-            SimObstacle(
-                obstacle_id="passage-left",
-                obstacle_type="passagem_restrita",
-                base_position=np.array([-3.8, 1.5, 9.0], dtype=float),
-                size=np.array([2.6, 3.0, 4.5], dtype=float),
-                color_rgb=(0.38, 0.42, 0.50),
-            ),
-            SimObstacle(
-                obstacle_id="passage-right",
-                obstacle_type="passagem_restrita",
-                base_position=np.array([3.8, 1.5, 9.0], dtype=float),
-                size=np.array([2.6, 3.0, 4.5], dtype=float),
-                color_rgb=(0.38, 0.42, 0.50),
-            ),
-            SimObstacle(
-                obstacle_id="passage-lower-left",
-                obstacle_type="passagem_restrita",
-                base_position=np.array([-3.8, 1.5, -9.0], dtype=float),
-                size=np.array([2.6, 3.0, 4.0], dtype=float),
-                color_rgb=(0.36, 0.40, 0.48),
-            ),
-            SimObstacle(
-                obstacle_id="passage-lower-right",
-                obstacle_type="passagem_restrita",
-                base_position=np.array([3.8, 1.5, -9.0], dtype=float),
-                size=np.array([2.6, 3.0, 4.0], dtype=float),
-                color_rgb=(0.36, 0.40, 0.48),
-            ),
-        ]
+        obstacles: List[SimObstacle] = []
+        for spec in self.match_variant.obstacles:
+            obstacles.append(
+                SimObstacle(
+                    obstacle_id=spec.obstacle_id,
+                    obstacle_type=spec.obstacle_type,
+                    base_position=spec.base_position.copy(),
+                    size=spec.size.copy(),
+                    color_rgb=spec.color_rgb,
+                    movement_axis=spec.movement_axis.copy(),
+                    movement_amplitude=spec.movement_amplitude,
+                    movement_speed=spec.movement_speed,
+                    phase_offset=spec.phase_offset,
+                )
+            )
+        return obstacles
 
     def reset_match(self) -> None:
         self.match_index += 1
@@ -231,23 +186,19 @@ class ArenaSimulation:
         self.step_index = 0
         self.last_match_result = None
         self.trajectory_rows = []
+        self.match_variant = self._sample_next_variant()
         self.agents = []
         self.obstacles = self._create_obstacles()
         for obstacle in self.obstacles:
             obstacle.update(0.0)
-        for team_idx, (team_name, paradigm, spawn_center, color_rgb) in enumerate(TEAM_DEFINITIONS):
-            offsets = [
-                np.array([-1.7, 0.0, 0.0], dtype=float),
-                np.array([1.7, 0.0, 0.0], dtype=float),
-                np.array([0.0, 0.0, 1.7], dtype=float),
-            ]
-            for agent_idx, offset in enumerate(offsets):
+        for team_idx, spawn in enumerate(self.match_variant.team_spawns):
+            for agent_idx, offset in enumerate(AGENT_FORMATION_OFFSETS):
                 agent = SimAgent(
                     agent_id=f"{team_idx + 1}-{agent_idx + 1}",
-                    team_name=team_name,
-                    paradigm=paradigm,
-                    color_rgb=color_rgb,
-                    position=spawn_center + offset,
+                    team_name=spawn.team_name,
+                    paradigm=spawn.paradigm,
+                    color_rgb=spawn.color_rgb,
+                    position=spawn.spawn_center + offset,
                     heading_deg=self.rng.uniform(0.0, 360.0),
                 )
                 self.agents.append(agent)
@@ -256,7 +207,7 @@ class ArenaSimulation:
         self.pending_obstacle_hits.clear()
 
     def live_team_counts(self) -> Dict[str, int]:
-        counts = {team_name: 0 for team_name, _, _, _ in TEAM_DEFINITIONS}
+        counts = {team_name: 0 for team_name, _, _ in TEAM_META}
         for agent in self.agents:
             if agent.alive:
                 counts[agent.team_name] += 1
@@ -288,7 +239,7 @@ class ArenaSimulation:
         return np.array([math.sin(radians), 0.0, math.cos(radians)], dtype=float)
 
     def _clamp_position_to_arena(self, position: np.ndarray) -> np.ndarray:
-        half = self.config.arena_size * 0.5 - AGENT_RADIUS
+        half = self.match_variant.arena_size * 0.5 - AGENT_RADIUS
         clamped = position.copy()
         clamped[0] = float(np.clip(clamped[0], -half, half))
         clamped[2] = float(np.clip(clamped[2], -half, half))
@@ -460,7 +411,7 @@ class ArenaSimulation:
         start: np.ndarray,
         end: np.ndarray,
     ) -> tuple[bool, np.ndarray | None, float]:
-        half = self.config.arena_size * 0.5
+        half = self.match_variant.arena_size * 0.5
         direction = end - start
         best_t = float("inf")
         best_position: np.ndarray | None = None
@@ -530,12 +481,12 @@ class ArenaSimulation:
         if direction_input is None:
             return None
         direction = normalize(direction_input)
-        speed = max(self.config.shoot_range * PROJECTILE_SPEED_MULTIPLIER, FLOAT_EPSILON)
+        speed = max(self.match_variant.shoot_range * PROJECTILE_SPEED_MULTIPLIER, FLOAT_EPSILON)
         if float(np.linalg.norm(direction)) <= FLOAT_EPSILON:
             warnings.warn(f"Disparo do agente {shooter.agent_id} ignorado por direcao nula.")
             return None
         projectile_origin = shooter.position.copy() + direction * (AGENT_RADIUS + PROJECTILE_RADIUS + 0.05)
-        half = self.config.arena_size * 0.5 - PROJECTILE_RADIUS
+        half = self.match_variant.arena_size * 0.5 - PROJECTILE_RADIUS
         projectile_origin[0] = float(np.clip(projectile_origin[0], -half, half))
         projectile_origin[2] = float(np.clip(projectile_origin[2], -half, half))
         projectile = ProjectileState(
@@ -550,7 +501,7 @@ class ArenaSimulation:
             obstacle_hit=False,
             hit_position=np.zeros(3, dtype=float),
             distance_travelled=0.0,
-            max_distance=self.config.shoot_range,
+            max_distance=self.match_variant.shoot_range,
         )
         self._projectile_id_counter += 1
         self.projectiles.append(projectile)
@@ -672,12 +623,14 @@ class ArenaSimulation:
         self.pending_obstacle_hits.clear()
         self.match_time += dt
         self.step_index += 1
+        self.total_env_steps += 1
         self._update_obstacles()
         snapshots = self.build_snapshots()
         context = ControllerContext(
             step_index=self.step_index,
-            arena_size=self.config.arena_size,
+            arena_size=self.match_variant.arena_size,
             time_delta=dt,
+            shoot_range=self.match_variant.shoot_range,
         )
         decisions: Dict[str, object] = {}
         hit_status = {agent.agent_id: False for agent in self.agents}
@@ -695,11 +648,15 @@ class ArenaSimulation:
                 self._apply_jump_and_gravity(agent, dt)
                 continue
 
-            agent.heading_deg = (agent.heading_deg + decision.turn * self.config.agent_turn_speed * dt) % 360.0
+            agent.heading_deg = (
+                agent.heading_deg + decision.turn * self.match_variant.agent_turn_speed * dt
+            ) % 360.0
             if decision.jump and agent.position[1] <= 1.02:
                 agent.vertical_velocity = self.config.jump_speed
             forward = self._forward_from_heading(agent.heading_deg)
-            desired_position = agent.position + forward * decision.move * self.config.agent_move_speed * dt
+            desired_position = (
+                agent.position + forward * decision.move * self.match_variant.agent_move_speed * dt
+            )
             agent.position = self._resolve_movement(agent.position, desired_position)
             self._apply_jump_and_gravity(agent, dt)
             if agent.alive:
@@ -709,7 +666,7 @@ class ArenaSimulation:
             decision = decisions.get(agent.agent_id)
             if not agent.alive or decision is None or not decision.shoot:
                 continue
-            if self.match_time - agent.last_shot_at < self.config.shoot_cooldown:
+            if self.match_time - agent.last_shot_at < self.match_variant.shoot_cooldown:
                 continue
             agent.last_shot_at = self.match_time
             self._spawn_projectile(agent, decision.aim_direction)
@@ -747,7 +704,7 @@ class ArenaSimulation:
         alive_teams = [team_name for team_name, count in alive_by_team.items() if count > 0]
         if len(alive_teams) <= 1:
             return True
-        return self.match_time >= self.config.match_duration_seconds
+        return self.match_time >= self.match_variant.match_duration_seconds
 
     def finish_match(self) -> MatchResult:
         team_alive = self.live_team_counts()
@@ -758,7 +715,9 @@ class ArenaSimulation:
         team_rows: List[Dict[str, float]] = []
         agent_rows: List[Dict[str, float]] = []
 
-        for team_name, paradigm, _, _ in TEAM_DEFINITIONS:
+        for spawn in self.match_variant.team_spawns:
+            team_name = spawn.team_name
+            paradigm = spawn.paradigm
             team_agents = [agent for agent in self.agents if agent.team_name == team_name]
             team_metrics = self.cumulative_metrics[team_name]
             team_metrics.matches_played += 1
@@ -766,6 +725,7 @@ class ArenaSimulation:
             team_rows.append(
                 {
                     "match_index": self.match_index,
+                    "variant_id": self.match_variant.variant_id,
                     "team_name": team_name,
                     "paradigm": paradigm,
                     "winner": 1 if team_name == winner_team else 0,

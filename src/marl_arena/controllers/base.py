@@ -30,6 +30,7 @@ class ControllerContext:
     step_index: int
     arena_size: float
     time_delta: float
+    shoot_range: float
 
 
 class BaseTeamController(ABC):

@@ -7,7 +7,6 @@ from typing import Any
 import numpy as np
 import torch
 
-from marl_arena.config import CONFIG
 from marl_arena.models import AgentSnapshot, StepDecision
 
 
@@ -33,6 +32,7 @@ def action_to_decision(
     agent: AgentSnapshot,
     all_agents: list[AgentSnapshot],
     action_index: int,
+    shoot_range: float,
 ) -> StepDecision:
     parsed = parse_action(action_index)
     targets = controller.candidate_targets(agent, all_agents)
@@ -41,7 +41,7 @@ def action_to_decision(
     can_shoot = False
     if enemy is not None and parsed.shoot:
         distance = float(np.linalg.norm(enemy.position - agent.position))
-        can_shoot = distance <= CONFIG.shoot_range
+        can_shoot = distance <= shoot_range
     roles = ["engage", "flank", "support", "evade"]
     return controller.make_decision_from_target(agent, target, can_shoot, roles[parsed.target_index])
 

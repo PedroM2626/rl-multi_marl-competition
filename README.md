@@ -10,14 +10,10 @@ Arena 3D com 9 agentes (3 equipes × 3), cada equipe com um paradigma MARL trein
 
 ## Pontos de entrada
 
-O projeto usa **dois comandos** — não há pasta `scripts/` cheia de utilitários:
-
-| Comando | Arquivo | Função |
-|---------|---------|--------|
-| `python scripts/train_rl.py` | Treino headless | Roda N partidas, atualiza redes com PPO, salva checkpoints e métricas |
-| `python main.py` | Arena 3D | Carrega checkpoints e exibe a competição em tempo real (inferência) |
-
-Isso é intencional: treino e visualização são fluxos separados, mas cada um tem um único script. Testes automatizados ficam em `tests/` (pytest), não em `scripts/`.
+| Comando | Função |
+|---------|--------|
+| `python scripts/train_rl.py` | Treino até **3M steps** (padrão) com randomização de domínio |
+| `python main.py` | Arena 3D com layout padrão e checkpoints carregados |
 
 ## Instalação
 
@@ -27,20 +23,32 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-Copie `.env.example` para `.env` e ajuste se necessário.
+Copie `.env.example` para `.env`.
 
-## Treinar
+## Treinar (3 milhões de steps)
 
 ```bash
 python scripts/train_rl.py
 ```
 
-Durante o treino:
+O treino para quando `total_env_steps >= RL_TRAIN_TOTAL_STEPS` (padrão: **3.000.000**).
 
-- checkpoints em `data/checkpoints/` (`equipe_1_cte.pt`, `equipe_2_dte.pt`, `equipe_3_ctde.pt`)
-- log resumido em `data/checkpoints/training_log.json`
-- métricas CSV em `data/metrics/`
-- gráfico comparativo em `data/exports/comparative_dashboard.png` (gerado ao registrar cada partida)
+A cada nova partida, com `DOMAIN_RANDOMIZATION=true`, o ambiente sorteia:
+
+- **Spawns** das 3 equipes (posições e pequenos deslocamentos)
+- **Obstáculos** (5–10: barreiras, passagens, blocos móveis com eixo/amplitude/velocidade aleatórios)
+- **Tamanho da arena** (28–36)
+- **Duração da partida** (60–120 s)
+- **Velocidade de movimento e giro**
+- **Alcance e cooldown de disparo**
+
+Isso torna as políticas mais robustas a layouts e regras variáveis.
+
+Saídas:
+
+- `data/checkpoints/equipe_*_{cte,dte,ctde}.pt` (salvos a cada `RL_SAVE_EVERY_STEPS`, padrão 100k)
+- `data/checkpoints/training_log.json`
+- Métricas/gráfico a cada `RL_METRICS_EVERY_MATCHES` partidas
 
 ## Jogar (visual 3D)
 
@@ -48,7 +56,7 @@ Durante o treino:
 python main.py
 ```
 
-Requer checkpoints já treinados. Os agentes usam política gulosa (sem exploração). Use o mouse para orbitar a câmera; o botão **Reiniciar Partida** reseta a rodada.
+Usa **layout fixo** (`DOMAIN_RANDOMIZATION=false`) para visualização estável.
 
 ## Testes
 
@@ -56,59 +64,32 @@ Requer checkpoints já treinados. Os agentes usam política gulosa (sem explora�
 python -m pytest tests/ -q
 ```
 
-Cobre redes neurais e um ciclo curto de treino/simulação.
-
-## Estrutura do projeto
+## Estrutura
 
 ```text
-.
-├── main.py                 # entrada: visualização 3D
-├── scripts/
-│   └── train_rl.py         # entrada: treino PPO
-├── tests/
-│   ├── test_rl_networks.py
-│   └── test_rl_training.py
-├── requirements.txt
-├── .env / .env.example
-└── src/marl_arena/
-    ├── config.py
-    ├── models.py
-    ├── controllers/
-    │   ├── base.py         # features, alvos, movimento
-    │   └── rl_controller.py
-    ├── rl/
-    │   ├── actions.py      # espaço de ação + checkpoints
-    │   ├── networks.py
-    │   ├── buffer.py
-    │   └── ppo.py
-    ├── systems/
-    │   ├── simulation.py   # física, combate, partidas
-    │   ├── metrics.py
-    │   └── plotting.py
-    └── ui/
-        └── dashboard.py
+main.py
+scripts/train_rl.py
+src/marl_arena/
+  config.py
+  models.py
+  controllers/base.py, rl_controller.py
+  rl/actions.py, networks.py, buffer.py, ppo.py
+  systems/simulation.py, match_variant.py, metrics.py, plotting.py
+  ui/dashboard.py
+tests/
 ```
 
-## Configuração (`.env`)
+## Configuração principal (`.env`)
 
 | Variável | Padrão | Descrição |
 |----------|--------|-----------|
-| `RL_TRAIN_MATCHES` | 300 | Partidas por sessão de treino |
-| `RL_SAVE_EVERY` | 25 | Frequência de salvamento dos `.pt` |
-| `RL_DEVICE` | cpu | `cpu`, `cuda` ou `mps` |
-| `RL_LEARNING_RATE` | 0.0003 | Taxa do Adam no PPO |
-| `RL_PPO_EPOCHS` | 4 | Épocas PPO por partida |
-| `MATCH_DURATION_SECONDS` | 90 | Tempo máximo por partida |
-| `SHOOT_RANGE` | 20 | Alcance do disparo |
-| `SHOOT_COOLDOWN` | 0.45 | Intervalo entre tiros |
-| `RANDOM_SEED` | 7 | Semente da simulação |
+| `RL_TRAIN_TOTAL_STEPS` | 3000000 | Total de steps de ambiente no treino |
+| `RL_SAVE_EVERY_STEPS` | 100000 | Salvar checkpoints a cada N steps |
+| `RL_LOG_EVERY_STEPS` | 50000 | Log de progresso no console |
+| `DOMAIN_RANDOMIZATION` | true | Variar mapa/regras a cada partida (treino) |
+| `SIM_STEP_DT` | 0.1 | Delta de tempo por step |
+| `DR_*` | ver `.env.example` | Intervalos da randomização de domínio |
 
-## Saídas geradas
+## Estimativa de tempo
 
-| Caminho | Conteúdo |
-|---------|----------|
-| `data/checkpoints/*.pt` | Pesos treinados por equipe/paradigma |
-| `data/checkpoints/training_log.json` | Win rates ao longo do treino |
-| `data/metrics/team_match_metrics.csv` | Resultado por partida/equipe |
-| `data/metrics/summary.json` | Resumo acumulado |
-| `data/exports/comparative_dashboard.png` | Gráficos de vitória, eliminações, sobrevivência, precisão |
+Com `SIM_STEP_DT=0.1` e partidas de ~60–120 s, 3M steps ≈ **3.000–5.000 partidas** (~horas em CPU). Use `RL_DEVICE=cuda` se tiver GPU.
