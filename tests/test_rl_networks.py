@@ -3,7 +3,6 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-import numpy as np
 import torch
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -11,9 +10,8 @@ SRC_DIR = PROJECT_ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
+from marl_arena.rl.actions import GLOBAL_OBS_DIM, LOCAL_OBS_DIM, NUM_ACTIONS, parse_action
 from marl_arena.rl.networks import ActorNetwork, CentralizedActorNetwork, CentralizedCriticNetwork
-from marl_arena.rl.constants import GLOBAL_OBS_DIM, LOCAL_OBS_DIM, NUM_ACTIONS
-from marl_arena.rl.spaces import parse_action
 
 
 def test_actor_forward_shape() -> None:

@@ -10,7 +10,7 @@ import numpy as np
 
 from marl_arena.config import CONFIG
 from marl_arena.controllers.base import ControllerContext, normalize
-from marl_arena.controllers.factory import build_controllers, finish_rl_episode
+from marl_arena.controllers.rl_controller import build_controllers, finish_rl_episode
 from marl_arena.models import AgentSnapshot, MatchResult, ObstacleSnapshot, ProjectileSnapshot, TeamMetrics, TransitionRecord
 
 

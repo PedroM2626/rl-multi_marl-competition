@@ -25,8 +25,7 @@ from ursina import (
     window,
 )
 
-from marl_arena.config import CONFIG
-from marl_arena.controllers.factory import set_rl_training
+from marl_arena.controllers.rl_controller import set_rl_training
 from marl_arena.systems.metrics import MetricsStore
 from marl_arena.systems.simulation import ArenaSimulation
 from marl_arena.ui.dashboard import build_overlay_text
@@ -153,8 +152,7 @@ class ArenaApp:
     def __init__(self) -> None:
         self.metrics = MetricsStore()
         self.simulation = ArenaSimulation()
-        if CONFIG.controller_mode == "rl":
-            set_rl_training(self.simulation.controllers, False)
+        set_rl_training(self.simulation.controllers, False)
         self.agent_visuals: dict[str, CapsuleVisual] = {}
         self.obstacle_visuals: dict[str, ObstacleVisual] = {}
         self.projectile_visuals: dict[int, ProjectileVisual] = {}

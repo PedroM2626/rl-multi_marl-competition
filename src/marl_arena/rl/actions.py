@@ -1,12 +1,20 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
 
 import numpy as np
+import torch
 
 from marl_arena.config import CONFIG
 from marl_arena.models import AgentSnapshot, StepDecision
-from marl_arena.rl.constants import GLOBAL_OBS_DIM, LOCAL_OBS_DIM, NUM_ACTIONS, NUM_TARGETS
+
+
+LOCAL_OBS_DIM = 8
+GLOBAL_OBS_DIM = 36
+NUM_TARGETS = 4
+NUM_ACTIONS = NUM_TARGETS * 2
 
 
 @dataclass(frozen=True)
@@ -36,3 +44,14 @@ def action_to_decision(
         can_shoot = distance <= CONFIG.shoot_range
     roles = ["engage", "flank", "support", "evade"]
     return controller.make_decision_from_target(agent, target, can_shoot, roles[parsed.target_index])
+
+
+def save_checkpoint(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(payload, path)
+
+
+def load_checkpoint(path: Path, device: torch.device) -> dict[str, Any]:
+    if not path.exists():
+        raise FileNotFoundError(f"Checkpoint nao encontrado: {path}")
+    return torch.load(path, map_location=device, weights_only=False)

@@ -10,15 +10,12 @@ if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
 from marl_arena.config import CONFIG
-from marl_arena.controllers.factory import save_rl_checkpoints, set_rl_training
+from marl_arena.controllers.rl_controller import save_rl_checkpoints, set_rl_training
 from marl_arena.systems.metrics import MetricsStore
 from marl_arena.systems.simulation import ArenaSimulation
 
 
 def main() -> None:
-    if CONFIG.controller_mode != "rl":
-        raise RuntimeError("Defina CONTROLLER_MODE=rl no arquivo .env antes de treinar.")
-
     metrics = MetricsStore()
     simulation = ArenaSimulation()
     set_rl_training(simulation.controllers, True)
@@ -28,8 +25,7 @@ def main() -> None:
     print(f"Iniciando treino PPO por {total_matches} partidas | device={CONFIG.rl_device}")
     for match_number in range(1, total_matches + 1):
         while True:
-            finished = simulation.step(0.1)
-            if finished:
+            if simulation.step(0.1):
                 break
         result = simulation.finish_match()
         metrics.record_match(result, simulation.cumulative_metrics)

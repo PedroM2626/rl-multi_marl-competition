@@ -9,13 +9,11 @@ SRC_DIR = PROJECT_ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-os.environ["CONTROLLER_MODE"] = "rl"
 os.environ["RL_TRAIN_MATCHES"] = "2"
 os.environ["MATCH_DURATION_SECONDS"] = "5"
 
 from marl_arena.config import CONFIG
-from marl_arena.controllers.factory import save_rl_checkpoints, set_rl_training
-from marl_arena.controllers.rl_base import RLTeamController
+from marl_arena.controllers.rl_controller import RLTeamController, save_rl_checkpoints, set_rl_training
 from marl_arena.systems.simulation import ArenaSimulation
 
 
