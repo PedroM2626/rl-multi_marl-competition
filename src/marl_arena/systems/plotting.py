@@ -25,13 +25,22 @@ def _load_team_metric_series(team_metrics_csv: Path) -> dict[str, list[dict[str,
     match_counts: dict[str, int] = defaultdict(int)
 
     for row in rows:
-        team_name = str(row["team_name"])
-        paradigm = str(row["paradigm"])
-        match_index = int(row["match_index"])
-        winner = int(row["winner"])
-        eliminations = int(row["eliminations"])
-        mean_survival_time = float(row["mean_survival_time"])
-        shot_accuracy = float(row["shot_accuracy"])
+        if "team_name" not in row or "winner" not in row:
+            continue
+        team_name = str(row["team_name"]).strip()
+        if not team_name.startswith("Equipe "):
+            continue
+        paradigm = str(row.get("paradigm", ""))
+        try:
+            match_index = int(float(row["match_index"]))
+            winner = int(float(row["winner"]))
+            eliminations = int(float(row["eliminations"]))
+            mean_survival_time = float(row["mean_survival_time"])
+            shot_accuracy = float(row["shot_accuracy"])
+        except (TypeError, ValueError, KeyError):
+            continue
+        if winner not in (0, 1):
+            continue
 
         match_counts[team_name] += 1
         cumulative_wins[team_name] += winner
