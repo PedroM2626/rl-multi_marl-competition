@@ -12,6 +12,7 @@ Projeto completo de simulacao 3D com 9 agentes em formato de capsula, distribuid
 
 - `Python 3.13` testado localmente
 - `Python 3.11+` suportado pelo projeto
+- `PyTorch` para treino PPO das politicas MARL
 - `Ursina` para visualizacao 3D em tempo real
 - `NumPy` para calculos vetoriais
 - `Matplotlib` para exportacao de graficos
@@ -31,19 +32,33 @@ Projeto completo de simulacao 3D com 9 agentes em formato de capsula, distribuid
 |   |-- exports/
 |   `-- metrics/
 |-- scripts/
+|   |-- train_rl.py
 |   |-- headless_batch.py
- |   |-- live_metrics_viewer.py
- |   |-- test_projectile_collision.py
- |   `-- validate_initial_behavior.py
+|   |-- live_metrics_viewer.py
+|   |-- test_projectile_collision.py
+|   `-- validate_initial_behavior.py
+|-- tests/
+|   |-- test_rl_networks.py
+|   `-- test_rl_training.py
 `-- src/
     `-- marl_arena/
         |-- config.py
         |-- models.py
         |-- controllers/
         |   |-- base.py
+        |   |-- factory.py
         |   |-- cte_controller.py
         |   |-- dte_controller.py
-        |   `-- ctde_controller.py
+        |   |-- ctde_controller.py
+        |   |-- cte_rl_controller.py
+        |   |-- dte_rl_controller.py
+        |   `-- ctde_rl_controller.py
+        |-- rl/
+        |   |-- networks.py
+        |   |-- buffer.py
+        |   |-- ppo.py
+        |   |-- spaces.py
+        |   `-- checkpoints.py
         |-- systems/
         |   |-- simulation.py
         |   |-- metrics.py
@@ -89,13 +104,56 @@ Esse script abre a arena 3D e mostra:
 - reinicio automatico de partidas
 - exportacao de metricas e graficos ao fim de cada partida
 
+### Treino RL real (PPO + PyTorch)
+
+```bash
+pip install -r requirements.txt
+```
+
+No `.env`, defina:
+
+```env
+CONTROLLER_MODE=rl
+RL_TRAIN_MATCHES=300
+RL_DEVICE=cpu
+```
+
+Execute o treino headless:
+
+```bash
+python scripts/train_rl.py
+```
+
+O treino:
+
+- usa **PPO** com redes neurais por paradigma
+- salva checkpoints em `data/checkpoints/` (`equipe_1_cte.pt`, `equipe_2_dte.pt`, `equipe_3_ctde.pt`)
+- grava log resumido em `data/checkpoints/training_log.json`
+- atualiza as politicas ao final de cada partida com rollouts coletados na simulacao
+
+Paradigmas implementados com redes:
+
+| Paradigma | Equipe | Arquitetura |
+|-----------|--------|-------------|
+| **CTE** | Equipe 1 | ator centralizado (estado global + slot do agente) + critico global |
+| **DTE** | Equipe 2 | ator-critico local (somente observacao local na execucao) |
+| **CTDE** | Equipe 3 | ator local na execucao + critico global no treino PPO |
+
+Espaco de acao discreto: `8` acoes (`4` alvos taticos x `2` estados de disparo).
+
+Para voltar ao modo heuristico legado:
+
+```env
+CONTROLLER_MODE=heuristic
+```
+
 ### Simulacao headless em lote
 
 ```bash
 python scripts/headless_batch.py
 ```
 
-Esse script executa varias partidas sem abrir a janela 3D, ideal para gerar historico estatistico rapidamente.
+Esse script executa varias partidas sem abrir a janela 3D, ideal para gerar historico estatistico rapidamente. Com `CONTROLLER_MODE=rl`, carrega checkpoints treinados e roda em modo inferencia (sem gradiente).
 
 ### Visualizador de metricas em tempo real
 
@@ -174,34 +232,30 @@ O dashboard consolidado plota ao longo do tempo:
 
 ## Diferencas Entre as Equipes
 
-### CTE
+### Modo heuristico (`CONTROLLER_MODE=heuristic`)
 
-- decide com base em informacao global da equipe
-- usa coordenacao centralizada tanto no aprendizado quanto na execucao
-- tende a favorecer papeis coordenados como `pressure`, `flank` e `support`
+- **CTE**: pesos heuristicos com visao global na decisao
+- **DTE**: pesos locais independentes por agente
+- **CTDE**: ator heuristico local + ajuste de critico heuristico
 
-### DTE
+### Modo RL (`CONTROLLER_MODE=rl`)
 
-- cada agente decide de forma independente usando somente observacao local
-- mantem pesos por agente
-- nao compartilha politica de execucao entre os colegas
-
-### CTDE
-
-- atores executam a politica com observacao local
-- o treinamento usa um critico centralizado com informacao global
-- o ajuste dos atores usa sinal do critico para melhorar coordenacao
+- **CTE**: `CentralizedActorNetwork` + `CentralizedCriticNetwork`, treinados com PPO usando estado global da arena
+- **DTE**: `ActorNetwork` com observacao local de 8 dimensoes e valor local
+- **CTDE**: ator local + critico global; o critico nao entra na execucao, apenas no bootstrap e no loss do PPO
 
 ## Configuracao
 
 Edite `.env` para alterar parametros como:
 
+- `CONTROLLER_MODE` (`heuristic` ou `rl`)
 - duracao da partida
 - velocidade de movimento
 - velocidade de giro
 - alcance de tiro
 - cooldown de disparo
 - quantidade de partidas headless
+- hiperparametros PPO (`RL_LEARNING_RATE`, `RL_GAMMA`, `RL_PPO_EPOCHS`, ...)
 - seed aleatoria
 
 ## Comportamento Inicial Sem Treinamento
@@ -247,10 +301,18 @@ Esse script executa cenarios deterministas e um smoke test headless para validar
 - saidas persistidas em arquivos estruturados
 - simulacao visual e headless sobre a mesma logica central
 
+## Testes
+
+```bash
+pip install -r requirements.txt
+python -m pytest tests/ -q
+```
+
 ## Limitacoes Conhecidas
 
 - o modo Docker foca em execucao headless, nao em renderizacao 3D com janela
-- os controladores implementam paradigmas MARL distintos com atualizacao online leve, priorizando demonstracao comparativa reproduzivel da competicao
+- o treino RL usa PPO tabular por partida (sem replay buffer persistente entre sessoes)
+- convergencia depende de `RL_TRAIN_MATCHES` e do balanceamento do mapa; para resultados fortes, aumente partidas e ajuste hiperparametros
 
 ## Correcao da Colisao de Projetil
 

@@ -14,3 +14,5 @@ build/
 data/exports/*.png
 data/metrics/*.csv
 data/metrics/*.json
+data/checkpoints/*.pt
+data/checkpoints/training_log.json

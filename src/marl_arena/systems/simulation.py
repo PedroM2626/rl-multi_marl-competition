@@ -9,8 +9,8 @@ from typing import Dict, List
 import numpy as np
 
 from marl_arena.config import CONFIG
-from marl_arena.controllers import CTDEController, CTEController, DTEController
 from marl_arena.controllers.base import ControllerContext, normalize
+from marl_arena.controllers.factory import build_controllers, finish_rl_episode
 from marl_arena.models import AgentSnapshot, MatchResult, ObstacleSnapshot, ProjectileSnapshot, TeamMetrics, TransitionRecord
 
 
@@ -133,11 +133,7 @@ class ArenaSimulation:
         self.seed = self.config.random_seed if seed is None else seed
         self.rng = random.Random(self.seed)
         self.np_rng = np.random.default_rng(self.seed)
-        self.controllers = {
-            "Equipe 1": CTEController("Equipe 1", self.seed + 11),
-            "Equipe 2": DTEController("Equipe 2", self.seed + 23),
-            "Equipe 3": CTDEController("Equipe 3", self.seed + 37),
-        }
+        self.controllers = build_controllers(self.seed)
         self.cumulative_metrics = {
             team_name: TeamMetrics(team_name=team_name, paradigm=paradigm)
             for team_name, paradigm, _, _ in TEAM_DEFINITIONS
@@ -805,6 +801,7 @@ class ArenaSimulation:
             agent_rows=agent_rows,
             trajectory_rows=self.trajectory_rows.copy(),
         )
+        finish_rl_episode(self.controllers)
         return self.last_match_result
 
     def match_status_text(self) -> str:

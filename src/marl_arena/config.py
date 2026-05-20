@@ -37,9 +37,24 @@ class ArenaConfig:
     plot_update_interval: float = float(os.getenv("PLOT_UPDATE_INTERVAL", "1.0"))
     metrics_flush_interval: float = float(os.getenv("METRICS_FLUSH_INTERVAL", "1.5"))
     random_seed: int = int(os.getenv("RANDOM_SEED", "7"))
+    controller_mode: str = os.getenv("CONTROLLER_MODE", "heuristic").strip().lower()
+    rl_train_matches: int = int(os.getenv("RL_TRAIN_MATCHES", "300"))
+    rl_save_every: int = int(os.getenv("RL_SAVE_EVERY", "25"))
+    rl_learning_rate: float = float(os.getenv("RL_LEARNING_RATE", "0.0003"))
+    rl_gamma: float = float(os.getenv("RL_GAMMA", "0.99"))
+    rl_gae_lambda: float = float(os.getenv("RL_GAE_LAMBDA", "0.95"))
+    rl_clip_eps: float = float(os.getenv("RL_CLIP_EPS", "0.2"))
+    rl_value_coef: float = float(os.getenv("RL_VALUE_COEF", "0.5"))
+    rl_entropy_coef: float = float(os.getenv("RL_ENTROPY_COEF", "0.01"))
+    rl_max_grad_norm: float = float(os.getenv("RL_MAX_GRAD_NORM", "0.5"))
+    rl_ppo_epochs: int = int(os.getenv("RL_PPO_EPOCHS", "4"))
+    rl_batch_size: int = int(os.getenv("RL_BATCH_SIZE", "256"))
+    rl_hidden_dim: int = int(os.getenv("RL_HIDDEN_DIM", "128"))
+    rl_device: str = os.getenv("RL_DEVICE", "cpu")
+    rl_checkpoint_dir: Path = ROOT_DIR / "data" / "checkpoints"
 
 
 CONFIG = ArenaConfig()
 
-for directory in (DATA_DIR, METRICS_DIR, EXPORTS_DIR):
+for directory in (DATA_DIR, METRICS_DIR, EXPORTS_DIR, CONFIG.rl_checkpoint_dir):
     directory.mkdir(parents=True, exist_ok=True)
