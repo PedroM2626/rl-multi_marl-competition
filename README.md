@@ -33,6 +33,7 @@ Projeto completo de simulacao 3D com 9 agentes em formato de capsula, distribuid
 |-- scripts/
 |   |-- headless_batch.py
  |   |-- live_metrics_viewer.py
+ |   |-- test_projectile_collision.py
  |   `-- validate_initial_behavior.py
 `-- src/
     `-- marl_arena/
@@ -152,7 +153,10 @@ Interacoes implementadas:
 - colisao dos agentes com obstaculos sem atravessar a geometria
 - deslizamento lateral ao tentar contornar barreiras
 - reposicionamento de seguranca caso um obstaculo movel pressione um agente
-- bloqueio de linha de tiro quando um obstaculo fica entre atirador e alvo
+- bloqueio fisico de projeteis por obstaculos fixos, moveis e paredes da arena
+- deteccao continua de intersecao entre o segmento percorrido pelo projetil e as hitboxes 3D do cenario
+- resolucao do primeiro impacto valido no trajeto do projetil, evitando falsos positivos por amostragem grosseira
+- acerto em agentes baseado na trajetoria real do projetil, em vez de eliminacao instantanea desacoplada do disparo
 
 ## Graficos Exportados
 
@@ -221,6 +225,20 @@ Resumo do teste executado:
 - `2` obstaculos moveis se deslocaram como esperado
 - houve `0` sobreposicoes invalidas entre agentes vivos e obstaculos
 
+### Validacao pratica da colisao de projeteis
+
+```bash
+python scripts/test_projectile_collision.py
+```
+
+Esse script executa cenarios deterministas e um smoke test headless para validar:
+
+- impacto do projetil na parede central antes de atingir um alvo atras dela
+- acerto direto em inimigo sem falso bloqueio
+- interrupcao do projetil ao atingir o limite fisico da arena
+- limpeza correta dos eventos de colisao a cada passo da simulacao
+- permanencia dos projeteis dentro dos limites da arena em execucao continua
+
 ## Boas Praticas e DevOps
 
 - configuracao externa via `.env`
@@ -233,3 +251,13 @@ Resumo do teste executado:
 
 - o modo Docker foca em execucao headless, nao em renderizacao 3D com janela
 - os controladores implementam paradigmas MARL distintos com atualizacao online leve, priorizando demonstracao comparativa reproduzivel da competicao
+
+## Correcao da Colisao de Projetil
+
+Problemas corrigidos nesta versao:
+
+- remocao da antiga verificacao por amostragem que podia perder colisores finos ou detectar impactos em pontos incorretos
+- eliminacao do erro de alcance por frame que verificava ate `10x` alem do deslocamento real do projetil
+- alinhamento entre arena visual e arena logica, evitando divergencia entre parede renderizada e limite de colisao
+- substituicao do acerto instantaneo por resolucao da colisao ao longo da trajetoria do projetil
+- controle consistente do ciclo de vida dos eventos de impacto para nao acumular explosoes antigas em passos futuros

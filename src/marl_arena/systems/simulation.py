@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import random
+import warnings
 from dataclasses import dataclass, field
 from typing import Dict, List
 
@@ -20,6 +21,10 @@ TEAM_DEFINITIONS = (
 )
 
 AGENT_RADIUS = 0.58
+AGENT_HALF_HEIGHT = 1.1
+PROJECTILE_RADIUS = 0.12
+PROJECTILE_SPEED_MULTIPLIER = 2.5
+FLOAT_EPSILON = 1e-6
 
 
 @dataclass
@@ -96,6 +101,7 @@ class SimObstacle:
 @dataclass
 class ProjectileState:
     projectile_id: int
+    shooter_agent_id: str
     position: np.ndarray
     velocity: np.ndarray
     team_name: str
@@ -104,6 +110,8 @@ class ProjectileState:
     hit: bool
     obstacle_hit: bool
     hit_position: np.ndarray
+    distance_travelled: float
+    max_distance: float
 
     def snapshot(self) -> ProjectileSnapshot:
         return ProjectileSnapshot(
@@ -359,40 +367,284 @@ class ArenaSimulation:
             obstacle.update(self.match_time)
         self._push_agents_out_of_obstacles()
 
-    def _segment_hits_obstacle(self, start: np.ndarray, end: np.ndarray, obstacle: SimObstacle) -> bool:
-        half = obstacle.size * 0.5
-        min_x = obstacle.position[0] - half[0]
-        max_x = obstacle.position[0] + half[0]
-        min_z = obstacle.position[2] - half[2]
-        max_z = obstacle.position[2] + half[2]
-        samples = 20
-        for t in np.linspace(0.0, 1.0, samples):
-            x = start[0] + (end[0] - start[0]) * t
-            z = start[2] + (end[2] - start[2]) * t
-            if min_x <= x <= max_x and min_z <= z <= max_z:
-                return True
-        return False
+    def _coerce_vec3(self, value: np.ndarray, context: str) -> np.ndarray | None:
+        try:
+            vector = np.asarray(value, dtype=float)
+        except (TypeError, ValueError):
+            warnings.warn(f"{context}: nao foi possivel converter o vetor para um formato numerico valido.")
+            return None
+        if vector.shape != (3,) or not np.all(np.isfinite(vector)):
+            warnings.warn(f"{context}: esperado vetor 3D finito, recebido shape={vector.shape}.")
+            return None
+        return vector
 
-    def _projectile_hits_obstacle(
-        self, start: np.ndarray, direction: np.ndarray, max_distance: float
-    ) -> tuple[bool, np.ndarray]:
-        step_size = 0.25
-        current = start.copy()
-        direction_norm = normalize(direction)
-        distance_accumulated = 0.0
-        for _ in range(int(max_distance / step_size) + 1):
-            for obstacle in self.obstacles:
-                half = obstacle.size * 0.5
-                if (
-                    abs(current[0] - obstacle.position[0]) <= half[0] + 0.1
-                    and abs(current[2] - obstacle.position[2]) <= half[2] + 0.1
-                ):
-                    return True, current.copy()
-            current = current + direction_norm * step_size
-            distance_accumulated += step_size
-            if distance_accumulated >= max_distance:
-                break
-        return False, current.copy()
+    def _segment_intersects_aabb(
+        self,
+        start: np.ndarray,
+        end: np.ndarray,
+        min_corner: np.ndarray,
+        max_corner: np.ndarray,
+    ) -> tuple[bool, float, np.ndarray]:
+        direction = end - start
+        t_enter = 0.0
+        t_exit = 1.0
+        for axis in range(3):
+            delta = direction[axis]
+            if abs(delta) <= FLOAT_EPSILON:
+                if start[axis] < min_corner[axis] or start[axis] > max_corner[axis]:
+                    return False, 1.0, end.copy()
+                continue
+            inv_delta = 1.0 / delta
+            t0 = (min_corner[axis] - start[axis]) * inv_delta
+            t1 = (max_corner[axis] - start[axis]) * inv_delta
+            if t0 > t1:
+                t0, t1 = t1, t0
+            t_enter = max(t_enter, t0)
+            t_exit = min(t_exit, t1)
+            if t_enter - t_exit > FLOAT_EPSILON:
+                return False, 1.0, end.copy()
+        hit_t = float(np.clip(t_enter, 0.0, 1.0))
+        hit_position = start + direction * hit_t
+        return True, hit_t, hit_position
+
+    def _obstacle_bounds(self, obstacle: SimObstacle, padding: float = 0.0) -> tuple[np.ndarray, np.ndarray]:
+        half = obstacle.size * 0.5 + padding
+        return obstacle.position - half, obstacle.position + half
+
+    def _agent_bounds(self, agent: SimAgent, padding: float = 0.0) -> tuple[np.ndarray, np.ndarray]:
+        half = np.array(
+            [AGENT_RADIUS + padding, AGENT_HALF_HEIGHT + padding, AGENT_RADIUS + padding],
+            dtype=float,
+        )
+        return agent.position - half, agent.position + half
+
+    def _first_obstacle_collision(
+        self,
+        start: np.ndarray,
+        end: np.ndarray,
+    ) -> tuple[SimObstacle | None, np.ndarray | None, float]:
+        best_obstacle: SimObstacle | None = None
+        best_position: np.ndarray | None = None
+        best_t = float("inf")
+        for obstacle in self.obstacles:
+            min_corner, max_corner = self._obstacle_bounds(obstacle, PROJECTILE_RADIUS)
+            intersects, hit_t, hit_position = self._segment_intersects_aabb(start, end, min_corner, max_corner)
+            if intersects and hit_t < best_t:
+                best_obstacle = obstacle
+                best_position = hit_position
+                best_t = hit_t
+        return best_obstacle, best_position, best_t
+
+    def _first_agent_collision(
+        self,
+        start: np.ndarray,
+        end: np.ndarray,
+        projectile: ProjectileState,
+    ) -> tuple[SimAgent | None, np.ndarray | None, float]:
+        best_agent: SimAgent | None = None
+        best_position: np.ndarray | None = None
+        best_t = float("inf")
+        for candidate in self.agents:
+            if (
+                not candidate.alive
+                or candidate.team_name == projectile.team_name
+                or candidate.agent_id == projectile.shooter_agent_id
+            ):
+                continue
+            min_corner, max_corner = self._agent_bounds(candidate, PROJECTILE_RADIUS)
+            intersects, hit_t, hit_position = self._segment_intersects_aabb(start, end, min_corner, max_corner)
+            if intersects and hit_t < best_t:
+                best_agent = candidate
+                best_position = hit_position
+                best_t = hit_t
+        return best_agent, best_position, best_t
+
+    def _arena_boundary_collision(
+        self,
+        start: np.ndarray,
+        end: np.ndarray,
+    ) -> tuple[bool, np.ndarray | None, float]:
+        half = self.config.arena_size * 0.5
+        direction = end - start
+        best_t = float("inf")
+        best_position: np.ndarray | None = None
+        for axis in (0, 2):
+            delta = direction[axis]
+            if abs(delta) <= FLOAT_EPSILON:
+                continue
+            for boundary in (-half, half):
+                hit_t = (boundary - start[axis]) / delta
+                if hit_t <= FLOAT_EPSILON or hit_t > 1.0 + FLOAT_EPSILON:
+                    continue
+                hit_position = start + direction * hit_t
+                if abs(hit_position[0]) <= half + FLOAT_EPSILON and abs(hit_position[2]) <= half + FLOAT_EPSILON:
+                    if hit_t < best_t:
+                        best_t = float(hit_t)
+                        best_position = hit_position
+        return best_position is not None, best_position, best_t
+
+    def _find_agent(self, agent_id: str) -> SimAgent | None:
+        for agent in self.agents:
+            if agent.agent_id == agent_id:
+                return agent
+        return None
+
+    def _register_projectile_miss(self, projectile: ProjectileState) -> None:
+        shooter = self._find_agent(projectile.shooter_agent_id)
+        if shooter is None:
+            warnings.warn(
+                f"Projetil {projectile.projectile_id} descartado sem autor valido para registrar erro de disparo."
+            )
+            return
+        shooter.misses += 1
+        team_metrics = self.cumulative_metrics.get(projectile.team_name)
+        if team_metrics is None:
+            warnings.warn(f"Equipe '{projectile.team_name}' nao encontrada ao registrar miss do projetil.")
+            return
+        team_metrics.shots_missed += 1
+
+    def _register_projectile_hit(
+        self,
+        projectile: ProjectileState,
+        target: SimAgent,
+        hit_status: Dict[str, bool],
+        scored_status: Dict[str, bool],
+    ) -> None:
+        shooter = self._find_agent(projectile.shooter_agent_id)
+        target.alive = False
+        target.vertical_velocity = 0.0
+        hit_status[target.agent_id] = True
+        if shooter is None:
+            warnings.warn(
+                f"Projetil {projectile.projectile_id} acertou {target.agent_id}, mas o autor nao foi encontrado."
+            )
+            return
+        shooter.kills += 1
+        shooter.hits += 1
+        scored_status[shooter.agent_id] = True
+        team_metrics = self.cumulative_metrics.get(projectile.team_name)
+        if team_metrics is None:
+            warnings.warn(f"Equipe '{projectile.team_name}' nao encontrada ao registrar hit do projetil.")
+            return
+        team_metrics.eliminations += 1
+        team_metrics.shots_hit += 1
+
+    def _spawn_projectile(self, shooter: SimAgent, aim_direction: np.ndarray) -> ProjectileState | None:
+        direction_input = self._coerce_vec3(aim_direction, f"Disparo do agente {shooter.agent_id}")
+        if direction_input is None:
+            return None
+        direction = normalize(direction_input)
+        speed = max(self.config.shoot_range * PROJECTILE_SPEED_MULTIPLIER, FLOAT_EPSILON)
+        if float(np.linalg.norm(direction)) <= FLOAT_EPSILON:
+            warnings.warn(f"Disparo do agente {shooter.agent_id} ignorado por direcao nula.")
+            return None
+        projectile_origin = shooter.position.copy() + direction * (AGENT_RADIUS + PROJECTILE_RADIUS + 0.05)
+        half = self.config.arena_size * 0.5 - PROJECTILE_RADIUS
+        projectile_origin[0] = float(np.clip(projectile_origin[0], -half, half))
+        projectile_origin[2] = float(np.clip(projectile_origin[2], -half, half))
+        projectile = ProjectileState(
+            projectile_id=self._projectile_id_counter,
+            shooter_agent_id=shooter.agent_id,
+            position=projectile_origin,
+            velocity=direction * speed,
+            team_name=shooter.team_name,
+            team_color=shooter.color_rgb,
+            age=0.0,
+            hit=False,
+            obstacle_hit=False,
+            hit_position=np.zeros(3, dtype=float),
+            distance_travelled=0.0,
+            max_distance=self.config.shoot_range,
+        )
+        self._projectile_id_counter += 1
+        self.projectiles.append(projectile)
+        return projectile
+
+    def _advance_projectiles(
+        self,
+        dt: float,
+        hit_status: Dict[str, bool],
+        scored_status: Dict[str, bool],
+    ) -> None:
+        if dt <= 0.0:
+            return
+        remaining_projectiles: List[ProjectileState] = []
+        for projectile in self.projectiles:
+            try:
+                start = self._coerce_vec3(projectile.position, f"Projetil {projectile.projectile_id} posicao")
+                velocity = self._coerce_vec3(projectile.velocity, f"Projetil {projectile.projectile_id} velocidade")
+                if start is None or velocity is None:
+                    raise ValueError("estado do projetil invalido")
+                speed = float(np.linalg.norm(velocity))
+                if speed <= FLOAT_EPSILON:
+                    raise ValueError("velocidade nula")
+                remaining_distance = max(0.0, projectile.max_distance - projectile.distance_travelled)
+                if remaining_distance <= FLOAT_EPSILON:
+                    self._register_projectile_miss(projectile)
+                    continue
+                travel_distance = min(speed * dt, remaining_distance)
+                direction = velocity / speed
+                end = start + direction * travel_distance
+                projectile.age += dt
+
+                best_kind: str | None = None
+                best_t = float("inf")
+                best_position: np.ndarray | None = None
+                best_target: SimAgent | None = None
+
+                obstacle, obstacle_position, obstacle_t = self._first_obstacle_collision(start, end)
+                if obstacle is not None and obstacle_position is not None:
+                    best_kind = "obstacle"
+                    best_t = obstacle_t
+                    best_position = obstacle_position
+
+                target, target_position, target_t = self._first_agent_collision(start, end, projectile)
+                if target is not None and target_position is not None and target_t < best_t - FLOAT_EPSILON:
+                    best_kind = "agent"
+                    best_t = target_t
+                    best_position = target_position
+                    best_target = target
+
+                boundary_hit, boundary_position, boundary_t = self._arena_boundary_collision(start, end)
+                if boundary_hit and boundary_position is not None and boundary_t < best_t - FLOAT_EPSILON:
+                    best_kind = "boundary"
+                    best_t = boundary_t
+                    best_position = boundary_position
+
+                if best_kind == "agent" and best_position is not None and best_target is not None:
+                    projectile.hit = True
+                    projectile.hit_position = best_position.copy()
+                    projectile.position = best_position.copy()
+                    projectile.distance_travelled += travel_distance * best_t
+                    self._register_projectile_hit(projectile, best_target, hit_status, scored_status)
+                    continue
+
+                if best_kind in {"obstacle", "boundary"} and best_position is not None:
+                    projectile.obstacle_hit = True
+                    projectile.hit_position = best_position.copy()
+                    projectile.position = best_position.copy()
+                    projectile.distance_travelled += travel_distance * best_t
+                    self.pending_obstacle_hits.append(
+                        {
+                            "position": best_position.copy(),
+                            "team_name": projectile.team_name,
+                            "team_color": projectile.team_color,
+                        }
+                    )
+                    self._register_projectile_miss(projectile)
+                    continue
+
+                projectile.position = end
+                projectile.distance_travelled += travel_distance
+                if projectile.distance_travelled >= projectile.max_distance - FLOAT_EPSILON:
+                    projectile.hit_position = end.copy()
+                    self._register_projectile_miss(projectile)
+                    continue
+                remaining_projectiles.append(projectile)
+            except ValueError as exc:
+                warnings.warn(f"Projetil {projectile.projectile_id} removido: {exc}.")
+                self._register_projectile_miss(projectile)
+        self.projectiles = remaining_projectiles
 
     def _record_trajectory(self) -> None:
         team_counts = self.live_team_counts()
@@ -412,28 +664,6 @@ class ArenaSimulation:
                 }
             )
 
-    def _pick_hit_target(self, shooter: SimAgent, aim_direction: np.ndarray) -> SimAgent | None:
-        best_target: SimAgent | None = None
-        best_distance = float("inf")
-        for candidate in self.agents:
-            if not candidate.alive or candidate.team_name == shooter.team_name:
-                continue
-            delta = candidate.position - shooter.position
-            horizontal = np.array([delta[0], 0.0, delta[2]], dtype=float)
-            distance = float(np.linalg.norm(horizontal))
-            if distance > self.config.shoot_range or distance <= 1e-6:
-                continue
-            direction = normalize(horizontal)
-            alignment = float(np.dot(direction, normalize(np.array([aim_direction[0], 0.0, aim_direction[2]], dtype=float))))
-            if alignment < 0.93:
-                continue
-            if any(self._segment_hits_obstacle(shooter.position, candidate.position, obstacle) for obstacle in self.obstacles):
-                continue
-            if distance < best_distance:
-                best_target = candidate
-                best_distance = distance
-        return best_target
-
     def _reward_for_agent(self, agent: SimAgent, was_hit: bool, scored_hit: bool) -> float:
         reward = 0.015 if agent.alive else -0.5
         if scored_hit:
@@ -443,6 +673,7 @@ class ArenaSimulation:
         return reward
 
     def step(self, dt: float) -> bool:
+        self.pending_obstacle_hits.clear()
         self.match_time += dt
         self.step_index += 1
         self._update_obstacles()
@@ -485,66 +716,9 @@ class ArenaSimulation:
             if self.match_time - agent.last_shot_at < self.config.shoot_cooldown:
                 continue
             agent.last_shot_at = self.match_time
-            target = self._pick_hit_target(agent, decision.aim_direction)
-            team_metrics = self.cumulative_metrics[agent.team_name]
-            projectile_velocity = decision.aim_direction * self.config.shoot_range * 2.5
-            projectile_pos = agent.position.copy()
-            projectile_pos[1] = 1.0
-            self.projectiles.append(
-                ProjectileState(
-                    projectile_id=self._projectile_id_counter,
-                    position=projectile_pos,
-                    velocity=projectile_velocity,
-                    team_name=agent.team_name,
-                    team_color=agent.color_rgb,
-                    age=0.0,
-                    hit=False,
-                    obstacle_hit=False,
-                    hit_position=np.zeros(3, dtype=float),
-                )
-            )
-            self._projectile_id_counter += 1
-            if target is None:
-                agent.misses += 1
-                team_metrics.shots_missed += 1
-                continue
+            self._spawn_projectile(agent, decision.aim_direction)
 
-            target.alive = False
-            target.vertical_velocity = 0.0
-            agent.kills += 1
-            agent.hits += 1
-            team_metrics.eliminations += 1
-            team_metrics.shots_hit += 1
-            hit_status[target.agent_id] = True
-            scored_status[agent.agent_id] = True
-
-        expired_projectiles: List[ProjectileState] = []
-        for proj in self.projectiles:
-            if proj.obstacle_hit:
-                expired_projectiles.append(proj)
-                continue
-            proj.age += dt
-            proj.position += proj.velocity * dt
-            if proj.age > 3.0:
-                expired_projectiles.append(proj)
-                continue
-            max_travel = float(np.linalg.norm(proj.velocity)) * dt * 10.0
-            hit_obstacle, hit_pos = self._projectile_hits_obstacle(
-                proj.position - proj.velocity * dt, proj.velocity, max_travel
-            )
-            if hit_obstacle:
-                proj.obstacle_hit = True
-                proj.hit_position = hit_pos
-                proj.position = hit_pos
-                self.pending_obstacle_hits.append(
-                    {
-                        "position": hit_pos.copy(),
-                        "team_name": proj.team_name,
-                        "team_color": proj.team_color,
-                    }
-                )
-                expired_projectiles.append(proj)
-        self.projectiles = [p for p in self.projectiles if p not in expired_projectiles]
+        self._advance_projectiles(dt, hit_status, scored_status)
 
         post_snapshots = self.build_snapshots()
         for team_name, controller in self.controllers.items():

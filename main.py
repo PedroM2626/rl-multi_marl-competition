@@ -162,15 +162,23 @@ class ArenaApp:
         self._spawn_agent_visuals()
 
     def _build_scene(self) -> None:
+        arena_size = self.simulation.config.arena_size
+        arena_half = arena_size * 0.5
         window.title = "RL Multi MARL Competition"
         window.borderless = False
         window.color = color.rgb(22, 24, 31)
-        Entity(model="plane", scale=(40, 1, 40), texture="white_cube", texture_scale=(20, 20), color=color.rgb(70, 75, 82))
+        Entity(
+            model="plane",
+            scale=(arena_size, 1, arena_size),
+            texture="white_cube",
+            texture_scale=(max(arena_size / 2.0, 1.0), max(arena_size / 2.0, 1.0)),
+            color=color.rgb(70, 75, 82),
+        )
         wall_color = color.rgb(45, 48, 55)
-        Entity(model="cube", scale=(40, 3, 1), position=(0, 1.5, 20), color=wall_color)
-        Entity(model="cube", scale=(40, 3, 1), position=(0, 1.5, -20), color=wall_color)
-        Entity(model="cube", scale=(1, 3, 40), position=(20, 1.5, 0), color=wall_color)
-        Entity(model="cube", scale=(1, 3, 40), position=(-20, 1.5, 0), color=wall_color)
+        Entity(model="cube", scale=(arena_size, 3, 1), position=(0, 1.5, arena_half), color=wall_color)
+        Entity(model="cube", scale=(arena_size, 3, 1), position=(0, 1.5, -arena_half), color=wall_color)
+        Entity(model="cube", scale=(1, 3, arena_size), position=(arena_half, 1.5, 0), color=wall_color)
+        Entity(model="cube", scale=(1, 3, arena_size), position=(-arena_half, 1.5, 0), color=wall_color)
         AmbientLight(color=color.rgba(180, 180, 180, 0.7))
         sun = DirectionalLight()
         sun.look_at(Vec3(1, -1, -1))

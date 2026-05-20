@@ -1,0 +1,13 @@
+services:
+  marl-arena-headless:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: marl-arena-headless
+    env_file:
+      - .env
+    environment:
+      MPLBACKEND: Agg
+    volumes:
+      - ./data:/app/data
+    command: python scripts/headless_batch.py
