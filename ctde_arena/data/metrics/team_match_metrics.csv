@@ -1,0 +1,4 @@
+match_index,variant_id,team_name,paradigm,winner,eliminations,mean_survival_time,shots_hit,shots_missed,shot_accuracy,remaining_agents,match_duration_seconds
+10,10,Equipe 1,CTDE-VD,0,0,5.166666666666663,0,11,0.0,0,69.9000000000003
+10,10,Equipe 2,CTDE-CAC,1,5,26.633333333333436,5,17,0.22727272727272727,1,69.9000000000003
+10,10,Equipe 3,CTDE-Comm,0,2,26.2000000000001,2,21,0.08695652173913043,1,69.9000000000003

@@ -1,0 +1,145 @@
+{
+  "target_steps": 5000,
+  "completed_steps": 5000,
+  "matches_played": 16,
+  "entries": [
+    {
+      "env_steps": 1217,
+      "matches": 4,
+      "winner": "Equipe 3",
+      "variant": {
+        "variant_id": 4,
+        "arena_size": 31.198057093965513,
+        "obstacle_count": 8,
+        "match_duration_seconds": 78.73174402621453,
+        "agent_move_speed": 3.9068155442396786,
+        "shoot_range": 20.38435867330474,
+        "shoot_cooldown": 0.36581776963206014
+      },
+      "summary": {
+        "Equipe 1": {
+          "team_name": "Equipe 1",
+          "paradigm": "CTDE-VD",
+          "win_rate": 0.25,
+          "eliminations_per_match": 2.0,
+          "mean_survival_time": 11.158333333333358,
+          "shots_hit": 8,
+          "shots_missed": 93,
+          "shot_accuracy": 0.07920792079207921
+        },
+        "Equipe 2": {
+          "team_name": "Equipe 2",
+          "paradigm": "CTDE-CAC",
+          "win_rate": 0.25,
+          "eliminations_per_match": 2.5,
+          "mean_survival_time": 21.333333333333428,
+          "shots_hit": 10,
+          "shots_missed": 117,
+          "shot_accuracy": 0.07874015748031496
+        },
+        "Equipe 3": {
+          "team_name": "Equipe 3",
+          "paradigm": "CTDE-Comm",
+          "win_rate": 0.5,
+          "eliminations_per_match": 3.0,
+          "mean_survival_time": 8.325000000000038,
+          "shots_hit": 12,
+          "shots_missed": 60,
+          "shot_accuracy": 0.16666666666666666
+        }
+      }
+    },
+    {
+      "env_steps": 2526,
+      "matches": 7,
+      "winner": "Equipe 2",
+      "variant": {
+        "variant_id": 7,
+        "arena_size": 35.52470172642538,
+        "obstacle_count": 9,
+        "match_duration_seconds": 94.69673481607073,
+        "agent_move_speed": 5.327665240386394,
+        "shoot_range": 20.177232208214964,
+        "shoot_cooldown": 0.5561890608050803
+      },
+      "summary": {
+        "Equipe 1": {
+          "team_name": "Equipe 1",
+          "paradigm": "CTDE-VD",
+          "win_rate": 0.14285714285714285,
+          "eliminations_per_match": 2.4285714285714284,
+          "mean_survival_time": 13.876190476190535,
+          "shots_hit": 17,
+          "shots_missed": 172,
+          "shot_accuracy": 0.08994708994708994
+        },
+        "Equipe 2": {
+          "team_name": "Equipe 2",
+          "paradigm": "CTDE-CAC",
+          "win_rate": 0.42857142857142855,
+          "eliminations_per_match": 2.2857142857142856,
+          "mean_survival_time": 18.05714285714295,
+          "shots_hit": 16,
+          "shots_missed": 196,
+          "shot_accuracy": 0.07547169811320754
+        },
+        "Equipe 3": {
+          "team_name": "Equipe 3",
+          "paradigm": "CTDE-Comm",
+          "win_rate": 0.42857142857142855,
+          "eliminations_per_match": 2.857142857142857,
+          "mean_survival_time": 9.876190476190526,
+          "shots_hit": 20,
+          "shots_missed": 136,
+          "shot_accuracy": 0.1282051282051282
+        }
+      }
+    },
+    {
+      "env_steps": 3958,
+      "matches": 12,
+      "winner": "Equipe 3",
+      "variant": {
+        "variant_id": 12,
+        "arena_size": 30.260527556445176,
+        "obstacle_count": 7,
+        "match_duration_seconds": 86.39025869858914,
+        "agent_move_speed": 4.4825402965438546,
+        "shoot_range": 22.597362220854215,
+        "shoot_cooldown": 0.5175951298930042
+      },
+      "summary": {
+        "Equipe 1": {
+          "team_name": "Equipe 1",
+          "paradigm": "CTDE-VD",
+          "win_rate": 0.25,
+          "eliminations_per_match": 2.0,
+          "mean_survival_time": 10.816666666666713,
+          "shots_hit": 24,
+          "shots_missed": 236,
+          "shot_accuracy": 0.09230769230769231
+        },
+        "Equipe 2": {
+          "team_name": "Equipe 2",
+          "paradigm": "CTDE-CAC",
+          "win_rate": 0.4166666666666667,
+          "eliminations_per_match": 2.75,
+          "mean_survival_time": 13.694444444444507,
+          "shots_hit": 33,
+          "shots_missed": 258,
+          "shot_accuracy": 0.1134020618556701
+        },
+        "Equipe 3": {
+          "team_name": "Equipe 3",
+          "paradigm": "CTDE-Comm",
+          "win_rate": 0.3333333333333333,
+          "eliminations_per_match": 2.75,
+          "mean_survival_time": 9.966666666666717,
+          "shots_hit": 33,
+          "shots_missed": 184,
+          "shot_accuracy": 0.15207373271889402
+        }
+      }
+    }
+  ]
+}
