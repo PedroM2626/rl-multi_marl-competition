@@ -673,7 +673,6 @@ class ArenaSimulation:
 
         self._advance_projectiles(dt, hit_status, scored_status)
 
-        post_snapshots = self.build_snapshots()
         for team_name, controller in self.controllers.items():
             transitions: List[TransitionRecord] = []
             for agent in self.agents:
@@ -684,13 +683,7 @@ class ArenaSimulation:
                     TransitionRecord(
                         agent_id=agent.agent_id,
                         team_name=agent.team_name,
-                        state_features=controller.build_local_features(agent.snapshot(), post_snapshots),
-                        action_features=np.array(
-                            [decision.move, decision.turn, 1.0 if decision.shoot else 0.0, 1.0 if decision.jump else 0.0],
-                            dtype=float,
-                        ),
                         reward=self._reward_for_agent(agent, hit_status[agent.agent_id], scored_status[agent.agent_id]),
-                        next_state_features=controller.build_local_features(agent.snapshot(), post_snapshots),
                         done=not agent.alive,
                     )
                 )

@@ -20,7 +20,7 @@ def normalize(vector: np.ndarray) -> np.ndarray:
 
 def angle_to_target(origin: np.ndarray, heading_deg: float, target: np.ndarray) -> float:
     offset = target - origin
-    target_angle = math.degrees(math.atan2(offset[0], offset[1]))
+    target_angle = math.degrees(math.atan2(offset[0], offset[2]))
     delta = (target_angle - heading_deg + 180.0) % 360.0 - 180.0
     return delta
 
@@ -39,7 +39,6 @@ class BaseTeamController(ABC):
     def __init__(self, team_name: str, rng_seed: int) -> None:
         self.team_name = team_name
         self.rng = random.Random(rng_seed)
-        self.transitions: List[TransitionRecord] = []
 
     def get_team_agents(self, all_agents: Iterable[AgentSnapshot]) -> List[AgentSnapshot]:
         return [agent for agent in all_agents if agent.team_name == self.team_name]
@@ -138,8 +137,6 @@ class BaseTeamController(ABC):
     ) -> StepDecision:
         raise NotImplementedError
 
-    def update(
-        self,
-        transitions: List[TransitionRecord],
-    ) -> None:
-        self.transitions.extend(transitions)
+    @abstractmethod
+    def update(self, transitions: List[TransitionRecord]) -> None:
+        raise NotImplementedError

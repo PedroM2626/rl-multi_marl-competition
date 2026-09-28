@@ -127,7 +127,6 @@ class RLTeamController(BaseTeamController):
         self.training_enabled = enabled
 
     def update(self, transitions: List[TransitionRecord]) -> None:
-        super().update(transitions)
         for transition in transitions:
             if transition.team_name != self.team_name:
                 continue

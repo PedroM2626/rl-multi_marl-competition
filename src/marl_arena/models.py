@@ -74,10 +74,7 @@ class ObstacleSnapshot:
 class TransitionRecord:
     agent_id: str
     team_name: str
-    state_features: np.ndarray
-    action_features: np.ndarray
     reward: float
-    next_state_features: np.ndarray
     done: bool
 
 
