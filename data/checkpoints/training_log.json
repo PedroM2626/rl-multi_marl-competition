@@ -1,0 +1,53 @@
+{
+  "target_steps": 100000,
+  "completed_steps": 100000,
+  "matches_played": 463,
+  "entries": [
+    {
+      "env_steps": 50587,
+      "matches": 235,
+      "winner": "Team 3",
+      "variant": {
+        "variant_id": 235,
+        "arena_size": 30.65594087332586,
+        "obstacle_count": 5,
+        "match_duration_seconds": 100.05238766697381,
+        "agent_move_speed": 4.285718382854669,
+        "shoot_range": 18.255479289236128,
+        "shoot_cooldown": 0.3726474841287374
+      },
+      "summary": {
+        "Team 1": {
+          "team_name": "Team 1",
+          "paradigm": "CTE",
+          "win_rate": 0.23829787234042554,
+          "eliminations_per_match": 1.6340425531914893,
+          "mean_survival_time": 10.556453900709199,
+          "shots_hit": 384,
+          "shots_missed": 4799,
+          "shot_accuracy": 0.07408836581130619
+        },
+        "Team 2": {
+          "team_name": "Team 2",
+          "paradigm": "DTE",
+          "win_rate": 0.2297872340425532,
+          "eliminations_per_match": 1.646808510638298,
+          "mean_survival_time": 8.052198581560292,
+          "shots_hit": 387,
+          "shots_missed": 4314,
+          "shot_accuracy": 0.08232291001914487
+        },
+        "Team 3": {
+          "team_name": "Team 3",
+          "paradigm": "CTDE",
+          "win_rate": 0.5319148936170213,
+          "eliminations_per_match": 3.625531914893617,
+          "mean_survival_time": 10.072907801418435,
+          "shots_hit": 852,
+          "shots_missed": 5342,
+          "shot_accuracy": 0.13755247013238617
+        }
+      }
+    }
+  ]
+}

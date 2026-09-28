@@ -1,5 +1,5 @@
+# Environments and tooling
 __pycache__/
-mlruns/
 *.pyc
 *.pyo
 *.pyd
@@ -12,8 +12,21 @@ env/
 dist/
 build/
 *.egg-info/
-data/exports/*.png
-data/metrics/*.csv
-data/metrics/*.json
-data/checkpoints/*.pt
-data/checkpoints/training_log.json
+.pytest_cache/
+
+# Local scratch that must never be mistaken for experiment output
+**/_untrained_scratch/
+.coverage
+htmlcov/
+
+# MLflow's local file store: binary model artefacts and duplicated checkpoints.
+# The logged points are exported to ctde_arena/data/mlflow_export/ instead.
+mlruns/
+
+# Orphaned history from CSV schema rotations (MetricsStore._rotate_csv_if_schema_changed).
+# These are pre-rename or pre-schema-change copies; the live files beside them are versioned.
+**/data/metrics/*.legacy*.csv
+
+# Experiment artefacts under **/data/ ARE versioned on purpose: they are the evidence
+# behind every number in docs/. Patterns here used to be root-anchored ("data/metrics/*.csv"),
+# which silently excluded experiment 1 while committing experiment 2.
