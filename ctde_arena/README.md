@@ -20,17 +20,15 @@ Each paradigm controls one team; three teams of three agents fight in the same a
 
 | Aspect | State |
 |---|---|
-| Versioned 100k-step run | 456 matches, artefacts committed under `data/` |
-| Headline result | CTDE-CAC 42.89 % ≈ CTDE-VD 40.67 % ≫ CTDE-Comm 16.44 % win rate |
-| Statistically supported | **only** "Comm loses to both others" (p ≈ 0.001–0.002, survives Bonferroni) |
-| VD vs CAC | **not significant** (p = 0.674 on the 46 recorded matches) |
+| Historical 100k-step run | 456 matches, artefacts committed under `data/` |
+| Replicated study | 5 seeds × 1,000,000 steps, held-out greedy evaluation — [results](../docs/08_results.md#replicated-study) |
 | MLflow curves | **1 logged point** for the 100k run — see [A-9](../docs/11_code_audit.md#mlflow-cadence) |
-| Test coverage | **14 %** of statements; the two tests touch only the new network classes |
-| Multi-seed replication | not done |
+| Tests | 33 passing, **88 %** statement coverage |
 | Docker image | never built or run in this session |
 
 Read [Results](../docs/08_results.md) and [Threats to validity](../docs/10_threats_to_validity.md)
-before quoting any number from here.
+before quoting any number from here. The tables in this file are the **historical** single-seed run,
+kept because those artefacts ship in `data/`; the study supersedes them.
 
 ## Architecture
 
@@ -202,22 +200,22 @@ The values that matter most here:
 
 ```bash
 cd ctde_arena
-python -m pytest tests/ -q        # 2 passed
+python -m pytest tests/ -q        # 33 passed, 88% statement coverage
 ```
 
-`tests/test_components.py` checks tensor shapes and finiteness for `ValueDecompositionCriticNetwork` and
-`CommActorNetwork`. Nothing else in this experiment is covered: the simulator, controllers, PPO trainers,
-metrics store and training script are all at 0 %.
-[§ Coverage](../docs/11_code_audit.md#coverage).
+`test_components.py` checks tensor shapes for the two new networks; `test_ctde_training.py` terminates
+real matches and asserts that all three variants' parameters move after a PPO update, that the VD critic
+slices the right agents, and that the Comm arm stores 24-wide team observations; `test_control_law.py`
+pins the heading-controller fix; `test_metrics_store.py` covers the artefact pipeline. The remaining gap
+is `ui/dashboard.py`. [§ Coverage](../docs/11_code_audit.md#coverage).
 
 ## Open work for this experiment
 
-1. Fix [A-2](../docs/11_code_audit.md#unbounded-transition-retention) (memory leak), then run
-   5 seeds × 3 M steps — ≈ 22.5 h of CPU time for the whole study.
-2. Lower `RL_LOG_EVERY_STEPS` (or move the MLflow call outside the boundary check) so a run produces an
-   actual curve.
-3. Add a held-out greedy evaluation: 200 fixed-variant matches per pairing.
-4. Mask dead allies in `CommActorNetwork` instead of zero-filling their observations.
-5. Match critic capacity across VD and CAC before interpreting that contrast.
-6. Report shots per second-of-alive-life per agent — the only measurement that separates "Comm shoots
+1. Lower `RL_LOG_EVERY_STEPS` (or move the MLflow call outside the boundary check) so a run produces an
+   actual curve — `run_experiment.py` already records its own curve, but MLflow still does not.
+2. Rotate which team slot each variant occupies, so a slot effect cannot masquerade as an
+   architecture effect.
+3. Mask dead allies in `CommActorNetwork` instead of zero-filling their observations.
+4. Match critic capacity across VD and CAC before interpreting that contrast.
+5. Report shots per second-of-alive-life per agent — the only measurement that separates "Comm shoots
    less" from "Comm dies sooner".

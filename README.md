@@ -31,13 +31,13 @@ Honest summary of what is finished and what is not:
 | | Experiment 1 (root) | Experiment 2 (`ctde_arena/`) |
 |---|---|---|
 | Engine and training code | complete | complete |
-| 100k-step run performed | yes (463 matches) | yes (456 matches) |
-| Results **committed to Git** | **no** — git-ignored | yes |
-| Checkpoints committed | **no** | yes |
+| Historical 100k-step run | yes (463 matches) | yes (456 matches) |
+| Results committed to Git | yes | yes |
+| Checkpoints committed | yes | yes |
 | MLflow tracking | n/a | wired, but only **1 logged point** for the 100k run |
-| Tests | 7 passing, **73 %** statement coverage | 2 passing, **14 %** coverage |
-| Multi-seed replication | **not done** | **not done** |
-| Held-out evaluation of the shipped policies | **not done** | **not done** |
+| Tests | 36 passing, **93 %** statement coverage | 33 passing, **88 %** coverage |
+| Multi-seed replication | 5 seeds × 1 M steps | 5 seeds × 1 M steps |
+| Held-out greedy evaluation | yes, 150 matches per replicate | yes, 150 matches per replicate |
 
 Three defects documented in the audit were **fixed** as part of the work below, and each changed what the
 results mean:
@@ -86,10 +86,9 @@ Run all commands **from the experiment's own directory**.
 
 ## Results at a glance
 
-Cumulative over the versioned 100k-step runs. See [§ Results](docs/08_results.md) for intervals,
-significance tests and the caveats — in particular, **no pairwise difference in Experiment 1 is
-statistically significant** on the recorded matches, and in Experiment 2 the only robust finding is that
-CTDE-Comm loses to both other arms.
+Cumulative training-time metrics from the two historical single-seed 100k-step runs. These are **not**
+the study result — see [§ Results](docs/08_results.md#replicated-study) for the five-seed held-out
+evaluation, which supersedes them.
 
 | Experiment | Team | Paradigm | Win rate | Elim./match | Mean survival | Shot accuracy |
 |---|---|---|---:|---:|---:|---:|
@@ -143,8 +142,10 @@ mlflow ui --backend-store-uri file:./mlruns
 > optimizer state ([A-4](docs/11_code_audit.md#silent-warm-start)). Delete `data/checkpoints/*.pt` first
 > if you want training from random initialisation.
 
-**Cost.** Measured at 185 env steps/s on CPU: the versioned 100k-step run is ≈ 9 minutes; a 3 M-step run
-is ≈ 4.5 hours (but currently blocked by [A-2](docs/11_code_audit.md#unbounded-transition-retention)).
+**Cost.** Measured at 368 env steps/s on CPU with one torch thread per process (more threads and CUDA
+both make it *slower* — see [A-26](docs/11_code_audit.md#gpu-and-thread-scaling)): a 100k-step run is
+≈ 4.5 minutes, a 1 M-step run ≈ 45 minutes, and the whole 10-replicate study runs in about the time of
+one replicate because the processes are independent.
 
 ## Controls in the 3D view
 
@@ -176,7 +177,7 @@ the code default when the variable is absent is 3,000,000. `RESPAWN_ENABLED` has
 │   ├── rl/                     # actions, buffer + GAE, networks, ppo
 │   ├── systems/                # match_variant, simulation, metrics, plotting
 │   └── ui/dashboard.py         # in-game overlay text
-├── tests/                      # 7 tests
+├── tests/                      # 36 tests
 ├── data/                       # experiment 1 artefacts — NOT versioned (see A-3)
 ├── exports/metrics/            # derived charts (versioned)
 ├── docs/                       # the full documentation set
