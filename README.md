@@ -6,7 +6,7 @@ against each other inside one engine, so the competitive outcome is itself the m
 
 > **Full technical documentation lives in [`docs/`](docs/README.md)** — system model, MDP
 > formalisation, architectures, optimisation, protocol, results with confidence intervals and power
-> analysis, reproducibility, limitations, and a 30-item code audit. This file is the quick start.
+> analysis, reproducibility, limitations, and a 31-item code audit. This file is the quick start.
 
 ## Documentation
 

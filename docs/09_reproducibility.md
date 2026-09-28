@@ -28,21 +28,39 @@ Every number in this documentation set was produced on:
 | Device | CPU |
 | Platform | Windows 10 / 11 x64 |
 
-Two caveats on that table, stated plainly because they bound what "reproducible" covers here:
+**Every number in this documentation set was produced on the versions above, not on the pinned
+requirements** — NumPy 1.26 → 2.2 is a *major* version change. Rather than leave that as an untested
+reassuring-sounding claim, it was measured, in a second environment holding everything else constant:
 
-* **Every number in this documentation set was produced on the versions above, not on the pinned
-  requirements.** NumPy 1.26 → 2.2 is a *major* version change, not a minor one, so a reader who installs
-  `requirements.txt` and re-runs the study is not reproducing the recorded conditions. It is plausible —
-  even likely — that nothing changes, since the arena uses only basic array arithmetic and the analysis
-  scripts recompute from committed CSV/JSON rather than from the simulation. But it was **not tested**:
-  no second environment exists on this machine, and installing a second NumPy major version over the one
-  that produced the study would have destroyed the evidence rather than checking it.
-* The environment drift is recorded rather than resolved. Resolving it needs a lock file
-  (`requirements.txt` pins direct dependencies only, with no hashes and no transitive lock — see item 4 of
-  [§ 9.6](#96-what-is-and-is-not-reproducible)).
+| Check | NumPy 1.26.4 vs 2.2.6 | Result |
+|---|---|---|
+| Experiment 1 test suite (59 tests) | both versions | **pass** |
+| Experiment 2 test suite (47 tests) | both versions | **pass** |
+| Collision geometry (14 hand-computed entry parameters and hit positions) | both versions | **identical to 1e-12** |
+| Domain-randomisation stream (`arena_size`, speeds, cooldowns of match 41) | both versions | **identical, all digits** |
+| `train_rl.py --seed 42 --steps 4000`, first PPO update | both versions | policy/value loss differ at the **1e-6 – 1e-8** level |
+| Same run, saved checkpoints at 4,000 steps | both versions | **every file differs, in every byte** |
 
-The host's own `.venv/` is additionally broken: its launcher points at a removed `C:\Python313`, so it
-cannot start at all. All measurements above came from a separate working environment.
+So the drift is not in the arena and not in the RNG — the variant parameters match to the last digit, which
+rules out a stream change — but in floating-point accumulation inside the PPO update. A perturbation of one
+part in a million at the first optimisation step is amplified by the chaotic dynamics of training into
+completely different weights, and therefore a different replicate.
+
+**Consequence, stated as the limitation it is:** installing `requirements.txt` and re-running the study
+will not reproduce the recorded replicates. It will produce runs that are statistically *inside* the spread
+this chapter measures — which is not a consolation but the study's own conclusion arriving from a second
+direction. A difference of 1e-6 changes a replicate, and the between-seed SD is 0.12–0.22, so the ranking
+is not a stable property of this system. Anyone quoting a specific win rate must quote the environment that
+produced it, and that environment is the table above, not the pin file.
+
+Closing the gap properly needs a hash-locked environment file (`requirements.txt` pins direct dependencies
+only, with no transitive or hash lock — see item 4 of
+[§ 9.6](#96-what-is-and-is-not-reproducible)).
+
+Two notes on the local machines. The host's own `.venv/` is broken: its launcher points at a removed
+`C:\Python313`, so it cannot start at all, and every measurement above came from a separate working
+environment. The second NumPy environment used for this comparison was `--system-site-packages` with
+NumPy 2.2.6 installed over PyTorch 2.5.1, so the two runs share a Torch version and only NumPy differs.
 
 ## 9.2 Setup
 

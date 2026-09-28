@@ -126,6 +126,13 @@ Because a win can be awarded by timeout with nobody dead, and because the tiebre
   plausibly reorder the arms.
 * Everything is CPU-simulated at \(\Delta t = 0.1\) s with a 0.4 s projectile lifetime. Nothing about
   the transfer of these policies to a real-time or real-robot setting has been examined.
+* **The pinned environment does not reproduce the recorded runs.** Measured directly:
+  [§ 9.1](09_reproducibility.md#verification-environment-actually-used) shows the arena's geometry and its
+  randomisation streams are identical under the pinned NumPy 2.2.6, but the PPO update diverges at the
+  1e-6 level and every saved weight differs after 4,000 steps. A replicate is therefore not reproducible
+  across library versions — an external-validity problem for the *specific* numbers and independent
+  corroboration of the study's central claim, that this system's outcome differences are smaller than the
+  perturbations that produce them.
 
 ## 10.4 Statistical validity
 
@@ -134,9 +141,10 @@ applied to the original single-seed evidence, and left three that no amount of r
 
 **Now addressed:**
 
-1. ~~**n = 1 seed per experiment.**~~ Five seeds per experiment, so between-seed variance is estimable
-   and a paradigm that only wins on one seed is visible as such.
-2. ~~**46 recorded matches per team.**~~ 150 held-out greedy matches per replicate, i.e. 750 per paradigm
+1. ~~**n = 1 seed per experiment.**~~ Ten seeds per experiment, so between-seed variance is estimable
+   and a paradigm that only wins on one seed is visible as such — which is exactly what happened to the
+   project's headline claim ([§ 8.1](08_results.md#reversal)).
+2. ~~**46 recorded matches per team.**~~ 150 held-out greedy matches per replicate, i.e. 1,500 per paradigm
    per experiment, pooled with Wilson intervals reported per seed and in aggregate.
 3. ~~**Training metrics presented as results.**~~ The study measures the final policy under greedy
    action selection on the fixed evaluation variant, which is what the headline tables always claimed to

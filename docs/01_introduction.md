@@ -82,14 +82,27 @@ not be relied on are set out in [§ Threats to validity](10_threats_to_validity.
    which six distinct information-flow architectures share one simulator, one reward and one
    observation encoding.
 2. A from-scratch implementation of all six architectures in ~1,900 lines of model and training code,
-   including a swept-AABB projectile collision solver that is exact at the discrete step level
-   ([§ Collision detection](03_arena_system_model.md#343-collision-detection)).
-3. Versioned training artefacts for Experiment 2: policies, per-match metric CSVs, aggregate summary,
-   dashboard, and the exact set of points that reached MLflow.
-4. A written account of what the implementation *actually computes*, as opposed to what the
-   architecture names conventionally imply — several divergences are documented in
-   [§ Optimisation procedure](06_optimisation_procedure.md#65-what-the-implementation-does-not-do) and
-   [§ Code audit](11_code_audit.md). This is the part that constrains how the results may be read.
+   including a swept-AABB projectile collision solver whose geometry is verified against hand-computed
+   entry parameters, including a step long enough to tunnel a barrier
+   ([§ Collision detection](03_arena_system_model.md#343-collision-detection), `tests/test_collision.py`).
+3. **A replicated, held-out study of both experiments — 10 seeds each, 500 000 steps, slot-rotated — that
+   does not reproduce the single-seed conclusions the repository originally shipped, in either experiment.**
+   The ordering reverses, no seed-level comparison reaches significance, and one replicate out of thirty
+   paradigm-slots is enough to flip which architecture is reported as the winner
+   ([§ 8.1](08_results.md#replicated-study)).
+4. Versioned training artefacts for **both** experiments — promoted policies, per-match metric CSVs,
+   aggregate summaries, dashboards, `PROVENANCE.json` recording how each replicate was chosen, the study
+   aggregates under `results/`, and the exact set of points that reached MLflow.
+5. Bit-for-bit reproducibility of training, verified by hashing checkpoints from repeated seeded runs
+   rather than asserted ([§ 9.6](09_reproducibility.md#96-what-is-and-is-not-reproducible)).
+6. A written account of what the implementation *actually computes*, as opposed to what the
+   architecture names conventionally imply — 30 audited findings, several of which are the reason the
+   results changed on re-measurement
+   ([§ Optimisation procedure](06_optimisation_procedure.md#65-what-the-implementation-does-not-do) and
+   [§ Code audit](11_code_audit.md)). This is the part that constrains how the results may be read.
+7. A characterisation of a PPO failure mode in this reward landscape: a policy that stops firing is not
+   punished until the match clock ends, and can occupy that basin for an entire training budget
+   ([§ 8.1](08_results.md#leave-one-out)).
 
 ## 1.6 Scope boundaries
 

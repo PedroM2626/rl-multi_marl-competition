@@ -68,5 +68,6 @@ Experiment 1's artefacts were themselves only committed on 2026-09-27 — before
 | The `--seed median` choice in [§ 9.7](09_reproducibility.md#97-artefact-inventory) | `python scripts/promote_run.py --experiment exp1 --list` |
 | [§ 9.7](09_reproducibility.md#97-artefact-inventory) artefact table | `python scripts/report_inventory.py` |
 | [§ 9.6](09_reproducibility.md#96-what-is-and-is-not-reproducible) reproducibility claim | two `train_rl.py --seed 42 --steps 4000` runs into separate `ARENA_DATA_DIR`s, then compare SHA-256 of the checkpoints and `training_log.json` |
+| [§ 9.1](09_reproducibility.md#verification-environment-actually-used) NumPy-version comparison | the same seeded run under NumPy 1.26.4 and 2.2.6; variant parameters match to the last digit, saved weights do not ([A-31](11_code_audit.md#the-pinned-environment-does-not-reproduce-the-recorded-runs)) |
 | Coverage figures in [§ Code audit](11_code_audit.md#coverage) | `coverage run --source=src/marl_arena -m pytest tests/ -q && coverage report` |
 | Documentation cross-references | `python -m pytest tests/test_docs_links.py -q` |

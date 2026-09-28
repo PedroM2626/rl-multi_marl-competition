@@ -42,6 +42,7 @@ Every finding below was open at some point; the status column is the current sta
 | [A-28](#the-training-console-line-never-evaluated) | FIXED | The win-rate console line printed a comprehension as literal text |
 | [A-29](#zero-norm-shots-burn-the-cooldown-and-vanish-from-the-metrics) | LOW | A zero-norm aim consumes the shoot cooldown yet counts as neither hit nor miss — 8–18 per replicate |
 | [A-30](#greedy-evaluation-of-an-untrained-network-is-not-random-play) | MED | Argmax of random weights is a near-constant policy: untrained "random" arms differ by 18× in firing rate |
+| [A-31](#the-pinned-environment-does-not-reproduce-the-recorded-runs) | INFO | Measured: the pinned NumPy changes training outcomes at the first PPO update |
 
 ---
 
@@ -622,6 +623,36 @@ python scripts/random_baseline.py --matches 300 --policy uniform
 
 The baseline is therefore reported in [§ 8.9](08_results.md#random-baseline) in both modes, and the honest
 summary is that win rate in this arena cannot be interpreted against a chance level of 1/3.
+
+## The pinned environment does not reproduce the recorded runs
+
+**A-31 · INFO · MEASURED**
+
+`requirements.txt` pins `numpy==2.2.6`, but every number in this documentation set was produced under
+NumPy 1.26.4. That gap was measured in a second environment differing only in NumPy:
+
+| Check | Outcome |
+|---|---|
+| Both test suites, 106 tests | pass under both versions |
+| The 14 hand-computed collision cases | identical to 1e-12 |
+| Domain-randomisation parameters of a match | identical, all digits |
+| `train_rl.py --seed 42 --steps 4000`, first PPO update | losses differ at 1e-6 – 1e-8 |
+| Same run, saved checkpoints | **every file differs, in every byte** |
+
+The randomisation streams matching exactly rules out an RNG-stream change, so the divergence is
+floating-point accumulation in the optimiser. The arena is version-stable; the *training* is not.
+
+**Why this is not a footnote.** A one-in-a-million perturbation at the first update is enough to produce a
+different replicate, and the study's between-seed SD is 0.12–0.22 with a ranking that one replicate out of
+thirty can reverse ([§ 8.1](08_results.md#leave-one-out)). So this is not a reproducibility chore but
+independent corroboration of the central negative result, reached from outside the statistics entirely.
+It also means anyone re-running the study from `requirements.txt` is generating new replicates, not
+reproducing these.
+
+**Not fixed.** Closing it needs a hash-locked environment file, which would make the recorded numbers
+reproducible but would not make them robust — the point of the measurement is that robustness is what is
+missing. Reproduction command, and the fuller table, in
+[§ 9.1](09_reproducibility.md#verification-environment-actually-used).
 
 ## Open work: suggested measurements
 
