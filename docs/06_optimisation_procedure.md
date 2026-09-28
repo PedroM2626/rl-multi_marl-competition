@@ -131,18 +131,19 @@ between the two trees ([§ Code audit](11_code_audit.md#cross-tree-divergence)).
 
 ## 6.5 What the implementation does not do
 
-Each of these is a standard PPO ingredient that the naming of the code suggests but the code omits.
-They are listed because they bound what the results can be read as.
+Each of these is a standard PPO ingredient that the naming of the code suggests but the code leaves out.
+They are listed because they bound what the results can be read as; two of the nine have since been
+closed, and the row says so rather than quietly dropping them.
 
 | Omitted | Where it would matter | Evidence |
 |---|---|---|
-| **KL monitoring / early stopping** | With 4 epochs over a variable-size batch and no KL guard, a short match (122 rows → one minibatch) and a long match (1,157 rows → five minibatches) get very different effective step counts | `PPOStats.approx_kl` is hard-coded to `0.0` at `ppo.py:67` |
+| **KL early stopping** | With 4 epochs over a variable-size batch and no KL guard, a short match (122 rows → one minibatch) and a long match (1,157 rows → five minibatches) get very different effective step counts | `approx_kl` is now **measured** and logged ([A-14](11_code_audit.md#approx-kl-placeholder)), but nothing acts on it: no epoch breaks early and no update is skipped on a KL spike. That matters more than it used to, because one replicate's policy did collapse into a never-fires basin and the KL trace would have been the signal ([§ 8.1](08_results.md#leave-one-out)) |
 | **Value-function clipping** | Deviation from MAPPO practice. Measured returns in a typical match span \([-1.50, +2.72]\), so this is not visibly harmful here | `nn.functional.mse_loss(values, returns_batch)` only |
 | **Reward / return normalisation** | MAPPO's reported stability is largely attributed to this; here the mean reward per buffer row is \(+0.012\) for a surviving team against informative events of \(\pm1.5\), so the signal-to-noise ratio of the value target is low | absent |
-| **Reporting of training loss** | Without policy/value/entropy curves there is no way to tell a converged policy from a diverged one | `PPOStats` is constructed and returned, then **discarded**: `finish_rl_episode` returns a dict that no caller reads |
+| **Reporting of training loss** | Without policy/value/entropy curves there is no way to tell a converged policy from a diverged one | **Fixed** — `PPOStats` reaches `training_log.json` and `run_summary.json` per team ([A-15](11_code_audit.md#ppostats-discarded)). What is still missing is the analysis: no script correlates a replicate's win rate with its KL or value loss |
 | **Recurrent or history-conditioned policies** | Agents have no memory, so a partially observed state cannot be disambiguated over time | MLPs only |
 | **Learning-rate schedule** | 3 M-step runs at a constant 3e-4 Adam | absent |
-| **Optimizer state persistence** | Training cannot be resumed; a restart silently resets Adam moments | [§ 5.7](05_network_architectures.md#57-checkpoint-contents) |
+| **Optimizer state persistence** | Resuming from a checkpoint resets Adam moments while keeping the weights, so a continued run is not the same optimisation process | Checkpoints hold `{paradigm, actor, critic}` only — [§ 5.7](05_network_architectures.md#57-checkpoint-contents) |
 
 The `PPOStats` row deserves emphasis because it is the one that was *intended*: the dataclass exists,
 `_optimize` fills it, `finish_episode` returns it, `finish_rl_episode` collects it into a dict — and

@@ -94,9 +94,11 @@ replaces the trust-region constraint of TRPO
 what makes the shared-optimizer-per-team structure in [§ Optimisation](06_optimisation_procedure.md)
 straightforward.
 
-Two implementation facts limit how strongly the results can be called "PPO": the approximate KL used
-for early stopping is never computed (the field is hard-coded to zero), and the advantage baseline is
-bootstrapped once per *match* rather than from a fixed-length rollout. Details and consequences in
+Two implementation facts limit how strongly the results can be called "PPO". The approximate KL used for
+early stopping was not computed for most of this project's life — it is now measured and logged, but
+nothing acts on it, so there is still no KL guard. And the advantage baseline is bootstrapped once per
+*match* rather than from a fixed-length rollout, which makes the estimator depend on episode length.
+Details and consequences in
 [§ What the implementation does not do](06_optimisation_procedure.md#65-what-the-implementation-does-not-do).
 
 ## 2.6 Domain randomisation
