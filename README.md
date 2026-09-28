@@ -54,9 +54,10 @@ results mean:
   versioned. [Details](docs/11_code_audit.md#versioning).
 
 Still open, and load-bearing for how the results may be read: the paradigm-to-slot assignment is not
-rotated ([A-11 / § 10.1](docs/10_threats_to_validity.md#slot-and-seed-confounding)), `ppo.py` has 26 % /
-16 % statement coverage ([A-6](docs/11_code_audit.md#coverage)), and PPO training statistics are still
-computed and discarded ([A-15](docs/11_code_audit.md#ppostats-discarded)).
+rotated ([A-27](docs/11_code_audit.md#slot-confounding)) and the remaining open items are
+statistical rather than code-level: the study needs ~13 replicates to settle CTDE vs CTE
+([§ 8.1](docs/08_results.md#power-analysis)), `ui/dashboard.py` is still untested, and the
+`ctde_arena/` Docker image has never been built.
 
 ## The two experiments
 

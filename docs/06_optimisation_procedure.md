@@ -99,8 +99,8 @@ no replay buffer, so the algorithm is strictly on-policy-within-a-match.
 that acted in the last step — and applied as the terminal value for the whole chain.
 
 `ppo_epochs = 4` passes over the buffer, shuffled with `np.random.shuffle`, minibatch size 256. The
-shuffle uses NumPy's **global** RNG, which is never seeded
-([§ Reproducibility](09_reproducibility.md#96-what-is-and-is-not-reproducible)).
+shuffle uses a `numpy.random.Generator` owned by the rollout buffer and seeded from the controller's
+seed, so a run is reproducible end to end ([A-8](11_code_audit.md#unseeded-minibatch-shuffle)).
 
 ## 6.4 The three update paths
 

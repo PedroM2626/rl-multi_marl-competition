@@ -26,7 +26,7 @@ parameters against CTDE-CAC's 37,889.
 
 *Remedy:* match total trainable parameters per team, e.g. by widening the smaller network.
 
-### Slot and seed confounding
+### Slot confounding (fixed) <a name="slot-and-seed-confounding"></a>
 
 Team identity is fixed to a spawn corner, a controller seed offset (11/23/37), and an initialisation
 position in the construction order. No permutation of architecture-to-slot assignment was run. With one
@@ -65,13 +65,13 @@ documentation is that **the two bodies of evidence are not comparable**: the his
 measurement was taken during training or held out. Only the study supports conclusions; the historical
 runs are a record of what the repository used to claim.
 
-### Cumulative tie-breaking
+### Cumulative tie-breaking (fixed)
 
-Wins on a timeout are awarded using *run-long* cumulative eliminations as the tiebreak
-([§ 3.5](03_arena_system_model.md#35-episode-structure-and-termination)), giving historically stronger
-teams a persistent edge in otherwise-flat matches. Its magnitude is unmeasured.
-
-*Remedy:* break ties on within-match statistics, or record a draw.
+Wins on a timeout used to be awarded using *run-long* cumulative eliminations as the tiebreak, giving
+historically stronger teams a persistent edge in otherwise-flat matches. Ranking now uses within-match
+kills, and a match whose top two teams are indistinguishable is recorded as a draw with no win awarded
+([A-10](11_code_audit.md#cumulative-tiebreak)). The draw rate under the current code is measured in
+[§ Results](08_results.md#replicated-study).
 
 ## 10.2 Construct validity
 

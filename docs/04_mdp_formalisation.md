@@ -7,40 +7,52 @@ that each optimise a per-team objective.
 
 ## 4.1 Local observation \(o_i\)
 
-`BaseTeamController.build_local_features` returns an 8-dimensional vector
-(`LOCAL_OBS_DIM = 8`):
+`BaseTeamController.build_local_features` returns a 9-dimensional vector
+(`LOCAL_OBS_DIM = 9`). Every length is divided by the arena half-size
+\(h = L/2\), so the vector is scale-free; \(L\) is 32 in the fixed variant and 28–36 under domain
+randomisation.
 
-| # | Component | Definition | Units / range |
+| # | Component | Definition | Range |
 |---|---|---|---|
-| 1 | \(p_x\) | own position, x | metres, \(\pm L/2\) |
-| 2 | \(p_z\) | own position, z | metres, \(\pm L/2\) |
-| 3 | \(\theta\) | heading / 180 | \([0, 2)\) |
-| 4 | \(\Delta^{e}_{x}\) | nearest living enemy x − own x | metres |
-| 5 | \(\Delta^{e}_{z}\) | nearest living enemy z − own z | metres |
-| 6 | \(d^{e}\) | \(\lVert\)enemy − own\(\rVert_2\) (3D) | metres |
-| 7 | \(\Delta^{a}_{x}\) | ally centroid x − own x | metres |
-| 8 | \(\Delta^{a}_{z}\) | ally centroid z − own z | metres |
+| 1 | \(p_x / h\) | own position, x | \([-1, 1]\) |
+| 2 | \(p_z / h\) | own position, z | \([-1, 1]\) |
+| 3 | \(\sin\theta\) | heading, sine | \([-1, 1]\) |
+| 4 | \(\cos\theta\) | heading, cosine | \([-1, 1]\) |
+| 5 | \(\Delta^{e}_{x} / h\) | nearest living enemy x − own x | \([-2, 2]\) |
+| 6 | \(\Delta^{e}_{z} / h\) | nearest living enemy z − own z | \([-2, 2]\) |
+| 7 | \(d^{e} / h\) | \(\lVert\)enemy − own\(\rVert_2\) (3D) | \([0, 2]\) |
+| 8 | \(\Delta^{a}_{x} / h\) | ally centroid x − own x | \([-2, 2]\) |
+| 9 | \(\Delta^{a}_{z} / h\) | ally centroid z − own z | \([-2, 2]\) |
 
-Three properties of this encoding shape everything downstream:
+Two properties of this encoding still shape everything downstream:
 
 * **Obstacles are not observable.** No component encodes wall or obstacle geometry. Agents can only
   infer obstacles from being blocked or shoved, which is not in the state either. Path planning around
   cover is therefore impossible to learn; the arena's cover is, from the policy's point of view,
-  invisible.
+  invisible. This is a deliberate design boundary rather than a defect — putting cover in the state
+  changes what the comparison is about — and it is listed as an accepted limitation in
+  [A-17](11_code_audit.md#observation-encoding).
 * **Only the *nearest* enemy is represented.** The other five enemies are absent from \(o_i\).
   "Decentralised execution" here means decentralised *and* strongly partial.
-* **Scale is raw metres.** Components 1, 2, 4–8 are unnormalised, so their magnitude grows with arena
-  size (28–36 under randomisation) and the network sees a drifting input distribution. Component 3 is
-  divided by 180 but heading lives in \([0, 360)\), so it occupies \([0, 2)\) rather than \([-1, 1]\)
-  and is discontinuous at the wrap — a heading of 359° reads as 1.994 and 1° as 0.017.
+
+### 4.1.1 What the encoding used to look like
+
+Before [A-17](11_code_audit.md#observation-encoding) was fixed the vector was 8-dimensional, heading was
+a single component \(\theta/180\), and every length was raw metres. Two problems followed, both measured:
+
+* \(\theta/180\) spans \([0,2)\) rather than \([-1,1]\) and is discontinuous at north: a heading of 359°
+  read as 1.994 and 1° as 0.017, so two nearly identical orientations differed by ~1.99 in feature space.
+  Encoding heading as \((\sin\theta, \cos\theta)\) brings that same 2° gap to 0.035.
+* Raw-metre positions meant the input distribution shifted with arena size, so the same physical layout
+  produced a different vector in a 28-metre arena than in a 36-metre one.
 
 ## 4.2 Global observation \(s\)
 
-`build_global_features` returns 36 floats (`GLOBAL_OBS_DIM = 36`): the concatenation, over all nine
+`build_global_features` returns 45 floats (`GLOBAL_OBS_DIM = 45`): the concatenation, over all nine
 agents sorted lexicographically by `agent_id` (`"1-1" … "3-3"`), of
 
 \[
-\bigl[\,p_x,\ p_z,\ \theta/180,\ \mathbb{1}[\text{alive}]\,\bigr].
+\bigl[\,p_x/h,\ p_z/h,\ \sin\theta,\ \cos\theta,\ \mathbb{1}[\text{alive}]\,\bigr].
 \]
 
 The critic therefore sees positions, facing, and life status of everyone — but **not** velocities,
@@ -49,7 +61,8 @@ absent. This is a weak "state": it is a snapshot of the nine agents only, so the
 cannot condition on the most immediate predictor of danger, an incoming projectile.
 
 The lexicographic ordering is what makes the fixed index slices in the VDN critic
-([§ Architectures](05_network_architectures.md#54-valuedecompositioncriticnetwork--additive-per-agent-critic-ctde-vd)) land on the right
+([§ Architectures](05_network_architectures.md#54-valuedecompositioncriticnetwork--additive-per-agent-critic-ctde-vd))
+land on the right
 agents. It holds because team and slot indices are single digits; it would break at ten agents per
 team.
 

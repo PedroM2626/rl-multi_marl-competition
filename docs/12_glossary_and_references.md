@@ -21,8 +21,8 @@
 
 | Symbol | Definition | Where |
 |---|---|---|
-| \(o_i\) | 8-dim local observation of agent \(i\) | [§ 4.1](04_mdp_formalisation.md#41-local-observation-o_i) |
-| \(s\) | 36-dim global observation | [§ 4.2](04_mdp_formalisation.md#42-global-observation-s) |
+| \(o_i\) | 9-dim local observation of agent \(i\) | [§ 4.1](04_mdp_formalisation.md#41-local-observation-o_i) |
+| \(s\) | 45-dim global observation | [§ 4.2](04_mdp_formalisation.md#42-global-observation-s) |
 | \(a\) | Action index in \(\{0,\dots,7\}\) | [§ 4.3](04_mdp_formalisation.md#43-action-space) |
 | \(\pi_\theta\) | Stochastic categorical policy | [§ 6.1](06_optimisation_procedure.md#61-objective) |
 | \(V_\phi(s)\) | Critic value estimate | [§ 5.3](05_network_architectures.md#53-centralizedcriticnetwork--joint-state-critic) |
@@ -46,7 +46,7 @@
 | `scripts/plot_metrics.py` | Standalone summary → CSV/PNG using pandas | [A-22](11_code_audit.md#missing-dependency) |
 | `src/marl_arena/config.py` | Frozen dataclass reading every tunable from `.env`; creates the data directories | [§ 6.7](06_optimisation_procedure.md#67-hyperparameters-as-trained) |
 | `src/marl_arena/models.py` | Dataclasses: snapshots, `TeamMetrics.as_summary`, `MatchResult` | [§ 7.4](07_experimental_protocol.md#74-metric-definitions) |
-| `src/marl_arena/systems/match_variant.py` | `TEAM_META`, obstacle specs, fixed and randomised variant sampling | [§ 3.6](03_arena_system_model.md#36-match-variants-and-domain-randomisation) |
+| `src/marl_arena/systems/match_variant.py` | `TEAM_NAMES`, `PARADIGM_CYCLE`, `team_meta(rotation)`, obstacle specs, fixed and randomised variant sampling | [§ 3.6](03_arena_system_model.md#36-match-variants-and-domain-randomisation) |
 | `src/marl_arena/systems/simulation.py` | The engine: kinematics, combat, collision, termination, trajectory recording | chapters 3 and 4 |
 | `src/marl_arena/systems/metrics.py` | CSV append with schema rotation, `summary.json`, dashboard trigger | [§ 7.5](07_experimental_protocol.md#75-artefact-schemas) |
 | `src/marl_arena/systems/plotting.py` | Cumulative four-panel comparison from the team CSV | [A-19](11_code_audit.md#plot-filter) |

@@ -55,14 +55,15 @@ Two implementation facts that change how the comparison should be read:
 
 ## Differences from the root experiment
 
-Only these files differ from the root tree; the rest are byte-identical copies.
+Only these five files differ from the root tree; the rest — including the whole engine, `simulation.py`
+and the renderer `main.py` — are byte-identical copies, and `tests/test_tree_parity.py` enforces it.
 
 | File | Change |
 |---|---|
 | `src/marl_arena/rl/networks.py` | adds `ValueDecompositionCriticNetwork`, `CommActorNetwork` |
 | `src/marl_arena/rl/ppo.py` | adds `update_ctde_vd`, `update_ctde_comm` |
 | `src/marl_arena/controllers/rl_controller.py` | paradigm selection and the Comm decision path |
-| `src/marl_arena/systems/match_variant.py` | `TEAM_META` labels; also drops `zip(..., strict=True)` |
+| `src/marl_arena/systems/match_variant.py` | `PARADIGM_CYCLE` only — a two-line difference |
 | `src/marl_arena/systems/simulation.py` | status-text lines only |
 | `scripts/train_rl.py` | MLflow run, params, metrics, artefacts, registered models |
 | `main.py` | legend text |

@@ -226,7 +226,7 @@ that appear in data, so it is documented here for provenance:
 
 | Before | After | Where |
 |---|---|---|
-| `Equipe 1/2/3` | `Team 1/2/3` | `TEAM_META`, `TEAM_PARADIGMS`, CSV `team_name` column, JSON keys, MLflow metric names |
+| `Equipe 1/2/3` | `Team 1/2/3` | `TEAM_NAMES`, `PARADIGM_CYCLE`, CSV `team_name` column, JSON keys, MLflow metric names |
 | `barreira_fixa` | `fixed_barrier` | obstacle type tag |
 | `obstaculo_movel` | `moving_obstacle` | obstacle type tag |
 | `passagem_restrita` | `restricted_passage` | obstacle type tag |

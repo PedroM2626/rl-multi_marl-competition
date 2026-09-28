@@ -171,22 +171,26 @@ A *match* is the episode. `step()` returns `True` on the step that ends it:
 `finish_match()` then assigns the win:
 
 ```python
-sorted_alive = sorted(team_alive.items(),
-                      key=lambda kv: (kv[1], cumulative_metrics[kv[0]].eliminations),
-                      reverse=True)
-winner = sorted_alive[0][0]
+ranked = sorted(team_alive.items(),
+                key=lambda kv: (kv[1], kills_this_match[kv[0]]),
+                reverse=True)
+if ranked[0][1:] == ranked[1][1:]:          # equal survivors and equal kills this match
+    winner = DRAW_TEAM                      # no team is credited with a win
+else:
+    winner = ranked[0][0]
 ```
 
 Two properties of this rule matter for interpretation:
 
 1. **A timeout awards the win to whoever is still standing**, even if nobody died. With the default
    90 s limit and a median recorded match length of 9.1 s (Experiment 1) / 7.6 s (Experiment 2),
-   timeouts are rare but not absent: over 60 headless matches from random initialisation, 50 ended by
-   wipeout and 10 by duration exhaustion.
-2. **Ties are broken by *cumulative* eliminations across the whole run**, not by performance inside the
-   tied match. A team that accumulated more kills earlier in training wins otherwise-flat ties. This is
-   a persistent advantage bias whose size is not measured
-   ([§ Threats to validity](10_threats_to_validity.md#102-construct-validity)).
+   timeouts are rare but not absent.
+2. **Ties are broken by kills inside the match being scored**, and a match whose top two teams are
+   indistinguishable on both survivors and kills is recorded as a draw with no win awarded to anybody.
+   The rule used to break ties on eliminations accumulated over the whole run, which handed a persistent
+   advantage to whichever team had been stronger earlier — unrelated to the match in question
+   ([A-10](11_code_audit.md#cumulative-tiebreak)). Because draws award nothing, win rates across the
+   three teams no longer sum to 1; the draw rate is reported with the results.
 
 ## 3.6 Match variants and domain randomisation
 
@@ -216,14 +220,22 @@ variant id is recorded in `team_match_metrics.csv` for post-hoc stratification.
 
 ## 3.7 Randomness and reproducibility
 
-Three independent streams exist:
+Five streams are in play, and all five are now pinned by one call to `config.seed_all(seed)`:
 
 | Stream | Seeded from | Used for |
 |---|---|---|
-| `self.rng` (`random.Random`) | `RANDOM_SEED` = 7 | Variant sampling, initial headings, controller jitter |
-| `self.np_rng` (`numpy.random.default_rng`) | same | **created but never used** |
+| `self.rng` (`random.Random`) | `RANDOM_SEED`, or `--seed` | Variant sampling, initial headings |
 | per-controller `self.rng` | `seed + offset`, offsets 11 / 23 / 37 | The random jump decision |
-| `np.random.shuffle` inside PPO | global NumPy state, **never seeded** | Minibatch order |
+| `RolloutBuffer.rng` (`numpy.random.Generator`) | the same controller seed | PPO minibatch order |
+| NumPy global RNG | `seed_all` | anything using `np.random.*` directly |
+| Torch global RNG | `seed_all` | weight initialisation |
 
-The last row is the one that breaks exact reproducibility: two runs with `RANDOM_SEED=7` still diverge
-in minibatch order. See [§ Reproducibility](09_reproducibility.md#96-what-is-and-is-not-reproducible).
+Two things used to sit in this table and no longer do. `ArenaSimulation.np_rng` was constructed and never
+used, and has been deleted. The PPO shuffle used to read NumPy's *global* state, which nothing seeded, so
+two runs with the same seed diverged in minibatch order — the buffer now owns a generator seeded from the
+controller ([A-8](11_code_audit.md#unseeded-minibatch-shuffle)). Verified: two `--seed 42` runs produce
+byte-identical training logs, and `--seed 43` produces a different one.
+
+The seed also selects the paradigm-to-slot rotation, `seed % 3`
+([A-27](11_code_audit.md#slot-confounding)), so a slot effect cannot be confounded with an architecture
+effect across replicates.

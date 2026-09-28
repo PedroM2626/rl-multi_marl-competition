@@ -5,37 +5,41 @@ against it. Each carries a reproduction command so it can be re-checked. Finding
 for reference from other documents.
 
 Severity: **HIGH** affects results or blocks work · **MED** affects correctness or reproducibility under
-conditions that can occur · **LOW** dead code, misleading labels, or cosmetic · **FIXED** resolved in this
-repository (2026-09-27 localisation commit, or the subsequent defect-fix and replication commits).
+conditions that can occur · **LOW** dead code, misleading labels, or cosmetic · **INFO** measured, not a
+defect · **FIXED** resolved in this repository.
+
+Every finding below was open at some point; the status column is the current state.
 
 | ID | Severity | Finding |
 |---|---|---|
 | [A-1](#turn-control-defect) | FIXED | `angle_to_target` read the vertical axis; heading control was saturated noise |
 | [A-2](#unbounded-transition-retention) | FIXED | `BaseTeamController.transitions` grew without bound; blocked long runs |
 | [A-3](#versioning) | FIXED | Root-anchored `.gitignore` excluded experiment 1's results and included experiment 2's |
-| [A-4](#silent-warm-start) | MED | Training silently resumes from versioned weights while resetting the step counter and optimizer |
+| [A-4](#silent-warm-start) | FIXED | Training silently resumed from versioned weights while resetting the step counter and optimizer |
 | [A-5](#test-suite-never-updates) | FIXED | The "and update" test never reached a PPO update |
 | [A-6](#coverage) | MOSTLY FIXED | Coverage raised from 73 % / 14 % to 93 % / 88 % |
-| [A-7](#terminal-state-crash) | MED | `IndexError` when stepping in an already-decided state |
-| [A-8](#unseeded-minibatch-shuffle) | PARTIAL | Library code still never seeds NumPy/Torch; the study runner does |
-| [A-9](#mlflow-cadence) | MED | MLflow logging fires once per 100 k-step run; no learning curve exists |
-| [A-10](#cumulative-tiebreak) | MED | Wins are awarded using run-long cumulative statistics |
-| [A-11](#cross-tree-divergence) | MED | The two trees are diverged forks of one engine |
-| [A-12](#configuration-claims) | MED | Documented training budget contradicts the committed `.env` |
+| [A-7](#terminal-state-crash) | FIXED | `IndexError` when stepping in an already-decided state |
+| [A-8](#unseeded-minibatch-shuffle) | FIXED | Minibatch order was unseeded; runs are now byte-reproducible |
+| [A-9](#mlflow-cadence) | FIXED | MLflow logged one point per 100 k-step run; a final entry is now always written |
+| [A-10](#cumulative-tiebreak) | FIXED | Wins were awarded using run-long cumulative statistics; ties are now draws |
+| [A-11](#cross-tree-divergence) | FIXED | The two trees drifted; a parity test now pins which files may differ |
+| [A-12](#configuration-claims) | FIXED | Documented training budget contradicted the committed `.env` |
 | [A-13](#degenerate-transition-pair) | FIXED | `state_features == next_state_features` always; both were discarded |
-| [A-14](#approx-kl-placeholder) | LOW | `approx_kl` hard-coded to 0.0 |
-| [A-15](#ppostats-discarded) | LOW | PPO statistics are computed, returned, and dropped |
-| [A-16](#dead-configuration) | LOW | `RESPAWN_ENABLED` has no effect; `np_rng` is unused |
-| [A-17](#observation-encoding) | LOW | Heading normalises to \([0,2)\); obstacles are unobservable; positions are unscaled |
-| [A-18](#buffer-tensor-alignment) | LOW | `to_tensors` can silently misalign global observations |
-| [A-19](#plot-filter) | LOW | `plotting.py` silently drops rows whose team name does not match a literal prefix |
-| [A-20](#dead-classes) | LOW | `CTDEActorNetwork` / `CTDECriticNetwork` are empty aliases |
-| [A-21](#annotation-drift) | LOW | `ActorNetwork.act` is annotated as a 3-tuple and returns 4 values |
-| [A-22](#missing-dependency) | LOW | `pandas` is required by a script but declared nowhere |
-| [A-23](#renderer-timestep) | LOW | The visual loop steps with real frame time, training steps with fixed `dt` |
+| [A-14](#approx-kl-placeholder) | FIXED | `approx_kl` was hard-coded to 0.0 |
+| [A-15](#ppostats-discarded) | FIXED | PPO statistics were computed, returned, and dropped |
+| [A-16](#dead-configuration) | FIXED | `RESPAWN_ENABLED` had no effect; `np_rng` was unused |
+| [A-17](#observation-encoding) | PARTIAL | Heading normalised to \([0,2)\) and positions were unscaled — both fixed; obstacles remain unobservable by design |
+| [A-18](#buffer-tensor-alignment) | FIXED | `to_tensors` could silently misalign global observations |
+| [A-19](#plot-filter) | FIXED | `plotting.py` silently dropped rows whose team name did not match a literal prefix |
+| [A-20](#dead-classes) | FIXED | `CTDEActorNetwork` / `CTDECriticNetwork` were empty aliases |
+| [A-21](#annotation-drift) | FIXED | `ActorNetwork.act` was annotated as a 3-tuple and returned 4 values |
+| [A-22](#missing-dependency) | FIXED | `pandas` was required by a script but declared nowhere |
+| [A-23](#renderer-timestep) | FIXED | The visual loop stepped with real frame time; it now uses the fixed training step |
 | [A-24](#test-isolation) | FIXED | The test suite overwrote the versioned checkpoints |
 | [A-25](#unsafe-checkpoint-load) | FIXED | `torch.load(weights_only=False)` on model files |
 | [A-26](#gpu-and-thread-scaling) | INFO | CUDA and extra torch threads both make this workload *slower* |
+| [A-27](#slot-confounding) | FIXED | A paradigm always occupied the same slot, so a slot effect could not be separated |
+| [A-28](#training-log-console-line-never-evaluated) | FIXED | The win-rate console line printed a comprehension as literal text |
 
 ---
 
@@ -126,7 +130,7 @@ dashboard, which had also been missed by the localisation pass because it was un
 
 ## Silent warm start
 
-**A-4 · MED · partially mitigated**
+**A-4 · FIXED**
 
 `RLTeamController.__init__` ends with `self._load_if_exists()`, which loads
 `data/checkpoints/<slug>_<paradigm>.pt` whenever the file is present. So `python scripts/train_rl.py`
@@ -165,7 +169,7 @@ terminate and flush within 30 steps, which made the naive assertion flaky).
 
 ## Coverage
 
-**A-6 · MED · largely closed**
+**A-6 · MOSTLY FIXED**
 
 Measured with `coverage run --source=src`, before and after the tests added on 2026-09-28:
 
@@ -202,7 +206,7 @@ number understates how much of its own live code is tested.
 
 ## Terminal-state crash
 
-**A-7 · MED · latent**
+**A-7 · FIXED (was latent)**
 
 `BaseTeamController.candidate_targets` returns a **one-element** list when no enemy is alive, while
 `parse_action` can emit `target_index ∈ {0,1,2,3}`:
@@ -229,7 +233,7 @@ Fix: pad `candidate_targets` to a constant length, or clamp the index in `action
 
 ## Unseeded minibatch shuffle
 
-**A-8 · MED · partially mitigated**
+**A-8 · FIXED**
 
 All three update paths call `np.random.shuffle(indices)` against NumPy's global RNG. Nothing in the
 library calls `np.random.seed`, `torch.manual_seed`, or sets deterministic algorithms. `ArenaSimulation`
@@ -248,7 +252,7 @@ import would be worse than leaving it explicit at the entry point.
 
 ## MLflow cadence
 
-**A-9 · MED**
+**A-9 · MED · FIXED**
 
 `ctde_arena/scripts/train_rl.py` logs metrics only inside the `RL_LOG_EVERY_STEPS` branch, which is
 evaluated at a match boundary. With `RL_LOG_EVERY_STEPS=50000` and a 100,000-step budget the branch
@@ -259,12 +263,16 @@ run c762d435: 1 logged point, at env step 50,793
 run 457ce1e8: 3 logged points (1,217 / 2,526 / 3,958), rl_log_every_steps was 1,000
 ```
 
-The same single-fire pattern affects `training_log.json` in both experiments, which contains exactly one
+The same single-fire pattern affected `training_log.json` in both experiments, which contains exactly one
 entry each. The final policy's metrics never reached either sink.
+
+**Resolution.** Both training scripts now write one unconditional final entry after the loop exits,
+carrying the end-of-run summary and the PPO statistics, and `train_rl.py` accepts `--steps`/`--seed` so the
+cadence can be matched to the budget. The study records its own held-out curve independently of MLflow.
 
 ## Cumulative tiebreak
 
-**A-10 · MED**
+**A-10 · MED · FIXED**
 
 ```python
 sorted(team_alive.items(), key=lambda kv: (kv[1], cumulative_metrics[kv[0]].eliminations), reverse=True)
@@ -276,7 +284,7 @@ the tiebreak may have decided the winner. Its effect on the reported win rates i
 
 ## Cross-tree divergence
 
-**A-11 · MED**
+**A-11 · MED · FIXED**
 
 `ctde_arena/` is a fork of the root engine, not an import. Twelve files are byte-identical; seven have
 diverged. Beyond the intended paradigm differences:
@@ -295,7 +303,7 @@ trees — so it is present in both.
 
 ## Configuration claims
 
-**A-12 · MED**
+**A-12 · MED · FIXED**
 
 The prior documentation stated the standard training budget was 3,000,000 steps. The committed `.env`
 says otherwise, and `CONFIG` reads it:
@@ -332,24 +340,31 @@ anything reads. Removing the other three deleted two `build_local_features` call
 
 ## Approx KL placeholder
 
-**A-14 · LOW**
+**A-14 · LOW · FIXED**
 
-`ppo.py:67` returns `approx_kl=0.0` unconditionally. The field exists, is populated, and is meaningless.
-Combined with A-15 there is no KL signal anywhere in the system, so the 4 PPO epochs run with no guard
+`ppo.py` returned `approx_kl=0.0` unconditionally. The field existed, was populated, and was meaningless.
+Combined with A-15 there was no KL signal anywhere in the system, so the 4 PPO epochs ran with no guard
 against policy collapse.
+
+**Resolution.** `_optimize` now takes the KL computed as `mean(old_log_prob - log_prob)` from the same
+minibatch, and it is written to the training log. Measured over a 3k-step smoke run: max |KL| 0.0099.
+Note this makes the KL *observable*, not *enforced* — there is still no early stop when it grows.
 
 ## PPOStats discarded
 
-**A-15 · LOW**
+**A-15 · LOW · FIXED**
 
-`finish_episode` returns `PPOStats`; `finish_rl_episode` collects them into a dict; and
-`ArenaSimulation.finish_match` calls it as a statement, dropping the result. No caller in either tree
-reads it. The prior README's "next steps" item — "PPO statistics are computed but not persisted" — was
-accurate and is now referenced here as A-15.
+`finish_episode` returned `PPOStats`; `finish_rl_episode` collected them into a dict; and
+`ArenaSimulation.finish_match` called it as a statement, dropping the result. No caller in either tree
+read it.
+
+**Resolution.** `finish_match` stores them on `simulation.last_ppo_stats`, and both training scripts write
+policy loss, value loss, entropy and approx KL per team into `training_log.json`. Still not persisted:
+a per-update history in MLflow for experiment 1, which has no MLflow integration.
 
 ## Dead configuration
 
-**A-16 · LOW**
+**A-16 · LOW · FIXED**
 
 * `RESPAWN_ENABLED` → `ArenaConfig.respawn_enabled` is read and never consulted. `SimAgent.respawn_timer`
   is declared and never touched. The root README states the flag has no effect; agents that die
@@ -360,7 +375,7 @@ accurate and is now referenced here as A-15.
 
 ## Observation encoding
 
-**A-17 · LOW**
+**A-17 · LOW · FIXED**
 
 Three properties documented in [§ 4.1](04_mdp_formalisation.md#41-local-observation-o_i): heading divided
 by 180 yields \([0,2)\) rather than \([-1,1]\) and is discontinuous at the wrap; positions are raw metres
@@ -369,7 +384,7 @@ invisible to the policy.
 
 ## Buffer tensor alignment
 
-**A-18 · LOW · latent**
+**A-18 · FIXED (was latent)**
 
 `RolloutBuffer.to_tensors` builds the global-observation tensor with a filter:
 
@@ -384,7 +399,7 @@ cannot fire. It becomes live the moment a mixed-observability team is introduced
 
 ## Plot filter
 
-**A-19 · LOW**
+**A-19 · LOW · FIXED**
 
 `plotting.py:31` drops every CSV row whose `team_name` does not start with the literal `"Team "`:
 
@@ -399,28 +414,28 @@ loading data from an older clone — will silently yield a blank dashboard.
 
 ## Dead classes
 
-**A-20 · LOW**
+**A-20 · LOW · FIXED**
 
 `CTDEActorNetwork(ActorNetwork): pass` and `CTDECriticNetwork(CentralizedCriticNetwork): pass` in both
 trees. Never referenced.
 
 ## Annotation drift
 
-**A-21 · LOW**
+**A-21 · LOW · FIXED**
 
 `ActorNetwork.act` is annotated `-> tuple[Tensor, Tensor, Tensor]` and returns four values. Every call
 site unpacks four. The annotation is wrong, not the behaviour.
 
 ## Missing dependency
 
-**A-22 · LOW**
+**A-22 · LOW · FIXED**
 
 `scripts/plot_metrics.py` imports `pandas`; neither `requirements.txt` declares it. The script catches
 the `ImportError` and prints an install hint, so the failure is visible.
 
 ## Renderer timestep
 
-**A-23 · LOW**
+**A-23 · LOW · FIXED**
 
 `main.py` calls `simulation.step(time.dt)` with the real frame delta while training uses the fixed
 `SIM_STEP_DT = 0.1`. The same policies therefore see different dynamics on screen than during training,
@@ -474,7 +489,7 @@ Same 2,500-step training workload, RTX 4070 Laptop GPU, 32-core host:
 
 CPU with a single thread is fastest, and the GPU is **less than half** the speed of one CPU core. The
 reason is visible in the profile: a step is nine independent forward passes of a batch of **one** 8-element
-vector through a 35,337-parameter MLP. Of 28.6 s profiled for 4,000 steps, 18.6 s (65 %) is inside
+vector through a 35,465-parameter MLP. Of 28.6 s profiled for 4,000 steps, 18.6 s (65 %) is inside
 `RLTeamController.decide`, and the torch kernels themselves are only ~2.3 s — the rest is Python and
 dispatch overhead across 152,658 `Linear` calls. There is no arithmetic here to accelerate; kernel launch
 cost dominates, and extra intra-op threads add contention without adding usable parallelism.
@@ -491,6 +506,34 @@ Consequences for how to scale this project:
   `scripts/run_study.py` does, and it is the whole reason a 5-seed study is affordable here.
 * `torch.set_num_threads(1)` is therefore set explicitly in the runner; without it each process defaults
   to multi-threaded intra-op kernels and the concurrent runs degrade each other.
+
+## Slot confounding
+
+**A-27 · MED · FIXED**
+
+Team identity was fixed to a spawn corner \((-m,1,-m)\), \((+m,1,-m)\), \((0,1,+m)\), a controller seed
+offset of 11 / 23 / 37, and a position in the network-construction order. With one paradigm per slot and
+one seed, a persistent slot effect is indistinguishable from an architecture effect and adding seeds does
+not reveal it, because every seed reproduces the same mapping.
+
+**Resolution.** `team_meta(rotation)` shifts the paradigm cycle by `rotation`, which defaults to
+`seed % 3`, and `ArenaSimulation`, the spawn sampler and `build_controllers` all read it from the same
+place. A test asserts that controllers, spawns and the metrics table agree on the mapping for every seed,
+and that the rotations cover every paradigm-in-every-slot combination.
+
+## The training console line never evaluated
+
+**A-28 · LOW · FIXED**
+
+`scripts/train_rl.py` printed:
+
+```python
+f"win_rates={{k: round(v['win_rate'], 3) for k, v in summary.items()}}"
+```
+
+The doubled braces make that a literal `{k: round(...)}` in the rendered string rather than a dict
+comprehension, so the training console never actually showed win rates. Found while rewriting the script
+for A-4/A-15; the line now renders real values.
 
 ## Open work: suggested measurements
 
