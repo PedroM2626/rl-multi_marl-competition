@@ -128,6 +128,36 @@ def paired_t(differences: list[float]) -> tuple[float, float]:
     return (t_stat, 2.0 * _student_sf(abs(t_stat), n - 1))
 
 
+def student_ppf(p: float, df: int) -> float:
+    """Upper-tail quantile of the t distribution, by bisection on _student_sf."""
+    lo, hi = 0.0, 200.0
+    for _ in range(200):
+        mid = (lo + hi) / 2.0
+        if _student_sf(mid, df) > p:
+            lo = mid
+        else:
+            hi = mid
+    return (lo + hi) / 2.0
+
+
+def replicates_for_power(mean_diff: float, diff_sd: float, alpha: float, power: float) -> int:
+    """Smallest n for a two-sided paired t-test to reach `power` at the observed effect size.
+
+    Solves n = ((t_crit + t_beta) * sd / mean_diff)^2 self-consistently, because t_crit depends on n.
+    """
+    if diff_sd <= 0.0 or mean_diff == 0.0:
+        return 10**9
+    n = 4.0
+    for _ in range(200):
+        df = max(int(math.ceil(n)) - 1, 1)
+        t_crit = student_ppf(alpha / 2.0, df)
+        t_beta = student_ppf(1.0 - power, df)
+        n = ((t_crit + t_beta) * diff_sd / abs(mean_diff)) ** 2
+        if n > 10**8:
+            return 10**9
+    return min(int(math.ceil(n)), 10**9)
+
+
 def main() -> None:
     rows = list(csv.DictReader(CSV_PATH.open(newline="", encoding="utf-8")))
     for row in rows:
@@ -184,6 +214,7 @@ def main() -> None:
         print("\nPairwise tests at the **seed** level — n = %d replicates, the independent unit:\n" % len(seeds))
         print("| Comparison | Mean per-seed difference | SD | Paired t | p (df=%d) | seeds favouring A |" % (len(seeds) - 1))
         print("|---|---:|---:|---:|---:|---|")
+        observed: list[tuple[str, str, float, float]] = []
         for i, a in enumerate(paradigms):
             for b in paradigms[i + 1:]:
                 diffs = []
@@ -198,10 +229,25 @@ def main() -> None:
                 t_stat, p_value = paired_t(diffs)
                 favour = sum(1 for d in diffs if d > 0)
                 verdict = "**significant**" if p_value < 0.0167 else ("nominal only" if p_value < 0.05 else "not significant")
+                observed.append((a, b, mean_diff, sd(diffs)))
                 print(
                     f"| {a} vs {b} | {mean_diff:+.3f} | {sd(diffs):.3f} | {t_stat:+.2f} "
                     f"| {p_value:.3f} | {favour}/{len(diffs)} — {verdict} |"
                 )
+
+        print(
+            "\nForward power at two-sided alpha = 0.0167 (Bonferroni over three comparisons) and 80 % power"
+            " — replicates needed to detect the **observed** difference at its observed spread:\n"
+        )
+        print("| Comparison | Observed difference | SD of difference | Cohen d | Replicates needed |")
+        print("|---|---:|---:|---:|---:|")
+        for a, b, mean_diff, diff_sd in observed:
+            needed = replicates_for_power(mean_diff, diff_sd, 0.0167, 0.80)
+            cohen_d = mean_diff / diff_sd if diff_sd > 0 else float("nan")
+            needed_text = f"~{needed}" if needed < 10**8 else "not reachable in this design"
+            print(
+                f"| {a} vs {b} | {mean_diff:+.3f} | {diff_sd:.3f} | {cohen_d:+.3f} | {needed_text} |"
+            )
 
         print("\nPairwise Fisher exact tests on pooled held-out wins (**match-level, anti-conservative**):\n")
         print("| Comparison | Wins / matches | Odds | p (two-sided) | Bonferroni (alpha=0.0167) |")

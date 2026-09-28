@@ -5,14 +5,23 @@ __pycache__/
 *.pyd
 .Python
 .venv/
+.venv-*/
 venv/
-env/
+# Anchored on purpose: an unanchored env/ also matches any source directory named env (case-insensitive
+# on this host), which is how a real src/env package once got silently untracked.
+/env/
 .idea/
 .vscode/
 dist/
 build/
 *.egg-info/
 .pytest_cache/
+
+# Console transcripts of local training and baseline runs. They duplicate what the versioned JSON
+# artefacts already record, and a stale one is worse than none.
+/study_run.log
+/baseline_*.log
+/ctde_arena/baseline_*.log
 
 # Local scratch that must never be mistaken for experiment output
 **/_untrained_scratch/
