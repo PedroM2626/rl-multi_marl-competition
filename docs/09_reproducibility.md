@@ -50,14 +50,16 @@ cp .env.example .env              # .env is tracked and identical to .env.exampl
 | `python scripts/train_rl.py` | 1 | Headless PPO training, `RL_TRAIN_TOTAL_STEPS` env steps |
 | `python main.py` | 1 | Ursina 3D window, greedy policies loaded from `data/checkpoints/` |
 | `python scripts/plot_metrics.py` | 1 | Reads `data/metrics/summary.json` → `exports/metrics/` |
-| `python -m pytest tests/ -q` | 1 | 7 tests |
+| `python -m pytest tests/ -q` | 1 | 41 tests |
 | `cd ctde_arena && python scripts/train_rl.py` | 2 | Same, plus MLflow logging |
 | `cd ctde_arena && mlflow ui --backend-store-uri file:./mlruns` | 2 | Tracking UI |
 | `cd ctde_arena && python main.py` | 2 | 3D window for the CTDE variants |
-| `cd ctde_arena && python -m pytest tests/ -q` | 2 | 2 tests |
+| `cd ctde_arena && python -m pytest tests/ -q` | 2 | 33 tests |
 | `cd ctde_arena && docker build -t ctde-arena . && docker run --rm -v ${PWD}/data:/app/data -v ${PWD}/mlruns:/app/mlruns ctde-arena` | 2 | Containerised training |
 | `python scripts/run_experiment.py --seed S --steps N --out DIR` | either | One seeded replicate: train, then greedy held-out evaluation |
-| `python scripts/run_study.py --steps 1000000 --seeds 1,2,3,4,5 --jobs 10` | both | Fan replicates out across processes and collect `results/study/` |
+| `python scripts/run_study.py --steps 500000 --seeds 1..10 --jobs 20` | both | Fan replicates out across processes and collect `results/study/` |
+| `python scripts/report_study.py` | both | Render the study tables from `results/study/per_seed_metrics.csv` |
+| `python scripts/promote_run.py --experiment exp1 --seed 1` | 1 or 2 | Copy one replicate into the versioned `data/` |
 
 `run_experiment.py` is byte-identical in both trees; which engine it binds to is decided by the working
 directory, exactly like `train_rl.py`. `run_study.py` exists only at the root and drives both.

@@ -501,9 +501,12 @@ Consequences for how to scale this project:
   a 779-line imperative simulator built on Python lists of dataclasses, dynamic projectile sets and
   rejection sampling. The bottleneck is not FLOPs, so that rewrite buys throughput only if it also
   removes the per-agent Python, which is most of the code.
-* **Do scale across processes.** Runs are independent and each wants exactly one core, so a
-  32-core host executes 10 replicates in the time of one. That is what
-  `scripts/run_study.py` does, and it is the whole reason a 5-seed study is affordable here.
+* **Do scale across processes — but measure it, because the machine decides the answer.** Runs are
+  independent and each wants exactly one core, and that is what `scripts/run_study.py` does. The scaling
+  is far from linear on this laptop: 20 concurrent replicates measured ~1,030 steps/s in aggregate, i.e.
+  ~51 steps/s each against 368 steps/s solo — under 3× the throughput of a single process from 20 times
+  the cores. So the win is real but sublinear, and the honest way to plan a study is to measure the
+  aggregate rate before committing to a seed count.
 * `torch.set_num_threads(1)` is therefore set explicitly in the runner; without it each process defaults
   to multi-threaded intra-op kernels and the concurrent runs degrade each other.
 
