@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
-DATA_DIR = ROOT_DIR / "data"
+DATA_DIR = Path(os.getenv("ARENA_DATA_DIR", str(ROOT_DIR / "data")))
 METRICS_DIR = DATA_DIR / "metrics"
 EXPORTS_DIR = DATA_DIR / "exports"
 
@@ -67,7 +67,7 @@ class ArenaConfig:
     rl_batch_size: int = int(os.getenv("RL_BATCH_SIZE", "256"))
     rl_hidden_dim: int = int(os.getenv("RL_HIDDEN_DIM", "128"))
     rl_device: str = os.getenv("RL_DEVICE", "cpu")
-    rl_checkpoint_dir: Path = ROOT_DIR / "data" / "checkpoints"
+    rl_checkpoint_dir: Path = DATA_DIR / "checkpoints"
 
 
 CONFIG = ArenaConfig()

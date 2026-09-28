@@ -30,3 +30,7 @@ mlruns/
 # Experiment artefacts under **/data/ ARE versioned on purpose: they are the evidence
 # behind every number in docs/. Patterns here used to be root-anchored ("data/metrics/*.csv"),
 # which silently excluded experiment 1 while committing experiment 2.
+
+# Per-run study scratch (checkpoints, per-step trajectory CSVs). The aggregated analysis
+# it produces is versioned under results/study/ instead.
+**/data/runs/
