@@ -31,7 +31,9 @@ IDENTICAL = [
     "src/marl_arena/ui/__init__.py",
     "src/marl_arena/ui/dashboard.py",
     "scripts/plot_metrics.py",
+    "scripts/random_baseline.py",
     "scripts/run_experiment.py",
+    "tests/test_collision.py",
 ]
 
 # Files that legitimately differ: the paradigms themselves and the MLflow integration. The engine,
