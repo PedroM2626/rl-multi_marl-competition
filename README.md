@@ -1,99 +1,203 @@
 # RL Multi MARL Competition
 
-Arena 3D com 9 agentes (3 equipes × 3) treinados com **PPO + PyTorch** para comparar paradigmas de **Aprendizado por Reforço Multi-Agente (MARL)**.
+A 3D battle arena with **nine agents — three teams of three** — where each team is trained with PPO
+(PyTorch) under a different multi-agent reinforcement learning architecture. The architectures compete
+against each other inside one engine, so the competitive outcome is itself the measurement.
 
-O repositório contém **dois experimentos autocontidos**, com a mesma engine de simulação, mas comparações distintas:
+> **Full technical documentation lives in [`docs/`](docs/README.md)** — system model, MDP
+> formalisation, architectures, optimisation, protocol, results with confidence intervals,
+> reproducibility, limitations, and a 25-item code audit. This file is the quick start.
 
-| Experimento | Localização | Comparado | Treino | Tracking |
-|-------------|-------------|-----------|--------|----------|
-| **1** | raiz do repositório | CTE × DTE × CTDE | `scripts/train_rl.py` | `data/…` (JSON/CSV/PNG) |
-| **2** | `ctde_arena/` | CTDE-VD × CTDE-CAC × CTDE-Comm | `ctde_arena/scripts/train_rl.py` | **MLflow** + `ctde_arena/data/…` |
+## Documentation
 
-Cada experimento é independente (pacote próprio `marl_arena`, `.env` e dados), então todos os comandos devem ser executados **a partir do diretório do experimento** (raiz do repositório ou `ctde_arena/`).
+| If you want to… | Read |
+|---|---|
+| understand what is being tested and why | [Introduction and research questions](docs/01_introduction.md) |
+| see how this relates to VDN / MAPPO / CommNet | [Related work](docs/02_related_work.md) |
+| understand the physics and combat model | [Arena system model](docs/03_arena_system_model.md) |
+| see the exact state, action and reward definitions | [MDP formalisation](docs/04_mdp_formalisation.md) |
+| look up a network layer by layer | [Network architectures](docs/05_network_architectures.md) |
+| understand what PPO is and is not doing here | [Optimisation procedure](docs/06_optimisation_procedure.md) |
+| know what the CSV columns mean | [Experimental protocol](docs/07_experimental_protocol.md) |
+| get the numbers, intervals and significance tests | [Results](docs/08_results.md) |
+| reproduce a run, or estimate its cost | [Reproducibility](docs/09_reproducibility.md) |
+| know what these results cannot support | [Threats to validity](docs/10_threats_to_validity.md) |
+| find the bugs before trusting a ranking | [Code audit](docs/11_code_audit.md) |
 
----
+## Repository status
 
-## Índice
+Honest summary of what is finished and what is not:
 
-- [Experimento 1 — CTE × DTE × CTDE](#experimento-1--cte--dte--ctde-raiz)
-- [Experimento 2 — CTDE-VD × CTDE-CAC × CTDE-Comm](#experimento-2--variantes-ctde-ctde_arena)
-- [Instalação](#instalação)
-- [Como usar](#como-usar)
-- [Resultados](#resultados)
-- [Configuração (.env)](#configuração-env)
-- [Estrutura do repositório](#estrutura-do-repositório)
-- [Arquivos de saída](#arquivos-de-saída)
-- [Métricas e gráficos](#métricas-e-gráficos)
-- [Testes](#testes)
-- [Próximos passos](#próximos-passos)
+| | Experiment 1 (root) | Experiment 2 (`ctde_arena/`) |
+|---|---|---|
+| Engine and training code | complete | complete |
+| 100k-step run performed | yes (463 matches) | yes (456 matches) |
+| Results **committed to Git** | **no** — git-ignored | yes |
+| Checkpoints committed | **no** | yes |
+| MLflow tracking | n/a | wired, but only **1 logged point** for the 100k run |
+| Tests | 7 passing, **73 %** statement coverage | 2 passing, **14 %** coverage |
+| Multi-seed replication | **not done** | **not done** |
+| Held-out evaluation of the shipped policies | **not done** | **not done** |
 
----
+Three things a reader should know before using these results, each detailed in the audit:
 
-## Experimento 1 — CTE × DTE × CTDE (raiz)
+* **[A-1](docs/11_code_audit.md#turn-control-defect)** — the low-level heading controller reads the wrong
+  axis, so turning is effectively saturated noise. Affects every trained policy. Left unfixed on purpose:
+  patching it invalidates all versioned results.
+* **[A-3](docs/11_code_audit.md#versioning)** — `.gitignore` patterns are root-anchored, so experiment 1's
+  data is excluded from the repository while experiment 2's is included. **Cloning this repo gives you no
+  way to recompute experiment 1's headline table.**
+* **[A-2](docs/11_code_audit.md#unbounded-transition-retention)** — a memory leak retains ~4.5 KB per env
+  step, which is survivable at 100k steps but reaches ~13.6 GB at the 3 M-step budget the code defaults
+  to.
 
-Compara três paradigmas MARL diferentes em execução/decisão.
+## The two experiments
 
-| Equipe | Paradigma | Descrição |
-|--------|-----------|-----------|
-| Equipe 1 | **CTE** | Centralized Training & Execution — ator e crítico centralizados (decisão única para a equipe) |
-| Equipe 2 | **DTE** | Decentraled Training & Execution — ator e crítico locais por agente |
-| Equipe 3 | **CTDE** | Centralized Training, Decentralized Execution — ator local, crítico global só no treino |
+| | Location | Compares | Tracking |
+|---|---|---|---|
+| **1** | repository root | CTE × DTE × CTDE | JSON / CSV / PNG under `data/` |
+| **2** | `ctde_arena/` | CTDE-VD × CTDE-CAC × CTDE-Comm | MLflow + `ctde_arena/data/` |
 
-### Treinar
+**Experiment 1 — training and execution paradigms.**
+
+| Team | Paradigm | Actor | Critic |
+|---|---|---|---|
+| Team 1 | CTE | joint state + slot | joint state |
+| Team 2 | DTE | local observation | own value head |
+| Team 3 | CTDE | local observation | joint state |
+
+**Experiment 2 — CTDE internals.**
+
+| Team | Paradigm | Idea |
+|---|---|---|
+| Team 1 | CTDE-VD | additive per-agent value terms (VDN-style) |
+| Team 2 | CTDE-CAC | centralised critic over the joint state (MAPPO-style) |
+| Team 3 | CTDE-Comm | differentiable mean-pooled messages (CommNet-style) |
+
+Each experiment is self-contained: its own `marl_arena` package, `.env`, `requirements.txt` and `data/`.
+Run all commands **from the experiment's own directory**.
+
+## Results at a glance
+
+Cumulative over the versioned 100k-step runs. See [§ Results](docs/08_results.md) for intervals,
+significance tests and the caveats — in particular, **no pairwise difference in Experiment 1 is
+statistically significant** on the recorded matches, and in Experiment 2 the only robust finding is that
+CTDE-Comm loses to both other arms.
+
+| Experiment | Team | Paradigm | Win rate | Elim./match | Mean survival | Shot accuracy |
+|---|---|---|---:|---:|---:|---:|
+| 1 | Team 1 | CTE | 27.39 % | 1.72 | 9.63 s | 8.10 % |
+| 1 | Team 2 | DTE | 25.43 % | 1.84 | 8.59 s | 8.13 % |
+| 1 | Team 3 | CTDE | 47.17 % | 3.42 | 9.93 s | 12.84 % |
+| 2 | Team 1 | CTDE-VD | 40.67 % | 2.50 | 10.20 s | 11.29 % |
+| 2 | Team 2 | CTDE-CAC | 42.89 % | 2.63 | 9.83 s | 12.33 % |
+| 2 | Team 3 | CTDE-Comm | 16.44 % | 1.96 | 7.47 s | 12.14 % |
+
+## Installation
+
+Requires Python 3.10+. Repeat for each experiment directory.
 
 ```bash
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1      # Windows PowerShell
+                                  # source .venv/bin/activate on POSIX
+pip install -r requirements.txt
+pip install pandas                # only for scripts/plot_metrics.py; not in requirements.txt
+```
+
+`.env` is tracked and identical to `.env.example`; copy the latter if you delete it.
+
+## Usage
+
+| Command | Run from | Effect |
+|---|---|---|
+| `python scripts/train_rl.py` | either | Train for `RL_TRAIN_TOTAL_STEPS` env steps |
+| `python main.py` | either | 3D arena with the versioned checkpoints, greedy actions |
+| `python -m pytest tests/ -q` | either | Test suite (**run the two separately**) |
+| `python scripts/plot_metrics.py` | either | `data/metrics/summary.json` → `exports/metrics/` |
+| `mlflow ui --backend-store-uri file:./mlruns` | `ctde_arena/` | Tracking UI |
+
+```bash
+# experiment 1
 python scripts/train_rl.py
-```
-
-Gera checkpoints e log de treino e atualiza o resumo de métricas ao final.
-
-### Executar a arena 3D (visual)
-
-```bash
 python main.py
-```
 
-Carrega os checkpoints e roda a simulação interativa. No fim de cada partida grava métricas e exporta o dashboard.
-
----
-
-## Experimento 2 — Variantes CTDE (`ctde_arena/`)
-
-Extensão autocontida que aprofunda dentro do paradigma **CTDE**, comparando três sub-abordagens:
-
-| Equipe | Paradigma | Descrição |
-|--------|-----------|-----------|
-| Equipe 1 | **CTDE-VD** | *Value Decomposition* (estilo VDN). O valor do time é decomposto na soma dos valores locais: \(V_{tot}(s)=\sum_{i=1}^{3} V_i(o_i)\). Ajuda na atribuição de crédito e estabiliza o gradiente. |
-| Equipe 2 | **CTDE-CAC** | Ator-Crítico Centralizado padrão (estilo **MAPPO**). Atores locais decidem; crítico estima valor do estado global completo. |
-| Equipe 3 | **CTDE-Comm** | Comunicação explícita (estilo **CommNet**). Atores trocam mensagens diferenciáveis durante a execução e usam crítico centralizado no treino. |
-
-### Treinar (com **MLflow**)
-
-```bash
+# experiment 2
 cd ctde_arena
 python scripts/train_rl.py
-```
-
-O treino registra hiperparâmetros, métricas por equipe ao longo dos steps, artefatos (plots) e checkpoints no **MLflow**.
-
-Para inspecionar no MLflow UI (runs, win-rate, gráficos e Model Registry):
-
-```bash
 mlflow ui --backend-store-uri file:./mlruns
 ```
 
-### Executar a arena 3D (visual)
+> **Running the test suites together fails at collection** (`pytest tests/ ctde_arena/tests/`), because
+> each tree prepends its own `src/` to `sys.path`. See
+> [§ Commands](docs/09_reproducibility.md#93-commands).
 
-```bash
-cd ctde_arena
-python main.py
+> **`train_rl.py` silently resumes from existing checkpoints** while resetting the step counter and
+> optimizer state ([A-4](docs/11_code_audit.md#silent-warm-start)). Delete `data/checkpoints/*.pt` first
+> if you want training from random initialisation.
+
+**Cost.** Measured at 185 env steps/s on CPU: the versioned 100k-step run is ≈ 9 minutes; a 3 M-step run
+is ≈ 4.5 hours (but currently blocked by [A-2](docs/11_code_audit.md#unbounded-transition-retention)).
+
+## Controls in the 3D view
+
+The window uses Ursina's `EditorCamera`: drag to orbit, scroll to zoom. The **Restart Match** button
+resets the arena. The right-hand panel is the legend; the top-left overlay lists per-agent status.
+
+## Configuration
+
+Every tunable is read from `.env` by `src/marl_arena/config.py`. The full table with defaults, ranges
+and units is in [§ Hyperparameters as trained](docs/06_optimisation_procedure.md#67-hyperparameters-as-trained)
+and [§ Match variants](docs/03_arena_system_model.md#36-match-variants-and-domain-randomisation).
+
+Note: `RL_TRAIN_TOTAL_STEPS` in the committed `.env` is **100,000** (what the shipped artefacts used);
+the code default when the variable is absent is 3,000,000. `RESPAWN_ENABLED` has no effect
+([A-16](docs/11_code_audit.md#dead-configuration)).
+
+## Repository layout
+
+```text
+.
+├── main.py                     # experiment 1: 3D arena
+├── scripts/
+│   ├── train_rl.py             # experiment 1: headless PPO training
+│   └── plot_metrics.py         # summary.json -> CSV/PNG (needs pandas)
+├── src/marl_arena/
+│   ├── config.py               # .env -> ArenaConfig
+│   ├── models.py               # snapshots, TeamMetrics.as_summary, MatchResult
+│   ├── controllers/            # base.py (features, waypoints), rl_controller.py (CTE/DTE/CTDE)
+│   ├── rl/                     # actions, buffer + GAE, networks, ppo
+│   ├── systems/                # match_variant, simulation, metrics, plotting
+│   └── ui/dashboard.py         # in-game overlay text
+├── tests/                      # 7 tests
+├── data/                       # experiment 1 artefacts — NOT versioned (see A-3)
+├── exports/metrics/            # derived charts (versioned)
+├── docs/                       # the full documentation set
+└── ctde_arena/                 # experiment 2: same engine, CTDE variants + MLflow
+    ├── main.py  Dockerfile  requirements.txt  README.md
+    ├── scripts/train_rl.py     # PPO + MLflow logging
+    ├── src/marl_arena/         # own copy; VD / CAC / Comm networks
+    ├── tests/test_components.py
+    └── data/                   # checkpoints, metrics, exports, mlflow_export — versioned
 ```
 
-Carrega os checkpoints de `ctde_arena/data/checkpoints` e roda a simulação interativa.
+## Output files
 
-### Docker
+| Path | Contents | Versioned |
+|---|---|---|
+| `data/checkpoints/team_N_<paradigm>.pt` | `{paradigm, actor, critic}` state dicts | exp. 2 only |
+| `data/checkpoints/training_log.json` | one mid-training snapshot per run | exp. 2 only |
+| `data/metrics/team_match_metrics.csv` | one row per team per recorded match | exp. 2 only |
+| `data/metrics/agent_match_metrics.csv` | one row per agent per recorded match | exp. 2 only |
+| `data/metrics/trajectory_metrics.csv` | one row per team per simulation step | exp. 2 only |
+| `data/metrics/summary.json` | cumulative aggregate behind the tables above | exp. 2 only |
+| `data/exports/comparative_dashboard.png` | four-panel cumulative comparison | exp. 2 only |
+| `data/mlflow_export/` | the 48 metric points that reached MLflow | yes |
 
-O sub-projeto contém um `Dockerfile` para rodar o treino de forma isolada.
+Schemas and the difference between "recorded" and "cumulative" matches:
+[§ Artefact schemas](docs/07_experimental_protocol.md#75-artefact-schemas).
+
+## Docker
 
 ```bash
 cd ctde_arena
@@ -101,244 +205,10 @@ docker build -t ctde-arena .
 docker run --rm -v ${PWD}/data:/app/data -v ${PWD}/mlruns:/app/mlruns ctde-arena
 ```
 
----
+The image installs OpenGL/X11 libraries but defaults to headless training. It has **not been built or
+run in this session** — see [§ Reproducibility](docs/09_reproducibility.md).
 
-## Instalação
+## Contact
 
-Pré-requisito: **Python 3.10+**. Execute a partir do diretório de cada experimento (raiz ou `ctde_arena/`).
-
-```bash
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1   # Windows PowerShell
-pip install -r requirements.txt
-```
-
-Em seguida, copie `.env.example` para `.env` e ajuste conforme necessário.
-
-Dependências principais:
-
-- raiz: `ursina 6.1.2`, `numpy 2.2.6`, `matplotlib 3.10.3`, `python-dotenv 1.0.1`, `torch 2.6.0`, `pytest 8.3.5`.
-- `ctde_arena/`: as mesmas + **`mlflow 2.17.2`**.
-
-> Observação: o script auxiliar `scripts/plot_metrics.py` (na raiz) usa **pandas**, que não está em `requirements.txt`. Instale com `pip install pandas` para usá-lo ou gere gráficos via `src/marl_arena/systems/plotting.py`.
-
----
-
-## Como usar
-
-Fluxo típico (para cada experimento, a partir do seu diretório):
-
-1. **Instalar** dependências e configurar `.env`.
-2. **Treinar** (opcional — o repo inclui checkpoints pré-treinados de 100.000 steps): `python scripts/train_rl.py`.
-3. **Rodar a arena 3D para avaliar/visualizar**: `python main.py`.
-
-Os dois experimentos expõem as mesmas entradas:
-
-| Comando | Função |
-|---------|--------|
-| `python scripts/train_rl.py` | Treina as políticas PPO (padrão configurado para 3M steps em `.env`, mas os checkpoints versionados usaram 100k) |
-| `python main.py` | Executa a arena 3D visual usando os checkpoints |
-
----
-
-## Resultados
-
-### Experimento 1 — CTE × DTE × CTDE
-
-Valores extraídos de `data/metrics/summary.json` (treino versionado: 100.000 steps, 463 partidas).
-
-| Equipe | Paradigma | Win rate | Elim./partida | Sobrevivência média (s) | Precisão de tiro |
-|--------|-----------|---------:|--------------:|-------------------------:|-----------------:|
-| Equipe 1 | CTE  | 27.39% | 1.72 | 9.63  | 8.10%  |
-| Equipe 2 | DTE  | 25.43% | 1.84 | 8.59  | 8.13%  |
-| Equipe 3 | CTDE | 47.17% | 3.42 | 9.93  | 12.84% |
-
-**Interpretação**
-
-- **Equipe 3 (CTDE)** tem o melhor desempenho geral: maior win rate, mais eliminações e melhor precisão de tiro.
-- Equipes 1 (CTE) e 2 (DTE) têm desempenho parecido, com win rates ~25–27% e precisão ~8%.
-
-### Experimento 2 — Variantes CTDE
-
-Valores extraídos de `ctde_arena/data/metrics/summary.json` (treino versionado: 100.000 steps, 456 partidas).
-
-| Equipe | Paradigma | Win rate | Elim./partida | Sobrevivência média (s) | Precisão de tiro |
-|--------|-----------|---------:|--------------:|-------------------------:|-----------------:|
-| Equipe 1 | CTDE-VD   | 40.67% | 2.50 | 10.20 | 11.29% |
-| Equipe 2 | CTDE-CAC  | 42.89% | 2.63 | 9.83  | 12.33% |
-| Equipe 3 | CTDE-Comm | 16.44% | 1.96 | 7.47  | 12.14% |
-
-**Análise e diagnóstico**
-
-O comportamento após 100.000 steps reflete as características arquiteturais internas:
-
-1. **Ator-Crítico Centralizado (CTDE-CAC / MAPPO)** — **42,89%**. O crítico centralizado vê o estado global completo de todos os 9 agentes, produzindo estimativas de valor com baixa variância e sinais de vantagem precisos para as políticas locais. Isso acelera o aprendizado nas fases iniciais.
-2. **Value Decomposition (CTDE-VD / VDN)** — **40,67%**. A decomposição do valor conjunto em soma de valores locais facilita a atribuição de crédito multi-agente e restringe a função de valor a observações locais, estabilizando o gradiente e reduzindo overfitting no início.
-3. **Comunicação Explícita (CTDE-Comm / CommNet)** — **16,44%**. A política depende de \([o_i, c_i]\) (observação local + mensagens recebidas). No início as mensagens são ruído; a política precisa aprender simultaneamente a agir e a desenvolver um protocolo de comunicação. Esse problema de aprendizado duplo exige muito mais steps (ex.: >500k–1M) para que as mensagens se tornem úteis.
-
-> Observação: o treino padrão em `.env` é 3.000.000 steps para os dois experimentos; os checkpoints e métricas versionados correspondem a execuções mais curtas (100.000 steps). Para treinar por mais tempo, ajuste `RL_TRAIN_TOTAL_STEPS` no `.env`.
-
----
-
-## Configuração (.env)
-
-Todas as variáveis (idênticas nos dois experimentos). Copie de `.env.example`.
-
-### Ambiente de simulação
-
-| Variável | Padrão | Descrição |
-|----------|--------|-----------|
-| `ARENA_SIZE` | 32 | Tamanho do lado da arena |
-| `MATCH_DURATION_SECONDS` | 90 | Duração máxima da partida (s) |
-| `RESPAWN_ENABLED` | false | Respawn de agentes (atualmente não implementado na simulação) |
-| `AGENT_MOVE_SPEED` | 4.5 | Velocidade de movimento dos agentes |
-| `AGENT_TURN_SPEED` | 110 | Velocidade de rotação (graus/s) |
-| `JUMP_SPEED` | 6.3 | Velocidade vertical de pulo |
-| `GRAVITY` | 14.0 | Gravidade |
-| `SHOOT_RANGE` | 20.0 | Alcance máximo de tiro |
-| `SHOOT_COOLDOWN` | 0.45 | Cooldown entre tiros (s) |
-| `RANDOM_SEED` | 7 | Semente de aleatoriedade |
-| `SIM_STEP_DT` | 0.1 | Passo de integração da simulação (s) |
-| `PLOT_UPDATE_INTERVAL` | 1.0 | (config auxiliar) Intervalo de atualização de gráficos |
-| `METRICS_FLUSH_INTERVAL` | 1.5 | (config auxiliar) Intervalo de escrita de métricas |
-| `DOMAIN_RANDOMIZATION` | true | Habilita randomização de domínio no treino |
-
-### Treino / Algoritmo (PPO / RL)
-
-| Variável | Padrão | Descrição |
-|----------|--------|-----------|
-| `RL_TRAIN_TOTAL_STEPS` | 3000000 | Total de env steps de treino |
-| `RL_SAVE_EVERY_STEPS` | 100000 | Salvar checkpoints a cada N steps |
-| `RL_LOG_EVERY_STEPS` | 50000 | Logar progresso a cada N steps |
-| `RL_METRICS_EVERY_MATCHES` | 10 | Registrar métricas a cada N partidas |
-| `RL_LEARNING_RATE` | 0.0003 | Taxa de aprendizado |
-| `RL_GAMMA` | 0.99 | Fator de desconto |
-| `RL_GAE_LAMBDA` | 0.95 | Lambda do GAE |
-| `RL_CLIP_EPS` | 0.2 | Clipping do PPO |
-| `RL_VALUE_COEF` | 0.5 | Coeficiente da perda de valor |
-| `RL_ENTROPY_COEF` | 0.01 | Coeficiente do bônus de entropia |
-| `RL_MAX_GRAD_NORM` | 0.5 | Clipping de gradiente |
-| `RL_PPO_EPOCHS` | 4 | Épocas de atualização por rollout |
-| `RL_BATCH_SIZE` | 256 | Tamanho do batch |
-| `RL_HIDDEN_DIM` | 128 | Largura das camadas ocultas |
-| `RL_DEVICE` | cpu | Dispositivo (`cpu`, `cuda`, `mps`) |
-
-### Domain Randomization (intervalos) — usado no treino
-
-| Variável | Padrão | Descrição |
-|----------|--------|-----------|
-| `DR_ARENA_SIZE_MIN` / `_MAX` | 28 / 36 | Tamanho da arena |
-| `DR_MATCH_DURATION_MIN` / `_MAX` | 60 / 120 | Duração da partida (s) |
-| `DR_MOVE_SPEED_MIN` / `_MAX` | 3.5 / 5.5 | Velocidade de movimento |
-| `DR_TURN_SPEED_MIN` / `_MAX` | 90 / 130 | Velocidade de rotação |
-| `DR_SHOOT_RANGE_MIN` / `_MAX` | 16 / 24 | Alcance de tiro |
-| `DR_SHOOT_COOLDOWN_MIN` / `_MAX` | 0.35 / 0.6 | Cooldown de tiro |
-| `DR_OBSTACLE_COUNT_MIN` / `_MAX` | 5 / 10 | Quantidade de obstáculos |
-
----
-
-## Estrutura do repositório
-
-```text
-.
-├── main.py                     # Arena 3D (experimento 1)
-├── scripts/
-│   ├── train_rl.py             # Treino (experimento 1)
-│   └── plot_metrics.py         # Gera gráficos/CSV a partir de data/metrics/summary.json (usa pandas)
-├── src/marl_arena/
-│   ├── config.py               # Configuração (env)
-│   ├── models.py               # Dataclasses (snapshots, métricas, etc.)
-│   ├── controllers/
-│   │   ├── base.py             # BaseTeamController, features
-│   │   └── rl_controller.py    # Paradigmas CTE/DTE/CTDE (experimento 1)
-│   ├── rl/
-│   │   ├── actions.py          # Espaço de ações e checkpoint I/O
-│   │   ├── buffer.py           # RolloutBuffer + GAE
-│   │   ├── networks.py         # ActorNetwork, Centralized_Critic etc.
-│   │   └── ppo.py              # PPOTrainer (updates actor-critic, ctde, cte)
-│   ├── systems/
-│   │   ├── match_variant.py    # Variantes de partida e randomização de domínio
-│   │   ├── simulation.py       # Lógica de física/combate
-│   │   ├── metrics.py          # MetricsStore (CSV/JSON + dashboard PNG)
-│   │   └── plotting.py         # Dashboard matplotlib de métricas acumuladas
-│   └── ui/
-│       └── dashboard.py        # Overlay in-game
-├── tests/
-│   ├── test_match_variant.py
-│   ├── test_rl_training.py
-│   └── test_rl_networks.py
-├── data/
-│   ├── checkpoints/            # *.pt por equipe (experimento 1)
-│   ├── metrics/                # *.csv e summary.json
-│   └── exports/                # dashboards PNG
-└── ctde_arena/                 # Experimento 2 (variantes CTDE)
-    ├── main.py
-    ├── Dockerfile
-    ├── scripts/train_rl.py     # Treino + MLflow
-    ├── src/marl_arena/         # Mesma engine; RL próprio (VD, CAC, Comm)
-    ├── tests/test_components.py
-    └── data/                   # checkpoints, metrics, exports próprios
-```
-
----
-
-## Arquivos de saída
-
-Cada experimento grava em **seu próprio** diretório `data/`:
-
-| Caminho | Conteúdo |
-|---------|----------|
-| `data/checkpoints/` | Checkpoints das políticas (`*.pt`) por equipe/paradigma |
-| `data/checkpoints/training_log.json` | Histórico de treino (steps, partidas, snapshot de métricas) |
-| `data/metrics/team_match_metrics.csv` | Métricas por equipe por partida |
-| `data/metrics/agent_match_metrics.csv` | Métricas por agente por partida |
-| `data/metrics/trajectory_metrics.csv` | Série temporal (vitorias/eliminações/precisão acumuladas) |
-| `data/metrics/summary.json` | **Resumo consolidado** das métricas (mostrado acima) |
-| `data/exports/*.png` | Dashboard(s) exportados (ex.: `comparative_dashboard.png`) |
-
-Notas: CSVs/JSON/PNG em `data/` são ignorados pelo git; os arquivos `.legacy*.*` são backups automáticos quando o esquema de CSV muda.
-
-Arquivos de métricas e checkpoint versionados usados neste README:
-
-- Experimento 1: `data/metrics/summary.json`
-- Experimento 2: `ctde_arena/data/metrics/summary.json`
-
----
-
-## Métricas e gráficos
-
-- **Dashboard automático** (ambos os experimentos): ao final de cada partida, `systems/plotting.py` gera `data/exports/comparative_dashboard.png` (win rate, eliminações acumuladas, sobrevivência média e precisão de tiro por partida).
-- **Gráficos rápidos (raiz)**: `python scripts/plot_metrics.py` lê `data/metrics/summary.json` e exporta CSV + PNG em `exports/metrics/` (requer **pandas**).
-- **MLflow (apenas `ctde_arena/`)**: o treino registra `win_rate`, `shot_accuracy`, `mean_survival_time` e `eliminations_per_match` por equipe ao longo dos steps, além dos plots e checkpoints como artefatos. UI: `mlflow ui --backend-store-uri file:./mlruns`.
-
----
-
-## Testes
-
-Execute a partir do diretório do experimento correspondente.
-
-```bash
-# Experimento 1 (3 testes: variante, treino curto, redes)
-python -m pytest tests/ -q
-
-# Experimento 2 (testes de componentes: VD critic e Comm actor)
-cd ctde_arena
-python -m pytest tests/ -q
-```
-
----
-
-## Próximos passos
-
-Ideias de aprofundamento (aplicáveis a ambos os experimentos):
-
-- Treinar com mais steps (o padrão `.env` é 3M; os resultados versionados usaram 100k), especialmente para o **CTDE-Comm**, que precisa de mais tempo.
-- Rodar avaliações com múltiplas seeds para validar a estabilidade estatística dos win-rates.
-- Registrar/plotar as estatísticas do PPO (policy/value loss, entropy) ao longo do treino — já calculadas em `PPOStats`, mas ainda não persistidas.
-- Expandir a cobertura de testes (PPO, buffer, métricas, colisões de projétil).
-
----
-
-## Contato
-
-Abra uma issue ou PR neste repositório para discutir experimentos, dúvidas ou melhorias.
+Open an issue or a pull request in this repository to discuss the experiments, the audit findings, or
+proposed fixes.

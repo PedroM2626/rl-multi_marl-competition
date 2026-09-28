@@ -1,123 +1,137 @@
-# CTDE Paradigm Comparison Arena
+# Experiment 2 — CTDE Variants Arena (`ctde_arena/`)
 
-Extensão autocontida (sub-projeto) do repositório [RL Multi MARL Competition](../README.md) que compara três **categorias de Aprendizado por Reforço Multi-Agente (MARL)** dentro da arquitetura **CTDE (Centralized Training with Decentralized Execution)**:
+Self-contained sub-project of [RL Multi MARL Competition](../README.md). It holds the engine, reward
+function and optimiser fixed at the **CTDE** paradigm and varies the architecture inside it, comparing
+three ways of giving three decentralised actors a learning signal:
 
-1. **Value Decomposition (CTDE-VD)** — estilo VDN. Decompõe o valor do time na soma de valores locais de cada agente: $V_{tot}(s) = \sum_{i=1}^{3} V_i(o_i)$.
-2. **Centralized Actor-Critic (CTDE-CAC)** — estilo MAPPO. Atores tomam ações com base em observações locais, e o crítico estima o valor do estado global completo.
-3. **Explicit Communication (CTDE-Comm)** — estilo CommNet. Atores descentralizados trocam mensagens diferenciáveis durante a execução, com crítico centralizado no treino.
+1. **CTDE-VD — Value Decomposition.** Team value is the sum of per-agent terms, in the spirit of VDN.
+2. **CTDE-CAC — Centralised Actor-Critic.** Local actors, one critic over the full joint state, in the
+   spirit of MAPPO.
+3. **CTDE-Comm — Explicit Communication.** Actors exchange differentiable, mean-pooled messages at
+   execution time, in the spirit of CommNet.
 
-Cada paradigma é representado por uma equipe na simulação (3 equipes × 3 agentes na mesma arena).
+Each paradigm controls one team; three teams of three agents fight in the same arena.
 
-> Visão unificada e resultados do outro experimento (CTE × DTE × CTDE) estão no [README raiz](../README.md). Este documento é autocontido para o experimento de variantes CTDE.
+> The parent repository's root is **Experiment 1**, which compares CTE × DTE × CTDE.
+> Full technical detail for both lives in [`docs/`](../docs/README.md). This document covers what is
+> specific to Experiment 2.
 
----
+## Status of this experiment
 
-## Índice
+| Aspect | State |
+|---|---|
+| Versioned 100k-step run | 456 matches, artefacts committed under `data/` |
+| Headline result | CTDE-CAC 42.89 % ≈ CTDE-VD 40.67 % ≫ CTDE-Comm 16.44 % win rate |
+| Statistically supported | **only** "Comm loses to both others" (p ≈ 0.001–0.002, survives Bonferroni) |
+| VD vs CAC | **not significant** (p = 0.674 on the 46 recorded matches) |
+| MLflow curves | **1 logged point** for the 100k run — see [A-9](../docs/11_code_audit.md#mlflow-cadence) |
+| Test coverage | **14 %** of statements; the two tests touch only the new network classes |
+| Multi-seed replication | not done |
+| Docker image | never built or run in this session |
 
-- [Arquitetura (descrição dos paradigmas)](#arquitetura-descrição-dos-paradigmas)
-- [Estrutura do sub-projeto](#estrutura-do-sub-projeto)
-- [Instalação](#instalação)
-- [Treinamento e MLOps com MLflow](#treinamento-e-mlops-com-mlflow)
-- [Executar a simulação visual (UI)](#executar-a-simulação-visual-ui)
-- [Uso com Docker](#uso-com-docker)
-- [Resultados do treinamento](#resultados-do-treinamento)
-- [Configuração (.env)](#configuração-env)
-- [Testes automatizados](#testes-automatizados)
-- [Próximos passos](#próximos-passos)
+Read [Results](../docs/08_results.md) and [Threats to validity](../docs/10_threats_to_validity.md)
+before quoting any number from here.
 
----
+## Architecture
 
-## Arquitetura (descrição dos paradigmas)
+| Team | Paradigm | Actor | Critic | Actor params | Critic params |
+|---|---|---|---|---:|---:|
+| Team 1 | CTDE-VD | `ActorNetwork` (local obs) | `ValueDecompositionCriticNetwork` | 35,337 | 17,281 |
+| Team 2 | CTDE-CAC | `ActorNetwork` (local obs) | `CentralizedCriticNetwork` (joint state) | 35,337 | 37,889 |
+| Team 3 | CTDE-Comm | `CommActorNetwork` (local obs + message) | `CentralizedCriticNetwork` (joint state) | 37,388 | 37,889 |
 
-| Equipe | Paradigma | Crítico | Ator | Observações principais |
-|--------|-----------|---------|------|-------------------------|
-| Equipe 1 | **CTDE-VD** | `ValueDecompositionCriticNetwork` (soma de $V_i(o_i)$ por agente) | `ActorNetwork` (local) | Bom équilibrio entre coordenação e atribuição de crédito; gradiente estável. |
-| Equipe 2 | **CTDE-CAC** | `CentralizedCriticNetwork` (estado global) | `ActorNetwork` (local) | Variância de valor baixa; aprendizado rápido em fases iniciais. |
-| Equipe 3 | **CTDE-Comm** | `CentralizedCriticNetwork` (estado global) | `CommActorNetwork` (local + mensagens) | Requer aprendizado simultâneo de ação e protocolo de comunicação. |
+Layer-by-layer specifications: [§ Network architectures](../docs/05_network_architectures.md).
 
-Implementações específicas (diferenças em relação à raiz):
+Two implementation facts that change how the comparison should be read:
 
-- `src/marl_arena/rl/networks.py` — adiciona `ValueDecompositionCriticNetwork` e `CommActorNetwork`.
-- `src/marl_arena/rl/ppo.py` — adiciona `update_ctde_vd` e `update_ctde_comm`.
-- `src/marl_arena/controllers/rl_controller.py` — seleção de paradigmas `CTDE-VD`/`CTDE-CAC`/`CTDE-Comm` e lógica de decisão para o caso de comunicação.
+* **`update_ctde_vd` is a one-line alias of `update_ctde`.** The only difference between the VD and CAC
+  arms is the critic's `forward` — and its input capacity, since VD's critic is half the size.
+  [§ 6.4](../docs/06_optimisation_procedure.md#64-the-three-update-paths).
+* **VD does not decompose over local observations.** The documented formula is
+  \(V_{\text{tot}}(s) = \sum_i V_i(o_i)\); the code computes \(\sum_i V_i(\text{slice}_i(s))\) from the
+  *global* vector, so it is not a decentralisable factorisation.
+  [§ 5.4](../docs/05_network_architectures.md#54-valuedecompositioncriticnetwork--additive-per-agent-critic-ctde-vd).
+* **Comm uses one communication round**, and dead allies contribute a learned non-zero constant message
+  because their observations are zero-filled rather than masked.
+  [§ 5.5](../docs/05_network_architectures.md#55-commactornetwork--one-round-differentiable-communication-ctde-comm).
 
----
+## Differences from the root experiment
 
-## Estrutura do sub-projeto
+Only these files differ from the root tree; the rest are byte-identical copies.
 
-```text
-ctde_arena/
-├── main.py                  # Arena 3D visual (Ursina)
-├── Dockerfile               # Build do container de treino
-├── README.md                # Este arquivo
-├── requirements.txt         # Inclui mlflow 2.17.2
-├── scripts/
-│   ├── train_rl.py          # Treino PPO (integrado ao MLflow)
-│   └── plot_metrics.py      # Gera CSV/PNG a partir de data/metrics/summary.json
-├── src/marl_arena/
-│   ├── config.py            # Mesma config da raiz (.env)
-│   ├── controllers/         # base.py, rl_controller.py (paradigmas CTDE-*)
-│   ├── rl/                  # actions, buffer, networks, ppo
-│   ├── systems/             # match_variant, simulation, metrics, plotting
-│   └── ui/                  # dashboard
-└── tests/
-    └── test_components.py   # Testes de sanidade das novas redes
-```
+| File | Change |
+|---|---|
+| `src/marl_arena/rl/networks.py` | adds `ValueDecompositionCriticNetwork`, `CommActorNetwork` |
+| `src/marl_arena/rl/ppo.py` | adds `update_ctde_vd`, `update_ctde_comm` |
+| `src/marl_arena/controllers/rl_controller.py` | paradigm selection and the Comm decision path |
+| `src/marl_arena/systems/match_variant.py` | `TEAM_META` labels; also drops `zip(..., strict=True)` |
+| `src/marl_arena/systems/simulation.py` | status-text lines only |
+| `scripts/train_rl.py` | MLflow run, params, metrics, artefacts, registered models |
+| `main.py` | legend text |
+| `requirements.txt` | adds `mlflow==2.17.2` |
+| `Dockerfile` | training container (root has none) |
 
----
+The full divergence list, including unintended drift, is
+[§ Cross-tree divergence](../docs/11_code_audit.md#cross-tree-divergence).
 
-## Instalação
+## Installation
 
 ```bash
 cd ctde_arena
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1   # Windows PowerShell
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
+pip install pandas                # only for scripts/plot_metrics.py
 ```
 
-Copie `.env.example` para `.env` e ajuste conforme necessário.
+Pinned: `ursina==6.1.2`, `numpy==2.2.6`, `matplotlib==3.10.3`, `python-dotenv==1.0.1`, `torch==2.6.0`,
+`pytest==8.3.5`, `mlflow==2.17.2`.
 
-Dependências (fixadas): `ursina==6.1.2`, `numpy==2.2.6`, `matplotlib==3.10.3`, `python-dotenv==1.0.1`, `torch==2.6.0`, `pytest==8.3.5`, `mlflow==2.17.2`.
-
----
-
-## Treinamento e MLOps com MLflow
-
-O treino é monitorado com **MLflow**: hiperparâmetros, logs de experimentos, métricas por equipe no decorrer dos steps, gráficos e modelos registrados no Model Registry.
+## Training and MLOps
 
 ```bash
-cd ctde_arena
 python scripts/train_rl.py
 ```
 
-A execução registra:
+The run registers, under experiment `CTDE_Comparison_Arena`, run `ppo_training_run`:
 
-- Parâmetros de configuração (todas as chaves simples de `CONFIG`);
-- Por equipe, a cada `RL_LOG_EVERY_STEPS`: `win_rate`, `shot_accuracy`, `mean_survival_time`, `eliminations_per_match`;
-- Artefatos de checkpoint e dashboards em `mlruns/` e em `data/…`.
-
-### MLflow UI
+* **43 scalar parameters** — every simple field of `CONFIG`;
+* **tags** `domain_randomization` and `device`;
+* **per team, per `RL_LOG_EVERY_STEPS`:** `<team>_win_rate`, `<team>_shot_accuracy`,
+  `<team>_mean_survival_time`, `<team>_eliminations_per_match`;
+* **artefacts:** `plots/`, `checkpoints/`, `logs/training_log.json`;
+* **Model Registry:** `CTDE_Arena_TEAM_1_ACTOR`, `..._TEAM_2_...`, `..._TEAM_3_...`.
 
 ```bash
 mlflow ui --backend-store-uri file:./mlruns
 ```
 
-Veja runs, win-rate das equipes, gráficos e modelos no Model Registry (nomes: `CTDE_Arena_*_Actor`).
+> **What the tracker actually contains.** The metric call sits inside the `RL_LOG_EVERY_STEPS` branch,
+> which is evaluated at a match boundary; with a 50,000-step cadence and a 100,000-step budget it fires
+> **once**, at step 50,793, and the loop then exits. The 100k run therefore has a single logged point per
+> metric and no learning curve. `mlruns/` is git-ignored; the 48 points that do exist are exported to
+> [`data/mlflow_export/`](../docs/07_experimental_protocol.md#73-runs-actually-performed) so the claim is
+> checkable. [A-9](../docs/11_code_audit.md#mlflow-cadence).
 
----
+The mid-training snapshot at 50,793 steps already reproduces the final ordering:
 
-## Executar a simulação visual (UI)
+| Team | Win rate @50,793 | Final cumulative |
+|---|---:|---:|
+| CTDE-VD | 0.4039 | 0.4067 |
+| CTDE-CAC | 0.4433 | 0.4289 |
+| CTDE-Comm | 0.1527 | 0.1644 |
+
+## Visual simulation
 
 ```bash
-cd ctde_arena
 python main.py
 ```
 
-Carrega os checkpoints e mostra a arena 3D interativa (botão “Reiniciar Partida” incluído).
+Loads `data/checkpoints/team_N_<paradigm>.pt` and runs the arena with greedy actions. The legend panel
+maps Team 1 → red / CTDE-VD, Team 2 → blue / CTDE-CAC, Team 3 → green / CTDE-Comm, and the obstacle
+colours. Orbit with `EditorCamera`; **Restart Match** resets.
 
----
-
-## Uso com Docker
+## Docker
 
 ```bash
 cd ctde_arena
@@ -125,65 +139,85 @@ docker build -t ctde-arena .
 docker run --rm -v ${PWD}/data:/app/data -v ${PWD}/mlruns:/app/mlruns ctde-arena
 ```
 
-O container executa `python scripts/train_rl.py` por padrão (headless) e inclui as dependências gráficas (OpenGL/X11) para eventual simulação.
+`python:3.10-slim` plus OpenGL/X11 libraries; `CMD` is headless training. **Not built or tested in this
+session** — treat as unverified.
 
----
+## Results
 
-## Resultados do treinamento
+Cumulative over 456 matches (the `summary.json` snapshot is taken at match 450).
 
-Valores consolidados em `data/metrics/summary.json` (treino versionado: 100.000 steps, 456 partidas).
+| Team | Paradigm | Win rate | Elim./match | Mean survival | Shot accuracy | Hits | Misses |
+|---|---|---:|---:|---:|---:|---:|---:|
+| Team 1 | CTDE-VD | 40.67 % | 2.50 | 10.20 s | 11.29 % | 1,125 | 8,843 |
+| Team 2 | CTDE-CAC | **42.89 %** | **2.63** | 9.83 s | **12.33 %** | 1,184 | 8,417 |
+| Team 3 | CTDE-Comm | 16.44 % | 1.96 | 7.47 s | 12.14 % | 883 | 6,390 |
 
-| Equipe | Paradigma | Win rate | Elim./partida | Sobrevivência média (s) | Precisão de tiro |
-|--------|-----------|---------:|--------------:|-------------------------:|-----------------:|
-| Equipe 1 | CTDE-VD   | 40.67% | 2.50 | 10.20 | 11.29% |
-| Equipe 2 | CTDE-CAC  | 42.89% | 2.63 | 9.83  | 12.33% |
-| Equipe 3 | CTDE-Comm | 16.44% | 1.96 | 7.47  | 12.14% |
+![Comparative dashboard](data/exports/comparative_dashboard.png)
 
-### Análise e diagnóstico
+### What the numbers support
 
-O comportamento após 100.000 passos reflete as características arquiteturais internas:
+**CTDE-Comm's deficit is a firing-volume deficit, not an aiming deficit.** Decomposing
+eliminations = shots × accuracy relative to CTDE-VD:
 
-1. **Ator-Crítico Centralizado (CTDE-CAC / MAPPO)** — **42,89%**. O crítico centralizado tem acesso ao estado global completo de todos os 9 agentes, fornecendo estimativas de valor com baixa variância e sinais de vantagem precisos às políticas locais. Isso acelera fortemente o aprendizado nas fases iniciais.
-2. **Value Decomposition (CTDE-VD / VDN)** — **40,67%**. A decomposição do valor conjunto em soma de valores locais ajuda na atribuição de crédito multi-agente e restringe a função de valor a observações locais, estabilizando o gradiente e reduzindo overfitting no início.
-3. **Comunicação Explícita (CTDE-Comm / CommNet)** — **16,44%**. A política depende de $[o_i, c_i]$ (observação local + mensagens). No início as mensagens são ruído; a política precisa aprender simultaneamente a agir e a desenvolver um protocolo de comunicação. Esse “aprendizado duplo” exige mais steps (ex.: >500k–1M) para produzir mensagens úteis.
+| Team | Shot volume | Accuracy | Product |
+|---|---:|---:|---:|
+| CTDE-CAC | ×0.963 | ×1.093 | ×1.052 |
+| CTDE-Comm | **×0.730** | **×1.076** | ×0.785 |
 
-> Observação: o alvo padrão em `.env` é `RL_TRAIN_TOTAL_STEPS=3000000`; os resultados versionados correspondem a execuções de 100.000 steps.
+Comm's accuracy (12.14 %) is *higher* than VD's (11.29 %) and within 0.2 points of CAC's. At VD's firing
+volume with its own accuracy, Comm would score **2.69 eliminations per match** — the best of the three.
+Whatever limits this arm, it acts through the decision to shoot or through dying earlier, not through
+missing. [§ 8.3](../docs/08_results.md#83-decomposing-the-elimination-gap).
 
----
+**Comm improved the most over training.** Splitting each team's 46 recorded matches at the midpoint:
 
-## Configuração (.env)
+| Team | First 23 | Last 23 | Change |
+|---|---:|---:|---:|
+| CTDE-VD | 0.478 | 0.348 | −0.130 |
+| CTDE-CAC | 0.478 | 0.435 | −0.043 |
+| CTDE-Comm | 0.043 | 0.217 | **+0.174** |
 
-Compartilha as mesmas variáveis da raiz. Documentação completa e todos os parâmetros (incluindo intervalos de *domain randomization*) em 
+This is consistent with the "learn to act and to communicate simultaneously" hypothesis — but it is also
+consistent with ordinary co-adaptation among three concurrently trained teams, and with n = 1 seed it
+cannot be resolved.
 
-- [README raiz — Configuração](../README.md#configuração-env)
+**VD vs CAC is a tie.** 2.2 points cumulative, 4.4 points on the recorded matches, p = 0.674.
 
-Resumo dos mais usados aqui:
+## Configuration
 
-| Variável | Padrão | Descrição |
-|----------|--------|-----------|
-| `RL_TRAIN_TOTAL_STEPS` | 3.000.000 | Alvo total de steps de treino |
-| `RL_SAVE_EVERY_STEPS` | 100.000 | Frequência de save/checkpoint |
-| `RL_LOG_EVERY_STEPS` | 50.000 | Frequência de logging/MLflow |
-| `RL_DEVICE` | cpu | `cpu`, `cuda` ou `mps` |
-| `RANDOM_SEED` | 7 | Semente |
+Same variables as the root experiment; the full table is in
+[§ Hyperparameters as trained](../docs/06_optimisation_procedure.md#67-hyperparameters-as-trained).
+The values that matter most here:
 
----
+| Variable | Committed value | Note |
+|---|---|---|
+| `RL_TRAIN_TOTAL_STEPS` | 100,000 | code default is 3,000,000 — the `.env` wins |
+| `RL_LOG_EVERY_STEPS` | 50,000 | with a 100k budget this yields one MLflow point |
+| `RL_METRICS_EVERY_MATCHES` | 10 | the CSVs hold one match in ten |
+| `RL_HIDDEN_DIM` | 128 | two Tanh layers |
+| `RL_DEVICE` | cpu | `cuda` / `mps` supported |
+| `RANDOM_SEED` | 7 | single seed; minibatch shuffling is unseeded regardless |
 
-## Testes automatizados
+## Tests
 
 ```bash
 cd ctde_arena
-python -m pytest tests/ -q
+python -m pytest tests/ -q        # 2 passed
 ```
 
-`tests/test_components.py` valida a forma e sanidade das tensores de `ValueDecompositionCriticNetwork` e `CommActorNetwork`.
+`tests/test_components.py` checks tensor shapes and finiteness for `ValueDecompositionCriticNetwork` and
+`CommActorNetwork`. Nothing else in this experiment is covered: the simulator, controllers, PPO trainers,
+metrics store and training script are all at 0 %.
+[§ Coverage](../docs/11_code_audit.md#coverage).
 
----
+## Open work for this experiment
 
-## Próximos passos
-
-Como o objetivo principal é avaliar se CTDE-Comm ultrapassa os outros métodos com treino prolongado:
-
-- Re-treinar com 3M steps (ou mais) no `.env` e reavaliar os win-rates.
-- Rodar múltiplas seeds para estabilidade estatística.
-- Registrar as estatísticas do PPO (policy/value loss, entropy) no MLflow.
+1. Fix [A-2](../docs/11_code_audit.md#unbounded-transition-retention) (memory leak), then run
+   5 seeds × 3 M steps — ≈ 22.5 h of CPU time for the whole study.
+2. Lower `RL_LOG_EVERY_STEPS` (or move the MLflow call outside the boundary check) so a run produces an
+   actual curve.
+3. Add a held-out greedy evaluation: 200 fixed-variant matches per pairing.
+4. Mask dead allies in `CommActorNetwork` instead of zero-filling their observations.
+5. Match critic capacity across VD and CAC before interpreting that contrast.
+6. Report shots per second-of-alive-life per agent — the only measurement that separates "Comm shoots
+   less" from "Comm dies sooner".
