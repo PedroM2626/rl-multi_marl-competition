@@ -6,11 +6,16 @@ change to a column, a denominator or the plotting filter would not have been cau
 
 from __future__ import annotations
 
+import os
 import sys
 import warnings
 from pathlib import Path
 
 import pytest
+
+# plotting.py imports pyplot at module scope, which selects a GUI backend; force the headless one
+# before that import happens.
+os.environ["MPLBACKEND"] = "Agg"
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SRC_DIR = PROJECT_ROOT / "src"
@@ -102,9 +107,6 @@ def test_dashboard_series_only_keeps_known_team_prefix(tmp_path: Path) -> None:
 
 
 def test_dashboard_png_is_written(tmp_path: Path) -> None:
-    import matplotlib
-
-    matplotlib.use("Agg")
     store = MetricsStore(metrics_dir=tmp_path, exports_dir=tmp_path / "exports")
     store.record_match(_result(TEAM_ROWS), _cumulative())
     outputs = export_metric_dashboard(store.team_metrics_csv, tmp_path / "exports")

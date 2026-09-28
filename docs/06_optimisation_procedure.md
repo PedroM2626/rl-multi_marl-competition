@@ -186,8 +186,11 @@ the 43 parameters recorded in the MLflow store
 | | `RL_METRICS_EVERY_MATCHES` | 10 |
 | | device | cpu |
 
-> The code default for `RL_TRAIN_TOTAL_STEPS` is 3,000,000 and several documents state that this is
-> "the standard configuration". The committed `.env` overrides it to 100,000, which is what the
-> versioned artefacts were produced with. The discrepancy is resolved in
-> [§ Code audit](11_code_audit.md#configuration-claims) — the `.env` is authoritative for the shipped
-> results.
+> The code default for `RL_TRAIN_TOTAL_STEPS` is 3,000,000 and the historical documentation stated that
+> this was "the standard configuration". The committed `.env` overrides it to 100,000, which is what the
+> historical artefacts were produced with. The discrepancy is resolved in
+> [§ Code audit](11_code_audit.md#configuration-claims) — the `.env` is authoritative for those runs.
+>
+> The replicated study does not use `.env` at all: `scripts/run_experiment.py` takes `--steps` and sets
+> `RL_TRAIN_TOTAL_STEPS` in the process environment, so a replicate's budget is recorded in its own
+> `run_summary.json` rather than inherited from a shared file.

@@ -14,8 +14,8 @@ repository (2026-09-27 localisation commit, or the subsequent defect-fix and rep
 | [A-2](#unbounded-transition-retention) | FIXED | `BaseTeamController.transitions` grew without bound; blocked long runs |
 | [A-3](#versioning) | FIXED | Root-anchored `.gitignore` excluded experiment 1's results and included experiment 2's |
 | [A-4](#silent-warm-start) | MED | Training silently resumes from versioned weights while resetting the step counter and optimizer |
-| [A-5](#test-suite-never-updates) | MED | The "and update" test never reaches a PPO update |
-| [A-6](#coverage) | MED | 73 % / 14 % statement coverage; `ppo.py` is 26 % / 16 % |
+| [A-5](#test-suite-never-updates) | FIXED | The "and update" test never reached a PPO update |
+| [A-6](#coverage) | MOSTLY FIXED | Coverage raised from 73 % / 14 % to 93 % / 88 % |
 | [A-7](#terminal-state-crash) | MED | `IndexError` when stepping in an already-decided state |
 | [A-8](#unseeded-minibatch-shuffle) | PARTIAL | Library code still never seeds NumPy/Torch; the study runner does |
 | [A-9](#mlflow-cadence) | MED | MLflow logging fires once per 100 k-step run; no learning curve exists |
@@ -143,50 +143,62 @@ so pointing it at a fresh directory guarantees a run from random initialisation.
 
 ## Test suite never updates
 
-**A-5 · MED**
+**A-5 · MED · FIXED**
 
-`tests/test_rl_training.py::test_rl_controllers_collect_rollouts_and_update` sets
-`MATCH_DURATION_SECONDS=5` and loops for 30 env steps at `dt = 0.1`. Termination by duration needs 50
+`tests/test_rl_training.py::test_rl_controllers_collect_rollouts_and_update` set
+`MATCH_DURATION_SECONDS=5` and looped for 30 env steps at `dt = 0.1`. Termination by duration needs 50
 steps; termination by wipeout needs someone to die.
 
 ```
 test loop: steps taken=30, match terminated within 30 steps? False
 ```
 
-`finish_match()` is therefore never called, `finish_rl_episode` never runs, and no PPO gradient step is
-ever taken. The test validates rollout *collection* and checkpoint *writing* only. Its name overstates
-what it proves, and the coverage figures below are the consequence.
+`finish_match()` was therefore never called, `finish_rl_episode` never ran, and no PPO gradient step was
+ever taken. The test validated rollout *collection* and checkpoint *writing* only. Its name overstated
+what it proved, and the coverage figures below are the consequence.
+
+**Resolution.** `test_match_termination_triggers_a_real_ppo_update` now loops until two matches have
+ended and asserts that every team's actor and critic tensors changed after `finish_match()`, and that the
+buffer was cleared. The original test survives as `test_rl_controllers_collect_rollouts_and_save`, with
+its buffer assertion made against the peak observed size rather than the end state (a match can legitimately
+terminate and flush within 30 steps, which made the naive assertion flaky).
 
 ## Coverage
 
-**A-6 · MED**
+**A-6 · MED · largely closed**
 
-Measured with `coverage run --source=src`:
+Measured with `coverage run --source=src`, before and after the tests added on 2026-09-28:
 
-| Module | Experiment 1 | Experiment 2 |
-|---|---:|---:|
-| `rl/ppo.py` | **26 %** | **16 %** |
-| `rl/buffer.py` | 49 % | 47 % |
-| `systems/simulation.py` | 87 % | **0 %** |
-| `systems/metrics.py` | **0 %** | **0 %** |
-| `systems/plotting.py` | **0 %** | **0 %** |
-| `controllers/rl_controller.py` | 73 % | **0 %** |
-| `systems/match_variant.py` | 98 % | **0 %** |
-| `ui/dashboard.py` | 0 % | 0 % |
-| **total** | **73 %** | **14 %** |
+| Module | Exp. 1 before | Exp. 1 after | Exp. 2 before | Exp. 2 after |
+|---|---:|---:|---:|---:|
+| `rl/ppo.py` | **26 %** | **97 %** | **16 %** | 62 % |
+| `rl/buffer.py` | 49 % | **100 %** | 47 % | **100 %** |
+| `rl/networks.py` | 84 % | **100 %** | 64 % | **100 %** |
+| `systems/simulation.py` | 87 % | 92 % | **0 %** | 93 % |
+| `systems/metrics.py` | **0 %** | 87 % | **0 %** | 87 % |
+| `systems/plotting.py` | **0 %** | 89 % | **0 %** | 89 % |
+| `controllers/rl_controller.py` | 73 % | 92 % | **0 %** | 85 % |
+| `controllers/base.py` | 91 % | 90 % | 91 % | 90 % |
+| **total** | **73 %** | **93 %** | **14 %** | **88 %** |
 
-Experiment 2's two tests exercise only the shape of two new network classes; the entire simulator,
-controller and training path is untouched by them.
+Test count went from 9 to 69 (36 and 33). The additions that mattered:
 
-Not covered anywhere, in either tree:
+* `test_control_law.py` pins the A-1 fix, including a closed-loop check that repeated application of the
+  commanded turn actually converges on the target bearing.
+* The training tests now terminate real matches and assert that every team's actor and critic parameters
+  **move** after `finish_match()` — the first assertion in the repository that training trains. This is
+  what took `ppo.py` from 26 % to 97 %.
+* `test_metrics_store.py` covers CSV append, the summary denominators, schema rotation and the A-19
+  prefix filter — the code that produces every number in this documentation set.
+* A greedy-evaluation test drives `decide()` with training off, which is the branch the held-out study
+  runs entirely through and which nothing had ever executed.
 
-* `RolloutBuffer.compute_returns` — the GAE recursion, i.e. the core learning signal;
-* every `PPOTrainer.update_*` method — the policy gradient step;
-* `_segment_intersects_aabb` and the four collision queries — no geometric ground truth is asserted;
-* `MetricsStore` — CSV append, schema rotation, summary writing;
-* `export_metric_dashboard` — including the filter in A-19;
-* `ArenaSimulation.finish_match` — winner assignment and row construction;
-* `main.py`, both `train_rl.py` scripts, both `plot_metrics.py` scripts.
+**Residual gaps.** `ui/dashboard.py` is 0 % (it only formats overlay text). Experiment 2's `ppo.py` is
+capped at 62 % for a structural reason worth naming: `update_actor_critic` and `update_cte` are the DTE
+and CTE paths, and experiment 2 configures none of its three teams as DTE or CTE, so **78 statements in
+that file are unreachable in that tree**. They are not bugs, they are the cost of forking the engine
+([§ Cross-tree divergence](#cross-tree-divergence)) — but they mean experiment 2's headline coverage
+number understates how much of its own live code is tested.
 
 ## Terminal-state crash
 

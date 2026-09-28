@@ -73,14 +73,17 @@ def test_rl_controllers_collect_rollouts_and_save(tmp_path: Path) -> None:
     simulation = ArenaSimulation(seed=99, domain_randomization=True)
     set_rl_training(simulation.controllers, True)
     target = 30
+    peak = {name: 0 for name in simulation.controllers}
     while simulation.total_env_steps < target:
         if simulation.step(0.1):
             simulation.finish_match()
             simulation.reset_match()
+        for name, controller in simulation.controllers.items():
+            peak[name] = max(peak[name], len(controller.buffer))
 
     for controller in simulation.controllers.values():
         assert isinstance(controller, RLTeamController)
-        assert len(controller.buffer) > 0, "no rollout rows were collected"
+    assert all(count > 0 for count in peak.values()), f"no rollout rows collected: {peak}"
 
     # Save into tmp_path: writing to CONFIG.rl_checkpoint_dir would overwrite the versioned policies.
     for controller in simulation.controllers.values():
@@ -88,3 +91,29 @@ def test_rl_controllers_collect_rollouts_and_save(tmp_path: Path) -> None:
     for paradigm in ("cte", "dte", "ctde"):
         matches = list(tmp_path.glob(f"*_{paradigm}.pt"))
         assert matches, f"Checkpoint {paradigm} was not saved."
+
+
+def test_greedy_evaluation_is_deterministic_and_collects_nothing(tmp_path: Path) -> None:
+    """The held-out evaluation in scripts/run_experiment.py runs entirely through the greedy branch of
+    decide(), which is otherwise never exercised."""
+    from marl_arena.controllers.base import ControllerContext
+
+    simulation = ArenaSimulation(seed=3, domain_randomization=False)
+    set_rl_training(simulation.controllers, False)
+    snapshots = simulation.build_snapshots()
+    context = ControllerContext(step_index=1, arena_size=simulation.match_variant.arena_size,
+                                time_delta=0.1, shoot_range=simulation.match_variant.shoot_range)
+
+    for controller in simulation.controllers.values():
+        agent = next(a for a in simulation.agents if a.team_name == controller.team_name)
+        first = controller.decide(agent.snapshot(), snapshots, context)
+        second = controller.decide(agent.snapshot(), snapshots, context)
+        assert first.move == second.move and first.turn == second.turn
+        assert first.shoot == second.shoot, "greedy actions must not vary between identical calls"
+        assert not controller.pending_steps, "evaluation must not queue rollout steps"
+
+    for _ in range(20):
+        if simulation.step(0.1):
+            break
+    for controller in simulation.controllers.values():
+        assert len(controller.buffer) == 0, "evaluation must not accumulate a rollout buffer"
