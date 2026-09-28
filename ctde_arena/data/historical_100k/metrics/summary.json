@@ -1,0 +1,34 @@
+{
+  "teams": [
+    {
+      "team_name": "Team 1",
+      "paradigm": "CTDE-VD",
+      "win_rate": 0.4066666666666667,
+      "eliminations_per_match": 2.5,
+      "mean_survival_time": 10.202666666666646,
+      "shots_hit": 1125,
+      "shots_missed": 8843,
+      "shot_accuracy": 0.11286115569823435
+    },
+    {
+      "team_name": "Team 2",
+      "paradigm": "CTDE-CAC",
+      "win_rate": 0.4288888888888889,
+      "eliminations_per_match": 2.631111111111111,
+      "mean_survival_time": 9.8299259259259,
+      "shots_hit": 1184,
+      "shots_missed": 8417,
+      "shot_accuracy": 0.12332048744922404
+    },
+    {
+      "team_name": "Team 3",
+      "paradigm": "CTDE-Comm",
+      "win_rate": 0.16444444444444445,
+      "eliminations_per_match": 1.9622222222222223,
+      "mean_survival_time": 7.4697777777777565,
+      "shots_hit": 883,
+      "shots_missed": 6390,
+      "shot_accuracy": 0.12140794720197992
+    }
+  ]
+}

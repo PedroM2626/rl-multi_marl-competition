@@ -102,6 +102,15 @@ class RLTeamController(BaseTeamController):
     def _load_if_exists(self) -> None:
         path = self._checkpoint_path()
         if not path.exists():
+            # Checkpoint names carry the paradigm of the slot that trained it, and the slot depends on
+            # paradigm_rotation = seed % 3. A seed whose rotation differs from the shipped policies' looks
+            # for files that do not exist, so say so instead of demoing a random network in silence.
+            siblings = sorted(p.name for p in path.parent.glob("*.pt")) if path.parent.is_dir() else []
+            warnings.warn(
+                f"No checkpoint at {path.name}; {self.team_name} ({self.paradigm}) starts from random "
+                f"initialisation. The slot-to-paradigm mapping depends on seed % 3, and "
+                f"{path.parent} holds {siblings or 'no policies'}."
+            )
             return
         payload = load_checkpoint(path, self.device)
         expected = self.actor.state_dict() if self.actor is not None else {}

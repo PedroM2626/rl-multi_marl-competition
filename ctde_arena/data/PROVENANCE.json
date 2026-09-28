@@ -1,0 +1,194 @@
+{
+  "promoted_run": "exp2_seed2",
+  "selection": "median: least L1 distance to the per-arm study means",
+  "note": "These artefacts are one replicate of the study in results/study/. A single replicate is not evidence about the ranking: see the per-seed matrix in docs/08_results.md before reading the win rates below as a result.",
+  "summary": {
+    "seed": 2,
+    "target_steps": 500000,
+    "completed_steps": 500000,
+    "matches_played": 4342,
+    "train_seconds": 5974.8,
+    "evaluation_seconds": 1006.1,
+    "steps_per_second": 83.7,
+    "device": "cpu",
+    "paradigm_rotation": 2,
+    "paradigms": {
+      "Team 1": "CTDE-Comm",
+      "Team 2": "CTDE-VD",
+      "Team 3": "CTDE-CAC"
+    },
+    "training_cumulative": {
+      "Team 1": {
+        "team_name": "Team 1",
+        "paradigm": "CTDE-Comm",
+        "win_rate": 0.39207555862704446,
+        "eliminations_per_match": 2.370882285187745,
+        "mean_survival_time": 5.742447976656663,
+        "shots_hit": 10292,
+        "shots_missed": 117275,
+        "shot_accuracy": 0.08067917251326753
+      },
+      "Team 2": {
+        "team_name": "Team 2",
+        "paradigm": "CTDE-VD",
+        "win_rate": 0.34623358673116794,
+        "eliminations_per_match": 2.28242340474545,
+        "mean_survival_time": 5.696398679259764,
+        "shots_hit": 9908,
+        "shots_missed": 122759,
+        "shot_accuracy": 0.074683229439122
+      },
+      "Team 3": {
+        "team_name": "Team 3",
+        "paradigm": "CTDE-CAC",
+        "win_rate": 0.253167472932504,
+        "eliminations_per_match": 2.3542962451048144,
+        "mean_survival_time": 4.880534439069333,
+        "shots_hit": 10220,
+        "shots_missed": 103270,
+        "shot_accuracy": 0.09005198695920345
+      }
+    },
+    "held_out_greedy": {
+      "matches": 150,
+      "median_duration_seconds": 90.09999999999916,
+      "per_team": {
+        "Team 1": {
+          "win_rate": 0.25333333333333335,
+          "eliminations_per_match": 1.3666666666666667,
+          "mean_survival_time": 21.8077777777776,
+          "shots_per_match": 130.84666666666666,
+          "shot_accuracy": 0.010444795434860142
+        },
+        "Team 2": {
+          "win_rate": 0.36666666666666664,
+          "eliminations_per_match": 1.0466666666666666,
+          "mean_survival_time": 38.99111111111078,
+          "shots_per_match": 213.79333333333332,
+          "shot_accuracy": 0.004895693660544451
+        },
+        "Team 3": {
+          "win_rate": 0.3333333333333333,
+          "eliminations_per_match": 3.3333333333333335,
+          "mean_survival_time": 24.42733333333313,
+          "shots_per_match": 136.18,
+          "shot_accuracy": 0.02447740735301317
+        }
+      }
+    },
+    "curve": [
+      {
+        "env_steps": 125033,
+        "fraction": 0.25,
+        "elapsed_seconds": 2335.5,
+        "per_team": {
+          "Team 1": {
+            "win_rate": 0.025,
+            "eliminations_per_match": 0.325,
+            "mean_survival_time": 11.494166666666619,
+            "shots_per_match": 26.5,
+            "shot_accuracy": 0.012264150943396227
+          },
+          "Team 2": {
+            "win_rate": 0.675,
+            "eliminations_per_match": 4.125,
+            "mean_survival_time": 16.061666666666557,
+            "shots_per_match": 96.55,
+            "shot_accuracy": 0.04272397721387882
+          },
+          "Team 3": {
+            "win_rate": 0.3,
+            "eliminations_per_match": 2.375,
+            "mean_survival_time": 14.507499999999919,
+            "shots_per_match": 82.375,
+            "shot_accuracy": 0.028831562974203338
+          }
+        }
+      },
+      {
+        "env_steps": 250427,
+        "fraction": 0.5,
+        "elapsed_seconds": 4485.5,
+        "per_team": {
+          "Team 1": {
+            "win_rate": 0.05,
+            "eliminations_per_match": 0.175,
+            "mean_survival_time": 70.34583333333266,
+            "shots_per_match": 4.675,
+            "shot_accuracy": 0.0374331550802139
+          },
+          "Team 2": {
+            "win_rate": 0.825,
+            "eliminations_per_match": 1.65,
+            "mean_survival_time": 87.35499999999914,
+            "shots_per_match": 428.25,
+            "shot_accuracy": 0.003852889667250438
+          },
+          "Team 3": {
+            "win_rate": 0.0,
+            "eliminations_per_match": 0.0,
+            "mean_survival_time": 62.4791666666661,
+            "shots_per_match": 1.1,
+            "shot_accuracy": 0.0
+          }
+        }
+      },
+      {
+        "env_steps": 375004,
+        "fraction": 0.75,
+        "elapsed_seconds": 5841.2,
+        "per_team": {
+          "Team 1": {
+            "win_rate": 0.375,
+            "eliminations_per_match": 1.85,
+            "mean_survival_time": 44.49916666666631,
+            "shots_per_match": 253.05,
+            "shot_accuracy": 0.007310808140683659
+          },
+          "Team 2": {
+            "win_rate": 0.325,
+            "eliminations_per_match": 0.05,
+            "mean_survival_time": 66.97166666666607,
+            "shots_per_match": 3.35,
+            "shot_accuracy": 0.014925373134328358
+          },
+          "Team 3": {
+            "win_rate": 0.275,
+            "eliminations_per_match": 1.775,
+            "mean_survival_time": 51.524166666666225,
+            "shots_per_match": 10.925,
+            "shot_accuracy": 0.16247139588100687
+          }
+        }
+      },
+      {
+        "env_steps": 500000,
+        "fraction": 1.0,
+        "elapsed_seconds": 5974.8,
+        "per_team": {
+          "Team 1": {
+            "win_rate": 0.25333333333333335,
+            "eliminations_per_match": 1.3666666666666667,
+            "mean_survival_time": 21.8077777777776,
+            "shots_per_match": 130.84666666666666,
+            "shot_accuracy": 0.010444795434860142
+          },
+          "Team 2": {
+            "win_rate": 0.36666666666666664,
+            "eliminations_per_match": 1.0466666666666666,
+            "mean_survival_time": 38.99111111111078,
+            "shots_per_match": 213.79333333333332,
+            "shot_accuracy": 0.004895693660544451
+          },
+          "Team 3": {
+            "win_rate": 0.3333333333333333,
+            "eliminations_per_match": 3.3333333333333335,
+            "mean_survival_time": 24.42733333333313,
+            "shots_per_match": 136.18,
+            "shot_accuracy": 0.02447740735301317
+          }
+        }
+      }
+    ]
+  }
+}
