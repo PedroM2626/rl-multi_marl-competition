@@ -9,11 +9,29 @@ import numpy as np
 from marl_arena.config import ArenaConfig
 
 
-TEAM_META: tuple[tuple[str, str, tuple[float, float, float]], ...] = (
-    ("Team 1", "CTDE-VD", (0.92, 0.25, 0.25)),
-    ("Team 2", "CTDE-CAC", (0.25, 0.55, 0.95)),
-    ("Team 3", "CTDE-Comm", (0.25, 0.88, 0.45)),
+TEAM_NAMES: tuple[str, ...] = ("Team 1", "Team 2", "Team 3")
+TEAM_COLORS: tuple[tuple[float, float, float], ...] = (
+    (0.92, 0.25, 0.25),
+    (0.25, 0.55, 0.95),
+    (0.25, 0.88, 0.45),
 )
+PARADIGM_CYCLE: tuple[str, ...] = ("CTDE-VD", "CTDE-CAC", "CTDE-Comm")
+
+
+def paradigm_assignment(rotation: int = 0) -> dict[str, str]:
+    """Rotate which paradigm sits in which team slot.
+
+    A slot carries a spawn corner, a controller seed offset and a position in the construction order,
+    so with a fixed mapping a persistent slot effect is indistinguishable from an architecture effect.
+    rotation=0 reproduces the original assignment.
+    """
+    count = len(TEAM_NAMES)
+    return {name: PARADIGM_CYCLE[(index + rotation) % count] for index, name in enumerate(TEAM_NAMES)}
+
+
+def team_meta(rotation: int = 0) -> tuple[tuple[str, str, tuple[float, float, float]], ...]:
+    assignment = paradigm_assignment(rotation)
+    return tuple((name, assignment[name], color) for name, color in zip(TEAM_NAMES, TEAM_COLORS, strict=True))
 
 AGENT_FORMATION_OFFSETS: tuple[np.ndarray, ...] = (
     np.array([-1.7, 0.0, 0.0], dtype=float),
@@ -171,7 +189,7 @@ def _default_obstacle_specs() -> tuple[ObstacleSpec, ...]:
     )
 
 
-def _default_team_spawns(config: ArenaConfig) -> tuple[TeamSpawnSpec, ...]:
+def _default_team_spawns(config: ArenaConfig, rotation: int = 0) -> tuple[TeamSpawnSpec, ...]:
     margin = config.arena_size * 0.32
     centers = (
         np.array([-margin, 1.0, -margin], dtype=float),
@@ -179,12 +197,12 @@ def _default_team_spawns(config: ArenaConfig) -> tuple[TeamSpawnSpec, ...]:
         np.array([0.0, 1.0, margin], dtype=float),
     )
     spawns: list[TeamSpawnSpec] = []
-    for (team_name, paradigm, color), center in zip(TEAM_META, centers, strict=True):
+    for (team_name, paradigm, color), center in zip(team_meta(rotation), centers, strict=True):
         spawns.append(TeamSpawnSpec(team_name, paradigm, center, color))
     return tuple(spawns)
 
 
-def create_default_variant(config: ArenaConfig, variant_id: int = 0) -> MatchVariant:
+def create_default_variant(config: ArenaConfig, variant_id: int = 0, rotation: int = 0) -> MatchVariant:
     return MatchVariant(
         variant_id=variant_id,
         arena_size=config.arena_size,
@@ -193,7 +211,7 @@ def create_default_variant(config: ArenaConfig, variant_id: int = 0) -> MatchVar
         agent_turn_speed=config.agent_turn_speed,
         shoot_range=config.shoot_range,
         shoot_cooldown=config.shoot_cooldown,
-        team_spawns=_default_team_spawns(config),
+        team_spawns=_default_team_spawns(config, rotation),
         obstacles=_default_obstacle_specs(),
     )
 
@@ -233,7 +251,9 @@ def _spawn_far_enough(centers: Sequence[np.ndarray], candidate: np.ndarray, min_
     return True
 
 
-def _sample_team_spawns(rng: random.Random, arena_size: float, obstacles: Sequence[ObstacleSpec]) -> tuple[TeamSpawnSpec, ...]:
+def _sample_team_spawns(
+    rng: random.Random, arena_size: float, obstacles: Sequence[ObstacleSpec], rotation: int = 0
+) -> tuple[TeamSpawnSpec, ...]:
     margin = arena_size * rng.uniform(0.26, 0.36)
     min_sep = arena_size * 0.38
     candidates = [
@@ -261,7 +281,7 @@ def _sample_team_spawns(rng: random.Random, arena_size: float, obstacles: Sequen
     while len(chosen) < 3:
         chosen.append(np.array([rng.uniform(-6, 6), 1.0, rng.uniform(-6, 6)], dtype=float))
     spawns: list[TeamSpawnSpec] = []
-    for (team_name, paradigm, color), center in zip(TEAM_META, chosen[:3], strict=True):
+    for (team_name, paradigm, color), center in zip(team_meta(rotation), chosen[:3], strict=True):
         spawns.append(TeamSpawnSpec(team_name, paradigm, center, color))
     return tuple(spawns)
 
@@ -344,10 +364,12 @@ def _sample_obstacle_specs(rng: random.Random, arena_size: float, config: ArenaC
     return tuple(specs)
 
 
-def sample_training_variant(rng: random.Random, config: ArenaConfig, variant_id: int) -> MatchVariant:
+def sample_training_variant(
+    rng: random.Random, config: ArenaConfig, variant_id: int, rotation: int = 0
+) -> MatchVariant:
     arena_size = rng.uniform(config.dr_arena_size_min, config.dr_arena_size_max)
     obstacles = _sample_obstacle_specs(rng, arena_size, config)
-    team_spawns = _sample_team_spawns(rng, arena_size, obstacles)
+    team_spawns = _sample_team_spawns(rng, arena_size, obstacles, rotation)
     return MatchVariant(
         variant_id=variant_id,
         arena_size=arena_size,

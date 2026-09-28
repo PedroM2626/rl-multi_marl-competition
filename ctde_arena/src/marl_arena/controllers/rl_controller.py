@@ -9,6 +9,7 @@ import torch
 
 from marl_arena.config import CONFIG
 from marl_arena.controllers.base import BaseTeamController, ControllerContext
+from marl_arena.systems.match_variant import paradigm_assignment
 from marl_arena.models import AgentSnapshot, StepDecision, TransitionRecord
 from marl_arena.rl.actions import (
     GLOBAL_OBS_DIM,
@@ -21,13 +22,7 @@ from marl_arena.rl.actions import (
 from marl_arena.rl.buffer import RolloutBuffer, RolloutStep
 from marl_arena.rl.networks import ActorNetwork, CentralizedActorNetwork, CentralizedCriticNetwork, ValueDecompositionCriticNetwork, CommActorNetwork
 from marl_arena.rl.ppo import PPOStats, PPOTrainer
-
-TEAM_PARADIGMS = {
-    "Team 1": "CTDE-VD",
-    "Team 2": "CTDE-CAC",
-    "Team 3": "CTDE-Comm",
-}
-
+from marl_arena.systems.match_variant import paradigm_assignment
 
 
 def resolve_device() -> torch.device:
@@ -361,11 +356,14 @@ class RLTeamController(BaseTeamController):
         return stats
 
 
-def build_controllers(seed: int, load_checkpoints: bool = True) -> dict[str, RLTeamController]:
+def build_controllers(
+    seed: int, load_checkpoints: bool = True, paradigm_rotation: int = 0
+) -> dict[str, RLTeamController]:
     device = resolve_device()
+    assignment = paradigm_assignment(paradigm_rotation)
     return {
         team_name: RLTeamController(
-            team_name, TEAM_PARADIGMS[team_name], seed + offset, device, load_checkpoints
+            team_name, assignment[team_name], seed + offset, device, load_checkpoints
         )
         for team_name, offset in (
             ("Team 1", 11),

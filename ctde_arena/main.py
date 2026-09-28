@@ -194,12 +194,13 @@ class ArenaApp:
         EditorCamera(position=(0, 32, -28), rotation=(37, 0, 0))
         self.overlay = Text(text="", x=-0.86, y=0.47, scale=0.78, background=True)
         self.export_label = Text(text="", x=-0.86, y=-0.43, scale=0.72, background=True)
+        slot_colours = {"Team 1": "red", "Team 2": "blue", "Team 3": "green"}
         WindowPanel(
             title="Legend",
-            content=(
-                Text("Team 1 = red / CTDE-VD"),
-                Text("Team 2 = blue / CTDE-CAC"),
-                Text("Team 3 = green / CTDE-Comm"),
+            content=tuple(
+                Text(f"{spawn.team_name} = {slot_colours[spawn.team_name]} / {spawn.paradigm}")
+                for spawn in self.simulation.match_variant.team_spawns
+            ) + (
                 Text("Grey = fixed barrier"),
                 Text("Yellow = moving obstacle"),
                 Text("Steel = restricted passage"),

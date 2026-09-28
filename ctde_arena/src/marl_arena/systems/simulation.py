@@ -14,7 +14,9 @@ from marl_arena.controllers.rl_controller import build_controllers, finish_rl_ep
 from marl_arena.models import AgentSnapshot, MatchResult, ObstacleSnapshot, ProjectileSnapshot, TeamMetrics, TransitionRecord
 from marl_arena.systems.match_variant import (
     AGENT_FORMATION_OFFSETS,
-    TEAM_META,
+    TEAM_NAMES,
+    paradigm_assignment,
+    team_meta,
     MatchVariant,
     create_default_variant,
     sample_training_variant,
@@ -133,22 +135,26 @@ class ArenaSimulation:
         seed: int | None = None,
         domain_randomization: bool | None = None,
         load_checkpoints: bool = True,
+        paradigm_rotation: int | None = None,
     ) -> None:
         self.config = CONFIG
         self.seed = self.config.random_seed if seed is None else seed
+        self.paradigm_rotation = (
+            self.seed % len(TEAM_NAMES) if paradigm_rotation is None else paradigm_rotation
+        )
         self.rng = random.Random(self.seed)
         self.domain_randomization = (
             self.config.domain_randomization if domain_randomization is None else domain_randomization
         )
-        self.controllers = build_controllers(self.seed, load_checkpoints)
+        self.controllers = build_controllers(self.seed, load_checkpoints, self.paradigm_rotation)
         self.cumulative_metrics = {
             team_name: TeamMetrics(team_name=team_name, paradigm=paradigm)
-            for team_name, paradigm, _ in TEAM_META
+            for team_name, paradigm, _ in team_meta(self.paradigm_rotation)
         }
         self.match_index = 0
         self.variant_counter = 0
         self.total_env_steps = 0
-        self.match_variant: MatchVariant = create_default_variant(self.config)
+        self.match_variant: MatchVariant = create_default_variant(self.config, rotation=self.paradigm_rotation)
         self.agents: List[SimAgent] = []
         self.obstacles: List[SimObstacle] = []
         self.projectiles: List[ProjectileState] = []
@@ -164,8 +170,8 @@ class ArenaSimulation:
     def _sample_next_variant(self) -> MatchVariant:
         self.variant_counter += 1
         if self.domain_randomization:
-            return sample_training_variant(self.rng, self.config, self.variant_counter)
-        return create_default_variant(self.config, self.variant_counter)
+            return sample_training_variant(self.rng, self.config, self.variant_counter, self.paradigm_rotation)
+        return create_default_variant(self.config, self.variant_counter, self.paradigm_rotation)
 
     def _create_obstacles(self) -> List[SimObstacle]:
         obstacles: List[SimObstacle] = []
@@ -212,7 +218,7 @@ class ArenaSimulation:
         self.pending_obstacle_hits.clear()
 
     def live_team_counts(self) -> Dict[str, int]:
-        counts = {team_name: 0 for team_name, _, _ in TEAM_META}
+        counts = {team_name: 0 for team_name in TEAM_NAMES}
         for agent in self.agents:
             if agent.alive:
                 counts[agent.team_name] += 1
@@ -775,11 +781,12 @@ class ArenaSimulation:
         obstacle_breakdown: Dict[str, int] = {}
         for obstacle in self.obstacles:
             obstacle_breakdown[obstacle.obstacle_type] = obstacle_breakdown.get(obstacle.obstacle_type, 0) + 1
-        lines = [
-            f"Match {self.match_index}  Elapsed: {self.match_time:05.1f}s",
-            f"Team 1 / CTDE-VD: {counts['Team 1']} alive",
-            f"Team 2 / CTDE-CAC: {counts['Team 2']} alive",
-            f"Team 3 / CTDE-Comm: {counts['Team 3']} alive",
+        lines = [f"Match {self.match_index}  Elapsed: {self.match_time:05.1f}s"]
+        lines += [
+            f"{spawn.team_name} / {spawn.paradigm}: {counts[spawn.team_name]} alive"
+            for spawn in self.match_variant.team_spawns
+        ]
+        lines += [
             f"Obstacles: {len(self.obstacles)} | Fixed {obstacle_breakdown.get('fixed_barrier', 0)} | Moving {obstacle_breakdown.get('moving_obstacle', 0)} | Restricted {obstacle_breakdown.get('restricted_passage', 0)}",
         ]
         return "\n".join(lines)

@@ -22,9 +22,10 @@ os.environ["MATCH_DURATION_SECONDS"] = "3"
 os.environ["DOMAIN_RANDOMIZATION"] = "true"
 
 from marl_arena.controllers.rl_controller import RLTeamController, set_rl_training  # noqa: E402
+from marl_arena.rl.actions import LOCAL_OBS_DIM  # noqa: E402
 from marl_arena.systems.simulation import ArenaSimulation  # noqa: E402
 
-EXPECTED_PARADIGMS = {"Team 1": "CTDE-VD", "Team 2": "CTDE-CAC", "Team 3": "CTDE-Comm"}
+PARADIGMS = ("CTDE-VD", "CTDE-CAC", "CTDE-Comm")
 
 
 def _flat_params(controller: RLTeamController) -> dict[str, object]:
@@ -35,14 +36,21 @@ def _flat_params(controller: RLTeamController) -> dict[str, object]:
     return weights
 
 
+def by_paradigm(simulation: ArenaSimulation, paradigm: str) -> RLTeamController:
+    matches = [c for c in simulation.controllers.values() if c.paradigm == paradigm]
+    assert len(matches) == 1, f"expected exactly one {paradigm} controller, found {len(matches)}"
+    return matches[0]
+
+
 def test_each_ctde_variant_has_the_expected_networks() -> None:
+    # Slot assignment rotates with the seed, so controllers are looked up by paradigm, never by name.
     simulation = ArenaSimulation(seed=5, domain_randomization=False)
-    for name, controller in simulation.controllers.items():
-        assert controller.paradigm == EXPECTED_PARADIGMS[name]
-        assert controller.actor is not None, f"{name} built no actor"
-        assert controller.critic is not None, f"{name} built no critic"
-    assert simulation.controllers["Team 1"].critic.agent_indices == [0, 1, 2]
-    assert simulation.controllers["Team 3"].actor.msg_dim == 4
+    assert sorted(c.paradigm for c in simulation.controllers.values()) == sorted(PARADIGMS)
+    for controller in simulation.controllers.values():
+        assert controller.actor is not None, f"{controller.team_name} built no actor"
+        assert controller.critic is not None, f"{controller.team_name} built no critic"
+    assert by_paradigm(simulation, "CTDE-VD").actor.__class__.__name__ == "ActorNetwork"
+    assert by_paradigm(simulation, "CTDE-Comm").actor.msg_dim == 4
 
 
 def test_ppo_update_moves_every_variant(tmp_path: Path) -> None:
@@ -78,9 +86,9 @@ def test_comm_rollout_stores_team_observations() -> None:
     for _ in range(40):
         if simulation.step(0.1):
             break
-    comm = simulation.controllers["Team 3"]
+    comm = by_paradigm(simulation, "CTDE-Comm")
     assert comm.buffer.steps, "Comm collected no rollouts"
-    assert comm.buffer.steps[0].local_obs.shape == (24,)
+    assert comm.buffer.steps[0].local_obs.shape == (3 * LOCAL_OBS_DIM,)
     assert comm.buffer.steps[0].agent_slot is not None
     assert comm.buffer.steps[0].global_obs is not None
 

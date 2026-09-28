@@ -169,6 +169,7 @@ def main() -> None:
         "evaluation_seconds": round(eval_seconds, 1),
         "steps_per_second": round(sim.total_env_steps / max(train_seconds, 1e-9), 1),
         "device": CONFIG.rl_device,
+        "paradigm_rotation": sim.paradigm_rotation,
         "paradigms": {name: controller.paradigm for name, controller in sim.controllers.items()},
         "training_cumulative": {t: m.as_summary() for t, m in sim.cumulative_metrics.items()},
         "held_out_greedy": {

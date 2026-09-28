@@ -15,6 +15,7 @@ OTHER = PROJECT_ROOT / "ctde_arena"
 
 # Files that must stay byte-identical across the two trees.
 IDENTICAL = [
+    "main.py",
     "src/marl_arena/__init__.py",
     "src/marl_arena/config.py",
     "src/marl_arena/models.py",
@@ -26,20 +27,20 @@ IDENTICAL = [
     "src/marl_arena/systems/__init__.py",
     "src/marl_arena/systems/metrics.py",
     "src/marl_arena/systems/plotting.py",
+    "src/marl_arena/systems/simulation.py",
     "src/marl_arena/ui/__init__.py",
     "src/marl_arena/ui/dashboard.py",
     "scripts/plot_metrics.py",
     "scripts/run_experiment.py",
 ]
 
-# Files that legitimately differ: the paradigms themselves, plus the MLflow and legend differences.
+# Files that legitimately differ: the paradigms themselves and the MLflow integration. The engine,
+# the renderer and the arena are shared verbatim.
 EXPECTED_DIFFERENT = [
-    "main.py",                                        # legend text only
-    "src/marl_arena/controllers/rl_controller.py",    # paradigm selection
+    "src/marl_arena/controllers/rl_controller.py",    # paradigm selection and decision paths
     "src/marl_arena/rl/networks.py",                  # VD + Comm networks
     "src/marl_arena/rl/ppo.py",                       # VD + Comm update paths
-    "src/marl_arena/systems/match_variant.py",        # TEAM_META paradigm labels
-    "src/marl_arena/systems/simulation.py",           # status-text lines only
+    "src/marl_arena/systems/match_variant.py",        # PARADIGM_CYCLE only
     "scripts/train_rl.py",                            # MLflow integration
 ]
 
@@ -62,16 +63,16 @@ def test_declared_divergences_are_real() -> None:
     assert not stale, f"these files are now identical and can move to IDENTICAL: {stale}"
 
 
-def test_simulation_diff_is_only_the_status_lines() -> None:
-    """simulation.py is 780 lines; the only permitted difference is the three paradigm labels it prints."""
+def test_match_variant_differs_only_in_the_paradigm_cycle() -> None:
+    """The arena definition is shared; only the list of paradigms being compared may differ."""
     import difflib
 
-    left = (PROJECT_ROOT / "src/marl_arena/systems/simulation.py").read_text(encoding="utf-8").splitlines()
-    right = (OTHER / "src/marl_arena/systems/simulation.py").read_text(encoding="utf-8").splitlines()
+    left = (PROJECT_ROOT / "src/marl_arena/systems/match_variant.py").read_text(encoding="utf-8").splitlines()
+    right = (OTHER / "src/marl_arena/systems/match_variant.py").read_text(encoding="utf-8").splitlines()
     changed = [
         line
         for line in difflib.unified_diff(left, right, lineterm="", n=0)
         if line.startswith(("+", "-")) and not line.startswith(("+++", "---"))
     ]
-    assert len(changed) == 6, f"unexpected divergence in simulation.py: {changed}"
-    assert all("Team 1 /" in line or "Team 2 /" in line or "Team 3 /" in line for line in changed)
+    assert len(changed) == 2, f"unexpected divergence in match_variant.py: {changed}"
+    assert all("PARADIGM_CYCLE" in line for line in changed)
