@@ -29,20 +29,28 @@ def wilson(k: float, n: float, z: float = 1.96) -> tuple[float, float]:
 
 
 def fisher_two_sided(k1: int, n1: int, k2: int, n2: int) -> float:
-    from math import comb
+    """Exact two-sided Fisher test for two binomials via the hypergeometric tail.
+
+    Computed in log space with lgamma so it stays usable at the sample sizes the study produces -
+    a direct comb() form overflows or underflows well before 1500 trials.
+    """
+    from math import exp, inf, lgamma
+
+    def log_comb(a: int, b: int) -> float:
+        if b < 0 or b > a:
+            return -inf
+        return lgamma(a + 1) - lgamma(b + 1) - lgamma(a - b + 1)
 
     total = k1 + k2
     n = n1 + n2
+    if total == 0 or n == 0:
+        return float("nan")
     lo, hi = max(0, total - n2), min(total, n1)
-    denom = comb(n, total)
-    observed = comb(n1, k1) * comb(n2, total - k1) / denom
-    p = 0.0
-    for x in range(lo, hi + 1):
-        px = comb(n1, x) * comb(n2, total - x) / denom
-        if px <= observed * (1 + 1e-9):
-            p += px
+    log_denom = log_comb(n, total)
+    log_pmf = {x: log_comb(n1, x) + log_comb(n2, total - x) - log_denom for x in range(lo, hi + 1)}
+    observed = log_pmf[k1]
+    p = sum(exp(l) for l in log_pmf.values() if l <= observed + 1e-9)
     return min(1.0, p)
-
 
 def sd(values: list[float]) -> float:
     if len(values) < 2:
