@@ -65,11 +65,16 @@ most files byte-for-byte but have diverged; the divergence is catalogued in
 * **RQ3.** Is the observed ranking stable — across seeds, across training length, and across the
   match-to-match variance of the arena?
 
-RQ1 and RQ2 are answered *provisionally* in [§ Results](08_results.md): a single run per experiment
-produced a clear ordering. **RQ3 is unanswered**, and the honest reading of this repository is that
-the ordering should not be relied on until it is. The evidence available is one seed, one run, and a
-step budget that the reward-scale analysis in [§ MDP formalisation](04_mdp_formalisation.md#44-reward)
-suggests is short.
+RQ1 and RQ2 are answered in [§ Results](08_results.md#replicated-study) from a five-seed, one-million-step
+replicated study with held-out greedy evaluation. RQ3 is answered in two parts: **stability across seeds
+and across the arena's match-to-match variance is measured**, and the per-seed spread is reported rather
+than pooled away; **stability across training length is only partially addressed**, because the budget is
+1 M steps rather than the 3 M the code defaults to, so a paradigm still improving at the end of the run is
+reported as "not yet settled" rather than "no".
+
+The repository previously answered these questions from a single 100 k-step run per experiment, measured
+during training. That evidence is retained and labelled historical in chapter 8, and the reasons it should
+not be relied on are set out in [§ Threats to validity](10_threats_to_validity.md).
 
 ## 1.5 Contributions
 
@@ -92,8 +97,9 @@ Out of scope, deliberately or as unfinished work:
 
 * No comparison against published baselines on a shared benchmark; the arena is bespoke, so absolute
   win rates are not comparable to any figure in the literature.
-* No multi-seed replication, no confidence intervals, no significance tests
-  ([§ Threats to validity](10_threats_to_validity.md#104-statistical-validity)).
+* No evaluation against a fixed pool of opponents or scripted baselines — the only comparison available is
+  between the three arms inside one run, so a ranking cannot be separated from the co-adaptation dynamics
+  that produced it.
 * No ablation of domain randomisation, reward coefficients, or network width.
 * Respawn is configured but not implemented; the flag has no effect
   ([§ Code audit](11_code_audit.md#dead-configuration)).

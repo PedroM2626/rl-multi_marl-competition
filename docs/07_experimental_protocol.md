@@ -52,6 +52,35 @@ Two properties of this procedure are load-bearing:
   of the final policy. A team that was strong at match 50 and weak at match 450 contributes equally to
   both. [§ Results](08_results.md#drift) quantifies how much this matters.
 
+
+These two are precisely what the replicated study changes. Its procedure differs as follows:
+
+```
+scripts/run_experiment.py --seed S --steps 1000000 --out <run dir>
+  1. ARENA_DATA_DIR=<run dir>, RANDOM_SEED=S, RL_TRAIN_TOTAL_STEPS=1000000
+       -> one directory per replicate; nothing can warm-start from another run's checkpoints
+  2. seed random.Random, NumPy's global RNG (which drives the PPO minibatch shuffle)
+     and Torch (which drives weight initialisation)
+  3. train exactly as above, recording training metrics every 100 matches
+  4. at 25 / 50 / 75 / 100 % of the budget:
+       save checkpoints -> construct a SEPARATE ArenaSimulation that loads them
+       -> 40 greedy matches, domain_randomization=False, set_rl_training(False)
+       -> discard that simulation; resume training the original
+  5. at the end: 150 further greedy held-out matches -> evaluation/eval_match_metrics.csv
+```
+
+Three consequences worth stating explicitly:
+
+* The evaluation numbers describe **the shipped policy**, sampled greedily on the fixed variant, which is
+  what a "result" was always meant to be. The training-time running average is reported alongside it, not
+  instead of it.
+* The evaluation runs in a separate simulation instance, so it cannot contaminate training: with
+  `training_enabled = False`, `_record_step` returns early, no rollout rows accumulate, and the
+  `finish_match()` it calls performs no gradient step. Covered by
+  `test_greedy_evaluation_is_deterministic_and_collects_nothing`.
+* The curve points evaluate *intermediate* checkpoints of the same run, so they show learning within a
+  replicate rather than a running average across ~10,000 different policies.
+
 ## 7.3 Runs actually performed
 
 | Run | Experiment | Target steps | Matches | Evidence |
