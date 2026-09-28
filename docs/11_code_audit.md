@@ -319,7 +319,7 @@ accurate and is now referenced here as A-15.
 **A-16 · LOW**
 
 * `RESPAWN_ENABLED` → `ArenaConfig.respawn_enabled` is read and never consulted. `SimAgent.respawn_timer`
-  is declared and never touched. The README correctly notes respawn is unimplemented; agents that die
+  is declared and never touched. The root README states the flag has no effect; agents that die
   stay dead.
 * `ArenaSimulation.np_rng` is constructed and never used.
 * `JUMP_SPEED` / `GRAVITY` are live, but jump is unreachable from the action space
