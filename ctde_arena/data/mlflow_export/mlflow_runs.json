@@ -1,0 +1,64 @@
+{
+  "experiment_id": "953311562563344944",
+  "experiment_name": "CTDE_Comparison_Arena",
+  "tracking_uri": "file:./mlruns",
+  "note": "Exported from the local file-based MLflow store, which is git-ignored. Only the logged metric points and scalar parameters are reproduced here; model artifacts and plots are not.",
+  "runs": [
+    {
+      "run_id": "457ce1e8c2ce4ef39e4110d06f24f790",
+      "logged_param_count": 43,
+      "random_seed": "7",
+      "rl_train_total_steps": "5000",
+      "rl_learning_rate": "0.0003",
+      "rl_gamma": "0.99",
+      "rl_gae_lambda": "0.95",
+      "rl_clip_eps": "0.2",
+      "rl_value_coef": "0.5",
+      "rl_entropy_coef": "0.01",
+      "rl_max_grad_norm": "0.5",
+      "rl_ppo_epochs": "4",
+      "rl_batch_size": "256",
+      "rl_hidden_dim": "128",
+      "rl_device": "cpu",
+      "domain_randomization": "True",
+      "arena_size": "32.0",
+      "match_duration_seconds": "90.0",
+      "rl_log_every_steps": "1000",
+      "rl_save_every_steps": "5000",
+      "rl_metrics_every_matches": "10",
+      "logged_metric_steps": [
+        1217,
+        2526,
+        3958
+      ],
+      "logged_point_count": 3
+    },
+    {
+      "run_id": "c762d435baa546349f8a29b20795e885",
+      "logged_param_count": 43,
+      "random_seed": "7",
+      "rl_train_total_steps": "100000",
+      "rl_learning_rate": "0.0003",
+      "rl_gamma": "0.99",
+      "rl_gae_lambda": "0.95",
+      "rl_clip_eps": "0.2",
+      "rl_value_coef": "0.5",
+      "rl_entropy_coef": "0.01",
+      "rl_max_grad_norm": "0.5",
+      "rl_ppo_epochs": "4",
+      "rl_batch_size": "256",
+      "rl_hidden_dim": "128",
+      "rl_device": "cpu",
+      "domain_randomization": "True",
+      "arena_size": "32.0",
+      "match_duration_seconds": "90.0",
+      "rl_log_every_steps": "50000",
+      "rl_save_every_steps": "100000",
+      "rl_metrics_every_matches": "10",
+      "logged_metric_steps": [
+        50793
+      ],
+      "logged_point_count": 1
+    }
+  ]
+}
