@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from pathlib import Path
 from typing import Dict, Iterable, List
 
@@ -107,6 +108,15 @@ class RLTeamController(BaseTeamController):
         if not path.exists():
             return
         payload = load_checkpoint(path, self.device)
+        expected = self.actor.state_dict() if self.actor is not None else {}
+        for key, tensor in payload.get("actor", {}).items():
+            if key in expected and tuple(expected[key].shape) != tuple(tensor.shape):
+                warnings.warn(
+                    f"{path.name} was produced by a different observation encoding "
+                    f"(actor.{key}: {tuple(tensor.shape)} vs {tuple(expected[key].shape)}); "
+                    "training from random initialisation instead. Pass --from-scratch to silence this."
+                )
+                return
         if self.actor is not None:
             self.actor.load_state_dict(payload["actor"])
         if self.critic is not None and "critic" in payload:
@@ -187,12 +197,13 @@ class RLTeamController(BaseTeamController):
     ) -> StepDecision:
         self._register_agent_slots(all_agents)
         agent_list = list(all_agents)
-        local_obs = self.build_local_features(agent, all_agents)
+        scale = context.arena_size * 0.5
+        local_obs = self.build_local_features(agent, all_agents, scale)
 
         if self.paradigm == "CTE":
             assert isinstance(self.actor, CentralizedActorNetwork)
             assert self.critic is not None
-            global_obs = self.build_global_features(all_agents)
+            global_obs = self.build_global_features(all_agents, scale)
             agent_slot = self._agent_slot_vector(agent.agent_id)
             global_tensor = torch.tensor(global_obs, dtype=torch.float32, device=self.device).unsqueeze(0)
             slot_tensor = torch.tensor(agent_slot, dtype=torch.float32, device=self.device).unsqueeze(0)
@@ -221,7 +232,7 @@ class RLTeamController(BaseTeamController):
         if self.paradigm == "CTDE":
             assert isinstance(self.actor, ActorNetwork)
             assert self.critic is not None
-            global_obs = self.build_global_features(all_agents)
+            global_obs = self.build_global_features(all_agents, scale)
             local_tensor = torch.tensor(local_obs, dtype=torch.float32, device=self.device).unsqueeze(0)
             global_tensor = torch.tensor(global_obs, dtype=torch.float32, device=self.device).unsqueeze(0)
             with torch.no_grad():

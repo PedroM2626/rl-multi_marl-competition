@@ -102,13 +102,13 @@ class ValueDecompositionCriticNetwork(nn.Module):
     def __init__(self, agent_indices: list[int], hidden_dim: int = 128) -> None:
         super().__init__()
         self.agent_indices = agent_indices
-        # Each agent's state features: [pos_x, pos_z, heading, alive] (4 features)
-        self.agent_critic = _mlp(4, 1, hidden_dim)
+        # Each agent's state features: [pos_x, pos_z, sin(heading), cos(heading), alive]
+        self.agent_critic = _mlp(5, 1, hidden_dim)
 
     def forward(self, global_obs: torch.Tensor) -> torch.Tensor:
         v_tot = torch.zeros(global_obs.shape[0], device=global_obs.device)
         for idx in self.agent_indices:
-            agent_features = global_obs[:, 4 * idx : 4 * (idx + 1)]
+            agent_features = global_obs[:, 5 * idx : 5 * (idx + 1)]
             v_i = self.agent_critic(agent_features).squeeze(-1)
             v_tot = v_tot + v_i
         return v_tot

@@ -59,7 +59,12 @@ class BaseTeamController(ABC):
         positions = np.array([agent.position for agent in allies], dtype=float)
         return positions.mean(axis=0)
 
-    def build_local_features(self, agent: AgentSnapshot, all_agents: Iterable[AgentSnapshot]) -> np.ndarray:
+    def build_local_features(
+        self,
+        agent: AgentSnapshot,
+        all_agents: Iterable[AgentSnapshot],
+        scale: float = 1.0,
+    ) -> np.ndarray:
         enemy = self.nearest_enemy(agent, all_agents)
         ally_centroid = self.ally_centroid(all_agents)
         if enemy is None:
@@ -68,28 +73,32 @@ class BaseTeamController(ABC):
         else:
             relative_enemy = enemy.position - agent.position
             enemy_distance = float(np.linalg.norm(relative_enemy))
+        radians = math.radians(agent.heading_deg)
         return np.array(
             [
-                agent.position[0],
-                agent.position[2],
-                agent.heading_deg / 180.0,
-                relative_enemy[0],
-                relative_enemy[2],
-                enemy_distance,
-                ally_centroid[0] - agent.position[0],
-                ally_centroid[2] - agent.position[2],
+                agent.position[0] / scale,
+                agent.position[2] / scale,
+                math.sin(radians),
+                math.cos(radians),
+                relative_enemy[0] / scale,
+                relative_enemy[2] / scale,
+                enemy_distance / scale,
+                (ally_centroid[0] - agent.position[0]) / scale,
+                (ally_centroid[2] - agent.position[2]) / scale,
             ],
             dtype=float,
         )
 
-    def build_global_features(self, all_agents: Iterable[AgentSnapshot]) -> np.ndarray:
+    def build_global_features(self, all_agents: Iterable[AgentSnapshot], scale: float = 1.0) -> np.ndarray:
         features: List[float] = []
         for agent in sorted(all_agents, key=lambda item: item.agent_id):
+            radians = math.radians(agent.heading_deg)
             features.extend(
                 [
-                    agent.position[0],
-                    agent.position[2],
-                    agent.heading_deg / 180.0,
+                    agent.position[0] / scale,
+                    agent.position[2] / scale,
+                    math.sin(radians),
+                    math.cos(radians),
                     1.0 if agent.alive else 0.0,
                 ]
             )

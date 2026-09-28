@@ -10,8 +10,8 @@ import torch
 from marl_arena.models import AgentSnapshot, StepDecision
 
 
-LOCAL_OBS_DIM = 8
-GLOBAL_OBS_DIM = 36
+LOCAL_OBS_DIM = 9
+GLOBAL_OBS_DIM = 45
 NUM_TARGETS = 4
 NUM_ACTIONS = NUM_TARGETS * 2
 

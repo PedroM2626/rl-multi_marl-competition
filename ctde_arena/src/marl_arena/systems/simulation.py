@@ -20,6 +20,7 @@ from marl_arena.systems.match_variant import (
     sample_training_variant,
 )
 
+DRAW_TEAM = "draw"
 AGENT_RADIUS = 0.58
 AGENT_HALF_HEIGHT = 1.1
 PROJECTILE_RADIUS = 0.12
@@ -705,9 +706,17 @@ class ArenaSimulation:
 
     def finish_match(self) -> MatchResult:
         team_alive = self.live_team_counts()
-        sorted_alive = sorted(team_alive.items(), key=lambda item: (item[1], self.cumulative_metrics[item[0]].eliminations), reverse=True)
-        winner_team = sorted_alive[0][0]
-        self.cumulative_metrics[winner_team].wins += 1
+        kills_this_match = {
+            spawn.team_name: sum(agent.kills for agent in self.agents if agent.team_name == spawn.team_name)
+            for spawn in self.match_variant.team_spawns
+        }
+        ranked = sorted(team_alive.items(), key=lambda item: (item[1], kills_this_match[item[0]]), reverse=True)
+        best, runner_up = ranked[0], ranked[1]
+        if best[1] == runner_up[1] and kills_this_match[best[0]] == kills_this_match[runner_up[0]]:
+            winner_team = DRAW_TEAM
+        else:
+            winner_team = best[0]
+            self.cumulative_metrics[winner_team].wins += 1
 
         team_rows: List[Dict[str, float]] = []
         agent_rows: List[Dict[str, float]] = []
