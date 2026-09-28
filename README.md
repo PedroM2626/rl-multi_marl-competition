@@ -39,17 +39,24 @@ Honest summary of what is finished and what is not:
 | Multi-seed replication | **not done** | **not done** |
 | Held-out evaluation of the shipped policies | **not done** | **not done** |
 
-Three things a reader should know before using these results, each detailed in the audit:
+Three defects documented in the audit were **fixed** as part of the work below, and each changed what the
+results mean:
 
-* **[A-1](docs/11_code_audit.md#turn-control-defect)** — the low-level heading controller reads the wrong
-  axis, so turning is effectively saturated noise. Affects every trained policy. Left unfixed on purpose:
-  patching it invalidates all versioned results.
-* **[A-3](docs/11_code_audit.md#versioning)** — `.gitignore` patterns are root-anchored, so experiment 1's
-  data is excluded from the repository while experiment 2's is included. **Cloning this repo gives you no
-  way to recompute experiment 1's headline table.**
-* **[A-2](docs/11_code_audit.md#unbounded-transition-retention)** — a memory leak retains ~4.5 KB per env
-  step, which is survivable at 100k steps but reaches ~13.6 GB at the 3 M-step budget the code defaults
-  to.
+* **A-1** — the low-level heading controller computed its bearing from the vertical axis, so turning was
+  effectively saturated noise. Every policy trained before the fix learned in that world, which is why the
+  original single-seed numbers are now labelled historical and the study was re-run.
+  [Details](docs/11_code_audit.md#turn-control-defect).
+* **A-2** — `BaseTeamController` retained every transition forever: 4.53 KB per env step, ~13.6 GB
+  extrapolated to 3 M steps. That, not compute, is what made a replicated study impossible. Now 16 B per
+  step. [Details](docs/11_code_audit.md#unbounded-transition-retention).
+* **A-3** — root-anchored `.gitignore` patterns excluded experiment 1's data while committing experiment
+  2's, so cloning the repo left you unable to recompute experiment 1's headline table. Both trees are now
+  versioned. [Details](docs/11_code_audit.md#versioning).
+
+Still open, and load-bearing for how the results may be read: the paradigm-to-slot assignment is not
+rotated ([A-11 / § 10.1](docs/10_threats_to_validity.md#slot-and-seed-confounding)), `ppo.py` has 26 % /
+16 % statement coverage ([A-6](docs/11_code_audit.md#coverage)), and PPO training statistics are still
+computed and discarded ([A-15](docs/11_code_audit.md#ppostats-discarded)).
 
 ## The two experiments
 

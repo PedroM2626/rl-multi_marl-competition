@@ -5,24 +5,24 @@ against it. Each carries a reproduction command so it can be re-checked. Finding
 for reference from other documents.
 
 Severity: **HIGH** affects results or blocks work · **MED** affects correctness or reproducibility under
-conditions that can occur · **LOW** dead code, misleading labels, or cosmetic · **FIXED** resolved during
-the 2026-09-27 localisation commit.
+conditions that can occur · **LOW** dead code, misleading labels, or cosmetic · **FIXED** resolved in this
+repository (2026-09-27 localisation commit, or the subsequent defect-fix and replication commits).
 
 | ID | Severity | Finding |
 |---|---|---|
-| [A-1](#turn-control-defect) | HIGH | `angle_to_target` reads the vertical axis; heading control is saturated noise |
-| [A-2](#unbounded-transition-retention) | HIGH | `BaseTeamController.transitions` grows without bound; blocks the 3 M-step plan |
-| [A-3](#versioning) | HIGH | Root-anchored `.gitignore` excludes experiment 1's results and includes experiment 2's |
+| [A-1](#turn-control-defect) | FIXED | `angle_to_target` read the vertical axis; heading control was saturated noise |
+| [A-2](#unbounded-transition-retention) | FIXED | `BaseTeamController.transitions` grew without bound; blocked long runs |
+| [A-3](#versioning) | FIXED | Root-anchored `.gitignore` excluded experiment 1's results and included experiment 2's |
 | [A-4](#silent-warm-start) | MED | Training silently resumes from versioned weights while resetting the step counter and optimizer |
 | [A-5](#test-suite-never-updates) | MED | The "and update" test never reaches a PPO update |
 | [A-6](#coverage) | MED | 73 % / 14 % statement coverage; `ppo.py` is 26 % / 16 % |
 | [A-7](#terminal-state-crash) | MED | `IndexError` when stepping in an already-decided state |
-| [A-8](#unseeded-minibatch-shuffle) | MED | Minibatch order is unseeded; runs are not reproducible |
+| [A-8](#unseeded-minibatch-shuffle) | PARTIAL | Library code still never seeds NumPy/Torch; the study runner does |
 | [A-9](#mlflow-cadence) | MED | MLflow logging fires once per 100 k-step run; no learning curve exists |
 | [A-10](#cumulative-tiebreak) | MED | Wins are awarded using run-long cumulative statistics |
 | [A-11](#cross-tree-divergence) | MED | The two trees are diverged forks of one engine |
 | [A-12](#configuration-claims) | MED | Documented training budget contradicts the committed `.env` |
-| [A-13](#degenerate-transition-pair) | LOW | `state_features == next_state_features` always; both are discarded |
+| [A-13](#degenerate-transition-pair) | FIXED | `state_features == next_state_features` always; both were discarded |
 | [A-14](#approx-kl-placeholder) | LOW | `approx_kl` hard-coded to 0.0 |
 | [A-15](#ppostats-discarded) | LOW | PPO statistics are computed, returned, and dropped |
 | [A-16](#dead-configuration) | LOW | `RESPAWN_ENABLED` has no effect; `np_rng` is unused |
@@ -35,12 +35,13 @@ the 2026-09-27 localisation commit.
 | [A-23](#renderer-timestep) | LOW | The visual loop steps with real frame time, training steps with fixed `dt` |
 | [A-24](#test-isolation) | FIXED | The test suite overwrote the versioned checkpoints |
 | [A-25](#unsafe-checkpoint-load) | FIXED | `torch.load(weights_only=False)` on model files |
+| [A-26](#gpu-and-thread-scaling) | INFO | CUDA and extra torch threads both make this workload *slower* |
 
 ---
 
 ## Turn control defect
 
-**A-1 · HIGH · not fixed — deliberately**
+**A-1 · HIGH · FIXED**
 
 `src/marl_arena/controllers/base.py:23`
 
@@ -64,39 +65,43 @@ Reproduction:
 -90.0                     # true heading-to-target: -63.43
 ```
 
-Effect: `turn = clip(delta/35, -1, 1)` saturates to \(\pm 1\) for any off-axis target, so agents spin
-toward a fixed absolute heading instead of toward their waypoint. Shooting is unaffected because
-`aim_direction` is computed independently of heading, which is why the agents remain competitive at all.
+Effect: `turn = clip(delta/35, -1, 1)` saturated to \(\pm 1\) for any off-axis target, so agents spun
+toward a fixed absolute heading instead of toward their waypoint. Shooting was unaffected because
+`aim_direction` is computed independently of heading, which is why the agents remained competitive at all.
 
-**Why it was not fixed here.** The versioned policies were trained under this control law. Patching it
-invalidates every checkpoint and every number in [§ Results](08_results.md). It is a one-line change
-whose only honest companion is a full re-run of both experiments. The fix belongs in a new experiment,
-not in a documentation commit.
+**Resolution.** Fixed by reading `offset[2]`. Verified against the analytic bearing over a 3×3 grid of
+targets — every returned delta now equals the true heading-to-target error. Because the versioned
+policies were trained under the broken law, the fix invalidates them: [§ Results](08_results.md) now
+reports a re-run of both experiments under the corrected control, and the single-seed numbers are kept
+only as the historical record.
 
 ## Unbounded transition retention
 
-**A-2 · HIGH · blocks the stated next step**
+**A-2 · HIGH · FIXED**
 
-`BaseTeamController.update` calls `super().update(transitions)`, which does
-`self.transitions.extend(transitions)` and is never cleared — not at `finish_episode`, not at
-`reset_match`. Only `buffer` and `pending_steps` are cleared.
+`BaseTeamController.update` called `super().update(transitions)`, which did
+`self.transitions.extend(transitions)` and was never cleared — not at `finish_episode`, not at
+`reset_match`. Only `buffer` and `pending_steps` were.
 
 ```
-3,000 env steps -> 11,731 TransitionRecords retained, 13.59 MB attributed heap growth
-                -> 4.53 KB per env step
-extrapolated    -> ~453 MB at 100k steps (the versioned runs, which survived it)
-                -> ~13.6 GB at 3M steps (the documented plan)
+before:  3,000 env steps -> 11,731 TransitionRecords retained, 13.59 MB heap growth
+                         -> 4.53 KB per env step
+                         -> ~453 MB at 100k steps, ~13.6 GB at 3M steps
+after:   20,000 env steps -> 0.33 MB growth -> 16.3 B per env step
+                         -> ~0.05 GB at 3M steps
 ```
 
-Each retained record also holds two NumPy arrays, so the per-record cost is dominated by the 8-element
-float arrays plus Python object overhead. The list is read by nothing.
+**Resolution.** Nothing ever read the list, so the accumulation was deleted rather than periodically
+cleared, and `update()` became an abstract hook like `decide()`. The same reasoning removed the three
+`TransitionRecord` fields that were built every step and never consumed — see
+[A-13](#degenerate-transition-pair) — which also cut two `build_local_features` calls per agent per step.
 
-Fix: drop `super().update()` from `RLTeamController.update`, or clear `self.transitions` in
-`finish_episode`. This is the cheapest change that unlocks the 3 M-step study.
+This is the change that made the replicated study possible: at 4.53 KB/step, a 3 M-step run would have
+needed ~13.6 GB of RAM per process, so ten concurrent replicates were impossible.
 
 ## Versioning
 
-**A-3 · HIGH · repository structure**
+**A-3 · HIGH · FIXED**
 
 `.gitignore` patterns containing a `/` are anchored at the repository root:
 
@@ -113,9 +118,15 @@ does not exist in the repository. See
 Related: `mlruns/` is ignored, so the MLflow store — the tracking system experiment 2's README describes
 — is absent from the repository. Only the 48-row export added on 2026-09-27 survives in Git.
 
+**Resolution.** The rules now use `**/data/...` where they need to reach both trees, and experiment
+artefacts are versioned by design. What stays excluded is only what is not evidence: the `mlruns/` file
+store, and `**/data/metrics/*.legacy*.csv` — orphaned copies left by schema rotations, one of which is
+29.9 MB of pre-rename history. Experiment 1's five artefacts were committed after regenerating its
+dashboard, which had also been missed by the localisation pass because it was untracked.
+
 ## Silent warm start
 
-**A-4 · MED**
+**A-4 · MED · partially mitigated**
 
 `RLTeamController.__init__` ends with `self._load_if_exists()`, which loads
 `data/checkpoints/<slug>_<paradigm>.pt` whenever the file is present. So `python scripts/train_rl.py`
@@ -123,11 +134,12 @@ does **not** start from scratch on a machine that has the versioned checkpoints:
 100 k-step policies while resetting `total_env_steps` to 0 and creating a fresh Adam optimizer with
 fresh moments.
 
-There is no flag to disable this. A reproduction run and a fresh run are indistinguishable from the
-command line, and the resulting `training_log.json` will claim 100,000 steps of training that did not
-happen from random initialisation.
+`train_rl.py` still has no flag to disable this, so the hazard stands for that entry point.
 
-Fix: a `--from-scratch` flag, or refuse to load when `RL_TRAIN_TOTAL_STEPS` is being counted from zero.
+**Mitigation.** `ARENA_DATA_DIR` now re-roots the whole data tree — metrics, exports and checkpoints —
+so pointing it at a fresh directory guarantees a run from random initialisation.
+`scripts/run_experiment.py` does exactly that, which is what makes the replicates in
+[§ Results](08_results.md) genuine fresh runs rather than continuations of the shipped policies.
 
 ## Test suite never updates
 
@@ -205,16 +217,22 @@ Fix: pad `candidate_targets` to a constant length, or clamp the index in `action
 
 ## Unseeded minibatch shuffle
 
-**A-8 · MED**
+**A-8 · MED · partially mitigated**
 
 All three update paths call `np.random.shuffle(indices)` against NumPy's global RNG. Nothing in the
-codebase calls `np.random.seed`, `torch.manual_seed`, or sets deterministic algorithms. `ArenaSimulation`
+library calls `np.random.seed`, `torch.manual_seed`, or sets deterministic algorithms. `ArenaSimulation`
 creates `self.np_rng = np.random.default_rng(seed)` and then never uses it (see A-16).
 
 Consequence: identical seeds give different minibatch orders, different gradient trajectories, and
 different final policies. This is the concrete reason
 [§ Reproducibility](09_reproducibility.md#96-what-is-and-is-not-reproducible) states that re-runs are
 only statistically similar.
+
+**Mitigation.** `scripts/run_experiment.py::seed_everything` seeds `random`, NumPy's global RNG and
+Torch before the simulation is constructed, so the replicates behind
+[§ Results](08_results.md) are reproducible end to end. The library default is unchanged: `train_rl.py`
+still produces non-reproducible runs, because making the library seed global state as a side effect of
+import would be worse than leaving it explicit at the entry point.
 
 ## MLflow cadence
 
@@ -286,16 +304,19 @@ committed by default.
 
 ## Degenerate transition pair
 
-**A-13 · LOW**
+**A-13 · LOW · FIXED**
 
-`ArenaSimulation.step` builds each `TransitionRecord` with
+`ArenaSimulation.step` built each `TransitionRecord` with
 `state_features=controller.build_local_features(agent.snapshot(), post_snapshots)` and
 `next_state_features=` the identical expression. Measured over 1,593 transitions: **100.0 % identical**.
 
-The fields are then discarded — `RLTeamController.update` reads only `reward` and `done`, and the
-observation actually trained on was captured pre-step in `_record_step`. So the learning signal is
-correct and this is wasted computation plus a memory cost, not a training corruption. It is still a trap
-for anyone who later starts consuming `TransitionRecord`.
+The fields were then discarded — `RLTeamController.update` read only `reward` and `done`, and the
+observation actually trained on was captured pre-step in `_record_step`. So the learning signal was
+correct and this was wasted computation plus a memory cost, not a training corruption.
+
+**Resolution.** `TransitionRecord` is now `{agent_id, team_name, reward, done}` — the four fields
+anything reads. Removing the other three deleted two `build_local_features` calls and one
+`np.array` allocation per agent per step, which is part of why a step is cheap enough to replicate.
 
 ## Approx KL placeholder
 
@@ -423,16 +444,56 @@ weights_only=True OK -> keys=['paradigm', 'actor', 'critic'] types=['OrderedDict
 
 Applied to both trees.
 
+## GPU and thread scaling
+
+**A-26 · INFO · measured, so that nobody re-derives it**
+
+The obvious intuitions — "use the GPU", "give torch more threads" — are both wrong for this workload,
+and the numbers are worth recording because the workload looks like it should benefit from both.
+
+Same 2,500-step training workload, RTX 4070 Laptop GPU, 32-core host:
+
+| Configuration | Steps/s |
+|---|---:|
+| CPU, 1 torch thread | **368** |
+| CPU, 2 threads | 261 |
+| CPU, 4 threads | 259 |
+| CUDA, batch-1 forwards | 149.6 |
+
+CPU with a single thread is fastest, and the GPU is **less than half** the speed of one CPU core. The
+reason is visible in the profile: a step is nine independent forward passes of a batch of **one** 8-element
+vector through a 35,337-parameter MLP. Of 28.6 s profiled for 4,000 steps, 18.6 s (65 %) is inside
+`RLTeamController.decide`, and the torch kernels themselves are only ~2.3 s — the rest is Python and
+dispatch overhead across 152,658 `Linear` calls. There is no arithmetic here to accelerate; kernel launch
+cost dominates, and extra intra-op threads add contention without adding usable parallelism.
+
+Consequences for how to scale this project:
+
+* **Do not move to GPU without also vectorising the environment.** A GPU only pays off when the batch
+  dimension becomes large, which means running thousands of arena instances simultaneously — a rewrite of
+  a 779-line imperative simulator built on Python lists of dataclasses, dynamic projectile sets and
+  rejection sampling. The bottleneck is not FLOPs, so that rewrite buys throughput only if it also
+  removes the per-agent Python, which is most of the code.
+* **Do scale across processes.** Runs are independent and each wants exactly one core, so a
+  32-core host executes 10 replicates in the time of one. That is what
+  `scripts/run_study.py` does, and it is the whole reason a 5-seed study is affordable here.
+* `torch.set_num_threads(1)` is therefore set explicitly in the runner; without it each process defaults
+  to multi-threaded intra-op kernels and the concurrent runs degrade each other.
+
 ## Open work: suggested measurements
 
-Derived directly from the gaps above, in decreasing value per unit of effort:
+Items 1–3 below were the original list; 1–3 are now done, and the remaining gaps are 4–7.
 
-1. Fix A-1, then re-run both experiments — every existing number is conditioned on the defect.
-2. Fix A-2, then run 5 seeds × 3 M steps (≈ 22 h CPU) and report Wilson intervals per seed.
-3. Add a held-out greedy evaluation: 200 fixed-variant matches per pairing, which is the measurement the
-   headline tables claim to be.
+1. ~~Fix A-1, then re-run both experiments.~~ **Done** — see
+   [§ Replicated study](08_results.md#replicated-study).
+2. ~~Fix A-2, then run 5 seeds.~~ **Done** — 5 seeds × 1 M steps, reported with the study.
+3. ~~Add a held-out greedy evaluation.~~ **Done** — 150 greedy fixed-variant matches per replicate.
 4. Log `PPOStats` (A-15) and a real `approx_kl` (A-14) so convergence and divergence are distinguishable.
+   The study measures outcomes, not optimisation health.
 5. Report shots-per-second-of-alive-life per agent, which is the only way to separate the two candidate
    explanations for CTDE-Comm's deficit ([§ 8.3](08_results.md#83-decomposing-the-elimination-gap)).
 6. Rotate architecture-to-slot assignment across seeds (A-11 /
-   [§ 10.1](10_threats_to_validity.md#slot-and-seed-confounding)).
+   [§ 10.1](10_threats_to_validity.md#slot-and-seed-confounding)). The current replicates vary the seed
+   but not the slot, so a persistent slot effect would still masquerade as an architecture effect.
+7. Re-run at the 3 M-step budget the code defaults to, now that A-2 no longer makes it impossible, to
+   test whether CTDE-Comm's late improvement continues.

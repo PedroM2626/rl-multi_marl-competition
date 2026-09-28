@@ -56,6 +56,11 @@ cp .env.example .env              # .env is tracked and identical to .env.exampl
 | `cd ctde_arena && python main.py` | 2 | 3D window for the CTDE variants |
 | `cd ctde_arena && python -m pytest tests/ -q` | 2 | 2 tests |
 | `cd ctde_arena && docker build -t ctde-arena . && docker run --rm -v ${PWD}/data:/app/data -v ${PWD}/mlruns:/app/mlruns ctde-arena` | 2 | Containerised training |
+| `python scripts/run_experiment.py --seed S --steps N --out DIR` | either | One seeded replicate: train, then greedy held-out evaluation |
+| `python scripts/run_study.py --steps 1000000 --seeds 1,2,3,4,5 --jobs 10` | both | Fan replicates out across processes and collect `results/study/` |
+
+`run_experiment.py` is byte-identical in both trees; which engine it binds to is decided by the working
+directory, exactly like `train_rl.py`. `run_study.py` exists only at the root and drives both.
 
 **The two test suites must be run separately.** Invoking `pytest tests/ ctde_arena/tests/` from the root
 fails at collection with `ImportError: cannot import name 'ValueDecompositionCriticNetwork'`, because
@@ -84,44 +89,57 @@ collision solver returns the geometrically correct hit, or that any metric is co
 
 ## 9.5 Cost of a run
 
-Measured on this machine, CPU only, with domain randomisation enabled and all three teams training:
+Measured on this machine (32-core host, RTX 4070 Laptop GPU), CPU only, domain randomisation enabled,
+all three teams training, one process:
 
 ```
-2000 env steps in 10.81 s  ->  185.1 steps/s
+torch.set_num_threads(1) -> 368 steps/s
+torch.set_num_threads(2) -> 261 steps/s
+torch.set_num_threads(4) -> 259 steps/s
+CUDA, same loop          -> 150 steps/s
 ```
 
-| Budget | Wall time | Notes |
+One thread is fastest and the GPU is the slowest option, because a step is nine batch-1 forwards through
+a 35 k-parameter MLP: the cost is Python and kernel dispatch, not arithmetic. The full profile and the
+implication for a JAX/vectorised-env port are in
+[§ GPU and thread scaling](11_code_audit.md#gpu-and-thread-scaling).
+
+| Budget | Wall time, one process | Notes |
 |---|---:|---|
-| 100,000 steps (versioned runs) | **≈ 9 minutes** | 463 / 456 matches |
-| 1,000,000 steps | ≈ 1.5 h | |
-| 3,000,000 steps (code default) | ≈ 4.5 h | feasible on CPU |
-| 3 M × 5 seeds | ≈ 22.5 h | the replication study this project needs |
+| 100,000 steps (historical runs) | ≈ 4.5 min | 463 / 456 matches |
+| 1,000,000 steps | ≈ 45 min | the replicated study budget |
+| 3,000,000 steps (code default) | ≈ 2.3 h | |
+| 1 M × 5 seeds × 2 experiments | **≈ 50 min total** | 10 processes in parallel on 32 cores |
 
-A 3 M-step run is therefore **not** computationally out of reach. It is, however, currently blocked by a
-memory defect: `BaseTeamController.transitions` accumulates every `TransitionRecord` ever produced and
-is never cleared. Measured with `tracemalloc`:
+Parallelism across seeds, not throughput per step, is what makes replication affordable: the runs are
+independent and each wants exactly one core.
+
+The memory defect that previously made long runs impossible is fixed. Before, `BaseTeamController`
+retained every `TransitionRecord` forever — 4.53 KB per env step, ~13.6 GB extrapolated to 3 M steps, so
+ten concurrent replicates could never fit in RAM. After:
 
 ```
-3,000 extra steps -> 11,731 transitions retained, 13.59 MB of marl_arena-attributed heap growth
-                  -> 4.53 KB per env step
-extrapolated:  100,000 steps ≈   453 MB
-             3,000,000 steps ≈ 13.6 GB
+20,000 env steps -> 0.33 MB growth -> 16.3 B per env step -> ~0.05 GB at 3M steps
 ```
 
-So a 100 k-step run survives the leak; a 3 M-step run will exhaust a typical workstation. This is the
-single change that most unblocks the project's stated next step — see
-[§ Unbounded transition retention](11_code_audit.md#unbounded-transition-retention).
+See [§ Unbounded transition retention](11_code_audit.md#unbounded-transition-retention).
 
 ## 9.6 What is and is not reproducible
 
 **Reproducible bit-for-bit from the repository:** every table in [§ Results](08_results.md), because all
 of them are recomputed from committed CSV/JSON files with the commands quoted in each section.
 
-**Not reproducible:** the training runs that produced those files. Four independent reasons:
+**Reproducible by re-running:** the replicated study. `scripts/run_experiment.py::seed_everything` seeds
+`random`, NumPy's global RNG (which drives the PPO minibatch shuffle) and Torch (which drives weight
+initialisation) before the simulation is constructed, and `ARENA_DATA_DIR` isolates each run's artefacts
+so a replicate cannot silently warm-start from another's checkpoints.
 
-1. **Minibatch shuffling is unseeded.** `np.random.shuffle` in all three `PPOTrainer.update_*` methods
-   uses NumPy's global RNG, which nothing in the codebase seeds. `RANDOM_SEED=7` reaches `random.Random`
-   and `np.random.default_rng` (the latter of which is created and then never used).
+**Still not reproducible:** the two historical 100 k-step runs, and any run made with `train_rl.py`.
+Four independent reasons:
+
+1. **Minibatch shuffling is unseeded in library code.** `np.random.shuffle` in all three
+   `PPOTrainer.update_*` methods uses NumPy's global RNG, which `train_rl.py` never seeds. Only the study
+   runner does.
 2. **No code version is recorded.** Checkpoints store `{paradigm, actor, critic}` and MLflow logs 43
    scalar config parameters — neither records a git commit, and the MLflow store itself is git-ignored.
 3. **No environment lock.** Pinned versions exist but no hash lock file, and CUDA/CPU selection is a
@@ -150,9 +168,8 @@ Versioned artefacts, with SHA-256 for integrity checking.
 | `exports/metrics/metrics_comparison.png` | 24,161 | `d1da22c5456b3cc7d666431c41f3a5f1b29a43eb632ce1836579ee48b8401145` |
 | `exports/metrics/metrics_summary.csv` | 403 | `5e840a5ac26bca77de324d07d9cba77aca17307bb25d18e0b2e56f27d526f452` |
 
-`exports/metrics/*` are derived from experiment 1's **untracked** `data/metrics/summary.json`, so they
-are the only committed evidence of experiment 1's results — and they contain three rows and no
-per-match detail.
+`exports/metrics/*` are derived from experiment 1's `data/metrics/summary.json` and are a convenience
+chart; the authoritative artefacts are the CSVs and `summary.json` themselves, now versioned in both trees.
 
 ## 9.8 The versioning asymmetry <a name="the-versioning-asymmetry"></a>
 
@@ -178,11 +195,29 @@ committed. The result is inverted from what was presumably intended:
 | dashboard PNG | not in repo | in repo |
 | MLflow store | git-ignored, present locally | never created |
 
-**A reader who clones this repository cannot recompute a single number from Experiment 1.** Fixing it
-means either anchoring the rules with `/**` so they apply to both trees and then force-adding
-experiment 1's artefacts, or moving experiment 1's data under a path that is not matched. That is a
-decision about repository content, so it is reported rather than made unilaterally
-([§ Code audit](11_code_audit.md#versioning)).
+**A reader who cloned the repository before 2026-09-27 could not recompute a single number from
+Experiment 1.**
+
+### Resolution
+
+The rules now read `**/data/...` where they need to reach both trees, and experiment artefacts are
+versioned by design. Experiment 1's five artefacts — `summary.json`, the three per-match CSVs and
+`training_log.json` — plus its dashboard PNG are committed. What remains excluded is only what is not
+evidence:
+
+| Path | Why excluded |
+|---|---|
+| `mlruns/` | binary model artefacts and duplicated checkpoints; the logged points are exported to `ctde_arena/data/mlflow_export/` instead |
+| `**/data/metrics/*.legacy*.csv` | orphaned pre-schema-rotation copies, one of them 29.9 MB |
+| `**/data/runs/` | per-replicate study scratch (checkpoints and per-step trajectory CSVs); the aggregated analysis in `results/study/` is versioned instead |
+
+One artefact needed care: experiment 1's `data/exports/comparative_dashboard.png` was still rendered with
+the old Portuguese legends, because it was untracked and so the localisation pass never reached it. It was
+regenerated from the relabelled CSV before being committed — same curves, English text.
+
+The three untrained root checkpoints left in `data/checkpoints/` by the pre-fix test run were moved to
+`data/checkpoints/_untrained_scratch/` rather than committed, so they cannot be mistaken for the
+100 k-step policies.
 
 ## 9.9 Localisation rename <a name="localisation-rename"></a>
 

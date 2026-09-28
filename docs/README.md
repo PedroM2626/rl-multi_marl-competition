@@ -29,14 +29,19 @@ Three distinct data sources exist, and they are not interchangeable:
 
 | Source | Contents | Versioned? |
 |--------|----------|------------|
-| `data/metrics/summary.json` (root) | Experiment 1 aggregate over 460 recorded matches | **No** — excluded by `.gitignore` |
-| `ctde_arena/data/` | Experiment 2 aggregate, per-match CSV rows, checkpoints, dashboard | Yes |
+| `data/metrics/summary.json` (root) | Experiment 1 cumulative over 460 recorded matches, single seed | Yes |
+| `ctde_arena/data/` | Experiment 2 same, single seed | Yes |
 | `ctde_arena/data/mlflow_export/` | The 48 metric points actually logged to MLflow across two runs | Yes (exported) |
+| `results/study/` | 5 seeds × 1 M steps per experiment, held-out greedy evaluation, Fisher-exact tests | Yes |
 
-The asymmetry in the first row is a repository defect, described in
-[§ Reproducibility](09_reproducibility.md#the-versioning-asymmetry) and
-[§ Code audit](11_code_audit.md). It matters because Experiment 1's headline table cannot currently
-be recomputed by anyone who clones this repository.
+The first two rows are **historical**: produced under the heading-control defect
+[A-1](11_code_audit.md#turn-control-defect) before it was fixed, from a single seed, and measured during
+training rather than held out. The replicated study in `results/study/` is the primary evidence and is
+what [§ Results](08_results.md) leads with.
+
+Experiment 1's artefacts were themselves only committed on 2026-09-27 — before that, root-anchored
+`.gitignore` patterns excluded them while committing experiment 2's
+([A-3](11_code_audit.md#versioning)).
 
 ## Conventions
 

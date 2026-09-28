@@ -51,17 +51,19 @@ fictitious self-play.
 
 *Remedy:* evaluate each final policy against a fixed pool of the others, or against scripted baselines.
 
-### The turn control defect
+### The turn control defect (fixed, but it splits the evidence base)
 
-`angle_to_target` reads the wrong axis, so the low-level heading controller is driven by a near-constant
-signal ([§ Turn control defect](11_code_audit.md#turn-control-defect)). Because aiming and shooting do
-not depend on heading, the agents still function — but every policy learned in a world where turning is
-effectively noise. This is a shared defect, not a differential one, so it does not directly bias the
-comparison; it does mean the reported absolute performance understates what these architectures would
-achieve in a correctly actuated arena, and it makes the "survival" metric partly a measure of tumbling
-rather than tactics.
+`angle_to_target` read the wrong axis, so the low-level heading controller was driven by a near-constant
+signal ([A-1](11_code_audit.md#turn-control-defect)). Because aiming and shooting do not depend on
+heading, the agents still functioned — but every policy trained before the fix learned in a world where
+turning was effectively noise, which makes their "survival" metric partly a measure of tumbling rather
+than tactics.
 
-*Remedy:* one-line fix, then re-run both experiments. This is the highest-value change available.
+The fix is in place and the replicated study ran under it. The consequence for reading this
+documentation is that **the two bodies of evidence are not comparable**: the historical single-seed
+100 k-step runs and the 5-seed 1 M-step study differ in control law, budget, seed count and whether the
+measurement was taken during training or held out. Only the study supports conclusions; the historical
+runs are a record of what the repository used to claim.
 
 ### Cumulative tie-breaking
 
@@ -127,28 +129,41 @@ Because a win can be awarded by timeout with nobody dead, and because the tiebre
 
 ## 10.4 Statistical validity
 
-The dominant limitation, and the one that most changes the reading of
-[§ Results](08_results.md):
+The replicated study in [§ Results](08_results.md#replicated-study) removed the two largest threats that
+applied to the original single-seed evidence, and left three that no amount of replication fixes.
 
-1. **n = 1 seed per experiment.** No variance estimate across runs is available at all.
-2. **46 recorded matches per team.** Wilson 95 % intervals are ±13 percentage points wide, while the
-   claimed gaps are 11–17 points. In Experiment 1 **no** pairwise comparison reaches \(p < 0.05\).
-3. **The cumulative denominator is not independent.** Treating 460 matches as Bernoulli trials makes the
-   same comparisons significant at \(p < 10^{-5}\) — a 10-order-of-magnitude swing from an assumption
-   choice. This is the clearest demonstration that the current evidence base cannot support the
-   conclusions drawn from it.
-4. **Exactly-one-winner coupling.** Within a match the three outcomes are negatively correlated
-   (\(\sum_i \text{winner}_i = 1\)), so standard two-proportion tests are conservative in one direction
-   and wrong in another.
-5. **No multiple-comparison correction is applied** to the six pairwise tests across the two
-   experiments; the Bonferroni threshold would be 0.0167, which does not change any verdict in
-   Experiment 2 and does not rescue any in Experiment 1.
-6. **No effect sizes with uncertainty.** Eliminations per match and survival time are reported as point
-   estimates only.
+**Now addressed:**
 
-*Remedy, concretely:* 5 seeds × 3 M steps × 2 experiments ≈ 22.5 hours of CPU time on this machine
-([§ 9.5](09_reproducibility.md#95-cost-of-a-run)), plus a held-out greedy evaluation of 200 matches per
-pairing. That is the minimum credible study, and it is affordable.
+1. ~~**n = 1 seed per experiment.**~~ Five seeds per experiment, so between-seed variance is estimable
+   and a paradigm that only wins on one seed is visible as such.
+2. ~~**46 recorded matches per team.**~~ 150 held-out greedy matches per replicate, i.e. 750 per paradigm
+   per experiment, pooled with Wilson intervals reported per seed and in aggregate.
+3. ~~**Training metrics presented as results.**~~ The study measures the final policy under greedy
+   action selection on the fixed evaluation variant, which is what the headline tables always claimed to
+   report.
+4. ~~**The cumulative denominator is not independent.**~~ Pooled estimates are now over held-out matches
+   of a frozen policy, so the Bernoulli approximation is defensible; Fisher's exact test is used instead
+   of a normal-approximation \(z\)-test because the counts are small.
+
+**Still open:**
+
+5. **Exactly-one-winner coupling.** Within a match the three outcomes are negatively correlated
+   (\(\sum_i \text{winner}_i = 1\)). Pooling across seeds does not break this, so a two-sample test
+   between two arms of the same match is not strictly valid — it is anti-conservative for the loser and
+   conservative for the winner. Reporting all three arms' win rates together, as done here, is the honest
+   presentation; the third is determined by the other two.
+6. **Slot is not rotated.** Five seeds vary the initialisation and the environment stream, but Team 1 is
+   always the same paradigm and always spawns in the same corner. A persistent slot effect would
+   masquerade as an architecture effect and replication would not reveal it
+   ([§ 10.1](10_threats_to_validity.md#slot-and-seed-confounding)).
+7. **Budget still short of the hypothesis being tested.** The claim that CTDE-Comm needs more steps than
+   the others is tested at 1 M steps; if it is still improving at the end of that budget, the answer is
+   "not yet", not "no".
+8. **No effect sizes with uncertainty on the secondary metrics.** Eliminations per match, survival and
+   accuracy are reported as pooled means without intervals.
+
+*Next concrete step:* rotate the paradigm-to-slot assignment across seeds (a Latin square over three
+slots), which is the only remaining threat that a modest re-run actually fixes.
 
 ## 10.5 Reporting validity
 

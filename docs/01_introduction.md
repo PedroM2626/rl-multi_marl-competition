@@ -48,7 +48,8 @@ inspection.
 | Axis varied | Centralisation at train and execution time | Value decomposition vs centralised critic vs learned communication |
 | Reference style | — | VDN, MAPPO, CommNet |
 | Extra infrastructure | — | MLflow tracking, Dockerfile |
-| Versioned results | **No** (git-ignored) | Yes |
+| Versioned results | Yes | Yes |
+| Replicated across seeds | **5** (1 M steps each) | **5** (1 M steps each) |
 
 Experiment 2 is a self-contained fork of the same engine, not an import of it. The two trees share
 most files byte-for-byte but have diverged; the divergence is catalogued in
@@ -103,7 +104,10 @@ Out of scope, deliberately or as unfinished work:
 
 ## 1.7 Reading note
 
-The results in [§ Results](08_results.md) are reproducible from the versioned artefacts. The
-*interpretation* in that chapter is weaker than the numbers: it is a single-seed observation with a
-known control defect ([§ Code audit](11_code_audit.md#turn-control-defect)) that plausibly affects all
-six policies. Read the audit before citing the ranking.
+[§ Results](08_results.md) carries two bodies of evidence. The **replicated study** — five seeds per
+experiment at 1 M steps, with held-out greedy evaluation of the final policies — is the primary result
+and is what the conclusions should be drawn from. The **historical single-seed runs** at 100 k steps are
+reported alongside it because they are what the repository originally shipped, but they were produced
+under a defective heading controller
+([A-1, now fixed](11_code_audit.md#turn-control-defect)) and with no replication, so they are a record of
+what was measured, not evidence for a claim. Read the audit before citing either.

@@ -56,10 +56,14 @@ Two properties of this procedure are load-bearing:
 
 | Run | Experiment | Target steps | Matches | Evidence |
 |---|---|---:|---:|---|
-| Versioned training run 1 | 1 (CTE/DTE/CTDE) | 100,000 | 463 | `data/checkpoints/training_log.json`, `data/metrics/summary.json` — **not versioned** |
-| Versioned training run 2 | 2 (VD/CAC/Comm) | 100,000 | 456 | `ctde_arena/data/…` — versioned |
+| Historical single-seed run 1 | 1 (CTE/DTE/CTDE) | 100,000 | 463 | `data/checkpoints/training_log.json`, `data/metrics/summary.json` |
+| Historical single-seed run 2 | 2 (VD/CAC/Comm) | 100,000 | 456 | `ctde_arena/data/…` |
 | MLflow smoke run `457ce1e8` | 2 | 5,000 | — | 3 logged points at steps 1,217 / 2,526 / 3,958; `rl_log_every_steps` was 1,000 |
 | MLflow run `c762d435` | 2 | 100,000 | — | **1 logged point**, at step 50,793 |
+| Replicated study | 1 and 2 | 1,000,000 | see § 7.3 | `results/study/per_seed_metrics.csv`, `analysis.json`; raw per-run output under `data/runs/` (not versioned) |
+
+The two 100 k-step runs predate the A-1 heading-control fix and used a single seed, so they are labelled
+*historical* throughout this documentation set. The replicated study is the primary evidence.
 
 The last row is a real gap rather than a documentation slip. `train_rl.py` logs to MLflow only inside
 the `RL_LOG_EVERY_STEPS` branch, which is evaluated at a match boundary; with a 50,000-step cadence and
@@ -141,8 +145,9 @@ and starts a fresh file when the column set changes, emitting a warning. This is
 `data/metrics/team_match_metrics.legacy.csv` (1,191 rows) and
 `trajectory_metrics.legacy.csv` (480,021 rows) exist in the working tree for experiment 1: the CSV
 schema changed at least once during development, and the pre-rotation history is orphaned. Those files
-are not versioned and are not reflected in `summary.json`, so **experiment 1's local data directory
-contains three mutually inconsistent histories**.
+are not reflected in `summary.json`, so **experiment 1's local data directory contains three mutually
+inconsistent histories**; `**/data/metrics/*.legacy*.csv` is now ignored explicitly, so they stay out of
+the repository.
 
 ## 7.6 Statistical treatment used in this documentation
 

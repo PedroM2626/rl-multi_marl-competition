@@ -103,14 +103,14 @@ Three specific consequences:
    travels toward the target regardless of where the agent points. Hit probability depends on the
    projectile geometry of [§ 3.4](03_arena_system_model.md#34-combat), not on marksmanship.
 
-### 4.3.1 The turn control defect
+### 4.3.1 The turn control defect (fixed)
 
-`angle_to_target` computes the bearing as `atan2(offset[0], offset[1])`. The second argument is the
-**vertical** component, which is ≈ 0 for all on-ground pairs; the intended argument is `offset[2]`
-(the \(z\) component). The returned delta is therefore driven by \(\operatorname{atan2}(\Delta x,
-\approx 0) \in \{-90^\circ, +90^\circ\}\) and is almost independent of the actual bearing.
+`angle_to_target` originally computed the bearing as `atan2(offset[0], offset[1])`. The second argument
+is the **vertical** component, which is ≈ 0 for all on-ground pairs; the intended argument is `offset[2]`
+(the \(z\) component). The returned delta was therefore driven by \(\operatorname{atan2}(\Delta x,
+\approx 0) \in \{-90^\circ, +90^\circ\}\) and was almost independent of the actual bearing.
 
-Measured directly against the correct bearing:
+Before the fix, measured directly against the correct bearing:
 
 ```
 target=( -10.0,1.0,  5.0)  delta returned= -90.00   true heading-to-target= -63.43
@@ -120,10 +120,14 @@ target=( -10.0,1.0, 20.0)  delta returned= -90.00   true heading-to-target= -26.
 target=(  10.0,1.0, 20.0)  delta returned=  90.00   true heading-to-target=  26.57
 ```
 
-The controller saturates `turn` to a constant \(\pm 1\) for any target off the \(z\) axis, so agents
-spin toward a fixed absolute heading instead of toward their waypoint. The full analysis and the reason
-it was **not** patched are in
-[§ Turn control defect](11_code_audit.md#turn-control-defect).
+The controller saturated `turn` to a constant \(\pm 1\) for any target off the \(z\) axis, so agents
+spun toward a fixed absolute heading instead of toward their waypoint. Since aiming and shooting do not
+depend on heading, the agents still fought — but the single-seed results in
+[§ Historical single-seed runs](08_results.md#historical-single-seed-runs) were all produced under this
+defective control law.
+
+The fix (`offset[2]`) makes every returned delta equal the true bearing, verified over the same grid.
+Full entry: [§ Turn control defect](11_code_audit.md#turn-control-defect).
 
 ## 4.4 Reward
 
@@ -192,16 +196,12 @@ The per-step pipeline in `ArenaSimulation.step(dt)` is:
 8. append a trajectory row;
 9. return whether the match is over.
 
-`TransitionRecord` carries `state_features`, `action_features`, `reward`, `next_state_features` and
-`done`. Two facts about it:
+`TransitionRecord` carries `agent_id`, `team_name`, `reward` and `done` — nothing else. It used to
+carry `state_features`, `action_features` and `next_state_features` as well, and two of them were
+computed from the *same* post-step snapshot, so they were identical on 100 % of the 1,593 sampled
+transitions. All three were discarded by `RLTeamController.update()`, which reads only `reward` and
+`done`; the observation actually trained on is captured earlier, in `_record_step`, from the *pre-step*
+observation. They were removed rather than repaired, which also cut two `build_local_features` calls per
+agent per step ([A-13](11_code_audit.md#degenerate-transition-pair)).
 
-* **The recorded state pair is degenerate.** Both `state_features` and `next_state_features` are
-  computed from `controller.build_local_features(agent.snapshot(), post_snapshots)` *after* the step,
-  so they are the same vector. Measured over 1,593 sampled transitions: **100.0 % identical**.
-* **The degeneracy is inert.** `RLTeamController.update()` reads only `transition.reward` and
-  `transition.done`; the observation actually trained on was captured earlier, in `_record_step`, from
-  the *pre-step* observation. So the learning signal uses the correct \(o_t\), and the two 8-element
-  arrays in the record are computed, stored, and discarded — wasted work and a memory leak
-  ([§ Code audit](11_code_audit.md#unbounded-transition-retention)).
-
-`action_features` is `[move, turn, shoot_bit, jump_bit]`, recorded but never used as a training target.
+The learning signal therefore uses the correct \(o_t\) both before and after that change.
