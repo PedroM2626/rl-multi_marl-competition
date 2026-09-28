@@ -78,8 +78,9 @@ Here, credit assignment is handled by the *reward function alone*: a hit gives +
 the VD-vs-CAC comparison in Experiment 2 less sharp than it would be under a shared team-only reward,
 because the incentive to solve credit assignment is largely removed by the design
 ([§ Reward](04_mdp_formalisation.md#44-reward)). This is a protocol caveat, not a defect — but it is the
-reason the measured VD–CAC gap (2.2 points of win rate) should not be read as evidence about
-decomposition in general.
+reason the VD–CAC gap in the historical single-seed run (2.2 points of win rate) should not be read as
+evidence about decomposition in general. The study's own VD–CAC comparison is in
+[§ Results](08_results.md#replicated-study).
 
 ## 2.5 Optimisation algorithm
 
