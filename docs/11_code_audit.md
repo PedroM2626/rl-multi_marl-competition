@@ -17,7 +17,7 @@ Every finding below was open at some point; the status column is the current sta
 | [A-3](#versioning) | FIXED | Root-anchored `.gitignore` excluded experiment 1's results and included experiment 2's |
 | [A-4](#silent-warm-start) | FIXED | Training silently resumed from versioned weights while resetting the step counter and optimizer |
 | [A-5](#test-suite-never-updates) | FIXED | The "and update" test never reached a PPO update |
-| [A-6](#coverage) | MOSTLY FIXED | Coverage raised from 73 % / 14 % to 93 % / 88 % |
+| [A-6](#coverage) | MOSTLY FIXED | Coverage raised from 73 % / 14 % to 92 % / 87 %; the collision solver is now geometrically verified |
 | [A-7](#terminal-state-crash) | FIXED | `IndexError` when stepping in an already-decided state |
 | [A-8](#unseeded-minibatch-shuffle) | FIXED | Minibatch order was unseeded; runs are now byte-reproducible |
 | [A-9](#mlflow-cadence) | FIXED | MLflow logged one point per 100 k-step run; a final entry is now always written |
@@ -28,7 +28,7 @@ Every finding below was open at some point; the status column is the current sta
 | [A-14](#approx-kl-placeholder) | FIXED | `approx_kl` was hard-coded to 0.0 |
 | [A-15](#ppostats-discarded) | FIXED | PPO statistics were computed, returned, and dropped |
 | [A-16](#dead-configuration) | FIXED | `RESPAWN_ENABLED` had no effect; `np_rng` was unused |
-| [A-17](#observation-encoding) | PARTIAL | Heading normalised to \([0,2)\) and positions were unscaled — both fixed; obstacles remain unobservable by design |
+| [A-17](#observation-encoding) | PARTIAL | Positions were unscaled and heading unbounded — both fixed, heading now \((\sin\theta,\cos\theta)\); obstacles remain unobservable by design |
 | [A-18](#buffer-tensor-alignment) | FIXED | `to_tensors` could silently misalign global observations |
 | [A-19](#plot-filter) | FIXED | `plotting.py` silently dropped rows whose team name did not match a literal prefix |
 | [A-20](#dead-classes) | FIXED | `CTDEActorNetwork` / `CTDECriticNetwork` were empty aliases |
@@ -39,7 +39,9 @@ Every finding below was open at some point; the status column is the current sta
 | [A-25](#unsafe-checkpoint-load) | FIXED | `torch.load(weights_only=False)` on model files |
 | [A-26](#gpu-and-thread-scaling) | INFO | CUDA and extra torch threads both make this workload *slower* |
 | [A-27](#slot-confounding) | FIXED | A paradigm always occupied the same slot, so a slot effect could not be separated |
-| [A-28](#training-log-console-line-never-evaluated) | FIXED | The win-rate console line printed a comprehension as literal text |
+| [A-28](#the-training-console-line-never-evaluated) | FIXED | The win-rate console line printed a comprehension as literal text |
+| [A-29](#zero-norm-shots-burn-the-cooldown-and-vanish-from-the-metrics) | LOW | A zero-norm aim consumes the shoot cooldown yet counts as neither hit nor miss — 8–18 per replicate |
+| [A-30](#greedy-evaluation-of-an-untrained-network-is-not-random-play) | MED | Argmax of random weights is a near-constant policy: untrained "random" arms differ by 18× in firing rate |
 
 ---
 
@@ -171,21 +173,23 @@ terminate and flush within 30 steps, which made the naive assertion flaky).
 
 **A-6 · MOSTLY FIXED**
 
-Measured with `coverage run --source=src`, before and after the tests added on 2026-09-28:
+Measured with `coverage run --source=src/marl_arena -m pytest`, before and after the tests added on
+2026-09-27 and 2026-09-28:
 
 | Module | Exp. 1 before | Exp. 1 after | Exp. 2 before | Exp. 2 after |
 |---|---:|---:|---:|---:|
 | `rl/ppo.py` | **26 %** | **97 %** | **16 %** | 62 % |
 | `rl/buffer.py` | 49 % | **100 %** | 47 % | **100 %** |
-| `rl/networks.py` | 84 % | **100 %** | 64 % | **100 %** |
-| `systems/simulation.py` | 87 % | 92 % | **0 %** | 93 % |
+| `rl/networks.py` | 84 % | **100 %** | 64 % | 85 % |
+| `systems/simulation.py` | 87 % | 92 % | **0 %** | 92 % |
 | `systems/metrics.py` | **0 %** | 87 % | **0 %** | 87 % |
-| `systems/plotting.py` | **0 %** | 89 % | **0 %** | 89 % |
-| `controllers/rl_controller.py` | 73 % | 92 % | **0 %** | 85 % |
-| `controllers/base.py` | 91 % | 90 % | 91 % | 90 % |
-| **total** | **73 %** | **93 %** | **14 %** | **88 %** |
+| `systems/plotting.py` | **0 %** | 87 % | **0 %** | 87 % |
+| `controllers/rl_controller.py` | 73 % | 93 % | **0 %** | 86 % |
+| `controllers/base.py` | 91 % | 89 % | 91 % | 89 % |
+| **total** | **73 %** | **93 %** | **14 %** | **87–88 %** |
 
-Test count went from 9 to 69 (36 and 33). The additions that mattered:
+Test count went from 9 to 106 (59 and 47). Experiment 2's total moves by two statements between identical
+invocations, so it is quoted as a range. The additions that mattered:
 
 * `test_control_law.py` pins the A-1 fix, including a closed-loop check that repeated application of the
   commanded turn actually converges on the target bearing.
@@ -196,6 +200,9 @@ Test count went from 9 to 69 (36 and 33). The additions that mattered:
   prefix filter — the code that produces every number in this documentation set.
 * A greedy-evaluation test drives `decide()` with training off, which is the branch the held-out study
   runs entirely through and which nothing had ever executed.
+* `test_collision.py` (14 cases) checks the swept segment-vs-AABB solver against **hand-computed** entry
+  parameters and hit positions, and drives `_advance_projectiles` with a step long enough to jump a barrier
+  outright — asserting both that the hit registers and that its position lands on the inflated box face.
 
 **Residual gaps.** `ui/dashboard.py` is 0 % (it only formats overlay text). Experiment 2's `ppo.py` is
 capped at 62 % for a structural reason worth naming: `update_actor_critic` and `update_cte` are the DTE
@@ -203,6 +210,13 @@ and CTE paths, and experiment 2 configures none of its three teams as DTE or CTE
 that file are unreachable in that tree**. They are not bugs, they are the cost of forking the engine
 ([§ Cross-tree divergence](#cross-tree-divergence)) — but they mean experiment 2's headline coverage
 number understates how much of its own live code is tested.
+
+**Coverage is not correctness, and the collision suite proves the point.** Adding 14 geometry tests moved
+`systems/simulation.py` from 92 % to 92 %: the solver's lines were already *executed* by the match-running
+tests. What changed is that those lines are now *asserted* — before, a solver that hit nothing would have
+passed the suite at the same percentage. The remaining unverified surface is of that kind, not of the
+uncovered-line kind: no test checks that a metric is right against an independent computation, only that it
+is computed at all.
 
 ## Terminal-state crash
 
@@ -538,20 +552,104 @@ The doubled braces make that a literal `{k: round(...)}` in the rendered string 
 comprehension, so the training console never actually showed win rates. Found while rewriting the script
 for A-4/A-15; the line now renders real values.
 
+## Zero-norm shots burn the cooldown and vanish from the metrics
+
+**A-29 · LOW · DOCUMENTED, NOT FIXED**
+
+`action_to_decision` can produce an `aim_direction` of zero norm — the clearest route is the A-7 fallback,
+where `candidate_targets` returns the agent's own position four times when there is no enemy, so the
+target offset is exactly zero. `_spawn_projectile` then normalises, gets a zero vector, warns and returns
+`None`:
+
+```python
+agent.last_shot_at = self.match_time                    # cooldown consumed
+self._spawn_projectile(agent, decision.aim_direction)   # no projectile created
+```
+
+A shot that never exists still costs the cooldown, but because hits and misses are attributed by the
+projectile, it is counted as neither — so `shots_per_match` and `shot_accuracy` both silently ignore it.
+The behaviour itself is defensible (burning the cooldown punishes an illegal aim); the metric hole is the
+defect.
+
+**Measured**, by counting the warning in every log the study produced: 8–18 occurrences per 500,000-step
+replicate, against tens of thousands of registered shots. It changes no reported number at the third
+decimal place, which is why it is documented rather than fixed — patching it means deciding whether a
+dropped shot is a miss, and that choice would move `shot_accuracy` for reasons unrelated to policy quality.
+
+The related maintainability trap is that the collision helpers do not share a return order:
+`_segment_intersects_aabb` yields `(flag, t, position)` while `_first_obstacle_collision`,
+`_first_agent_collision` and `_arena_boundary_collision` yield `(target, position, t)`. Both orders are now
+pinned by `tests/test_collision.py::test_the_helpers_do_not_share_a_return_order`.
+
+## Greedy evaluation of an untrained network is not random play
+
+**A-30 · MED · PROTOCOL, DOCUMENTED**
+
+`set_rl_training(sim.controllers, False)` makes `decide()` take `torch.argmax` of the actor's logits — the
+right thing for measuring a trained policy and the wrong thing for measuring an untrained one. A random
+network's argmax is a nearly-constant function of its initial weights, so an "untrained greedy" agent tends
+to replay one action for the whole match rather than sample across the eight. `scripts/random_baseline.py`
+measured what that means, 300 headless fixed-variant matches:
+
+```
+300 headless matches (greedy-policy init, no checkpoints): {'wipeout': 107, 'timeout': 129, 'draw': 64}
+  wipeout 35.7%  timeout 43.0%  draw 21.3%
+  duration min=4.3s median=90.1s max=90.1s mean=63.0s
+  CTDE  win 0.750  elim/match 3.13  survival 60.4s  shots/match 82.1  accuracy 0.038
+  CTE   win 0.013  elim/match 0.07  survival 40.7s  shots/match  4.6  accuracy 0.015
+  DTE   win 0.023  elim/match 0.23  survival 48.8s  shots/match  6.8  accuracy 0.034
+```
+
+Two consequences for how the study may be read:
+
+1. **The paradigm label predicts firing rate before any learning happens** — 82.1 shots per match for CTDE
+   against 4.6 for CTE, an 18× spread that exists purely because the three architectures start from
+   different random weight draws and argmax commits to whichever action that draw favours. Experiment 2
+   shows the same effect with the sign reversed (88.2 for CAC against 397.9 for Comm, accuracy 0.1–0.2 %).
+   Any comparison of these arms' *engagement* is therefore partly a comparison of their initialisations.
+2. **A "random baseline" win rate is not 1/3.** Untrained greedy CTDE wins 75 % of matches, against 32.6 %
+   for the same arm in the trained study. Read naively that says training cost CTDE 42 points. It does not —
+   the two are measured in different regimes (fixed variant vs. rotated slots, one weight draw vs. ten, and
+   21 % of baseline matches ending in a three-way draw) — but it does mean the study has no clean floor to
+   subtract, and the `--policy uniform` mode of the same script is the version that supplies one.
+
+**Reproduction** — in either tree:
+
+```
+python scripts/random_baseline.py --matches 300 --policy greedy
+python scripts/random_baseline.py --matches 300 --policy uniform
+```
+
+The baseline is therefore reported in [§ 8.9](08_results.md#random-baseline) in both modes, and the honest
+summary is that win rate in this arena cannot be interpreted against a chance level of 1/3.
+
 ## Open work: suggested measurements
 
-Items 1–3 below were the original list; 1–3 are now done, and the remaining gaps are 4–7.
+Items 1–3 were the original list and are done; 6 is done; 4 is partly done; 7 was deliberately not done.
 
 1. ~~Fix A-1, then re-run both experiments.~~ **Done** — see
    [§ Replicated study](08_results.md#replicated-study).
-2. ~~Fix A-2, then run 5 seeds.~~ **Done** — 5 seeds × 1 M steps, reported with the study.
+2. ~~Fix A-2, then run 5 seeds.~~ **Done** — and then superseded: the study was re-run at 10 seeds, which
+   is what [§ 8.1](08_results.md#replicated-study) reports.
 3. ~~Add a held-out greedy evaluation.~~ **Done** — 150 greedy fixed-variant matches per replicate.
 4. Log `PPOStats` (A-15) and a real `approx_kl` (A-14) so convergence and divergence are distinguishable.
-   The study measures outcomes, not optimisation health.
+   **Partly done** — both are now computed and written to `run_summary.json`, but the study still judges the
+   arms by outcome only; nothing correlates a replicate's win rate with its KL or value loss. The seed-6
+   collapse ([§ 8.1](08_results.md#leave-one-out)) is exactly the event those traces would have flagged, and
+   it went unrecorded.
 5. Report shots-per-second-of-alive-life per agent, which is the only way to separate the two candidate
    explanations for CTDE-Comm's deficit ([§ 8.3](08_results.md#decomposing-the-elimination-gap)).
-6. Rotate architecture-to-slot assignment across seeds (A-11 /
-   [§ 10.1](10_threats_to_validity.md#slot-and-seed-confounding)). The current replicates vary the seed
-   but not the slot, so a persistent slot effect would still masquerade as an architecture effect.
-7. Re-run at the 3 M-step budget the code defaults to, now that A-2 no longer makes it impossible, to
-   test whether CTDE-Comm's late improvement continues.
+   **Still open**, and A-30 makes it more urgent: firing rate differs by 18× at initialisation.
+6. ~~Rotate architecture-to-slot assignment across seeds~~ (A-27). **Done** — `paradigm_rotation` is derived
+   from the seed and recorded in every `run_summary.json`.
+7. Re-run at the 3 M-step budget the code defaults to, to test whether CTDE-Comm's late improvement
+   continues. **Deliberately not done.** The 10-replicate study showed the curve *direction* flipping when
+   the replicate count changed, so a longer budget would refine an estimate of a quantity that is not
+   stable; the binding problem is the reward and termination design, not the step count.
+8. **New:** separate the two match regimes. A quarter of replicates decide matches on the 90 s clock rather
+   than on eliminations ([§ 8.1](08_results.md#two-regimes)), so any pooled win rate mixes "who wins a
+   fight" with "who is most alive at the buzzer". Either report the regimes separately or change the
+   termination rule so that survival-to-cap is not a winning outcome.
+9. **New:** test the reward against the never-fires basin. Seed 6's CTDE arm finished training with 3.8 shots
+   per match and a 0.000 held-out win rate; nothing in the reward punishes not engaging until the match is
+   already over.

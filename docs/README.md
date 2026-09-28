@@ -29,15 +29,18 @@ Four distinct data sources exist, and they are not interchangeable:
 
 | Source | Contents | Versioned? |
 |--------|----------|------------|
-| `data/metrics/summary.json` (root) | Experiment 1 cumulative over 460 recorded matches, single seed | Yes |
-| `ctde_arena/data/` | Experiment 2 same, single seed | Yes |
+| `data/metrics/summary.json` (root) | Experiment 1, one promoted study replicate | Yes |
+| `ctde_arena/data/` | Experiment 2 same | Yes |
 | `ctde_arena/data/mlflow_export/` | The 48 metric points actually logged to MLflow across two runs | Yes (exported) |
-| `results/study/` | 5 seeds × 1 M steps per experiment, held-out greedy evaluation, paired *t*-tests and Fisher-exact tests | Yes |
+| `results/study/` | 10 seeds × 500 k steps per experiment, slot-rotated, held-out greedy evaluation, paired *t*-tests, Fisher-exact tests and forward power | Yes |
 
-The first two rows are **historical**: produced under the heading-control defect
-[A-1](11_code_audit.md#turn-control-defect) before it was fixed, from a single seed, and measured during
-training rather than held out. The replicated study in `results/study/` is the primary evidence and is
-what [§ Results](08_results.md) leads with.
+The first two rows are **one promoted replicate each** — the run closest to its experiment's study means,
+selected mechanically by `promote_run.py --seed median` and described by `data/PROVENANCE.json`. They are
+what `python main.py` loads and what the dashboards show; they are **not** evidence about the ranking, and
+a single replicate can reverse that ranking ([§ 8.1](08_results.md#leave-one-out)). The aggregated study in
+`results/study/` is the primary evidence and is what [§ Results](08_results.md) leads with. The superseded
+single-seed artefacts live on under `data/historical_100k/`, produced under the heading-control defect
+[A-1](11_code_audit.md#turn-control-defect) before it was fixed.
 
 Experiment 1's artefacts were themselves only committed on 2026-09-27 — before that, root-anchored
 `.gitignore` patterns excluded them while committing experiment 2's
@@ -57,7 +60,13 @@ Experiment 1's artefacts were themselves only committed on 2026-09-27 — before
 
 | Artefact | Produced by |
 |---|---|
-| `results/study/per_seed_metrics.csv` | `python scripts/run_study.py --steps 1000000 --seeds 1,2,3,4,5 --jobs 10` |
+| `results/study/per_seed_metrics.csv` | `python scripts/run_study.py --steps 500000 --seeds 1,2,3,4,5,6,7,8,9,10 --jobs 20 --eval-matches 150` |
 | The tables in [§ Results](08_results.md#replicated-study) | `python scripts/report_study.py` |
 | `results/study/learning_curves.png` | `python scripts/plot_study.py` |
-| Coverage figures in [§ Code audit](11_code_audit.md#coverage) | `coverage run --source=src -m pytest tests/ -q && coverage report -m` |
+| [§ 8.9](08_results.md#random-baseline) untrained baselines | `python scripts/random_baseline.py --matches 300 --policy greedy` and `--policy uniform`, in each tree |
+| The leave-one-out table in [§ 8.1](08_results.md#leave-one-out) | `report_study.paired_t` over the per-seed matrix with one replicate dropped |
+| The `--seed median` choice in [§ 9.7](09_reproducibility.md#97-artefact-inventory) | `python scripts/promote_run.py --experiment exp1 --list` |
+| [§ 9.7](09_reproducibility.md#97-artefact-inventory) artefact table | `python scripts/report_inventory.py` |
+| [§ 9.6](09_reproducibility.md#96-what-is-and-is-not-reproducible) reproducibility claim | two `train_rl.py --seed 42 --steps 4000` runs into separate `ARENA_DATA_DIR`s, then compare SHA-256 of the checkpoints and `training_log.json` |
+| Coverage figures in [§ Code audit](11_code_audit.md#coverage) | `coverage run --source=src/marl_arena -m pytest tests/ -q && coverage report` |
+| Documentation cross-references | `python -m pytest tests/test_docs_links.py -q` |

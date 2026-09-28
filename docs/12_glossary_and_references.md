@@ -25,7 +25,7 @@
 | \(s\) | 45-dim global observation | [§ 4.2](04_mdp_formalisation.md#42-global-observation-s) |
 | \(a\) | Action index in \(\{0,\dots,7\}\) | [§ 4.3](04_mdp_formalisation.md#43-action-space) |
 | \(\pi_\theta\) | Stochastic categorical policy | [§ 6.1](06_optimisation_procedure.md#61-objective) |
-| \(V_\phi(s)\) | Critic value estimate | [§ 5.3](05_network_architectures.md#53-centralizedcriticnetwork--joint-state-critic) |
+| \(V_\phi(s)\) | Critic value estimate | [§ 5.3](05_network_architectures.md#centralizedcriticnetwork) |
 | \(r_i(t)\) | Reward of agent \(i\) at step \(t\) | [§ 4.4](04_mdp_formalisation.md#44-reward) |
 | \(\gamma\) | Discount factor, 0.99 | [§ 6.7](06_optimisation_procedure.md#67-hyperparameters-as-trained) |
 | \(\lambda\) | GAE trace coefficient, 0.95 | [§ 6.2](06_optimisation_procedure.md#62-advantage-estimation) |
@@ -35,7 +35,7 @@
 | \(\hat f(\theta)\) | Forward unit vector from heading | [§ 3.2](03_arena_system_model.md#32-kinematics) |
 | \(L\) | Arena side length | [§ 3.1](03_arena_system_model.md#31-entities-and-geometry) |
 | \(W, E, H, X, S, M\) | Wins, eliminations, hits, misses, survival sum, matches played | [§ 7.4](07_experimental_protocol.md#74-metric-definitions) |
-| \(m_k,\ c_i\) | CommNet message and pooled channel | [§ 5.5](05_network_architectures.md#55-commactornetwork--one-round-differentiable-communication-ctde-comm) |
+| \(m_k,\ c_i\) | CommNet message and pooled channel | [§ 5.5](05_network_architectures.md#commactornetwork) |
 
 ## 12.3 Module map
 

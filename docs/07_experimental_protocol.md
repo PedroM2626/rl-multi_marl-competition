@@ -57,14 +57,15 @@ These two are precisely what the replicated study changes. Its procedure differs
 
 ```
 scripts/run_experiment.py --seed S --steps 1000000 --out <run dir>
-  1. ARENA_DATA_DIR=<run dir>, RANDOM_SEED=S, RL_TRAIN_TOTAL_STEPS=1000000
+  1. ARENA_DATA_DIR=<run dir>, RANDOM_SEED=S, RL_TRAIN_TOTAL_STEPS=500000
+       paradigm_rotation = S % 3 sets which paradigm occupies which team slot
        -> one directory per replicate; nothing can warm-start from another run's checkpoints
   2. seed random.Random, NumPy's global RNG (which drives the PPO minibatch shuffle)
      and Torch (which drives weight initialisation)
   3. train exactly as above, recording training metrics every 100 matches
   4. at 25 / 50 / 75 / 100 % of the budget:
        save checkpoints -> construct a SEPARATE ArenaSimulation that loads them
-       -> 40 greedy matches, domain_randomization=False, set_rl_training(False)
+       -> 60 greedy matches, domain_randomization=False, set_rl_training(False)
        -> discard that simulation; resume training the original
   5. at the end: 150 further greedy held-out matches -> evaluation/eval_match_metrics.csv
 ```
@@ -198,6 +199,13 @@ that run's initialisation and geometry stream, so they are not independent draws
    experiment) and both the raw verdict and the Bonferroni verdict are shown.
 5. **Power** is reported forward, not retrospectively: [§ 8.1](08_results.md#power-analysis) states how
    many replicates each observed effect size would need at 80 % power.
+6. **Sensitivity** is reported by leave-one-out: because one degenerate replicate in thirty paradigm-slots
+   reverses the experiment 1 ordering, [§ 8.1](08_results.md#leave-one-out) recomputes every comparison
+   with it removed, using the same shipped `paired_t`.
+7. **Which replicate ships** is decided mechanically, not by inspection: `promote_run.py --seed median`
+   selects the replicate with the least L1 distance to the per-arm study means, so the versioned `data/`
+   cannot be the one that happens to confirm the hypothesis. The rule and its result are recorded in
+   `data/PROVENANCE.json`.
 
 **Secondary — the historical single-seed runs.** Point estimates as `summary.json` reports them (a
 cumulative average over a non-stationary trajectory), Wilson intervals on the 46 recorded matches per

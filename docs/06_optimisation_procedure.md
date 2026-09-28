@@ -122,7 +122,7 @@ def update_ctde_vd(self, actor, critic, buffer, last_value, gamma, gae_lambda):
 so the entire difference between the VD and CAC arms in Experiment 2 is the critic's `forward`
 function. That makes Experiment 2's VD-vs-CAC contrast a clean architectural comparison at the level of
 the value network — and, given the capacity difference of
-[§ 5.4](05_network_architectures.md#54-valuedecompositioncriticnetwork--additive-per-agent-critic-ctde-vd),
+[§ 5.4](05_network_architectures.md#valuedecompositioncriticnetwork),
 not a clean one at the level of capacity.
 
 Second, `update_ctde_comm` is a near-copy of `update_ctde` with the extra slot tensor. The three paths

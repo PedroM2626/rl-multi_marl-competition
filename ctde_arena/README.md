@@ -20,15 +20,18 @@ Each paradigm controls one team; three teams of three agents fight in the same a
 
 | Aspect | State |
 |---|---|
-| Historical 100k-step run | 456 matches, artefacts committed under `data/` |
-| Replicated study | 5 seeds × 1,000,000 steps, held-out greedy evaluation — [results](../docs/08_results.md#replicated-study) |
+| Historical 100k-step run | 456 matches, artefacts committed under `data/historical_100k/` |
+| Replicated study | 10 seeds × 500,000 steps, slot-rotated, held-out greedy evaluation — [results](../docs/08_results.md#replicated-study) |
+| Promoted replicate in `data/` | seed 2, chosen as the one least distant from the study means (`data/PROVENANCE.json`) |
+| Untrained baseline | 300 matches in both greedy and uniform modes (`results/baseline/`) |
+| Bit-for-bit reproducible training | yes, verified with `--no-mlflow` |
 | MLflow curves | **1 logged point** for the 100k run — see [A-9](../docs/11_code_audit.md#mlflow-cadence) |
-| Tests | 33 passing, **88 %** statement coverage |
-| Docker image | never built or run in this session |
+| Tests | 47 passing, **87 %** statement coverage |
+| Docker image | **never built or run** — unverified configuration |
 
 Read [Results](../docs/08_results.md) and [Threats to validity](../docs/10_threats_to_validity.md)
-before quoting any number from here. The tables in this file are the **historical** single-seed run,
-kept because those artefacts ship in `data/`; the study supersedes them.
+before quoting any number from here. Everything in the "historical" tables is superseded by the replicated
+study; it is kept because those artefacts still ship.
 
 ## Architecture
 
@@ -48,29 +51,38 @@ Two implementation facts that change how the comparison should be read:
 * **VD does not decompose over local observations.** The documented formula is
   \(V_{\text{tot}}(s) = \sum_i V_i(o_i)\); the code computes \(\sum_i V_i(\text{slice}_i(s))\) from the
   *global* vector, so it is not a decentralisable factorisation.
-  [§ 5.4](../docs/05_network_architectures.md#54-valuedecompositioncriticnetwork--additive-per-agent-critic-ctde-vd).
+  [§ 5.4](../docs/05_network_architectures.md#valuedecompositioncriticnetwork).
 * **Comm uses one communication round**, and dead allies contribute a learned non-zero constant message
   because their observations are zero-filled rather than masked.
-  [§ 5.5](../docs/05_network_architectures.md#55-commactornetwork--one-round-differentiable-communication-ctde-comm).
+  [§ 5.5](../docs/05_network_architectures.md#commactornetwork).
 
 ## Differences from the root experiment
 
-Only these five files differ from the root tree; the rest — including the whole engine, `simulation.py`
-and the renderer `main.py` — are byte-identical copies, and `tests/test_tree_parity.py` enforces it.
+**Five source files differ, and the engine is not one of them.** `simulation.py`, `main.py`, `config.py`,
+`models.py`, `controllers/base.py`, `rl/actions.py`, `rl/buffer.py`, `systems/metrics.py`,
+`systems/plotting.py`, `ui/dashboard.py`, `scripts/run_experiment.py`, `scripts/random_baseline.py` and
+`scripts/plot_metrics.py` are byte-identical copies, and `tests/test_tree_parity.py` fails the suite if
+they drift. Measured by `diff`:
 
-| File | Change |
-|---|---|
-| `src/marl_arena/rl/networks.py` | adds `ValueDecompositionCriticNetwork`, `CommActorNetwork` |
-| `src/marl_arena/rl/ppo.py` | adds `update_ctde_vd`, `update_ctde_comm` |
-| `src/marl_arena/controllers/rl_controller.py` | paradigm selection and the Comm decision path |
-| `src/marl_arena/systems/match_variant.py` | `PARADIGM_CYCLE` only — a two-line difference |
-| `src/marl_arena/systems/simulation.py` | status-text lines only |
-| `scripts/train_rl.py` | MLflow run, params, metrics, artefacts, registered models |
-| `main.py` | legend text |
-| `requirements.txt` | adds `mlflow==2.17.2` |
-| `Dockerfile` | training container (root has none) |
+| File | Changed lines | Why |
+|---|---:|---|
+| `src/marl_arena/controllers/rl_controller.py` | 116 | paradigm selection and the Comm decision path |
+| `src/marl_arena/rl/networks.py` | 84 | adds `ValueDecompositionCriticNetwork`, `CommActorNetwork` |
+| `src/marl_arena/rl/ppo.py` | 58 | adds `update_ctde_vd`, `update_ctde_comm` |
+| `scripts/train_rl.py` | 135 | MLflow run, params, metrics, artefacts, registered models |
+| `src/marl_arena/systems/match_variant.py` | **2** | `PARADIGM_CYCLE` only — a pinned, asserted difference |
 
-The full divergence list, including unintended drift, is
+Non-code differences: `requirements.txt` adds `mlflow==2.17.2`, and this tree has a `Dockerfile` the root
+lacks. `RANDOM_SEED` also differs (2 here, 9 at the root) because each value is the one that makes
+`python main.py` load that tree's promoted checkpoints.
+
+**The physics, the reward, the termination rule, the observation encoder and the collision solver are the
+same code in both experiments**, so every engine fix listed in
+[§ Code audit](../docs/11_code_audit.md) — the control law, the memory leak, the tie-break, the observation
+scaling, the slot rotation — applies to experiment 2 as well. They were applied twice, and the parity test
+is what proves it rather than what hopes it.
+
+The full divergence history, including the unintended drift that was removed, is
 [§ Cross-tree divergence](../docs/11_code_audit.md#cross-tree-divergence).
 
 ## Installation
@@ -126,9 +138,15 @@ The mid-training snapshot at 50,793 steps already reproduces the final ordering:
 python main.py
 ```
 
-Loads `data/checkpoints/team_N_<paradigm>.pt` and runs the arena with greedy actions. The legend panel
-maps Team 1 → red / CTDE-VD, Team 2 → blue / CTDE-CAC, Team 3 → green / CTDE-Comm, and the obstacle
-colours. Orbit with `EditorCamera`; **Restart Match** resets.
+Loads `data/checkpoints/team_N_<paradigm>.pt` and runs the arena with greedy actions. Which paradigm is in
+which slot is `RANDOM_SEED % 3`; at the shipped value of 2 the promoted replicate (seed 2, rotation 2) maps
+Team 1 → red / CTDE-Comm, Team 2 → blue / CTDE-VD, Team 3 → green / CTDE-CAC, and the legend panel and
+obstacle colours are built from the live variant rather than hard-coded. Orbit with `EditorCamera`;
+**Restart Match** resets.
+
+If you change `RANDOM_SEED` to a value with a different remainder, the checkpoint files for those slots do
+not exist and each controller now **warns** instead of silently running random networks. To demo the shipped
+policies, keep the seed's remainder at 2.
 
 ## Docker
 
@@ -145,46 +163,76 @@ session** — treat as unverified.
 
 ### Replicated study — primary evidence
 
-5 independent replicates at 1,000,000 steps, each measured by 150 held-out greedy matches on the fixed
-evaluation variant. Full analysis:
+10 independent replicates at 500,000 steps each, with the paradigm-to-slot assignment rotated by
+`seed % 3`, each measured by 150 held-out greedy matches on the fixed evaluation variant. Full analysis:
 [§ 8.1 Replicated study](../docs/08_results.md#replicated-study).
 
 | Paradigm | Mean win rate | Between-seed SD | Pooled wins | Pooled 95 % CI | Elim./match | Survival | Shots/match | Accuracy |
 |---|---:|---:|---:|---|---:|---:|---:|---:|
-| **CTDE-Comm** | **0.365** | 0.305 | 274/750 | [0.332, 0.400] | 2.63 | 24.7 s | 99.8 | 2.88 % |
-| CTDE-CAC | 0.360 | 0.211 | 270/750 | [0.326, 0.395] | 1.94 | 25.6 s | 96.9 | 2.20 % |
-| CTDE-VD | 0.275 | 0.309 | 206/750 | [0.244, 0.308] | 1.16 | 24.8 s | 114.6 | 4.25 % |
+| **CTDE-VD** | **0.367** | 0.171 | 551/1500 | [0.343, 0.392] | 1.97 | 23.1 s | 92.8 | 3.01 % |
+| CTDE-Comm | 0.331 | 0.218 | 496/1500 | [0.307, 0.355] | 2.18 | 19.2 s | 111.6 | 2.40 % |
+| CTDE-CAC | 0.282 | 0.182 | 423/1500 | [0.260, 0.305] | 1.98 | 21.5 s | 112.3 | 2.35 % |
 
-Per-seed held-out win rate:
+Per-seed held-out win rate — every column is one independent replicate:
 
-| Paradigm | seed 1 | seed 2 | seed 3 | seed 4 | seed 5 |
-|---|---:|---:|---:|---:|---:|
-| CTDE-CAC | 0.560 | 0.613 | 0.240 | 0.147 | 0.240 |
-| CTDE-Comm | 0.407 | 0.033 | 0.733 | 0.080 | 0.573 |
-| CTDE-VD | 0.033 | 0.353 | 0.027 | 0.773 | 0.187 |
+| Paradigm | s1 | s2 | s3 | s4 | s5 | s6 | s7 | s8 | s9 | s10 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| CTDE-VD | 0.387 | 0.367 | 0.153 | 0.547 | 0.220 | 0.153 | 0.373 | 0.273 | 0.613 | 0.587 |
+| CTDE-Comm | 0.253 | 0.253 | 0.553 | 0.173 | 0.153 | **0.767** | 0.580 | 0.193 | 0.187 | 0.193 |
+| CTDE-CAC | 0.340 | 0.333 | 0.280 | 0.220 | 0.620 | 0.067 | **0.047** | 0.520 | 0.187 | 0.207 |
 
-> **Nothing here is statistically distinguishable.** Paired per-seed *t*-tests give *p* = 0.979 (CAC vs
-> Comm), 0.682 (CAC vs VD) and 0.743 (Comm vs VD). CAC and Comm differ by 0.005 win rate. The power
-> analysis in [§ 8.1](../docs/08_results.md#power-analysis) puts the CAC-vs-VD and Comm-vs-VD comparisons
-> at ~272 and ~421 replicates.
+> **Nothing here is statistically distinguishable.** Paired per-seed *t*-tests give *p* = 0.679 (CAC vs
+> Comm), 0.363 (CAC vs VD) and 0.746 (Comm vs VD). The forward power analysis in
+> [§ 8.1](../docs/08_results.md#power-analysis) puts those comparisons at ~576, ~117 and ~939 replicates —
+> 100 to 1,700 CPU-hours. The match-level Fisher tests reject two of the three, which is the anti-conservative
+> treatment this design warns about.
+>
+> Three of these ten replicates end most of their matches on the 90 s clock rather than by elimination
+> ([§ 8.1](../docs/08_results.md#two-regimes)), so part of what this table ranks is survival-to-buzzer, not
+> fighting.
 
-### The historical conclusion reverses
+### Both historical conclusions reverse
 
-| | Historical (1 seed, training-time, pre-A-1-fix) | Study (5 seeds, held-out, fixed) |
+| | Historical (1 seed, training-time, pre-A-1-fix) | Study (10 seeds, held-out, fixed, rotated) |
 |---|---|---|
-| Order | CAC 42.9 % > VD 40.7 % ≫ **Comm 16.4 %** | **Comm 36.5 % ≈ CAC 36.0 % > VD 27.5 %** |
-| Defended claim | "Comm loses to both others" | **does not reproduce** |
+| Order | CAC 42.9 % > VD 40.7 % ≫ **Comm 16.4 %** | **VD 36.7 % > Comm 33.1 % > CAC 28.2 %** |
+| Defended claim | "Comm loses to both others" | **does not reproduce** — Comm is now middle |
+| Historical winner | CTDE-CAC | **CTDE-CAC finishes last** |
 
-CTDE-Comm moves from last by 26 points to first by a hair. Either the broken heading controller produced
-the deficit or the single seed did; the data cannot separate the two, and both readings imply the same
-thing operationally — the old ranking was not a property of the architectures.
+CTDE-Comm moves from last by 26 points to middle, and the arm that historically won finishes third. Either
+the broken heading controller produced the original deficit or the single seed did; the data cannot separate
+the two, and both readings imply the same operational conclusion — the old ranking was not a property of the
+architectures.
 
-The hypothesis this experiment was built around, that Comm needs more steps than the others, is also not
-supported: at 25 % of the budget Comm was the **best** arm (0.650) and it drifted **down** from there.
+The hypothesis this experiment was built around, that Comm needs more steps than the others because messages
+must become informative before they help, is not supported either — and its *trajectory* is not stable enough
+to test. At 25 % of the budget Comm was the **best** arm in the 5-seed study (0.650) and the **worst** here
+(0.190); there it drifted down, here it drifts up (+0.141). When the sign of a learning curve flips on the
+replicate count, the curve is measuring initialisation.
+
+### Against untrained play
+
+`scripts/random_baseline.py`, 300 headless matches. [§ 8.9](../docs/08_results.md#random-baseline) has both
+experiments and the interpretation.
+
+| | Uniform random actions | Greedy, untrained | Trained (study mean) |
+|---|---:|---:|---:|
+| Ended by wipeout | 97.0 % | **2.0 %** | mostly |
+| Hit the cap / drawn | 2.0 % / 1.0 % | 56.7 % / **41.3 %** | 2.0 % drawn |
+| Survival VD / CAC / Comm | 9.4 / 8.1 / 10.3 s | 83.3 / 63.6 / 84.9 s | 23.1 / 21.5 / 19.2 s |
+| Shots/match | 43.5 / 37.5 / 43.4 | 358.2 / 88.2 / 397.9 | 92.8 / 112.3 / 111.6 |
+| Accuracy | 5.1 / 5.9 / 6.2 % | **0.10 / 0.10 / 0.20 %** | 3.0 / 2.4 / 2.4 % |
+| Win rate | 0.257 / 0.270 / 0.463 | 0.167 / 0.037 / 0.383 | 0.367 / 0.282 / 0.331 |
+
+Training raises conversion by 15–30× over the greedy-untrained floor and largely removes the
+timeout-and-draw regime, which is the strongest positive result in this repository. Against genuinely random
+aiming, though, trained policies fire more and convert less — the learned skill is engagement, not
+marksmanship. The uniform column is tree-independent (it never queries a network), so it is the same 300
+matches as the root's, relabelled.
 
 ### Historical single-seed run
 
-Cumulative over 456 matches, kept because these artefacts ship in `data/`.
+Cumulative over 456 matches, kept because these artefacts ship in `data/historical_100k/`.
 [§ 8.2](../docs/08_results.md#historical-single-seed-runs).
 
 | Team | Paradigm | Win rate | Elim./match | Mean survival | Shot accuracy | Hits | Misses |
@@ -219,33 +267,42 @@ The values that matter most here:
 
 | Variable | Committed value | Note |
 |---|---|---|
-| `RL_TRAIN_TOTAL_STEPS` | 100,000 | code default is 3,000,000 — the `.env` wins |
-| `RL_LOG_EVERY_STEPS` | 50,000 | with a 100k budget this yields one MLflow point |
+| `RL_TRAIN_TOTAL_STEPS` | 1,000,000 | matches the code default; the study overrode it to 500,000 per replicate |
+| `RL_LOG_EVERY_STEPS` | 50,000 | with the historical 100k budget this yields one MLflow point |
 | `RL_METRICS_EVERY_MATCHES` | 10 | the CSVs hold one match in ten |
 | `RL_HIDDEN_DIM` | 128 | two Tanh layers |
-| `RL_DEVICE` | cpu | `cuda` / `mps` supported |
-| `RANDOM_SEED` | 7 | single seed; minibatch shuffling is unseeded regardless |
+| `RL_DEVICE` | cpu | `cuda` / `mps` supported, and both are *slower* here — [A-26](../docs/11_code_audit.md#gpu-and-thread-scaling) |
+| `RANDOM_SEED` | 2 | also the slot rotation: `2 % 3 = 2`, which is what the promoted checkpoints need |
 
 ## Tests
 
 ```bash
 cd ctde_arena
-python -m pytest tests/ -q        # 33 passed, 88% statement coverage
+python -m pytest tests/ -q        # 47 passed, 87% statement coverage
 ```
 
-`test_components.py` checks tensor shapes for the two new networks; `test_ctde_training.py` terminates
-real matches and asserts that all three variants' parameters move after a PPO update, that the VD critic
-slices the right agents, and that the Comm arm stores 24-wide team observations; `test_control_law.py`
-pins the heading-controller fix; `test_metrics_store.py` covers the artefact pipeline. The remaining gap
-is `ui/dashboard.py`. [§ Coverage](../docs/11_code_audit.md#coverage).
+`test_components.py` checks tensor shapes for the two new networks; `test_ctde_training.py` terminates real
+matches and asserts that all three variants' parameters move after a PPO update, that the VD critic slices
+the right agents, and that the Comm arm stores 9-wide local observations; `test_control_law.py` pins the
+heading-controller fix; `test_collision.py` verifies the swept collision solver against hand-computed entry
+parameters and drives a full projectile step long enough to tunnel a barrier; `test_metrics_store.py` covers
+the artefact pipeline. The remaining gap is `ui/dashboard.py`.
+[§ Coverage](../docs/11_code_audit.md#coverage).
+
+Run the two trees' suites separately — from the root, `pytest tests/ ctde_arena/tests/` fails at collection
+because each tree prepends its own `src/`.
 
 ## Open work for this experiment
 
 1. Lower `RL_LOG_EVERY_STEPS` (or move the MLflow call outside the boundary check) so a run produces an
    actual curve — `run_experiment.py` already records its own curve, but MLflow still does not.
-2. Rotate which team slot each variant occupies, so a slot effect cannot masquerade as an
-   architecture effect.
+2. ~~Rotate which team slot each variant occupies~~ **Done** — `paradigm_rotation = seed % 3`, recorded in
+   every `run_summary.json`.
 3. Mask dead allies in `CommActorNetwork` instead of zero-filling their observations.
-4. Match critic capacity across VD and CAC before interpreting that contrast.
-5. Report shots per second-of-alive-life per agent — the only measurement that separates "Comm shoots
-   less" from "Comm dies sooner".
+4. Match critic capacity across VD and CAC before interpreting that contrast — VD's critic is 17,281
+   parameters against CAC's 37,889, and the study's exp-2 arms now differ in critic size as well as in
+   information flow.
+5. Report shots per second-of-alive-life per agent — the only measurement that separates "Comm shoots less"
+   from "Comm dies sooner". [A-30](../docs/11_code_audit.md#greedy-evaluation-of-an-untrained-network-is-not-random-play)
+   makes this urgent: untrained firing volume already spans 88 to 398 shots per match.
+6. Build and run the Docker image, or delete the Dockerfile. It is currently unverified configuration.

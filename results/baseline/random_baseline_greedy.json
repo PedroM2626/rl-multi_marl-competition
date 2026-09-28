@@ -1,0 +1,43 @@
+{
+  "matches": 300,
+  "seed": 1,
+  "paradigm_rotation": 0,
+  "match_duration_cap_seconds": 90.0,
+  "outcomes": {
+    "wipeout": 107,
+    "timeout": 129,
+    "draw": 64
+  },
+  "duration_seconds": {
+    "min": 4.300000000000001,
+    "median": 90.09999999999916,
+    "max": 90.09999999999916,
+    "mean": 63.01133333333279
+  },
+  "per_team": {
+    "Team 1": {
+      "paradigm": "CTE",
+      "win_rate": 0.013333333333333334,
+      "eliminations_per_match": 0.07,
+      "mean_survival_time": 40.697999999999595,
+      "shots_per_match": 4.6066666666666665,
+      "shot_accuracy": 0.015195369030390739
+    },
+    "Team 2": {
+      "paradigm": "DTE",
+      "win_rate": 0.023333333333333334,
+      "eliminations_per_match": 0.23,
+      "mean_survival_time": 48.77566666666619,
+      "shots_per_match": 6.77,
+      "shot_accuracy": 0.033973412112259974
+    },
+    "Team 3": {
+      "paradigm": "CTDE",
+      "win_rate": 0.75,
+      "eliminations_per_match": 3.13,
+      "mean_survival_time": 60.39411111111047,
+      "shots_per_match": 82.07333333333334,
+      "shot_accuracy": 0.038136625781821136
+    }
+  }
+}

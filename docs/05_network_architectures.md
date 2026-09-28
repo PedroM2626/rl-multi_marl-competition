@@ -70,7 +70,7 @@ policy   : Linear(128, 8)
 actors and is told which one is acting. Execution reads the **full 45-dim global vector**, which is why
 this arm is centralised at *execution* time and is not deployable to independent agents.
 
-## 5.3 `CentralizedCriticNetwork` — joint-state critic
+## 5.3 `CentralizedCriticNetwork` — joint-state critic <a name="centralizedcriticnetwork"></a>
 
 ```
 input    : global_obs[45]
@@ -82,7 +82,7 @@ One scalar per team. Note it does not receive the joint *action*, so it estimate
 team's own policy while the other two teams are part of \(s\) — the usual non-stationarity of
 concurrent MARL training, unmitigated here.
 
-## 5.4 `ValueDecompositionCriticNetwork` — additive per-agent critic (CTDE-VD)
+## 5.4 `ValueDecompositionCriticNetwork` — additive per-agent critic (CTDE-VD) <a name="valuedecompositioncriticnetwork"></a>
 
 ```python
 self.agent_critic = _mlp(5, 1, hidden_dim)          # ONE shared network
@@ -109,7 +109,7 @@ What it does deliver is a 17,409-parameter critic against CAC's 39,041, and an i
 opponent agents entirely. Both are plausible reasons for its behaviour in
 [§ Results](08_results.md), and both are confounds rather than clean tests of decomposition.
 
-## 5.5 `CommActorNetwork` — one-round differentiable communication (CTDE-Comm)
+## 5.5 `CommActorNetwork` — one-round differentiable communication (CTDE-Comm) <a name="commactornetwork"></a>
 
 ```
 msg_net     : _mlp(9, 4, 128)     → message m_k ∈ R^4 from ally k's local observation

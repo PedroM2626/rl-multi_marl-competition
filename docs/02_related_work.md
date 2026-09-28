@@ -60,7 +60,7 @@ The one-round, mean-pooled form is the important simplification. With a single r
 \(c_i = \frac{1}{|N(i)|}\sum_{j \ne i} m_j\) is commutative and associative by construction and cannot
 propagate information more than one hop. Multi-hop structure — which is where communication tends to
 pay off — is not representable. See
-[§ Architectures](05_network_architectures.md#55-commactornetwork--one-round-differentiable-communication-ctde-comm) for the exact algebra implemented.
+[§ Architectures](05_network_architectures.md#commactornetwork) for the exact algebra implemented.
 
 The alternative family of learned communication is discrete signalling trained with REINFORCE-style
 gradients, e.g. DIAL ([Foerster et al., 2016](12_glossary_and_references.md#references)) and the

@@ -2,180 +2,210 @@
   "exp1": {
     "per_paradigm": {
       "CTDE": {
-        "seeds": 5,
-        "pooled_win_rate": 0.4946,
+        "seeds": 10,
+        "pooled_win_rate": 0.326,
         "wilson_95_ci_pooled": [
-          0.459,
-          0.5304
+          0.3027,
+          0.3501
         ],
         "per_seed_win_rates": [
-          0.2133,
-          0.4733,
-          0.38,
-          0.8733,
-          0.5333
+          0.6067,
+          0.22,
+          0.6067,
+          0.28,
+          0.2467,
+          0.0,
+          0.4067,
+          0.18,
+          0.3467,
+          0.3667
         ],
-        "mean_survival": 16.512,
-        "eliminations_per_match": 3.648,
-        "shots_per_match": 82.068,
-        "shot_accuracy": 0.0528
+        "mean_survival": 18.371,
+        "eliminations_per_match": 1.969,
+        "shots_per_match": 101.156,
+        "shot_accuracy": 0.0265
       },
       "CTE": {
-        "seeds": 5,
-        "pooled_win_rate": 0.216,
+        "seeds": 10,
+        "pooled_win_rate": 0.252,
         "wilson_95_ci_pooled": [
-          0.188,
-          0.2469
+          0.2307,
+          0.2746
         ],
         "per_seed_win_rates": [
-          0.3,
-          0.34,
-          0.1267,
-          0.12,
-          0.1933
+          0.2067,
+          0.24,
+          0.1067,
+          0.5333,
+          0.2067,
+          0.2133,
+          0.3933,
+          0.1733,
+          0.2267,
+          0.22
         ],
-        "mean_survival": 17.69,
-        "eliminations_per_match": 1.805,
-        "shots_per_match": 100.088,
-        "shot_accuracy": 0.0244
+        "mean_survival": 22.688,
+        "eliminations_per_match": 2.219,
+        "shots_per_match": 121.717,
+        "shot_accuracy": 0.0359
       },
       "DTE": {
-        "seeds": 5,
-        "pooled_win_rate": 0.2893,
+        "seeds": 10,
+        "pooled_win_rate": 0.3807,
         "wilson_95_ci_pooled": [
-          0.258,
-          0.3228
+          0.3564,
+          0.4055
         ],
         "per_seed_win_rates": [
-          0.4867,
+          0.1533,
+          0.5267,
+          0.28,
           0.1867,
-          0.4933,
-          0.0067,
-          0.2733
+          0.5333,
+          0.76,
+          0.18,
+          0.4,
+          0.4067,
+          0.38
         ],
-        "mean_survival": 19.391,
-        "eliminations_per_match": 0.965,
-        "shots_per_match": 95.835,
-        "shot_accuracy": 0.0125
+        "mean_survival": 24.976,
+        "eliminations_per_match": 1.947,
+        "shots_per_match": 105.23,
+        "shot_accuracy": 0.0271
       }
     },
     "pairwise": {
       "CTDE vs CTE": {
         "wins": [
-          371,
-          750,
-          162,
-          750
+          489,
+          1500,
+          378,
+          1500
         ],
-        "fisher_two_sided_p": NaN
+        "fisher_two_sided_p": 9e-06
       },
       "CTDE vs DTE": {
         "wins": [
-          371,
-          750,
-          217,
-          750
+          489,
+          1500,
+          571,
+          1500
         ],
-        "fisher_two_sided_p": NaN
+        "fisher_two_sided_p": 0.001969
       },
       "CTE vs DTE": {
         "wins": [
-          162,
-          750,
-          217,
-          750
+          378,
+          1500,
+          571,
+          1500
         ],
-        "fisher_two_sided_p": 0.001316
+        "fisher_two_sided_p": 0.0
       }
     }
   },
   "exp2": {
     "per_paradigm": {
       "CTDE-CAC": {
-        "seeds": 5,
-        "pooled_win_rate": 0.36,
+        "seeds": 10,
+        "pooled_win_rate": 0.282,
         "wilson_95_ci_pooled": [
-          0.3264,
-          0.395
+          0.2598,
+          0.3053
         ],
         "per_seed_win_rates": [
-          0.56,
-          0.6133,
-          0.24,
-          0.1467,
-          0.24
+          0.34,
+          0.3333,
+          0.28,
+          0.22,
+          0.62,
+          0.0667,
+          0.0467,
+          0.52,
+          0.1867,
+          0.2067
         ],
-        "mean_survival": 25.628,
-        "eliminations_per_match": 1.94,
-        "shots_per_match": 96.899,
-        "shot_accuracy": 0.022
+        "mean_survival": 21.467,
+        "eliminations_per_match": 1.978,
+        "shots_per_match": 112.331,
+        "shot_accuracy": 0.0235
       },
       "CTDE-Comm": {
-        "seeds": 5,
-        "pooled_win_rate": 0.3653,
+        "seeds": 10,
+        "pooled_win_rate": 0.3306,
         "wilson_95_ci_pooled": [
-          0.3316,
-          0.4004
+          0.3073,
+          0.3549
         ],
         "per_seed_win_rates": [
-          0.4067,
-          0.0333,
-          0.7333,
-          0.08,
-          0.5733
+          0.2533,
+          0.2533,
+          0.5533,
+          0.1733,
+          0.1533,
+          0.7667,
+          0.58,
+          0.1933,
+          0.1867,
+          0.1933
         ],
-        "mean_survival": 24.716,
-        "eliminations_per_match": 2.632,
-        "shots_per_match": 99.815,
-        "shot_accuracy": 0.0288
+        "mean_survival": 19.23,
+        "eliminations_per_match": 2.181,
+        "shots_per_match": 111.649,
+        "shot_accuracy": 0.024
       },
       "CTDE-VD": {
-        "seeds": 5,
-        "pooled_win_rate": 0.2747,
+        "seeds": 10,
+        "pooled_win_rate": 0.3673,
         "wilson_95_ci_pooled": [
-          0.2439,
-          0.3077
+          0.3433,
+          0.392
         ],
         "per_seed_win_rates": [
-          0.0333,
-          0.3533,
-          0.0267,
-          0.7733,
-          0.1867
+          0.3867,
+          0.3667,
+          0.1533,
+          0.5467,
+          0.22,
+          0.1533,
+          0.3733,
+          0.2733,
+          0.6133,
+          0.5867
         ],
-        "mean_survival": 24.796,
-        "eliminations_per_match": 1.159,
-        "shots_per_match": 114.555,
-        "shot_accuracy": 0.0425
+        "mean_survival": 23.083,
+        "eliminations_per_match": 1.972,
+        "shots_per_match": 92.771,
+        "shot_accuracy": 0.0301
       }
     },
     "pairwise": {
       "CTDE-CAC vs CTDE-Comm": {
         "wins": [
-          270,
-          750,
-          274,
-          750
+          423,
+          1500,
+          496,
+          1500
         ],
-        "fisher_two_sided_p": NaN
+        "fisher_two_sided_p": 0.004336
       },
       "CTDE-CAC vs CTDE-VD": {
         "wins": [
-          270,
-          750,
-          206,
-          750
+          423,
+          1500,
+          551,
+          1500
         ],
-        "fisher_two_sided_p": NaN
+        "fisher_two_sided_p": 1e-06
       },
       "CTDE-Comm vs CTDE-VD": {
         "wins": [
-          274,
-          750,
-          206,
-          750
+          496,
+          1500,
+          551,
+          1500
         ],
-        "fisher_two_sided_p": NaN
+        "fisher_two_sided_p": 0.03858
       }
     }
   }

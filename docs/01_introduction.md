@@ -49,7 +49,7 @@ inspection.
 | Reference style | — | VDN, MAPPO, CommNet |
 | Extra infrastructure | — | MLflow tracking, Dockerfile |
 | Versioned results | Yes | Yes |
-| Replicated across seeds | **5** (1 M steps each) | **5** (1 M steps each) |
+| Replicated across seeds | **10** (500 k steps each, slot-rotated) | **10** (500 k steps each, slot-rotated) |
 
 Experiment 2 is a self-contained fork of the same engine, not an import of it. The two trees share
 most files byte-for-byte but have diverged; the divergence is catalogued in
@@ -65,11 +65,11 @@ most files byte-for-byte but have diverged; the divergence is catalogued in
 * **RQ3.** Is the observed ranking stable — across seeds, across training length, and across the
   match-to-match variance of the arena?
 
-RQ1 and RQ2 are answered in [§ Results](08_results.md#replicated-study) from a five-seed, one-million-step
-replicated study with held-out greedy evaluation. RQ3 is answered in two parts: **stability across seeds
+RQ1 and RQ2 are answered in [§ Results](08_results.md#replicated-study) from a ten-seed, 500 000-step
+replicated study with held-out greedy evaluation and the paradigm-to-slot assignment rotated by seed. RQ3 is answered in two parts: **stability across seeds
 and across the arena's match-to-match variance is measured**, and the per-seed spread is reported rather
 than pooled away; **stability across training length is only partially addressed**, because the budget is
-1 M steps rather than the 3 M the code defaults to, so a paradigm still improving at the end of the run is
+500 k steps rather than the 3 M the code defaults to, so a paradigm still improving at the end of the run is
 reported as "not yet settled" rather than "no".
 
 The repository previously answered these questions from a single 100 k-step run per experiment, measured
@@ -110,8 +110,9 @@ Out of scope, deliberately or as unfinished work:
 
 ## 1.7 Reading note
 
-[§ Results](08_results.md) carries two bodies of evidence. The **replicated study** — five seeds per
-experiment at 1 M steps, with held-out greedy evaluation of the final policies — is the primary result
+[§ Results](08_results.md) carries two bodies of evidence. The **replicated study** — ten seeds per
+experiment at 500 k steps, with held-out greedy evaluation of the final policies and the paradigm-to-slot
+assignment rotated across seeds — is the primary result
 and is what the conclusions should be drawn from. The **historical single-seed runs** at 100 k steps are
 reported alongside it because they are what the repository originally shipped, but they were produced
 under a defective heading controller

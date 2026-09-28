@@ -61,7 +61,7 @@ absent. This is a weak "state": it is a snapshot of the nine agents only, so the
 cannot condition on the most immediate predictor of danger, an incoming projectile.
 
 The lexicographic ordering is what makes the fixed index slices in the VDN critic
-([§ Architectures](05_network_architectures.md#54-valuedecompositioncriticnetwork--additive-per-agent-critic-ctde-vd))
+([§ Architectures](05_network_architectures.md#valuedecompositioncriticnetwork))
 land on the right
 agents. It holds because team and slot indices are single digits; it would break at ten agents per
 team.

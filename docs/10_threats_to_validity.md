@@ -61,7 +61,7 @@ than tactics.
 
 The fix is in place and the replicated study ran under it. The consequence for reading this
 documentation is that **the two bodies of evidence are not comparable**: the historical single-seed
-100 k-step runs and the 5-seed 1 M-step study differ in control law, budget, seed count and whether the
+100 k-step runs and the 10-seed 500 k-step study differ in control law, budget, seed count, slot rotation and whether the
 measurement was taken during training or held out. Only the study supports conclusions; the historical
 runs are a record of what the repository used to claim.
 
@@ -81,7 +81,7 @@ Do the measurements mean what they are labelled as?
 
 The documented formula is \(V_{\text{tot}}(s) = \sum_i V_i(o_i)\). The implementation computes
 \(\sum_i V_i(\text{slice}_i(s))\), where the slices come from the **global** vector the executing actors
-never see ([§ 5.4](05_network_architectures.md#54-valuedecompositioncriticnetwork--additive-per-agent-critic-ctde-vd)).
+never see ([§ 5.4](05_network_architectures.md#valuedecompositioncriticnetwork)).
 The arm is therefore a *sparse-input, weight-shared centralised critic*, not a decentralisable
 factorisation. Conclusions about VDN cannot be drawn from it.
 
@@ -152,18 +152,28 @@ applied to the original single-seed evidence, and left three that no amount of r
    between two arms of the same match is not strictly valid — it is anti-conservative for the loser and
    conservative for the winner. Reporting all three arms' win rates together, as done here, is the honest
    presentation; the third is determined by the other two.
-6. **Slot is not rotated.** Five seeds vary the initialisation and the environment stream, but Team 1 is
-   always the same paradigm and always spawns in the same corner. A persistent slot effect would
-   masquerade as an architecture effect and replication would not reveal it
-   ([§ 10.1](10_threats_to_validity.md#slot-and-seed-confounding)).
+6. ~~**Slot is not rotated.**~~ **Fixed** — `paradigm_rotation = seed % 3`, so across the 20 runs each
+   paradigm occupies each slot 6 or 7 times. Note what this does *not* buy: rotation removes the
+   confound, it does not remove the slot's effect, so residual slot variance now appears inside the
+   between-seed SD rather than hiding inside the architecture contrast.
 7. **Budget still short of the hypothesis being tested.** The claim that CTDE-Comm needs more steps than
-   the others is tested at 1 M steps; if it is still improving at the end of that budget, the answer is
-   "not yet", not "no".
+   the others is tested at 500 k steps; if it is still improving at the end of that budget, the answer is
+   "not yet", not "no". The evidence now points the other way: at 500 k steps three of six arms are best
+   at their *earliest* checkpoint ([§ 8.1](08_results.md#replicated-study)).
 8. **No effect sizes with uncertainty on the secondary metrics.** Eliminations per match, survival and
    accuracy are reported as pooled means without intervals.
+9. **Win rate does not isolate fighting.** A quarter of replicates decide most matches on the 90 s clock,
+   and the untrained greedy baseline shows 41 % three-way draws and 88–398 shots per match at 0.1 %
+   accuracy ([§ 8.9](08_results.md#random-baseline)), so the construct being measured is partly
+   survival-to-buzzer. The termination rule, not the sample size, is what would have to change.
+10. **No fixed-opponent evaluation.** Arms are compared only against each other, never against a frozen
+    pool or scripted opponents, so absolute strength is unmeasured
+    ([§ 10.3](10_threats_to_validity.md)).
 
-*Next concrete step:* rotate the paradigm-to-slot assignment across seeds (a Latin square over three
-slots), which is the only remaining threat that a modest re-run actually fixes.
+*Next concrete steps:* change what win rate measures (items 9 and 10) before adding replicates. Rotating
+the slot — the threat a modest re-run used to fix — has been done, and the ranking it might have exposed
+turned out to be reversible by a single degenerate replicate anyway
+([§ 8.1](08_results.md#leave-one-out)).
 
 ## 10.5 Reporting validity
 
