@@ -1,15 +1,26 @@
 # 8. Results
 
 All numbers in this chapter are recomputed from the artefacts in the repository or from a command
-quoted alongside them. The headline tables reproduce what `summary.json` reports; the analysis that
-follows tests whether those numbers support the claims the project set out to make.
+quoted alongside them.
 
-## 8.1 Headline tables
+The chapter has two halves, and they are not interchangeable:
+
+* **[§ Replicated study](#replicated-study)** — 5 seeds per experiment at 1,000,000 steps, measured by
+  held-out greedy evaluation of the final policy, produced under the corrected heading controller. This
+  is the primary evidence and the only part that supports a conclusion.
+* **[§ Historical single-seed runs](#historical-single-seed-runs)** — the two 100,000-step runs the
+  repository originally shipped, measured during training from a single seed, under the defective control
+  law [A-1](11_code_audit.md#turn-control-defect) before it was fixed. Reported because they are the
+  artefacts in `data/` and because their re-analysis is what motivated the study.
+
+Both halves are recomputed by scripts rather than transcribed: `scripts/report_study.py` emits the study
+tables from `results/study/per_seed_metrics.csv`.
+
+## 8.1 Historical single-seed runs <a name="historical-single-seed-runs"></a>
 
 ### Experiment 1 — CTE vs DTE vs CTDE
 
 Source: `data/metrics/summary.json` (463 matches played; snapshot taken at match 460).
-**Not versioned** — see [§ The versioning asymmetry](09_reproducibility.md#the-versioning-asymmetry).
 
 | Team | Paradigm | Win rate | Elim./match | Mean survival (s) | Shot accuracy | Hits | Misses |
 |---|---|---:|---:|---:|---:|---:|---:|
