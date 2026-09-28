@@ -17,7 +17,7 @@ Read them in order if you want the full argument; jump directly if you only need
 | 5 | [Network architectures](05_network_architectures.md) | Layer-by-layer specification and parameter counts for all six paradigms |
 | 6 | [Optimisation procedure](06_optimisation_procedure.md) | PPO objective, GAE, the three update paths, hyperparameters, what the implementation does and does not compute |
 | 7 | [Experimental protocol](07_experimental_protocol.md) | Protocol, domain randomisation, metric definitions with formulas, artefact schemas |
-| 8 | [Results](08_results.md) | Headline tables, learning-curve evidence, per-match distributions, interpretation |
+| 8 | [Results](08_results.md) | The replicated study (primary), the historical single-seed runs, held-out learning curves, significance tests at both units of analysis, and a power analysis |
 | 9 | [Reproducibility](09_reproducibility.md) | Environment setup, commands, measured runtime and cost, artefact inventory with checksums |
 | 10 | [Threats to validity](10_threats_to_validity.md) | Internal, construct, external and statistical validity — the limitations section |
 | 11 | [Code audit](11_code_audit.md) | Defects found by inspection and by execution, each with a reproduction command |
@@ -25,14 +25,14 @@ Read them in order if you want the full argument; jump directly if you only need
 
 ## Where the numbers come from
 
-Three distinct data sources exist, and they are not interchangeable:
+Four distinct data sources exist, and they are not interchangeable:
 
 | Source | Contents | Versioned? |
 |--------|----------|------------|
 | `data/metrics/summary.json` (root) | Experiment 1 cumulative over 460 recorded matches, single seed | Yes |
 | `ctde_arena/data/` | Experiment 2 same, single seed | Yes |
 | `ctde_arena/data/mlflow_export/` | The 48 metric points actually logged to MLflow across two runs | Yes (exported) |
-| `results/study/` | 5 seeds × 1 M steps per experiment, held-out greedy evaluation, Fisher-exact tests | Yes |
+| `results/study/` | 5 seeds × 1 M steps per experiment, held-out greedy evaluation, paired *t*-tests and Fisher-exact tests | Yes |
 
 The first two rows are **historical**: produced under the heading-control defect
 [A-1](11_code_audit.md#turn-control-defect) before it was fixed, from a single seed, and measured during
@@ -52,3 +52,12 @@ Experiment 1's artefacts were themselves only committed on 2026-09-27 — before
   never metric values ([details](09_reproducibility.md#localisation-rename)).
 * "Verified" means a claim was checked by running code in this session, and the command is quoted.
 * "Asserted" means the claim appears in documentation or comments but was not confirmed by execution.
+
+## Reproducing the numbers
+
+| Artefact | Produced by |
+|---|---|
+| `results/study/per_seed_metrics.csv` | `python scripts/run_study.py --steps 1000000 --seeds 1,2,3,4,5 --jobs 10` |
+| The tables in [§ Results](08_results.md#replicated-study) | `python scripts/report_study.py` |
+| `results/study/learning_curves.png` | `python scripts/plot_study.py` |
+| Coverage figures in [§ Code audit](11_code_audit.md#coverage) | `coverage run --source=src -m pytest tests/ -q && coverage report -m` |
