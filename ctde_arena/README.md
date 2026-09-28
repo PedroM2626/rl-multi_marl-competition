@@ -142,19 +142,61 @@ session** — treat as unverified.
 
 ## Results
 
-Cumulative over 456 matches (the `summary.json` snapshot is taken at match 450).
+### Replicated study — primary evidence
+
+5 independent replicates at 1,000,000 steps, each measured by 150 held-out greedy matches on the fixed
+evaluation variant. Full analysis:
+[§ 8.1 Replicated study](../docs/08_results.md#replicated-study).
+
+| Paradigm | Mean win rate | Between-seed SD | Pooled wins | Pooled 95 % CI | Elim./match | Survival | Shots/match | Accuracy |
+|---|---:|---:|---:|---|---:|---:|---:|---:|
+| **CTDE-Comm** | **0.365** | 0.305 | 274/750 | [0.332, 0.400] | 2.63 | 24.7 s | 99.8 | 2.88 % |
+| CTDE-CAC | 0.360 | 0.211 | 270/750 | [0.326, 0.395] | 1.94 | 25.6 s | 96.9 | 2.20 % |
+| CTDE-VD | 0.275 | 0.309 | 206/750 | [0.244, 0.308] | 1.16 | 24.8 s | 114.6 | 4.25 % |
+
+Per-seed held-out win rate:
+
+| Paradigm | seed 1 | seed 2 | seed 3 | seed 4 | seed 5 |
+|---|---:|---:|---:|---:|---:|
+| CTDE-CAC | 0.560 | 0.613 | 0.240 | 0.147 | 0.240 |
+| CTDE-Comm | 0.407 | 0.033 | 0.733 | 0.080 | 0.573 |
+| CTDE-VD | 0.033 | 0.353 | 0.027 | 0.773 | 0.187 |
+
+> **Nothing here is statistically distinguishable.** Paired per-seed *t*-tests give *p* = 0.979 (CAC vs
+> Comm), 0.682 (CAC vs VD) and 0.743 (Comm vs VD). CAC and Comm differ by 0.005 win rate. The power
+> analysis in [§ 8.1](../docs/08_results.md#power-analysis) puts the CAC-vs-VD and Comm-vs-VD comparisons
+> at ~272 and ~421 replicates.
+
+### The historical conclusion reverses
+
+| | Historical (1 seed, training-time, pre-A-1-fix) | Study (5 seeds, held-out, fixed) |
+|---|---|---|
+| Order | CAC 42.9 % > VD 40.7 % ≫ **Comm 16.4 %** | **Comm 36.5 % ≈ CAC 36.0 % > VD 27.5 %** |
+| Defended claim | "Comm loses to both others" | **does not reproduce** |
+
+CTDE-Comm moves from last by 26 points to first by a hair. Either the broken heading controller produced
+the deficit or the single seed did; the data cannot separate the two, and both readings imply the same
+thing operationally — the old ranking was not a property of the architectures.
+
+The hypothesis this experiment was built around, that Comm needs more steps than the others, is also not
+supported: at 25 % of the budget Comm was the **best** arm (0.650) and it drifted **down** from there.
+
+### Historical single-seed run
+
+Cumulative over 456 matches, kept because these artefacts ship in `data/`.
+[§ 8.2](../docs/08_results.md#historical-single-seed-runs).
 
 | Team | Paradigm | Win rate | Elim./match | Mean survival | Shot accuracy | Hits | Misses |
 |---|---|---:|---:|---:|---:|---:|---:|
 | Team 1 | CTDE-VD | 40.67 % | 2.50 | 10.20 s | 11.29 % | 1,125 | 8,843 |
-| Team 2 | CTDE-CAC | **42.89 %** | **2.63** | 9.83 s | **12.33 %** | 1,184 | 8,417 |
+| Team 2 | **CTDE-CAC** | **42.89 %** | **2.63** | 9.83 s | **12.33 %** | 1,184 | 8,417 |
 | Team 3 | CTDE-Comm | 16.44 % | 1.96 | 7.47 s | 12.14 % | 883 | 6,390 |
 
 ![Comparative dashboard](data/exports/comparative_dashboard.png)
 
-### What the numbers support
+### One historical analysis that survives
 
-**CTDE-Comm's deficit is a firing-volume deficit, not an aiming deficit.** Decomposing
+**CTDE-Comm's deficit was a firing-volume deficit, not an aiming deficit.** Decomposing
 eliminations = shots × accuracy relative to CTDE-VD:
 
 | Team | Shot volume | Accuracy | Product |
@@ -162,24 +204,11 @@ eliminations = shots × accuracy relative to CTDE-VD:
 | CTDE-CAC | ×0.963 | ×1.093 | ×1.052 |
 | CTDE-Comm | **×0.730** | **×1.076** | ×0.785 |
 
-Comm's accuracy (12.14 %) is *higher* than VD's (11.29 %) and within 0.2 points of CAC's. At VD's firing
-volume with its own accuracy, Comm would score **2.69 eliminations per match** — the best of the three.
-Whatever limits this arm, it acts through the decision to shoot or through dying earlier, not through
-missing. [§ 8.3](../docs/08_results.md#83-decomposing-the-elimination-gap).
-
-**Comm improved the most over training.** Splitting each team's 46 recorded matches at the midpoint:
-
-| Team | First 23 | Last 23 | Change |
-|---|---:|---:|---:|
-| CTDE-VD | 0.478 | 0.348 | −0.130 |
-| CTDE-CAC | 0.478 | 0.435 | −0.043 |
-| CTDE-Comm | 0.043 | 0.217 | **+0.174** |
-
-This is consistent with the "learn to act and to communicate simultaneously" hypothesis — but it is also
-consistent with ordinary co-adaptation among three concurrently trained teams, and with n = 1 seed it
-cannot be resolved.
-
-**VD vs CAC is a tie.** 2.2 points cumulative, 4.4 points on the recorded matches, p = 0.674.
+Comm's accuracy (12.14 %) was *higher* than VD's (11.29 %). At VD's firing volume with its own accuracy it
+would have led on eliminations. Whatever limited this arm acted through the decision to shoot, or through
+dying sooner — not through missing. That mechanism is architectural and is the best hypothesis left to
+test; what did not survive replication is the conclusion that it made Comm the weakest arm.
+[§ 8.5](../docs/08_results.md#decomposing-the-elimination-gap).
 
 ## Configuration
 

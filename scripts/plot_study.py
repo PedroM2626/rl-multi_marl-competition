@@ -25,14 +25,21 @@ OUT = ROOT / "results" / "study"
 PALETTE = ["#4c72b0", "#55a868", "#c44e52"]
 
 
-def load() -> dict[str, dict[str, list[tuple[int, float]]]]:
-    series: dict[str, dict[str, list[tuple[int, float]]]] = defaultdict(lambda: defaultdict(list))
+def load() -> dict[str, dict[str, dict[float, list[float]]]]:
+    """series[experiment][paradigm][fraction] = one held-out win rate per replicate.
+
+    Curve points fire at a match boundary, so each replicate's absolute step count differs slightly;
+    grouping by the nominal fraction is what makes the mean across seeds meaningful.
+    """
+    series: dict[str, dict[str, dict[float, list[float]]]] = defaultdict(
+        lambda: defaultdict(lambda: defaultdict(list))
+    )
     for summary in sorted(RUNS.glob("*/evaluation/run_summary.json")):
         experiment = summary.parents[1].name.split("_seed")[0]
         payload = json.loads(summary.read_text(encoding="utf-8"))
         for point in payload["curve"]:
             for team, stats in point["per_team"].items():
-                series[experiment][payload["paradigms"][team]].append((point["env_steps"], stats["win_rate"]))
+                series[experiment][payload["paradigms"][team]][point["fraction"]].append(stats["win_rate"])
     return series
 
 
@@ -42,26 +49,28 @@ def main() -> None:
     fig, axes = plt.subplots(1, len(experiments), figsize=(7.2 * len(experiments), 5.2), squeeze=False)
 
     for axis, experiment in zip(axes[0], experiments):
-        for index, (paradigm, points) in enumerate(sorted(series[experiment].items())):
-            by_seed: dict[int, list] = defaultdict(list)
-            for steps, value in points:
-                by_seed[steps].append(value)
-            xs = sorted(by_seed)
-            means = [sum(by_seed[x]) / len(by_seed[x]) for x in xs]
+        for index, (paradigm, by_fraction) in enumerate(sorted(series[experiment].items())):
+            fractions = sorted(by_fraction)
+            seeds = max(len(by_fraction[f]) for f in fractions)
             colour = PALETTE[index % len(PALETTE)]
-            for steps, value in sorted(points):
-                axis.plot([steps], [value], marker="o", markersize=3.5, linewidth=0, color=colour, alpha=0.35)
-            axis.plot(xs, means, marker="o", markersize=5, linewidth=2.4, color=colour,
-                      label=f"{paradigm} (mean of {len(by_seed[xs[0]])} seeds)")
+            for fraction in fractions:
+                for value in by_fraction[fraction]:
+                    axis.plot([fraction], [value], marker="o", markersize=3.5, linewidth=0,
+                              color=colour, alpha=0.35)
+            means = [sum(by_fraction[f]) / len(by_fraction[f]) for f in fractions]
+            axis.plot(fractions, means, marker="o", markersize=5, linewidth=2.4, color=colour,
+                      label=f"{paradigm} (mean of {seeds} seeds)")
 
         axis.axhline(1 / 3, linestyle="--", linewidth=1, color="grey", alpha=0.8)
-        axis.text(axis.get_xlim()[1], 1 / 3, "  chance", va="center", fontsize=8, color="grey")
-        axis.set_xlabel("environment steps")
+        axis.set_xlabel("fraction of the training budget")
+        axis.set_xlim(0.15, 1.1)
+        axis.set_xticks([0.25, 0.5, 0.75, 1.0])
+        axis.set_xticklabels(["25 %", "50 %", "75 %", "100 %"])
         axis.set_ylabel("held-out greedy win rate")
         axis.set_title(f"{experiment}: {' vs '.join(sorted(series[experiment]))}")
         axis.set_ylim(-0.03, 1.0)
         axis.grid(True, alpha=0.3)
-        axis.legend(fontsize=9)
+        axis.legend(fontsize=9, loc="upper left")
 
     fig.suptitle("Held-out win rate during training, one point per replicate", y=1.02)
     fig.tight_layout()

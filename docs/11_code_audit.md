@@ -503,7 +503,7 @@ Items 1–3 below were the original list; 1–3 are now done, and the remaining 
 4. Log `PPOStats` (A-15) and a real `approx_kl` (A-14) so convergence and divergence are distinguishable.
    The study measures outcomes, not optimisation health.
 5. Report shots-per-second-of-alive-life per agent, which is the only way to separate the two candidate
-   explanations for CTDE-Comm's deficit ([§ 8.3](08_results.md#83-decomposing-the-elimination-gap)).
+   explanations for CTDE-Comm's deficit ([§ 8.3](08_results.md#decomposing-the-elimination-gap)).
 6. Rotate architecture-to-slot assignment across seeds (A-11 /
    [§ 10.1](10_threats_to_validity.md#slot-and-seed-confounding)). The current replicates vary the seed
    but not the slot, so a persistent slot effect would still masquerade as an architecture effect.

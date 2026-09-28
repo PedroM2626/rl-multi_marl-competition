@@ -11,11 +11,15 @@ from __future__ import annotations
 
 import csv
 import math
+import sys
 from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CSV_PATH = ROOT / "results" / "study" / "per_seed_metrics.csv"
+
+# The tables contain em dashes; Windows consoles default to cp1252 and would raise on them.
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 
 def wilson(k: float, n: float, z: float = 1.96) -> tuple[float, float]:
@@ -57,6 +61,71 @@ def sd(values: list[float]) -> float:
         return float("nan")
     mean = sum(values) / len(values)
     return math.sqrt(sum((v - mean) ** 2 for v in values) / (len(values) - 1))
+
+
+def _student_sf(x: float, df: int) -> float:
+    """One-sided survival function of Student's t, via the regularised incomplete beta."""
+    from math import lgamma
+
+    def betacf(a: float, b: float, z: float) -> float:
+        tiny = 1e-300
+        qab, qap, qam = a + b, a + 1.0, a - 1.0
+        c, d = 1.0, 1.0 - qab * z / qap
+        if abs(d) < tiny:
+            d = tiny
+        d = 1.0 / d
+        result = d
+        for m in range(1, 300):
+            m2 = 2 * m
+            aa = m * (b - m) * z / ((qam + m2) * (a + m2))
+            d = 1.0 + aa * d
+            if abs(d) < tiny:
+                d = tiny
+            c = 1.0 + aa / c
+            if abs(c) < tiny:
+                c = tiny
+            d = 1.0 / d
+            result *= d * c
+            aa = -(a + m) * (qab + m) * z / ((a + m2) * (qap + m2))
+            d = 1.0 + aa * d
+            if abs(d) < tiny:
+                d = tiny
+            c = 1.0 + aa / c
+            if abs(c) < tiny:
+                c = tiny
+            d = 1.0 / d
+            delta = d * c
+            result *= delta
+            if abs(delta - 1.0) < 1e-13:
+                break
+        return result
+
+    def betai(a: float, b: float, z: float) -> float:
+        if z <= 0.0:
+            return 0.0
+        if z >= 1.0:
+            return 1.0
+        lbeta = lgamma(a + b) - lgamma(a) - lgamma(b) + a * math.log(z) + b * math.log(1.0 - z)
+        if z < (a + 1.0) / (a + b + 2.0):
+            return math.exp(lbeta) / a * betacf(a, b, z)
+        return 1.0 - math.exp(
+            lgamma(a + b) - lgamma(a) - lgamma(b) + b * math.log(1.0 - z) + a * math.log(z)
+        ) / b * betacf(b, a, 1.0 - z)
+
+    return 0.5 * betai(df / 2.0, 0.5, df / (df + x * x))
+
+
+def paired_t(differences: list[float]) -> tuple[float, float]:
+    """Two-sided paired t-test over per-seed differences; the seed, not the match, is the unit."""
+    n = len(differences)
+    if n < 2:
+        return (float("nan"), float("nan"))
+    mean = sum(differences) / n
+    variance = sum((d - mean) ** 2 for d in differences) / (n - 1)
+    if variance <= 0.0:
+        return (float("nan"), 1.0)
+    t_stat = mean / math.sqrt(variance / n)
+    return (t_stat, 2.0 * _student_sf(abs(t_stat), n - 1))
 
 
 def main() -> None:
@@ -112,8 +181,30 @@ def main() -> None:
             )
             print(f"| {paradigm} | " + " | ".join(cells) + f" | {best}/{len(seeds)} |")
 
-        print("\nPairwise Fisher exact tests on pooled held-out wins:\n")
-        print("| Comparison | Wins / matches | Odds | p (two-sided) | Bonferroni (α=0.0167) |")
+        print("\nPairwise tests at the **seed** level — n = %d replicates, the independent unit:\n" % len(seeds))
+        print("| Comparison | Mean per-seed difference | SD | Paired t | p (df=%d) | seeds favouring A |" % (len(seeds) - 1))
+        print("|---|---:|---:|---:|---:|---|")
+        for i, a in enumerate(paradigms):
+            for b in paradigms[i + 1:]:
+                diffs = []
+                for s in seeds:
+                    ra = [r for r in exp_rows if r["paradigm"] == a and int(r["seed"]) == s]
+                    rb = [r for r in exp_rows if r["paradigm"] == b and int(r["seed"]) == s]
+                    if ra and rb:
+                        diffs.append(ra[0]["eval_win_rate"] - rb[0]["eval_win_rate"])
+                if len(diffs) < 2:
+                    continue
+                mean_diff = sum(diffs) / len(diffs)
+                t_stat, p_value = paired_t(diffs)
+                favour = sum(1 for d in diffs if d > 0)
+                verdict = "**significant**" if p_value < 0.0167 else ("nominal only" if p_value < 0.05 else "not significant")
+                print(
+                    f"| {a} vs {b} | {mean_diff:+.3f} | {sd(diffs):.3f} | {t_stat:+.2f} "
+                    f"| {p_value:.3f} | {favour}/{len(diffs)} — {verdict} |"
+                )
+
+        print("\nPairwise Fisher exact tests on pooled held-out wins (**match-level, anti-conservative**):\n")
+        print("| Comparison | Wins / matches | Odds | p (two-sided) | Bonferroni (alpha=0.0167) |")
         print("|---|---|---:|---:|---|")
         for i, a in enumerate(paradigms):
             for b in paradigms[i + 1:]:

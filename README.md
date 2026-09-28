@@ -86,18 +86,33 @@ Run all commands **from the experiment's own directory**.
 
 ## Results at a glance
 
-Cumulative training-time metrics from the two historical single-seed 100k-step runs. These are **not**
-the study result — see [§ Results](docs/08_results.md#replicated-study) for the five-seed held-out
-evaluation, which supersedes them.
+Held-out greedy win rate, 5 independent replicates per experiment at 1,000,000 steps, 150 evaluation
+matches each. Full analysis: [§ Results](docs/08_results.md#replicated-study).
 
-| Experiment | Team | Paradigm | Win rate | Elim./match | Mean survival | Shot accuracy |
-|---|---|---|---:|---:|---:|---:|
-| 1 | Team 1 | CTE | 27.39 % | 1.72 | 9.63 s | 8.10 % |
-| 1 | Team 2 | DTE | 25.43 % | 1.84 | 8.59 s | 8.13 % |
-| 1 | Team 3 | CTDE | 47.17 % | 3.42 | 9.93 s | 12.84 % |
-| 2 | Team 1 | CTDE-VD | 40.67 % | 2.50 | 10.20 s | 11.29 % |
-| 2 | Team 2 | CTDE-CAC | 42.89 % | 2.63 | 9.83 s | 12.33 % |
-| 2 | Team 3 | CTDE-Comm | 16.44 % | 1.96 | 7.47 s | 12.14 % |
+| Experiment | Paradigm | Mean win rate | Between-seed SD | Pooled 95 % CI | Best in |
+|---|---|---:|---:|---|---:|
+| 1 | **CTDE** | **0.495** | 0.244 | [0.459, 0.530] | 3/5 |
+| 1 | DTE | 0.289 | 0.207 | [0.258, 0.323] | 2/5 |
+| 1 | CTE | 0.216 | 0.100 | [0.188, 0.247] | 0/5 |
+| 2 | **CTDE-Comm** | **0.365** | 0.305 | [0.332, 0.400] | 2/5 |
+| 2 | CTDE-CAC | 0.360 | 0.211 | [0.326, 0.395] | 2/5 |
+| 2 | CTDE-VD | 0.275 | 0.309 | [0.244, 0.308] | 1/5 |
+
+**No pairwise comparison is significant at the seed level** — the independent unit is the replicate, not
+the match. Paired per-seed *t*-tests give *p* = 0.115 to 0.979 across all six comparisons. The
+match-level Fisher tests call several of them significant; [§ 8.1](docs/08_results.md#replicated-study)
+shows why that treatment is anti-conservative here.
+
+Two findings worth knowing before reading anything else:
+
+* **The previous headline result does not reproduce.** With one seed, CTDE-Comm finished last by 26 points
+  and that was the project's only statistically-defended claim. Replicated, it is tied for first.
+* **Run-to-run variance exceeds the architecture effects.** Single replicates of one architecture range
+  from 0.007 to 0.873 win rate. Power analysis in
+  [§ 8.1](docs/08_results.md#power-analysis) puts the cheapest worthwhile comparison at ~13 replicates.
+
+The two historical single-seed 100k-step runs are still reported, relabelled, in
+[§ 8.2](docs/08_results.md#historical-single-seed-runs), because their artefacts ship in `data/`.
 
 ## Installation
 

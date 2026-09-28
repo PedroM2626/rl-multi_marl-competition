@@ -168,7 +168,7 @@ slots), which is the only remaining threat that a modest re-run actually fixes.
 ## 10.5 Reporting validity
 
 * The prior Portuguese-language README asserted a diagnosis of the CTDE-Comm deficit ("messages start as
-  noise") that the accuracy decomposition in [§ 8.3](08_results.md#83-decomposing-the-elimination-gap)
+  noise") that the accuracy decomposition in [§ 8.3](08_results.md#decomposing-the-elimination-gap)
   does not support: Comm's accuracy is fine, its firing volume is not.
 * The README also stated the default training budget was 3 M steps; the committed `.env` says 100,000.
 * Both have been corrected in this documentation set, and the corrections are itemised in
