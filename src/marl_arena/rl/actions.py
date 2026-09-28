@@ -54,4 +54,5 @@ def save_checkpoint(path: Path, payload: dict[str, Any]) -> None:
 def load_checkpoint(path: Path, device: torch.device) -> dict[str, Any]:
     if not path.exists():
         raise FileNotFoundError(f"Checkpoint not found: {path}")
-    return torch.load(path, map_location=device, weights_only=False)
+    # weights_only=True is safe here: save_checkpoint() only writes str keys and tensor state dicts.
+    return torch.load(path, map_location=device, weights_only=True)
