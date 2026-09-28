@@ -9,6 +9,8 @@ SRC_DIR = PROJECT_ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
+import torch
+
 os.environ["RL_TRAIN_TOTAL_STEPS"] = "50"
 os.environ["MATCH_DURATION_SECONDS"] = "5"
 os.environ["DOMAIN_RANDOMIZATION"] = "true"
@@ -30,7 +32,44 @@ def test_domain_randomization_changes_variant() -> None:
     assert len(sampled.team_spawns) == 3
 
 
-def test_rl_controllers_collect_rollouts_and_update(tmp_path: Path) -> None:
+def _flat_params(controller: RLTeamController) -> dict[str, object]:
+    """Actor and critic share key names, so they have to be prefixed or they overwrite each other."""
+    weights: dict[str, object] = {}
+    for role, module in (("actor", controller.actor), ("critic", controller.critic)):
+        if module is not None:
+            weights.update({f"{role}.{k}": v.detach().clone() for k, v in module.state_dict().items()})
+    return weights
+
+
+def test_match_termination_triggers_a_real_ppo_update(tmp_path: Path) -> None:
+    """Regression for the case where the loop was too short to ever end a match, so
+    finish_match() - and therefore the only PPO update - never ran."""
+    simulation = ArenaSimulation(seed=99, domain_randomization=True)
+    set_rl_training(simulation.controllers, True)
+
+    updates = 0
+    steps = 0
+    while updates < 2 and steps < 2000:
+        steps += 1
+        if simulation.step(0.1):
+            before = {name: _flat_params(c) for name, c in simulation.controllers.items()}
+            simulation.finish_match()
+            updates += 1
+            for name, controller in simulation.controllers.items():
+                assert len(controller.buffer) == 0, "rollout buffer was not cleared after the update"
+                after = _flat_params(controller)
+                changed = any(
+                    not torch.equal(before[name][key], value)
+                    for key, value in after.items()
+                    if isinstance(value, torch.Tensor)
+                )
+                assert changed, f"{name} ({controller.paradigm}) parameters did not move after an update"
+            simulation.reset_match()
+
+    assert updates == 2, f"no match terminated within {steps} steps"
+
+
+def test_rl_controllers_collect_rollouts_and_save(tmp_path: Path) -> None:
     simulation = ArenaSimulation(seed=99, domain_randomization=True)
     set_rl_training(simulation.controllers, True)
     target = 30
@@ -41,6 +80,7 @@ def test_rl_controllers_collect_rollouts_and_update(tmp_path: Path) -> None:
 
     for controller in simulation.controllers.values():
         assert isinstance(controller, RLTeamController)
+        assert len(controller.buffer) > 0, "no rollout rows were collected"
 
     # Save into tmp_path: writing to CONFIG.rl_checkpoint_dir would overwrite the versioned policies.
     for controller in simulation.controllers.values():
