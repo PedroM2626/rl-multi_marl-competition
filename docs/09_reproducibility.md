@@ -28,9 +28,21 @@ Every number in this documentation set was produced on:
 | Device | CPU |
 | Platform | Windows 10 / 11 x64 |
 
-The minor-version drift did not affect any reported figure: all results were recomputed from committed
-CSV/JSON artefacts, and the live simulation runs are used only for the qualitative and cost measurements
-flagged as such.
+Two caveats on that table, stated plainly because they bound what "reproducible" covers here:
+
+* **Every number in this documentation set was produced on the versions above, not on the pinned
+  requirements.** NumPy 1.26 → 2.2 is a *major* version change, not a minor one, so a reader who installs
+  `requirements.txt` and re-runs the study is not reproducing the recorded conditions. It is plausible —
+  even likely — that nothing changes, since the arena uses only basic array arithmetic and the analysis
+  scripts recompute from committed CSV/JSON rather than from the simulation. But it was **not tested**:
+  no second environment exists on this machine, and installing a second NumPy major version over the one
+  that produced the study would have destroyed the evidence rather than checking it.
+* The environment drift is recorded rather than resolved. Resolving it needs a lock file
+  (`requirements.txt` pins direct dependencies only, with no hashes and no transitive lock — see item 4 of
+  [§ 9.6](#96-what-is-and-is-not-reproducible)).
+
+The host's own `.venv/` is additionally broken: its launcher points at a removed `C:\Python313`, so it
+cannot start at all. All measurements above came from a separate working environment.
 
 ## 9.2 Setup
 
