@@ -180,17 +180,18 @@ the 43 parameters recorded in the MLflow store
 | | `ARENA_SIZE` | 32 (eval) / 28–36 (train) |
 | | `MATCH_DURATION_SECONDS` | 90 (eval) / 60–120 (train) |
 | | `DOMAIN_RANDOMIZATION` | true |
-| Budget | `RL_TRAIN_TOTAL_STEPS` | **100,000 in the committed `.env`** |
+| Budget | `RL_TRAIN_TOTAL_STEPS` | 1,000,000 in `.env` and `.env.example` |
 | | `RL_SAVE_EVERY_STEPS` | 100,000 |
 | | `RL_LOG_EVERY_STEPS` | 50,000 |
 | | `RL_METRICS_EVERY_MATCHES` | 10 |
 | | device | cpu |
 
-> The code default for `RL_TRAIN_TOTAL_STEPS` is 3,000,000 and the historical documentation stated that
-> this was "the standard configuration". The committed `.env` overrides it to 100,000, which is what the
-> historical artefacts were produced with. The discrepancy is resolved in
-> [§ Code audit](11_code_audit.md#configuration-claims) — the `.env` is authoritative for those runs.
+> `RL_TRAIN_TOTAL_STEPS` has had three values in this project's history and the documentation once
+> attributed the wrong one to the shipped artefacts ([A-12](11_code_audit.md#configuration-claims)).
+> The code default when the variable is absent is 3,000,000; the historical 100 k-step artefacts were
+> produced with `.env` set to 100,000; `.env` and `.env.example` now both say 1,000,000, which is the
+> scale the study runs at.
 >
-> The replicated study does not use `.env` at all: `scripts/run_experiment.py` takes `--steps` and sets
-> `RL_TRAIN_TOTAL_STEPS` in the process environment, so a replicate's budget is recorded in its own
+> The replicated study does not rely on `.env`: `scripts/run_experiment.py` takes `--steps` and writes
+> `RL_TRAIN_TOTAL_STEPS` into the process environment, so a replicate's budget is recorded in its own
 > `run_summary.json` rather than inherited from a shared file.

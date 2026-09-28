@@ -180,16 +180,31 @@ the repository.
 
 ## 7.6 Statistical treatment used in this documentation
 
-Because matches are neither independent (non-stationary policies) nor balanced (three teams in one
-match, so exactly one win per match), the following conventions are used in
-[§ Results](08_results.md):
+Two conventions are in force, and the difference between them is the reason the study reports two test
+levels per comparison.
 
-1. **Point estimates** are quoted exactly as `summary.json` reports them, with the caveat of § 7.2.
-2. **Uncertainty** is computed on the 46 recorded matches per team with Wilson score intervals, which
-   is the most conservative defensible estimate available from the versioned data.
-3. **Pairwise comparisons** use a two-proportion \(z\)-test on the same 46-match subsample, and are
-   additionally reported on the full cumulative denominator so the sensitivity of the conclusion to
-   the independence assumption is visible.
-4. No correction for multiple comparisons is applied; with three pairwise tests per experiment the
-   Bonferroni-adjusted threshold would be \(\alpha = 0.0167\), and this is noted where it changes a
-   verdict.
+**Primary — the replicated study.** The independent unit is the **replicate**, not the match. Matches
+inside one replicate are played by a single frozen policy against two opponents from the same run, sharing
+that run's initialisation and geometry stream, so they are not independent draws. Accordingly:
+
+1. **Effect estimates** are the mean of the per-replicate held-out win rates, reported with the
+   between-replicate standard deviation.
+2. **Pairwise tests** are two-sided paired *t*-tests over the per-replicate differences, with
+   df = replicates − 1. The paired form is used because the three arms share a match, so their win rates
+   are negatively coupled by construction.
+3. **Match-level Fisher exact tests** on the pooled held-out matches are reported alongside, explicitly
+   labelled anti-conservative, so the size of the unit-of-analysis error is visible rather than hidden.
+4. **Multiplicity** is controlled at α = 0.0167 (Bonferroni over the three pairwise comparisons per
+   experiment) and both the raw verdict and the Bonferroni verdict are shown.
+5. **Power** is reported forward, not retrospectively: [§ 8.1](08_results.md#power-analysis) states how
+   many replicates each observed effect size would need at 80 % power.
+
+**Secondary — the historical single-seed runs.** Point estimates as `summary.json` reports them (a
+cumulative average over a non-stationary trajectory), Wilson intervals on the 46 recorded matches per
+team, and two-proportion *z*-tests on the same subsample, with the full cumulative denominator shown as
+a sensitivity check. This treatment exists only to characterise artefacts that are already in `data/`;
+no conclusion rests on it.
+
+Draws are excluded from win-rate numerators but not from denominators, so the three arms' win rates sum
+to less than 1 by exactly the draw rate ([§ 3.5](03_arena_system_model.md#35-episode-structure-and-termination)).
+
