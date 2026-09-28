@@ -28,7 +28,7 @@ class ActorNetwork(nn.Module):
         value = self.value_head(features).squeeze(-1)
         return logits, value
 
-    def act(self, obs: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def act(self, obs: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         logits, value = self.forward(obs)
         distribution = Categorical(logits=logits)
         action = distribution.sample()
@@ -96,13 +96,6 @@ class CentralizedCriticNetwork(nn.Module):
         features = self.backbone(global_obs)
         return self.value_head(features).squeeze(-1)
 
-
-class CTDEActorNetwork(ActorNetwork):
-    pass
-
-
-class CTDECriticNetwork(CentralizedCriticNetwork):
-    pass
 
 
 class ValueDecompositionCriticNetwork(nn.Module):

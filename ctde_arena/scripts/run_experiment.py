@@ -13,7 +13,6 @@ import argparse
 import csv
 import json
 import os
-import random
 import sys
 import time
 from pathlib import Path
@@ -37,14 +36,10 @@ def parse_args() -> argparse.Namespace:
 
 
 def seed_everything(seed: int) -> None:
-    """Close the gap where only random.Random was seeded: NumPy's global RNG drives the
-    PPO minibatch shuffle and Torch drives weight initialisation."""
-    import numpy as np
-    import torch
+    """Delegates to the library helper so the study and scripts/train_rl.py seed identically."""
+    from marl_arena.config import seed_all
 
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
+    seed_all(seed)
 
 
 def evaluate(matches: int, seed: int) -> dict[str, object]:
@@ -53,7 +48,7 @@ def evaluate(matches: int, seed: int) -> dict[str, object]:
     from marl_arena.controllers.rl_controller import set_rl_training
     from marl_arena.systems.simulation import ArenaSimulation
 
-    sim = ArenaSimulation(seed=seed, domain_randomization=False)
+    sim = ArenaSimulation(seed=seed, domain_randomization=False, load_checkpoints=True)
     set_rl_training(sim.controllers, False)
 
     per_team: dict[str, dict[str, float]] = {
@@ -121,7 +116,7 @@ def main() -> None:
     next_curve = 0
 
     metrics = MetricsStore()
-    sim = ArenaSimulation(seed=args.seed, domain_randomization=True)
+    sim = ArenaSimulation(seed=args.seed, domain_randomization=True, load_checkpoints=False)
     set_rl_training(sim.controllers, True)
 
     started = time.time()

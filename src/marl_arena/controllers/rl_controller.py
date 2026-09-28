@@ -38,12 +38,19 @@ def resolve_device() -> torch.device:
 
 
 class RLTeamController(BaseTeamController):
-    def __init__(self, team_name: str, paradigm: str, rng_seed: int, device: torch.device) -> None:
+    def __init__(
+        self,
+        team_name: str,
+        paradigm: str,
+        rng_seed: int,
+        device: torch.device,
+        load_checkpoints: bool = True,
+    ) -> None:
         super().__init__(team_name, rng_seed)
         self.paradigm = paradigm
         self.paradigm_name = paradigm
         self.device = device
-        self.buffer = RolloutBuffer()
+        self.buffer = RolloutBuffer(rng=np.random.default_rng(rng_seed))
         self.pending_steps: Dict[str, RolloutStep] = {}
         self.training_enabled = True
         self._agent_slot_map: Dict[str, int] = {}
@@ -61,7 +68,8 @@ class RLTeamController(BaseTeamController):
         self.critic: CentralizedCriticNetwork | None = None
         self._build_networks()
         self.trainer.bind_optimizer(self._trainable_parameters())
-        self._load_if_exists()
+        if load_checkpoints:
+            self._load_if_exists()
 
     def _build_networks(self) -> None:
         hidden = CONFIG.rl_hidden_dim
@@ -296,10 +304,12 @@ class RLTeamController(BaseTeamController):
         return stats
 
 
-def build_controllers(seed: int) -> dict[str, RLTeamController]:
+def build_controllers(seed: int, load_checkpoints: bool = True) -> dict[str, RLTeamController]:
     device = resolve_device()
     return {
-        team_name: RLTeamController(team_name, TEAM_PARADIGMS[team_name], seed + offset, device)
+        team_name: RLTeamController(
+            team_name, TEAM_PARADIGMS[team_name], seed + offset, device, load_checkpoints
+        )
         for team_name, offset in (
             ("Team 1", 11),
             ("Team 2", 23),

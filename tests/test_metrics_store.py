@@ -90,8 +90,9 @@ def test_schema_change_rotates_the_old_file(tmp_path: Path) -> None:
     assert "variant_id" not in header
 
 
-def test_dashboard_series_only_keeps_known_team_prefix(tmp_path: Path) -> None:
-    """A-19: rows whose team_name does not start with 'Team ' are dropped without warning."""
+def test_dashboard_series_keeps_any_team_label(tmp_path: Path) -> None:
+    """A-19: the loader used to discard rows whose name did not start with the literal 'Team ',
+    silently producing an empty chart after a rename. Grouping must follow the data instead."""
     store = MetricsStore(metrics_dir=tmp_path, exports_dir=tmp_path / "exports")
     store.record_match(_result(TEAM_ROWS), _cumulative())
 
@@ -103,7 +104,7 @@ def test_dashboard_series_only_keeps_known_team_prefix(tmp_path: Path) -> None:
     rows[0]["team_name"] = "Squad 1"
     store2 = MetricsStore(metrics_dir=tmp_path / "other", exports_dir=tmp_path / "other_exports")
     store2._append_rows(store2.team_metrics_csv, rows)
-    assert set(_load_team_metric_series(store2.team_metrics_csv)) == {"Team 2"}
+    assert set(_load_team_metric_series(store2.team_metrics_csv)) == {"Squad 1", "Team 2"}
 
 
 def test_dashboard_png_is_written(tmp_path: Path) -> None:

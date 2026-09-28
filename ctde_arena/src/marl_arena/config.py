@@ -26,7 +26,6 @@ def _read_bool(name: str, default: bool) -> bool:
 class ArenaConfig:
     arena_size: float = float(os.getenv("ARENA_SIZE", "32"))
     match_duration_seconds: float = float(os.getenv("MATCH_DURATION_SECONDS", "90"))
-    respawn_enabled: bool = _read_bool("RESPAWN_ENABLED", False)
     agent_move_speed: float = float(os.getenv("AGENT_MOVE_SPEED", "4.5"))
     agent_turn_speed: float = float(os.getenv("AGENT_TURN_SPEED", "110"))
     jump_speed: float = float(os.getenv("JUMP_SPEED", "6.3"))
@@ -68,6 +67,28 @@ class ArenaConfig:
     rl_hidden_dim: int = int(os.getenv("RL_HIDDEN_DIM", "128"))
     rl_device: str = os.getenv("RL_DEVICE", "cpu")
     rl_checkpoint_dir: Path = DATA_DIR / "checkpoints"
+
+
+def seed_all(seed: int) -> None:
+    """Seed every RNG the training loop consumes.
+
+    ArenaSimulation seeds its own random.Random and each controller gets an offset seed, but weight
+    initialisation comes from Torch's global RNG and the PPO advantage normalisation from NumPy's, so
+    a run is only reproducible if those are pinned too.
+    """
+    import random as _random
+
+    import numpy as _np
+
+    _random.seed(seed)
+    _np.random.seed(seed)
+    try:
+        import torch as _torch
+    except ImportError:
+        return
+    _torch.manual_seed(seed)
+    if _torch.cuda.is_available():
+        _torch.cuda.manual_seed_all(seed)
 
 
 CONFIG = ArenaConfig()

@@ -22,6 +22,7 @@ class RolloutStep:
 @dataclass
 class RolloutBuffer:
     steps: List[RolloutStep] = field(default_factory=list)
+    rng: np.random.Generator = field(default_factory=np.random.default_rng)
 
     def clear(self) -> None:
         self.steps.clear()
@@ -66,14 +67,14 @@ class RolloutBuffer:
         }
         if use_global:
             global_obs = torch.tensor(
-                np.stack([step.global_obs for step in self.steps if step.global_obs is not None]),
+                np.stack([step.global_obs for step in self.steps]),
                 dtype=torch.float32,
                 device=device,
             )
             payload["global_obs"] = global_obs
         if use_agent_slot:
             agent_slots = torch.tensor(
-                np.stack([step.agent_slot for step in self.steps if step.agent_slot is not None]),
+                np.stack([step.agent_slot for step in self.steps]),
                 dtype=torch.float32,
                 device=device,
             )

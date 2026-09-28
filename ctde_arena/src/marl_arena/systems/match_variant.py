@@ -179,7 +179,7 @@ def _default_team_spawns(config: ArenaConfig) -> tuple[TeamSpawnSpec, ...]:
         np.array([0.0, 1.0, margin], dtype=float),
     )
     spawns: list[TeamSpawnSpec] = []
-    for (team_name, paradigm, color), center in zip(TEAM_META, centers):
+    for (team_name, paradigm, color), center in zip(TEAM_META, centers, strict=True):
         spawns.append(TeamSpawnSpec(team_name, paradigm, center, color))
     return tuple(spawns)
 
@@ -261,7 +261,7 @@ def _sample_team_spawns(rng: random.Random, arena_size: float, obstacles: Sequen
     while len(chosen) < 3:
         chosen.append(np.array([rng.uniform(-6, 6), 1.0, rng.uniform(-6, 6)], dtype=float))
     spawns: list[TeamSpawnSpec] = []
-    for (team_name, paradigm, color), center in zip(TEAM_META, chosen[:3]):
+    for (team_name, paradigm, color), center in zip(TEAM_META, chosen[:3], strict=True):
         spawns.append(TeamSpawnSpec(team_name, paradigm, center, color))
     return tuple(spawns)
 

@@ -98,7 +98,10 @@ class BaseTeamController(ABC):
     def candidate_targets(self, agent: AgentSnapshot, all_agents: Iterable[AgentSnapshot]) -> List[np.ndarray]:
         enemy = self.nearest_enemy(agent, all_agents)
         if enemy is None:
-            return [agent.position.copy()]
+            # The action space always indexes four waypoints, so the list must stay that long even
+            # when there is nothing to target; a short list makes action_to_decision raise.
+            hold = agent.position.copy()
+            return [hold, hold.copy(), hold.copy(), hold.copy()]
 
         chase = enemy.position.copy()
         flank = enemy.position + np.array([3.5, 0.0, -3.5], dtype=float)

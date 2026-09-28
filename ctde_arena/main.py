@@ -25,10 +25,16 @@ from ursina import (
     window,
 )
 
+from marl_arena.config import CONFIG
 from marl_arena.controllers.rl_controller import set_rl_training
 from marl_arena.systems.metrics import MetricsStore
 from marl_arena.systems.simulation import ArenaSimulation
 from marl_arena.ui.dashboard import build_overlay_text
+
+SIM_STEP_DT = CONFIG.sim_step_dt
+# A stalled or backgrounded window can deliver a very large delta; without a cap the loop would
+# try to simulate the whole gap in one frame.
+MAX_STEPS_PER_FRAME = 10
 
 
 class CapsuleVisual(Entity):
@@ -158,6 +164,7 @@ class ArenaApp:
         self.projectile_visuals: dict[int, ProjectileVisual] = {}
         self.explosions: list[ProjectileExplosion] = []
         self.match_banner: Text | None = None
+        self._accumulator = 0.0
         self.finished = False
         self._build_scene()
         self._spawn_obstacle_visuals()
@@ -218,6 +225,7 @@ class ArenaApp:
 
     def restart_match(self) -> None:
         self.finished = False
+        self._accumulator = 0.0
         if self.match_banner is not None:
             destroy(self.match_banner)
             self.match_banner = None
@@ -248,10 +256,17 @@ class ArenaApp:
         invoke(self.restart_match, delay=4.0)
 
     def update(self) -> None:
+        # Step on the fixed training timestep rather than the real frame delta, so what is shown here
+        # reproduces a training match instead of a frame-rate-dependent one.
         if not self.finished:
-            finished = self.simulation.step(time.dt)
-            if finished:
-                self._handle_match_end()
+            self._accumulator += time.dt
+            guard = 0
+            while self._accumulator >= SIM_STEP_DT and guard < MAX_STEPS_PER_FRAME:
+                self._accumulator -= SIM_STEP_DT
+                guard += 1
+                if self.simulation.step(SIM_STEP_DT):
+                    self._handle_match_end()
+                    break
         for visual in self.obstacle_visuals.values():
             visual.sync()
         for visual in self.agent_visuals.values():

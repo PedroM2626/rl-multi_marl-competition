@@ -49,6 +49,7 @@ class PPOTrainer:
         policy_loss: torch.Tensor,
         value_loss: torch.Tensor,
         entropy: torch.Tensor,
+        approx_kl: float = 0.0,
     ) -> PPOStats:
         if self.optimizer is None:
             raise RuntimeError("Optimizer has not been configured.")
@@ -64,7 +65,7 @@ class PPOTrainer:
             policy_loss=float(policy_loss.item()),
             value_loss=float(value_loss.item()),
             entropy=float(entropy.item()),
-            approx_kl=0.0,
+            approx_kl=approx_kl,
         )
 
     def update_actor_critic(
@@ -86,7 +87,7 @@ class PPOTrainer:
         sample_count = len(buffer)
         for _ in range(self.ppo_epochs):
             indices = np.arange(sample_count)
-            np.random.shuffle(indices)
+            buffer.rng.shuffle(indices)
             for start in range(0, sample_count, self.batch_size):
                 batch_indices = indices[start : start + self.batch_size]
                 obs_batch = tensors["local_obs"][batch_indices]
@@ -100,7 +101,10 @@ class PPOTrainer:
                 surrogate_2 = torch.clamp(ratio, 1.0 - self.clip_eps, 1.0 + self.clip_eps) * advantages_batch
                 policy_loss = -torch.min(surrogate_1, surrogate_2).mean()
                 value_loss = nn.functional.mse_loss(values, returns_batch)
-                last_stats = self._optimize(policy_loss, value_loss, entropy.mean())
+                last_stats = self._optimize(
+                    policy_loss, value_loss, entropy.mean(),
+                    float((old_log_probs_batch - log_probs).mean()),
+                )
         return last_stats
 
     def update_ctde(
@@ -123,7 +127,7 @@ class PPOTrainer:
         sample_count = len(buffer)
         for _ in range(self.ppo_epochs):
             indices = np.arange(sample_count)
-            np.random.shuffle(indices)
+            buffer.rng.shuffle(indices)
             for start in range(0, sample_count, self.batch_size):
                 batch_indices = indices[start : start + self.batch_size]
                 obs_batch = tensors["local_obs"][batch_indices]
@@ -139,7 +143,10 @@ class PPOTrainer:
                 surrogate_2 = torch.clamp(ratio, 1.0 - self.clip_eps, 1.0 + self.clip_eps) * advantages_batch
                 policy_loss = -torch.min(surrogate_1, surrogate_2).mean()
                 value_loss = nn.functional.mse_loss(values, returns_batch)
-                last_stats = self._optimize(policy_loss, value_loss, entropy.mean())
+                last_stats = self._optimize(
+                    policy_loss, value_loss, entropy.mean(),
+                    float((old_log_probs_batch - log_probs).mean()),
+                )
         return last_stats
 
     def update_cte(
@@ -162,7 +169,7 @@ class PPOTrainer:
         sample_count = len(buffer)
         for _ in range(self.ppo_epochs):
             indices = np.arange(sample_count)
-            np.random.shuffle(indices)
+            buffer.rng.shuffle(indices)
             for start in range(0, sample_count, self.batch_size):
                 batch_indices = indices[start : start + self.batch_size]
                 global_batch = tensors["global_obs"][batch_indices]
@@ -178,7 +185,10 @@ class PPOTrainer:
                 surrogate_2 = torch.clamp(ratio, 1.0 - self.clip_eps, 1.0 + self.clip_eps) * advantages_batch
                 policy_loss = -torch.min(surrogate_1, surrogate_2).mean()
                 value_loss = nn.functional.mse_loss(values, returns_batch)
-                last_stats = self._optimize(policy_loss, value_loss, entropy.mean())
+                last_stats = self._optimize(
+                    policy_loss, value_loss, entropy.mean(),
+                    float((old_log_probs_batch - log_probs).mean()),
+                )
         return last_stats
 
     def update_ctde_vd(
@@ -212,7 +222,7 @@ class PPOTrainer:
         sample_count = len(buffer)
         for _ in range(self.ppo_epochs):
             indices = np.arange(sample_count)
-            np.random.shuffle(indices)
+            buffer.rng.shuffle(indices)
             for start in range(0, sample_count, self.batch_size):
                 batch_indices = indices[start : start + self.batch_size]
                 team_obs_batch = tensors["local_obs"][batch_indices]
@@ -231,11 +241,13 @@ class PPOTrainer:
                 surrogate_2 = torch.clamp(ratio, 1.0 - self.clip_eps, 1.0 + self.clip_eps) * advantages_batch
                 policy_loss = -torch.min(surrogate_1, surrogate_2).mean()
                 value_loss = nn.functional.mse_loss(values, returns_batch)
-                last_stats = self._optimize(policy_loss, value_loss, entropy.mean())
+                last_stats = self._optimize(
+                    policy_loss, value_loss, entropy.mean(),
+                    float((old_log_probs_batch - log_probs).mean()),
+                )
         return last_stats
 
     @staticmethod
-
     def bootstrap_value_critic(critic: CentralizedCriticNetwork, global_obs: np.ndarray, device: torch.device) -> float:
         obs_tensor = torch.tensor(global_obs, dtype=torch.float32, device=device).unsqueeze(0)
         with torch.no_grad():

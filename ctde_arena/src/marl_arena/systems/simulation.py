@@ -41,7 +41,6 @@ class SimAgent:
     hits: int = 0
     misses: int = 0
     survival_time: float = 0.0
-    respawn_timer: float = 0.0
     last_shot_at: float = -999.0
 
     def snapshot(self) -> AgentSnapshot:
@@ -128,15 +127,19 @@ class ProjectileState:
 
 
 class ArenaSimulation:
-    def __init__(self, seed: int | None = None, domain_randomization: bool | None = None) -> None:
+    def __init__(
+        self,
+        seed: int | None = None,
+        domain_randomization: bool | None = None,
+        load_checkpoints: bool = True,
+    ) -> None:
         self.config = CONFIG
         self.seed = self.config.random_seed if seed is None else seed
         self.rng = random.Random(self.seed)
-        self.np_rng = np.random.default_rng(self.seed)
         self.domain_randomization = (
             self.config.domain_randomization if domain_randomization is None else domain_randomization
         )
-        self.controllers = build_controllers(self.seed)
+        self.controllers = build_controllers(self.seed, load_checkpoints)
         self.cumulative_metrics = {
             team_name: TeamMetrics(team_name=team_name, paradigm=paradigm)
             for team_name, paradigm, _ in TEAM_META
@@ -154,6 +157,7 @@ class ArenaSimulation:
         self.step_index = 0
         self.trajectory_rows: List[Dict[str, float]] = []
         self.last_match_result: MatchResult | None = None
+        self.last_ppo_stats: Dict[str, object] = {}
         self.reset_match()
 
     def _sample_next_variant(self) -> MatchVariant:
@@ -754,7 +758,7 @@ class ArenaSimulation:
             agent_rows=agent_rows,
             trajectory_rows=self.trajectory_rows.copy(),
         )
-        finish_rl_episode(self.controllers)
+        self.last_ppo_stats = finish_rl_episode(self.controllers)
         return self.last_match_result
 
     def match_status_text(self) -> str:

@@ -28,7 +28,7 @@ def _load_team_metric_series(team_metrics_csv: Path) -> dict[str, list[dict[str,
         if "team_name" not in row or "winner" not in row:
             continue
         team_name = str(row["team_name"]).strip()
-        if not team_name.startswith("Team "):
+        if not team_name:
             continue
         paradigm = str(row.get("paradigm", ""))
         try:
