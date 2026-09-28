@@ -1,7 +1,7 @@
 {
   "teams": [
     {
-      "team_name": "Equipe 1",
+      "team_name": "Team 1",
       "paradigm": "CTDE-VD",
       "win_rate": 0.4066666666666667,
       "eliminations_per_match": 2.5,
@@ -11,7 +11,7 @@
       "shot_accuracy": 0.11286115569823435
     },
     {
-      "team_name": "Equipe 2",
+      "team_name": "Team 2",
       "paradigm": "CTDE-CAC",
       "win_rate": 0.4288888888888889,
       "eliminations_per_match": 2.631111111111111,
@@ -21,7 +21,7 @@
       "shot_accuracy": 0.12332048744922404
     },
     {
-      "team_name": "Equipe 3",
+      "team_name": "Team 3",
       "paradigm": "CTDE-Comm",
       "win_rate": 0.16444444444444445,
       "eliminations_per_match": 1.9622222222222223,

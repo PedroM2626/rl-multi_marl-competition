@@ -14,7 +14,7 @@ os.environ["MATCH_DURATION_SECONDS"] = "5"
 os.environ["DOMAIN_RANDOMIZATION"] = "true"
 
 from marl_arena.config import CONFIG
-from marl_arena.controllers.rl_controller import RLTeamController, save_rl_checkpoints, set_rl_training
+from marl_arena.controllers.rl_controller import RLTeamController, set_rl_training
 from marl_arena.systems.match_variant import sample_training_variant
 from marl_arena.systems.simulation import ArenaSimulation
 
@@ -30,7 +30,7 @@ def test_domain_randomization_changes_variant() -> None:
     assert len(sampled.team_spawns) == 3
 
 
-def test_rl_controllers_collect_rollouts_and_update() -> None:
+def test_rl_controllers_collect_rollouts_and_update(tmp_path: Path) -> None:
     simulation = ArenaSimulation(seed=99, domain_randomization=True)
     set_rl_training(simulation.controllers, True)
     target = 30
@@ -42,7 +42,9 @@ def test_rl_controllers_collect_rollouts_and_update() -> None:
     for controller in simulation.controllers.values():
         assert isinstance(controller, RLTeamController)
 
-    save_rl_checkpoints(simulation.controllers)
+    # Save into tmp_path: writing to CONFIG.rl_checkpoint_dir would overwrite the versioned policies.
+    for controller in simulation.controllers.values():
+        controller.save(tmp_path)
     for paradigm in ("cte", "dte", "ctde"):
-        matches = list(CONFIG.rl_checkpoint_dir.glob(f"*_{paradigm}.pt"))
-        assert matches, f"Checkpoint {paradigm} nao foi salvo."
+        matches = list(tmp_path.glob(f"*_{paradigm}.pt"))
+        assert matches, f"Checkpoint {paradigm} was not saved."

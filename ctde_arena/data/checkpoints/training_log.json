@@ -6,7 +6,7 @@
     {
       "env_steps": 50793,
       "matches": 203,
-      "winner": "Equipe 2",
+      "winner": "Team 2",
       "variant": {
         "variant_id": 203,
         "arena_size": 30.667963498996613,
@@ -17,8 +17,8 @@
         "shoot_cooldown": 0.5538144542275197
       },
       "summary": {
-        "Equipe 1": {
-          "team_name": "Equipe 1",
+        "Team 1": {
+          "team_name": "Team 1",
           "paradigm": "CTDE-VD",
           "win_rate": 0.4039408866995074,
           "eliminations_per_match": 2.5320197044334973,
@@ -27,8 +27,8 @@
           "shots_missed": 3501,
           "shot_accuracy": 0.12801992528019926
         },
-        "Equipe 2": {
-          "team_name": "Equipe 2",
+        "Team 2": {
+          "team_name": "Team 2",
           "paradigm": "CTDE-CAC",
           "win_rate": 0.4433497536945813,
           "eliminations_per_match": 2.684729064039409,
@@ -37,8 +37,8 @@
           "shots_missed": 3624,
           "shot_accuracy": 0.13072679299592227
         },
-        "Equipe 3": {
-          "team_name": "Equipe 3",
+        "Team 3": {
+          "team_name": "Team 3",
           "paradigm": "CTDE-Comm",
           "win_rate": 0.15270935960591134,
           "eliminations_per_match": 1.8669950738916257,

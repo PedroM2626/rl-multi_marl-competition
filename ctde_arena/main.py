@@ -33,9 +33,9 @@ from marl_arena.ui.dashboard import build_overlay_text
 
 class CapsuleVisual(Entity):
     _team_hsv = {
-        "Equipe 1": (0.0, 0.73, 0.92),
-        "Equipe 2": (220.0, 0.74, 0.95),
-        "Equipe 3": (145.0, 0.72, 0.92),
+        "Team 1": (0.0, 0.73, 0.92),
+        "Team 2": (220.0, 0.74, 0.95),
+        "Team 3": (145.0, 0.72, 0.92),
     }
 
     def __init__(self, agent, **kwargs) -> None:
@@ -92,9 +92,9 @@ class ObstacleVisual(Entity):
 
 class ProjectileExplosion(Entity):
     _team_hues = {
-        "Equipe 1": 0.0,
-        "Equipe 2": 220.0,
-        "Equipe 3": 145.0,
+        "Team 1": 0.0,
+        "Team 2": 220.0,
+        "Team 3": 145.0,
     }
 
     def __init__(self, hit_data, **kwargs) -> None:
@@ -129,9 +129,9 @@ class ProjectileExplosion(Entity):
 
 class ProjectileVisual(Entity):
     _team_hues = {
-        "Equipe 1": 0.0,
-        "Equipe 2": 220.0,
-        "Equipe 3": 145.0,
+        "Team 1": 0.0,
+        "Team 2": 220.0,
+        "Team 3": 145.0,
     }
 
     def __init__(self, snapshot, **kwargs) -> None:
@@ -188,19 +188,19 @@ class ArenaApp:
         self.overlay = Text(text="", x=-0.86, y=0.47, scale=0.78, background=True)
         self.export_label = Text(text="", x=-0.86, y=-0.43, scale=0.72, background=True)
         WindowPanel(
-            title="Legenda",
+            title="Legend",
             content=(
-                Text("Equipe 1 = vermelho / CTDE-VD"),
-                Text("Equipe 2 = azul / CTDE-CAC"),
-                Text("Equipe 3 = verde / CTDE-Comm"),
-                Text("Cinza = barreira fixa"),
-                Text("Amarelo = obstaculo movel"),
-                Text("Aco = passagem restrita"),
+                Text("Team 1 = red / CTDE-VD"),
+                Text("Team 2 = blue / CTDE-CAC"),
+                Text("Team 3 = green / CTDE-Comm"),
+                Text("Grey = fixed barrier"),
+                Text("Yellow = moving obstacle"),
+                Text("Steel = restricted passage"),
             ),
             x=0.53,
             y=0.32,
         )
-        Button(text="Reiniciar Partida", x=0.63, y=-0.43, scale=(0.2, 0.06), on_click=self.restart_match)
+        Button(text="Restart Match", x=0.63, y=-0.43, scale=(0.2, 0.06), on_click=self.restart_match)
 
     def _spawn_obstacle_visuals(self) -> None:
         for visual in self.obstacle_visuals.values():
@@ -237,10 +237,10 @@ class ArenaApp:
         self.finished = True
         result = self.simulation.finish_match()
         exported = self.metrics.record_match(result, self.simulation.cumulative_metrics)
-        export_text = "Arquivos: " + ", ".join(path.name for path in exported) if exported else "Arquivos: nenhum"
+        export_text = "Files: " + ", ".join(path.name for path in exported) if exported else "Files: none"
         self.export_label.text = export_text
         self.match_banner = Text(
-            text=f"Vencedora: {result.winner_team} | Reinicio em 4s",
+            text=f"Winner: {result.winner_team} | Restarting in 4s",
             scale=1.8,
             y=0.34,
             background=True,

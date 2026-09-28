@@ -318,10 +318,10 @@ class ArenaSimulation:
         try:
             vector = np.asarray(value, dtype=float)
         except (TypeError, ValueError):
-            warnings.warn(f"{context}: nao foi possivel converter o vetor para um formato numerico valido.")
+            warnings.warn(f"{context}: could not convert the vector into a valid numeric format.")
             return None
         if vector.shape != (3,) or not np.all(np.isfinite(vector)):
-            warnings.warn(f"{context}: esperado vetor 3D finito, recebido shape={vector.shape}.")
+            warnings.warn(f"{context}: expected a finite 3D vector, got shape={vector.shape}.")
             return None
         return vector
 
@@ -440,13 +440,13 @@ class ArenaSimulation:
         shooter = self._find_agent(projectile.shooter_agent_id)
         if shooter is None:
             warnings.warn(
-                f"Projetil {projectile.projectile_id} descartado sem autor valido para registrar erro de disparo."
+                f"Projectile {projectile.projectile_id} discarded without a valid owner; the missed shot was not attributed."
             )
             return
         shooter.misses += 1
         team_metrics = self.cumulative_metrics.get(projectile.team_name)
         if team_metrics is None:
-            warnings.warn(f"Equipe '{projectile.team_name}' nao encontrada ao registrar miss do projetil.")
+            warnings.warn(f"Team '{projectile.team_name}' not found while recording a projectile miss.")
             return
         team_metrics.shots_missed += 1
 
@@ -463,7 +463,7 @@ class ArenaSimulation:
         hit_status[target.agent_id] = True
         if shooter is None:
             warnings.warn(
-                f"Projetil {projectile.projectile_id} acertou {target.agent_id}, mas o autor nao foi encontrado."
+                f"Projectile {projectile.projectile_id} hit {target.agent_id}, but its owner was not found."
             )
             return
         shooter.kills += 1
@@ -471,19 +471,19 @@ class ArenaSimulation:
         scored_status[shooter.agent_id] = True
         team_metrics = self.cumulative_metrics.get(projectile.team_name)
         if team_metrics is None:
-            warnings.warn(f"Equipe '{projectile.team_name}' nao encontrada ao registrar hit do projetil.")
+            warnings.warn(f"Team '{projectile.team_name}' not found while recording a projectile hit.")
             return
         team_metrics.eliminations += 1
         team_metrics.shots_hit += 1
 
     def _spawn_projectile(self, shooter: SimAgent, aim_direction: np.ndarray) -> ProjectileState | None:
-        direction_input = self._coerce_vec3(aim_direction, f"Disparo do agente {shooter.agent_id}")
+        direction_input = self._coerce_vec3(aim_direction, f"Shot by agent {shooter.agent_id}")
         if direction_input is None:
             return None
         direction = normalize(direction_input)
         speed = max(self.match_variant.shoot_range * PROJECTILE_SPEED_MULTIPLIER, FLOAT_EPSILON)
         if float(np.linalg.norm(direction)) <= FLOAT_EPSILON:
-            warnings.warn(f"Disparo do agente {shooter.agent_id} ignorado por direcao nula.")
+            warnings.warn(f"Shot by agent {shooter.agent_id} ignored because the aim direction has zero norm.")
             return None
         projectile_origin = shooter.position.copy() + direction * (AGENT_RADIUS + PROJECTILE_RADIUS + 0.05)
         half = self.match_variant.arena_size * 0.5 - PROJECTILE_RADIUS
@@ -518,13 +518,13 @@ class ArenaSimulation:
         remaining_projectiles: List[ProjectileState] = []
         for projectile in self.projectiles:
             try:
-                start = self._coerce_vec3(projectile.position, f"Projetil {projectile.projectile_id} posicao")
-                velocity = self._coerce_vec3(projectile.velocity, f"Projetil {projectile.projectile_id} velocidade")
+                start = self._coerce_vec3(projectile.position, f"Projectile {projectile.projectile_id} position")
+                velocity = self._coerce_vec3(projectile.velocity, f"Projectile {projectile.projectile_id} velocity")
                 if start is None or velocity is None:
-                    raise ValueError("estado do projetil invalido")
+                    raise ValueError("invalid projectile state")
                 speed = float(np.linalg.norm(velocity))
                 if speed <= FLOAT_EPSILON:
-                    raise ValueError("velocidade nula")
+                    raise ValueError("zero velocity")
                 remaining_distance = max(0.0, projectile.max_distance - projectile.distance_travelled)
                 if remaining_distance <= FLOAT_EPSILON:
                     self._register_projectile_miss(projectile)
@@ -589,7 +589,7 @@ class ArenaSimulation:
                     continue
                 remaining_projectiles.append(projectile)
             except ValueError as exc:
-                warnings.warn(f"Projetil {projectile.projectile_id} removido: {exc}.")
+                warnings.warn(f"Projectile {projectile.projectile_id} removed: {exc}.")
                 self._register_projectile_miss(projectile)
         self.projectiles = remaining_projectiles
 
@@ -770,10 +770,10 @@ class ArenaSimulation:
         for obstacle in self.obstacles:
             obstacle_breakdown[obstacle.obstacle_type] = obstacle_breakdown.get(obstacle.obstacle_type, 0) + 1
         lines = [
-            f"Partida {self.match_index}  Tempo: {self.match_time:05.1f}s",
-            f"Equipe 1 / CTE: {counts['Equipe 1']} vivos",
-            f"Equipe 2 / DTE: {counts['Equipe 2']} vivos",
-            f"Equipe 3 / CTDE: {counts['Equipe 3']} vivos",
-            f"Obstaculos: {len(self.obstacles)} | Fixos {obstacle_breakdown.get('barreira_fixa', 0)} | Moveis {obstacle_breakdown.get('obstaculo_movel', 0)} | Restritos {obstacle_breakdown.get('passagem_restrita', 0)}",
+            f"Match {self.match_index}  Elapsed: {self.match_time:05.1f}s",
+            f"Team 1 / CTE: {counts['Team 1']} alive",
+            f"Team 2 / DTE: {counts['Team 2']} alive",
+            f"Team 3 / CTDE: {counts['Team 3']} alive",
+            f"Obstacles: {len(self.obstacles)} | Fixed {obstacle_breakdown.get('fixed_barrier', 0)} | Moving {obstacle_breakdown.get('moving_obstacle', 0)} | Restricted {obstacle_breakdown.get('restricted_passage', 0)}",
         ]
         return "\n".join(lines)

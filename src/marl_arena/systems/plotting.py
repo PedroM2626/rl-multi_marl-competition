@@ -28,7 +28,7 @@ def _load_team_metric_series(team_metrics_csv: Path) -> dict[str, list[dict[str,
         if "team_name" not in row or "winner" not in row:
             continue
         team_name = str(row["team_name"]).strip()
-        if not team_name.startswith("Equipe "):
+        if not team_name.startswith("Team "):
             continue
         paradigm = str(row.get("paradigm", ""))
         try:
@@ -69,10 +69,10 @@ def export_metric_dashboard(team_metrics_csv: Path, export_dir: Path) -> list[Pa
 
     fig, axes = plt.subplots(2, 2, figsize=(14, 9), dpi=120)
     metrics = [
-        ("win_rate", "Taxa de Vitorias", axes[0, 0]),
-        ("cum_eliminations", "Eliminacoes Acumuladas", axes[0, 1]),
-        ("mean_survival_time", "Sobrevivencia Media", axes[1, 0]),
-        ("shot_accuracy", "Precisao de Disparos", axes[1, 1]),
+        ("win_rate", "Win Rate", axes[0, 0]),
+        ("cum_eliminations", "Cumulative Eliminations", axes[0, 1]),
+        ("mean_survival_time", "Mean Survival Time", axes[1, 0]),
+        ("shot_accuracy", "Shot Accuracy", axes[1, 1]),
     ]
 
     for team_name, points in series_by_team.items():
@@ -85,7 +85,7 @@ def export_metric_dashboard(team_metrics_csv: Path, export_dir: Path) -> list[Pa
                 linewidth=2,
                 label=label,
             )
-            axis.set_xlabel("Partida")
+            axis.set_xlabel("Match")
             axis.grid(True, alpha=0.3)
 
     for metric_name, title, axis in metrics:

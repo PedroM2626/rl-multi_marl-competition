@@ -42,7 +42,7 @@ class MetricsStore:
             backup_path = file_path.with_name(f"{file_path.stem}.legacy{counter}{file_path.suffix}")
         file_path.rename(backup_path)
         warnings.warn(
-            f"Esquema CSV alterado em {file_path.name}; arquivo anterior movido para {backup_path.name}."
+            f"CSV schema changed in {file_path.name}; the previous file was moved to {backup_path.name}."
         )
         return True
 
@@ -66,7 +66,7 @@ class MetricsStore:
         try:
             return export_metric_dashboard(self.team_metrics_csv, self.exports_dir)
         except (ValueError, KeyError) as exc:
-            warnings.warn(f"Nao foi possivel gerar dashboard de metricas: {exc}")
+            warnings.warn(f"Could not generate the metrics dashboard: {exc}")
             return []
 
     def write_summary(self, cumulative_metrics: Dict[str, TeamMetrics]) -> None:

@@ -22,9 +22,9 @@ from marl_arena.rl.networks import ActorNetwork, CentralizedActorNetwork, Centra
 from marl_arena.rl.ppo import PPOStats, PPOTrainer
 
 TEAM_PARADIGMS = {
-    "Equipe 1": "CTDE-VD",
-    "Equipe 2": "CTDE-CAC",
-    "Equipe 3": "CTDE-Comm",
+    "Team 1": "CTDE-VD",
+    "Team 2": "CTDE-CAC",
+    "Team 3": "CTDE-Comm",
 }
 
 
@@ -69,9 +69,9 @@ class RLTeamController(BaseTeamController):
         if self.paradigm == "CTDE-VD":
             self.actor = ActorNetwork(LOCAL_OBS_DIM, NUM_ACTIONS, hidden).to(self.device)
             # Find the indices of the team's 3 agents in sorted order.
-            if self.team_name == "Equipe 1":
+            if self.team_name == "Team 1":
                 indices = [0, 1, 2]
-            elif self.team_name == "Equipe 2":
+            elif self.team_name == "Team 2":
                 indices = [3, 4, 5]
             else:
                 indices = [6, 7, 8]
@@ -285,7 +285,7 @@ class RLTeamController(BaseTeamController):
             )
             return action_to_decision(self, agent, agent_list, action_index, context.shoot_range)
 
-        # Fallback (e.g. DTE/CTE path)
+        # Defensive fallback; none of the three CTDE variants configured here reach this branch.
         assert isinstance(self.actor, ActorNetwork)
         obs_tensor = torch.tensor(local_obs, dtype=torch.float32, device=self.device).unsqueeze(0)
         with torch.no_grad():
@@ -348,9 +348,9 @@ def build_controllers(seed: int) -> dict[str, RLTeamController]:
     return {
         team_name: RLTeamController(team_name, TEAM_PARADIGMS[team_name], seed + offset, device)
         for team_name, offset in (
-            ("Equipe 1", 11),
-            ("Equipe 2", 23),
-            ("Equipe 3", 37),
+            ("Team 1", 11),
+            ("Team 2", 23),
+            ("Team 3", 37),
         )
     }
 

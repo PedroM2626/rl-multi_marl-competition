@@ -51,7 +51,7 @@ class PPOTrainer:
         entropy: torch.Tensor,
     ) -> PPOStats:
         if self.optimizer is None:
-            raise RuntimeError("Optimizer nao configurado.")
+            raise RuntimeError("Optimizer has not been configured.")
         loss = policy_loss + self.value_coef * value_loss - self.entropy_coef * entropy
         self.optimizer.zero_grad()
         loss.backward()

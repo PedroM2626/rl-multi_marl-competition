@@ -10,9 +10,9 @@ from marl_arena.config import ArenaConfig
 
 
 TEAM_META: tuple[tuple[str, str, tuple[float, float, float]], ...] = (
-    ("Equipe 1", "CTE", (0.92, 0.25, 0.25)),
-    ("Equipe 2", "DTE", (0.25, 0.55, 0.95)),
-    ("Equipe 3", "CTDE", (0.25, 0.88, 0.45)),
+    ("Team 1", "CTE", (0.92, 0.25, 0.25)),
+    ("Team 2", "DTE", (0.25, 0.55, 0.95)),
+    ("Team 3", "CTDE", (0.25, 0.88, 0.45)),
 )
 
 AGENT_FORMATION_OFFSETS: tuple[np.ndarray, ...] = (
@@ -71,7 +71,7 @@ def _default_obstacle_specs() -> tuple[ObstacleSpec, ...]:
     return (
         ObstacleSpec(
             "fixed-central-wall",
-            "barreira_fixa",
+            "fixed_barrier",
             np.array([0.0, 1.5, -1.0], dtype=float),
             np.array([2.0, 3.0, 10.0], dtype=float),
             (0.60, 0.58, 0.56),
@@ -82,7 +82,7 @@ def _default_obstacle_specs() -> tuple[ObstacleSpec, ...]:
         ),
         ObstacleSpec(
             "fixed-east-block",
-            "barreira_fixa",
+            "fixed_barrier",
             np.array([8.0, 1.5, 5.0], dtype=float),
             np.array([7.0, 3.0, 2.4], dtype=float),
             (0.54, 0.52, 0.50),
@@ -93,7 +93,7 @@ def _default_obstacle_specs() -> tuple[ObstacleSpec, ...]:
         ),
         ObstacleSpec(
             "fixed-west-pillar",
-            "barreira_fixa",
+            "fixed_barrier",
             np.array([-8.0, 1.5, 6.0], dtype=float),
             np.array([2.8, 3.0, 2.8], dtype=float),
             (0.52, 0.50, 0.48),
@@ -104,7 +104,7 @@ def _default_obstacle_specs() -> tuple[ObstacleSpec, ...]:
         ),
         ObstacleSpec(
             "moving-north-sweeper",
-            "obstaculo_movel",
+            "moving_obstacle",
             np.array([0.0, 1.0, 13.5], dtype=float),
             np.array([4.0, 2.0, 1.6], dtype=float),
             (0.93, 0.74, 0.25),
@@ -115,7 +115,7 @@ def _default_obstacle_specs() -> tuple[ObstacleSpec, ...]:
         ),
         ObstacleSpec(
             "moving-south-sweeper",
-            "obstaculo_movel",
+            "moving_obstacle",
             np.array([0.0, 1.0, -12.0], dtype=float),
             np.array([4.6, 2.0, 1.6], dtype=float),
             (0.95, 0.66, 0.24),
@@ -126,7 +126,7 @@ def _default_obstacle_specs() -> tuple[ObstacleSpec, ...]:
         ),
         ObstacleSpec(
             "passage-left",
-            "passagem_restrita",
+            "restricted_passage",
             np.array([-3.8, 1.5, 9.0], dtype=float),
             np.array([2.6, 3.0, 4.5], dtype=float),
             (0.38, 0.42, 0.50),
@@ -137,7 +137,7 @@ def _default_obstacle_specs() -> tuple[ObstacleSpec, ...]:
         ),
         ObstacleSpec(
             "passage-right",
-            "passagem_restrita",
+            "restricted_passage",
             np.array([3.8, 1.5, 9.0], dtype=float),
             np.array([2.6, 3.0, 4.5], dtype=float),
             (0.38, 0.42, 0.50),
@@ -148,7 +148,7 @@ def _default_obstacle_specs() -> tuple[ObstacleSpec, ...]:
         ),
         ObstacleSpec(
             "passage-lower-left",
-            "passagem_restrita",
+            "restricted_passage",
             np.array([-3.8, 1.5, -9.0], dtype=float),
             np.array([2.6, 3.0, 4.0], dtype=float),
             (0.36, 0.40, 0.48),
@@ -159,7 +159,7 @@ def _default_obstacle_specs() -> tuple[ObstacleSpec, ...]:
         ),
         ObstacleSpec(
             "passage-lower-right",
-            "passagem_restrita",
+            "restricted_passage",
             np.array([3.8, 1.5, -9.0], dtype=float),
             np.array([2.6, 3.0, 4.0], dtype=float),
             (0.36, 0.40, 0.48),
@@ -270,13 +270,13 @@ def _sample_obstacle_specs(rng: random.Random, arena_size: float, config: ArenaC
     count = rng.randint(config.dr_obstacle_count_min, config.dr_obstacle_count_max)
     half = arena_size * 0.42
     specs: list[ObstacleSpec] = []
-    type_pool = ("barreira_fixa", "barreira_fixa", "passagem_restrita", "obstaculo_movel")
+    type_pool = ("fixed_barrier", "fixed_barrier", "restricted_passage", "moving_obstacle")
     for index in range(count):
         for _ in range(40):
             obstacle_type = rng.choice(type_pool)
             x = rng.uniform(-half, half)
             z = rng.uniform(-half, half)
-            if obstacle_type == "barreira_fixa":
+            if obstacle_type == "fixed_barrier":
                 size = np.array(
                     [
                         rng.uniform(2.0, 8.0),
@@ -290,7 +290,7 @@ def _sample_obstacle_specs(rng: random.Random, arena_size: float, config: ArenaC
                 amplitude = 0.0
                 speed = 0.0
                 phase = 0.0
-            elif obstacle_type == "passagem_restrita":
+            elif obstacle_type == "restricted_passage":
                 size = np.array(
                     [
                         rng.uniform(2.0, 3.5),
@@ -321,7 +321,7 @@ def _sample_obstacle_specs(rng: random.Random, arena_size: float, config: ArenaC
                 amplitude = rng.uniform(4.0, arena_size * 0.22)
                 speed = rng.uniform(0.45, 1.0)
                 phase = rng.uniform(0.0, 3.14)
-            position = np.array([x, 1.0 if obstacle_type == "obstaculo_movel" else 1.5, z], dtype=float)
+            position = np.array([x, 1.0 if obstacle_type == "moving_obstacle" else 1.5, z], dtype=float)
             candidate = ObstacleSpec(
                 f"rnd-{index}",
                 obstacle_type,

@@ -26,7 +26,7 @@ def main() -> None:
     last_logged_steps = 0
 
     print(
-        f"Treino PPO | alvo={target_steps:,} steps | dt={dt} | "
+        f"PPO training | target={target_steps:,} steps | dt={dt} | "
         f"domain_randomization={simulation.domain_randomization} | device={CONFIG.rl_device}"
     )
 
@@ -55,15 +55,15 @@ def main() -> None:
                 }
             )
             print(
-                f"steps={simulation.total_env_steps:,}/{target_steps:,} | partidas={simulation.match_index} | "
-                f"vencedora={result.winner_team} | variant={simulation.match_variant.variant_id} | "
+                f"steps={simulation.total_env_steps:,}/{target_steps:,} | matches={simulation.match_index} | "
+                f"winner={result.winner_team} | variant={simulation.match_variant.variant_id} | "
                 f"win_rates={{k: round(v['win_rate'], 3) for k, v in summary.items()}}"
             )
 
         if simulation.total_env_steps - last_saved_steps >= CONFIG.rl_save_every_steps:
             last_saved_steps = simulation.total_env_steps
             save_rl_checkpoints(simulation.controllers)
-            print(f"[save] checkpoints em {CONFIG.rl_checkpoint_dir} (@ {simulation.total_env_steps:,} steps)")
+            print(f"[save] checkpoints at {CONFIG.rl_checkpoint_dir} (@ {simulation.total_env_steps:,} steps)")
 
         simulation.reset_match()
 
@@ -80,7 +80,7 @@ def main() -> None:
             handle,
             indent=2,
         )
-    print(f"Treino finalizado em {simulation.total_env_steps:,} steps | log: {log_path}")
+    print(f"Training finished at {simulation.total_env_steps:,} steps | log: {log_path}")
 
 
 if __name__ == "__main__":

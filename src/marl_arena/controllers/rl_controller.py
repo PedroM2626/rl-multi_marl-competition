@@ -22,9 +22,9 @@ from marl_arena.rl.networks import ActorNetwork, CentralizedActorNetwork, Centra
 from marl_arena.rl.ppo import PPOStats, PPOTrainer
 
 TEAM_PARADIGMS = {
-    "Equipe 1": "CTE",
-    "Equipe 2": "DTE",
-    "Equipe 3": "CTDE",
+    "Team 1": "CTE",
+    "Team 2": "DTE",
+    "Team 3": "CTDE",
 }
 
 
@@ -302,9 +302,9 @@ def build_controllers(seed: int) -> dict[str, RLTeamController]:
     return {
         team_name: RLTeamController(team_name, TEAM_PARADIGMS[team_name], seed + offset, device)
         for team_name, offset in (
-            ("Equipe 1", 11),
-            ("Equipe 2", 23),
-            ("Equipe 3", 37),
+            ("Team 1", 11),
+            ("Team 2", 23),
+            ("Team 3", 37),
         )
     }
 

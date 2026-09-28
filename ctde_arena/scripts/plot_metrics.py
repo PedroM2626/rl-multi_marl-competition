@@ -8,8 +8,8 @@ try:
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 except Exception as e:
-    print("Erro ao importar dependências:", e)
-    print("Tente instalar dependências: pip install pandas matplotlib")
+    print("Failed to import dependencies:", e)
+    print("Try installing them with: pip install pandas matplotlib")
     sys.exit(1)
 
 
@@ -61,7 +61,7 @@ def plot_metrics(df, out_path):
 
 def main():
     if not os.path.exists(METRICS_PATH):
-        print(f"Arquivo de métricas não encontrado: {METRICS_PATH}")
+        print(f"Metrics file not found: {METRICS_PATH}")
         sys.exit(2)
 
     df = load_metrics(METRICS_PATH)
@@ -77,8 +77,8 @@ def main():
     save_csv(df, csv_path)
     plot_metrics(df, png_path)
 
-    print("CSV salvo em:", csv_path)
-    print("Gráfico salvo em:", png_path)
+    print("CSV written to:", csv_path)
+    print("Chart written to:", png_path)
 
 
 if __name__ == "__main__":
