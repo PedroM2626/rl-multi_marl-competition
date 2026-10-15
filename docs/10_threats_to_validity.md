@@ -183,14 +183,21 @@ applied to the original single-seed evidence, and left three that no amount of r
    introduced by the remedy for the previous version of this threat, and it is the strongest argument
    in the repository for reporting both readouts rather than one
    ([§ Readout](08_results.md#readout-divergence)).
-12. **~~No fixed-opponent evaluation.~~ Partly addressed.** The cross-experiment round-robin
+12. **The round-robin tests six checkpoints, not six architectures.** Each arm is represented by its one
+    promoted replicate, so its two corrected-significant results are statements about particular trained
+    networks. The evaluation is replicated five times; the training is not replicated at all, and the
+    variance the study attributes to training (0.12–0.22 between seeds) is larger than the differences the
+    round-robin found (0.074–0.095). See
+    [§ 8.10](08_results.md#cross-arena-limits) for what would close it and what that costs.
+13. **~~No fixed-opponent evaluation.~~ Partly addressed.** The cross-experiment round-robin
     ([§ 8.10](08_results.md#cross-arena)) puts all six arms on a common opponent pool, which removes the
     co-adaptation confound *for evaluation* and is where the repository's only corrected-significant
     differences appear. What remains open: the pool is still these six policies and no others, there are no
     scripted opponents, and training itself is still three arms co-adapting inside one run — so absolute
     strength, in the sense of a number comparable to the literature, is still unmeasured.
 
-*Next concrete steps:* change what win rate measures (items 9, 10 and 11) before adding replicates. Two of
+*Next concrete steps:* change what win rate measures (items 9, 10 and 11) and replicate the training behind the
+round-robin (item 12) before adding evaluation seeds. Two of
 the three remedies a previous version of this list proposed have now been carried out — rotating the slot,
 and evaluating on a common opponent pool — and both changed conclusions that were in print: the rotation
 helped expose that a single replicate could reverse the ranking, and the common pool reversed the

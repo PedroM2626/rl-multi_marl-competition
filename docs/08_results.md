@@ -631,6 +631,28 @@ bottom three (CAC, VD, CTDE). The result is a **high band and a low band**, not 
 single most surprising member of the low band is plain CTDE, last in all five seeds, which is the
 architecture experiment 1 was built to promote.
 
+### The hardest limit of this comparison <a name="cross-arena-limits"></a>
+
+**Each architecture is represented by exactly one checkpoint** — the promoted replicate of its experiment.
+So "CTDE-Comm beats plain CTDE" is a statement about two particular trained networks that were measured
+many times, not about two architectures averaged over independent training runs. The 5 harness seeds
+replicate the *evaluation*; they do not replicate the *training*, and they cannot, because the other 50
+replicates' checkpoints live under `data/runs/`, which is git-ignored.
+
+That distinction is the whole subject of this chapter, so the new significant result has to carry the same
+warning the old null one did. Two mitigations are worth stating and neither closes it:
+
+* The between-*harness*-seed SD here is 0.012–0.026, so the evaluation is not the noisy part — the gap
+  between "these two checkpoints" and "these two architectures" is entirely training variance, which the
+  study measures at 0.12–0.22 between seeds.
+* The two separated pairs differ by 0.095 and 0.074 in pooled win rate. A training-seed effect of the size
+  already documented could produce gaps of that magnitude by itself.
+
+**What would close it:** running the round-robin over several training replicates per architecture — the 60
+checkpoints already exist on this machine, so it is evaluation-only, roughly 3× the cost just incurred. It
+would not be reproducible by a reader until those checkpoints are versioned or re-trained, which is the
+trade-off to decide before doing it.
+
 ### The slot effect, measured at scale
 
 Pooled over 3,000 balanced team-matches per slot:
@@ -661,7 +683,9 @@ The cross-arena design removes the co-adaptation confound, balances slots, uses 
 and a paired test that respects the dependence between arms. Under it the six architectures are **not**
 all indistinguishable — two cross-experiment pairs separate past Bonferroni — but neither is there a strict
 ordering: three arms share a top band and three share a bottom, and the plain CTDE arm that experiment 1
-was built to promote is in the bottom band in every seed.
+was built to promote is in the bottom band in every seed. The first clause has to be read with
+[the caveat above](#cross-arena-limits) attached: what separates are two particular checkpoints, not two
+architectures averaged over training runs.
 
 That is a stronger claim than the study's, because it is no longer conditional on each arm fighting its own
 neighbours — and it was only reachable by replicating the evaluation. The first 600-match run, with a fifth
