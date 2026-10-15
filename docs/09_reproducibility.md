@@ -94,6 +94,7 @@ cp .env.example .env              # .env is tracked and identical to .env.exampl
 | `python scripts/promote_run.py --experiment exp1 --seed median` | 1 or 2 | Copy one replicate into the versioned `data/` and write `PROVENANCE.json` |
 | `python scripts/random_baseline.py --matches 300` | either | Untrained reference point: outcome mix, durations and per-arm metrics from random policies |
 | `python scripts/report_inventory.py` | root | Regenerate the § 9.7 artefact table from `git ls-files` and live SHA-256 |
+| `python scripts/render_trailer.py --frames 240` | either | Render a gameplay clip from the promoted policies via Ursina offscreen |
 
 `run_experiment.py` and `random_baseline.py` are byte-identical in both trees; which engine they bind to is
 decided by the working directory, exactly like `train_rl.py`. `run_study.py`, `report_study.py`,
@@ -240,7 +241,7 @@ checkpoints, and `run_experiment.py` passes `load_checkpoints=False`.
 
 ## 9.7 Artefact inventory
 
-Every versioned experiment artefact (46 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed.
+Every versioned experiment artefact (50 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed.
 
 **Promoted replicate.** The artefacts that match the current code. Chosen by `promote_run.py --seed median`, which is the replicate with the least L1 distance to the per-arm study means; `PROVENANCE.json` records the choice and the full run summary behind it.
 
@@ -301,6 +302,15 @@ Every versioned experiment artefact (46 files), with SHA-256 for integrity check
 | `data/historical_100k/metrics/summary.json` | 953 | `462070731a16d56162983ff7b3d08a6ed32e59025343c9be3d9fc827f3382a73` |
 | `data/historical_100k/metrics/team_match_metrics.csv` | 11,075 | `338ffa7442e0386227611996a0592a8643b6223fed658775a7083dc4d2890eda` |
 | `data/historical_100k/metrics/trajectory_metrics.csv` | 1,619,886 | `644342fc2f850c4a89fa35d0eb74b37d736339c2c9d51f3892f73d45f9edf406` |
+
+**Gameplay clips.** Rendered by `render_trailer.py` from the promoted replicate's trained policies; the JSON beside each clip records the seed, rotation, paradigm per slot and the per-frame alive and shot counts the caption asserts.
+
+| Path | Bytes | SHA-256 |
+|---|---:|---|
+| `docs/assets/gameplay_exp1.gif` | 698,135 | `585a470d26a2d818637bd60de802a145074bae31dc9a4d1cd6932ed1f6f7aa31` |
+| `docs/assets/gameplay_exp1.json` | 48,320 | `f090712cf990319369fe610a084110bd5f02378017d5436ed78b4981c4b523a3` |
+| `docs/assets/gameplay_exp2.gif` | 530,170 | `424e5c2c1952d23fb0c693dd3a8e14fd828f5d0c1045012ab15e9398f8d9c32e` |
+| `docs/assets/gameplay_exp2.json` | 48,490 | `b1660c289b2c65362b9128ee77cf0db117a427b2e49f5380e78212d90f246d51` |
 
 **MLflow export and derived charts.** The 48 points that reached MLflow, plus the `plot_metrics.py` output for each tree.
 

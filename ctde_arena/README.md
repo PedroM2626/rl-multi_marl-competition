@@ -134,6 +134,17 @@ The mid-training snapshot at 50,793 steps already reproduces the final ordering:
 
 ## Visual simulation
 
+**Experiment 2 as the trained policies actually play it** — CTDE-Comm (red) vs CTDE-VD (blue) vs
+CTDE-CAC (green), seed 2, slot rotation 2, rendered by Ursina offscreen on the fixed training timestep and
+selected greedily, which is the same configuration the study measures. The per-frame alive and shot counts
+are in [`../docs/assets/gameplay_exp2.json`](../docs/assets/gameplay_exp2.json).
+
+![Experiment 2 gameplay](../docs/assets/gameplay_exp2.gif)
+
+Regenerate with `python scripts/render_trailer.py --frames 240 --fps 14 --out ../docs/assets/gameplay_exp2.gif`
+from this directory. See the [root README](../README.md#what-the-arena-looks-like) for what the render path
+does and does not guarantee.
+
 ```bash
 python main.py
 ```

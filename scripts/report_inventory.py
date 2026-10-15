@@ -39,6 +39,13 @@ GROUPS = [
         ("data/historical_100k/", "ctde_arena/data/historical_100k/"),
     ),
     (
+        "Gameplay clips",
+        "Rendered by `render_trailer.py` from the promoted replicate's trained policies; the JSON beside "
+        "each clip records the seed, rotation, paradigm per slot and the per-frame alive and shot counts "
+        "the caption asserts.",
+        ("docs/assets/",),
+    ),
+    (
         "MLflow export and derived charts",
         "The 48 points that reached MLflow, plus the `plot_metrics.py` output for each tree.",
         ("ctde_arena/data/mlflow_export/", "exports/metrics/", "ctde_arena/exports/metrics/"),
@@ -53,7 +60,7 @@ def tracked_artefacts() -> list[str]:
         for p in listing.splitlines()
         if p.startswith(
             ("data/", "ctde_arena/data/", "exports/", "ctde_arena/exports/",
-             "results/", "ctde_arena/results/")
+             "results/", "ctde_arena/results/", "docs/assets/")
         )
     ]
 

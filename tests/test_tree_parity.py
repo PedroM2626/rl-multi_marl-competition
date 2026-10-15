@@ -32,6 +32,7 @@ IDENTICAL = [
     "src/marl_arena/ui/dashboard.py",
     "scripts/plot_metrics.py",
     "scripts/random_baseline.py",
+    "scripts/render_trailer.py",
     "scripts/run_experiment.py",
     "tests/test_collision.py",
 ]

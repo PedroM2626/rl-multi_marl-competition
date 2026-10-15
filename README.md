@@ -95,6 +95,37 @@ image has never been built.
 | Team 2 | CTDE-CAC | centralised critic over the joint state (MAPPO-style) |
 | Team 3 | CTDE-Comm | differentiable mean-pooled messages (CommNet-style) |
 
+## What the arena looks like
+
+Both clips are the real renderer, not a re-drawn approximation: Ursina in offscreen window mode, the same
+visual classes `main.py` uses, stepping on the same fixed `SIM_STEP_DT` the training loop uses, running the
+**promoted replicate's trained policies under greedy action selection** — the same configuration the study
+measures. The screen-space legend and overlay are hidden because the burn-in caption repeats them.
+
+**Experiment 1 — CTE (red) vs DTE (blue) vs CTDE (green)**, seed 9, slot rotation 0.
+
+![Experiment 1 gameplay](docs/assets/gameplay_exp1.gif)
+
+**Experiment 2 — CTDE-Comm (red) vs CTDE-VD (blue) vs CTDE-CAC (green)**, seed 2, slot rotation 2.
+
+![Experiment 2 gameplay](docs/assets/gameplay_exp2.gif)
+
+What each clip shows is recorded beside it in `docs/assets/gameplay_exp*.json` — frame count, seed, rotation,
+paradigm per slot, the alive count and cumulative shot count per frame — so the caption is checkable rather
+than decorative. Note that these are *single* replicates: the ranking they might appear to illustrate is not
+a finding of this study ([§ 8.1](docs/08_results.md#leave-one-out)).
+
+Regenerate either with:
+
+```bash
+python scripts/render_trailer.py --frames 240 --fps 14 --out docs/assets/gameplay_exp1.gif
+cd ctde_arena && python scripts/render_trailer.py --frames 240 --fps 14 \
+    --out ../docs/assets/gameplay_exp2.gif
+```
+
+Requires `ursina==6.1.2` and `pillow`, and a GPU context that accepts an offscreen window — this one does,
+but the render path is not covered by the test suite, so treat a failure there as environment, not code.
+
 Each experiment is self-contained: its own `marl_arena` package, `.env`, `requirements.txt` and `data/`.
 Run all commands **from the experiment's own directory**.
 

@@ -1,0 +1,2667 @@
+{
+  "clip": {
+    "clip": "docs\\assets\\gameplay_exp1.gif",
+    "frames": 240,
+    "fps": 14,
+    "sim_step_dt": 0.1,
+    "seed": 9,
+    "paradigm_rotation": 0,
+    "paradigms": {
+      "Team 1": "CTE",
+      "Team 2": "DTE",
+      "Team 3": "CTDE"
+    },
+    "trained": true,
+    "match_ended_in_clip": false,
+    "winner": null,
+    "clip_duration_sim_seconds": 24.0,
+    "final_alive": {
+      "Team 1": 1,
+      "Team 2": 1,
+      "Team 3": 0
+    },
+    "total_shots": 102
+  },
+  "timeline": [
+    {
+      "frame": 0,
+      "match_time": 0.1,
+      "alive": {
+        "Team 1": 3,
+        "Team 2": 3,
+        "Team 3": 3
+      },
+      "projectiles": 1,
+      "shots": 3
+    },
+    {
+      "frame": 1,
+      "match_time": 0.2,
+      "alive": {
+        "Team 1": 3,
+        "Team 2": 3,
+        "Team 3": 3
+      },
+      "projectiles": 0,
+      "shots": 4
+    },
+    {
+      "frame": 2,
+      "match_time": 0.3,
+      "alive": {
+        "Team 1": 3,
+        "Team 2": 3,
+        "Team 3": 3
+      },
+      "projectiles": 1,
+      "shots": 4
+    },
+    {
+      "frame": 3,
+      "match_time": 0.4,
+      "alive": {
+        "Team 1": 3,
+        "Team 2": 3,
+        "Team 3": 3
+      },
+      "projectiles": 0,
+      "shots": 6
+    },
+    {
+      "frame": 4,
+      "match_time": 0.5,
+      "alive": {
+        "Team 1": 3,
+        "Team 2": 3,
+        "Team 3": 3
+      },
+      "projectiles": 0,
+      "shots": 6
+    },
+    {
+      "frame": 5,
+      "match_time": 0.6,
+      "alive": {
+        "Team 1": 3,
+        "Team 2": 3,
+        "Team 3": 3
+      },
+      "projectiles": 2,
+      "shots": 9
+    },
+    {
+      "frame": 6,
+      "match_time": 0.7,
+      "alive": {
+        "Team 1": 3,
+        "Team 2": 3,
+        "Team 3": 3
+      },
+      "projectiles": 1,
+      "shots": 11
+    },
+    {
+      "frame": 7,
+      "match_time": 0.8,
+      "alive": {
+        "Team 1": 3,
+        "Team 2": 3,
+        "Team 3": 3
+      },
+      "projectiles": 1,
+      "shots": 12
+    },
+    {
+      "frame": 8,
+      "match_time": 0.9,
+      "alive": {
+        "Team 1": 3,
+        "Team 2": 3,
+        "Team 3": 3
+      },
+      "projectiles": 0,
+      "shots": 13
+    },
+    {
+      "frame": 9,
+      "match_time": 1.0,
+      "alive": {
+        "Team 1": 3,
+        "Team 2": 3,
+        "Team 3": 3
+      },
+      "projectiles": 0,
+      "shots": 14
+    },
+    {
+      "frame": 10,
+      "match_time": 1.1,
+      "alive": {
+        "Team 1": 3,
+        "Team 2": 3,
+        "Team 3": 3
+      },
+      "projectiles": 2,
+      "shots": 18
+    },
+    {
+      "frame": 11,
+      "match_time": 1.2,
+      "alive": {
+        "Team 1": 3,
+        "Team 2": 3,
+        "Team 3": 3
+      },
+      "projectiles": 1,
+      "shots": 20
+    },
+    {
+      "frame": 12,
+      "match_time": 1.3,
+      "alive": {
+        "Team 1": 2,
+        "Team 2": 3,
+        "Team 3": 3
+      },
+      "projectiles": 0,
+      "shots": 22
+    },
+    {
+      "frame": 13,
+      "match_time": 1.4,
+      "alive": {
+        "Team 1": 2,
+        "Team 2": 3,
+        "Team 3": 3
+      },
+      "projectiles": 0,
+      "shots": 22
+    },
+    {
+      "frame": 14,
+      "match_time": 1.5,
+      "alive": {
+        "Team 1": 2,
+        "Team 2": 3,
+        "Team 3": 3
+      },
+      "projectiles": 0,
+      "shots": 23
+    },
+    {
+      "frame": 15,
+      "match_time": 1.6,
+      "alive": {
+        "Team 1": 2,
+        "Team 2": 3,
+        "Team 3": 3
+      },
+      "projectiles": 0,
+      "shots": 25
+    },
+    {
+      "frame": 16,
+      "match_time": 1.7,
+      "alive": {
+        "Team 1": 2,
+        "Team 2": 3,
+        "Team 3": 3
+      },
+      "projectiles": 1,
+      "shots": 25
+    },
+    {
+      "frame": 17,
+      "match_time": 1.8,
+      "alive": {
+        "Team 1": 2,
+        "Team 2": 3,
+        "Team 3": 3
+      },
+      "projectiles": 2,
+      "shots": 26
+    },
+    {
+      "frame": 18,
+      "match_time": 1.9,
+      "alive": {
+        "Team 1": 2,
+        "Team 2": 2,
+        "Team 3": 3
+      },
+      "projectiles": 1,
+      "shots": 27
+    },
+    {
+      "frame": 19,
+      "match_time": 2.0,
+      "alive": {
+        "Team 1": 2,
+        "Team 2": 2,
+        "Team 3": 3
+      },
+      "projectiles": 0,
+      "shots": 28
+    },
+    {
+      "frame": 20,
+      "match_time": 2.1,
+      "alive": {
+        "Team 1": 2,
+        "Team 2": 2,
+        "Team 3": 3
+      },
+      "projectiles": 1,
+      "shots": 29
+    },
+    {
+      "frame": 21,
+      "match_time": 2.2,
+      "alive": {
+        "Team 1": 2,
+        "Team 2": 2,
+        "Team 3": 3
+      },
+      "projectiles": 1,
+      "shots": 30
+    },
+    {
+      "frame": 22,
+      "match_time": 2.3,
+      "alive": {
+        "Team 1": 2,
+        "Team 2": 2,
+        "Team 3": 3
+      },
+      "projectiles": 1,
+      "shots": 31
+    },
+    {
+      "frame": 23,
+      "match_time": 2.4,
+      "alive": {
+        "Team 1": 2,
+        "Team 2": 2,
+        "Team 3": 3
+      },
+      "projectiles": 1,
+      "shots": 32
+    },
+    {
+      "frame": 24,
+      "match_time": 2.5,
+      "alive": {
+        "Team 1": 2,
+        "Team 2": 2,
+        "Team 3": 2
+      },
+      "projectiles": 0,
+      "shots": 33
+    },
+    {
+      "frame": 25,
+      "match_time": 2.6,
+      "alive": {
+        "Team 1": 2,
+        "Team 2": 2,
+        "Team 3": 2
+      },
+      "projectiles": 1,
+      "shots": 33
+    },
+    {
+      "frame": 26,
+      "match_time": 2.7,
+      "alive": {
+        "Team 1": 2,
+        "Team 2": 2,
+        "Team 3": 1
+      },
+      "projectiles": 1,
+      "shots": 34
+    },
+    {
+      "frame": 27,
+      "match_time": 2.8,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 1
+      },
+      "projectiles": 1,
+      "shots": 35
+    },
+    {
+      "frame": 28,
+      "match_time": 2.9,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 1
+      },
+      "projectiles": 0,
+      "shots": 37
+    },
+    {
+      "frame": 29,
+      "match_time": 3.0,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 1
+      },
+      "projectiles": 0,
+      "shots": 37
+    },
+    {
+      "frame": 30,
+      "match_time": 3.1,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 1
+      },
+      "projectiles": 0,
+      "shots": 37
+    },
+    {
+      "frame": 31,
+      "match_time": 3.2,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 1
+      },
+      "projectiles": 0,
+      "shots": 37
+    },
+    {
+      "frame": 32,
+      "match_time": 3.3,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 1
+      },
+      "projectiles": 1,
+      "shots": 38
+    },
+    {
+      "frame": 33,
+      "match_time": 3.4,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 1
+      },
+      "projectiles": 1,
+      "shots": 39
+    },
+    {
+      "frame": 34,
+      "match_time": 3.5,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 1
+      },
+      "projectiles": 1,
+      "shots": 40
+    },
+    {
+      "frame": 35,
+      "match_time": 3.6,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 1
+      },
+      "projectiles": 0,
+      "shots": 41
+    },
+    {
+      "frame": 36,
+      "match_time": 3.7,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 1
+      },
+      "projectiles": 0,
+      "shots": 41
+    },
+    {
+      "frame": 37,
+      "match_time": 3.8,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 1
+      },
+      "projectiles": 0,
+      "shots": 42
+    },
+    {
+      "frame": 38,
+      "match_time": 3.9,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 1
+      },
+      "projectiles": 1,
+      "shots": 43
+    },
+    {
+      "frame": 39,
+      "match_time": 4.0,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 1
+      },
+      "projectiles": 1,
+      "shots": 44
+    },
+    {
+      "frame": 40,
+      "match_time": 4.1,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 1
+      },
+      "projectiles": 1,
+      "shots": 44
+    },
+    {
+      "frame": 41,
+      "match_time": 4.2,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 45
+    },
+    {
+      "frame": 42,
+      "match_time": 4.3,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 45
+    },
+    {
+      "frame": 43,
+      "match_time": 4.4,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 45
+    },
+    {
+      "frame": 44,
+      "match_time": 4.5,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 45
+    },
+    {
+      "frame": 45,
+      "match_time": 4.6,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 45
+    },
+    {
+      "frame": 46,
+      "match_time": 4.7,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 45
+    },
+    {
+      "frame": 47,
+      "match_time": 4.8,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 45
+    },
+    {
+      "frame": 48,
+      "match_time": 4.9,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 45
+    },
+    {
+      "frame": 49,
+      "match_time": 5.0,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 45
+    },
+    {
+      "frame": 50,
+      "match_time": 5.1,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 45
+    },
+    {
+      "frame": 51,
+      "match_time": 5.2,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 45
+    },
+    {
+      "frame": 52,
+      "match_time": 5.3,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 45
+    },
+    {
+      "frame": 53,
+      "match_time": 5.4,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 45
+    },
+    {
+      "frame": 54,
+      "match_time": 5.5,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 45
+    },
+    {
+      "frame": 55,
+      "match_time": 5.6,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 45
+    },
+    {
+      "frame": 56,
+      "match_time": 5.7,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 45
+    },
+    {
+      "frame": 57,
+      "match_time": 5.8,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 45
+    },
+    {
+      "frame": 58,
+      "match_time": 5.9,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 45
+    },
+    {
+      "frame": 59,
+      "match_time": 6.0,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 45
+    },
+    {
+      "frame": 60,
+      "match_time": 6.1,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 45
+    },
+    {
+      "frame": 61,
+      "match_time": 6.2,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 48
+    },
+    {
+      "frame": 62,
+      "match_time": 6.3,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 48
+    },
+    {
+      "frame": 63,
+      "match_time": 6.4,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 48
+    },
+    {
+      "frame": 64,
+      "match_time": 6.5,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 48
+    },
+    {
+      "frame": 65,
+      "match_time": 6.6,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 48
+    },
+    {
+      "frame": 66,
+      "match_time": 6.7,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 51
+    },
+    {
+      "frame": 67,
+      "match_time": 6.8,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 51
+    },
+    {
+      "frame": 68,
+      "match_time": 6.9,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 51
+    },
+    {
+      "frame": 69,
+      "match_time": 7.0,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 51
+    },
+    {
+      "frame": 70,
+      "match_time": 7.1,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 51
+    },
+    {
+      "frame": 71,
+      "match_time": 7.2,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 54
+    },
+    {
+      "frame": 72,
+      "match_time": 7.3,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 54
+    },
+    {
+      "frame": 73,
+      "match_time": 7.4,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 54
+    },
+    {
+      "frame": 74,
+      "match_time": 7.5,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 54
+    },
+    {
+      "frame": 75,
+      "match_time": 7.6,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 54
+    },
+    {
+      "frame": 76,
+      "match_time": 7.7,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 2,
+      "shots": 55
+    },
+    {
+      "frame": 77,
+      "match_time": 7.8,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 2,
+      "shots": 55
+    },
+    {
+      "frame": 78,
+      "match_time": 7.9,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 57
+    },
+    {
+      "frame": 79,
+      "match_time": 8.0,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 57
+    },
+    {
+      "frame": 80,
+      "match_time": 8.1,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 57
+    },
+    {
+      "frame": 81,
+      "match_time": 8.2,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 2,
+      "shots": 58
+    },
+    {
+      "frame": 82,
+      "match_time": 8.3,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 2,
+      "shots": 58
+    },
+    {
+      "frame": 83,
+      "match_time": 8.4,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 60
+    },
+    {
+      "frame": 84,
+      "match_time": 8.5,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 60
+    },
+    {
+      "frame": 85,
+      "match_time": 8.6,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 60
+    },
+    {
+      "frame": 86,
+      "match_time": 8.7,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 63
+    },
+    {
+      "frame": 87,
+      "match_time": 8.8,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 63
+    },
+    {
+      "frame": 88,
+      "match_time": 8.9,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 63
+    },
+    {
+      "frame": 89,
+      "match_time": 9.0,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 63
+    },
+    {
+      "frame": 90,
+      "match_time": 9.1,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 63
+    },
+    {
+      "frame": 91,
+      "match_time": 9.2,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 2,
+      "shots": 64
+    },
+    {
+      "frame": 92,
+      "match_time": 9.3,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 66
+    },
+    {
+      "frame": 93,
+      "match_time": 9.4,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 66
+    },
+    {
+      "frame": 94,
+      "match_time": 9.5,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 66
+    },
+    {
+      "frame": 95,
+      "match_time": 9.6,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 66
+    },
+    {
+      "frame": 96,
+      "match_time": 9.7,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 69
+    },
+    {
+      "frame": 97,
+      "match_time": 9.8,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 69
+    },
+    {
+      "frame": 98,
+      "match_time": 9.9,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 69
+    },
+    {
+      "frame": 99,
+      "match_time": 10.0,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 69
+    },
+    {
+      "frame": 100,
+      "match_time": 10.1,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 69
+    },
+    {
+      "frame": 101,
+      "match_time": 10.2,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 72
+    },
+    {
+      "frame": 102,
+      "match_time": 10.3,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 72
+    },
+    {
+      "frame": 103,
+      "match_time": 10.4,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 72
+    },
+    {
+      "frame": 104,
+      "match_time": 10.5,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 72
+    },
+    {
+      "frame": 105,
+      "match_time": 10.6,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 72
+    },
+    {
+      "frame": 106,
+      "match_time": 10.7,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 1,
+      "shots": 74
+    },
+    {
+      "frame": 107,
+      "match_time": 10.8,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 2,
+        "Team 3": 0
+      },
+      "projectiles": 1,
+      "shots": 74
+    },
+    {
+      "frame": 108,
+      "match_time": 10.9,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 75
+    },
+    {
+      "frame": 109,
+      "match_time": 11.0,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 75
+    },
+    {
+      "frame": 110,
+      "match_time": 11.1,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 75
+    },
+    {
+      "frame": 111,
+      "match_time": 11.2,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 77
+    },
+    {
+      "frame": 112,
+      "match_time": 11.3,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 77
+    },
+    {
+      "frame": 113,
+      "match_time": 11.4,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 77
+    },
+    {
+      "frame": 114,
+      "match_time": 11.5,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 77
+    },
+    {
+      "frame": 115,
+      "match_time": 11.6,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 77
+    },
+    {
+      "frame": 116,
+      "match_time": 11.7,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 79
+    },
+    {
+      "frame": 117,
+      "match_time": 11.8,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 79
+    },
+    {
+      "frame": 118,
+      "match_time": 11.9,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 79
+    },
+    {
+      "frame": 119,
+      "match_time": 12.0,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 79
+    },
+    {
+      "frame": 120,
+      "match_time": 12.1,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 79
+    },
+    {
+      "frame": 121,
+      "match_time": 12.2,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 81
+    },
+    {
+      "frame": 122,
+      "match_time": 12.3,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 81
+    },
+    {
+      "frame": 123,
+      "match_time": 12.4,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 81
+    },
+    {
+      "frame": 124,
+      "match_time": 12.5,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 81
+    },
+    {
+      "frame": 125,
+      "match_time": 12.6,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 81
+    },
+    {
+      "frame": 126,
+      "match_time": 12.7,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 82
+    },
+    {
+      "frame": 127,
+      "match_time": 12.8,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 82
+    },
+    {
+      "frame": 128,
+      "match_time": 12.9,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 82
+    },
+    {
+      "frame": 129,
+      "match_time": 13.0,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 82
+    },
+    {
+      "frame": 130,
+      "match_time": 13.1,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 82
+    },
+    {
+      "frame": 131,
+      "match_time": 13.2,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 132,
+      "match_time": 13.3,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 133,
+      "match_time": 13.4,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 134,
+      "match_time": 13.5,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 135,
+      "match_time": 13.6,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 136,
+      "match_time": 13.7,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 137,
+      "match_time": 13.8,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 138,
+      "match_time": 13.9,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 139,
+      "match_time": 14.0,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 140,
+      "match_time": 14.1,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 141,
+      "match_time": 14.2,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 142,
+      "match_time": 14.3,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 143,
+      "match_time": 14.4,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 144,
+      "match_time": 14.5,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 145,
+      "match_time": 14.6,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 146,
+      "match_time": 14.7,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 147,
+      "match_time": 14.8,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 148,
+      "match_time": 14.9,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 149,
+      "match_time": 15.0,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 150,
+      "match_time": 15.1,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 151,
+      "match_time": 15.2,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 152,
+      "match_time": 15.3,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 153,
+      "match_time": 15.4,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 154,
+      "match_time": 15.5,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 155,
+      "match_time": 15.6,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 156,
+      "match_time": 15.7,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 157,
+      "match_time": 15.8,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 158,
+      "match_time": 15.9,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 159,
+      "match_time": 16.0,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 160,
+      "match_time": 16.1,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 161,
+      "match_time": 16.2,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 162,
+      "match_time": 16.3,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 163,
+      "match_time": 16.4,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 164,
+      "match_time": 16.5,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 165,
+      "match_time": 16.6,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 166,
+      "match_time": 16.7,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 167,
+      "match_time": 16.8,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 168,
+      "match_time": 16.9,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 169,
+      "match_time": 17.0,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 170,
+      "match_time": 17.1,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 171,
+      "match_time": 17.2,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 172,
+      "match_time": 17.3,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 173,
+      "match_time": 17.4,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 174,
+      "match_time": 17.5,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 175,
+      "match_time": 17.6,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 176,
+      "match_time": 17.7,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 177,
+      "match_time": 17.8,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 178,
+      "match_time": 17.9,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 179,
+      "match_time": 18.0,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 180,
+      "match_time": 18.1,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 181,
+      "match_time": 18.2,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 182,
+      "match_time": 18.3,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 183,
+      "match_time": 18.4,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 184,
+      "match_time": 18.5,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 185,
+      "match_time": 18.6,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 186,
+      "match_time": 18.7,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 187,
+      "match_time": 18.8,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 188,
+      "match_time": 18.9,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 189,
+      "match_time": 19.0,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 190,
+      "match_time": 19.1,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 191,
+      "match_time": 19.2,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 192,
+      "match_time": 19.3,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 193,
+      "match_time": 19.4,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 83
+    },
+    {
+      "frame": 194,
+      "match_time": 19.5,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 2,
+      "shots": 83
+    },
+    {
+      "frame": 195,
+      "match_time": 19.6,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 85
+    },
+    {
+      "frame": 196,
+      "match_time": 19.7,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 85
+    },
+    {
+      "frame": 197,
+      "match_time": 19.8,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 85
+    },
+    {
+      "frame": 198,
+      "match_time": 19.9,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 85
+    },
+    {
+      "frame": 199,
+      "match_time": 20.0,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 1,
+      "shots": 86
+    },
+    {
+      "frame": 200,
+      "match_time": 20.1,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 87
+    },
+    {
+      "frame": 201,
+      "match_time": 20.2,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 87
+    },
+    {
+      "frame": 202,
+      "match_time": 20.3,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 87
+    },
+    {
+      "frame": 203,
+      "match_time": 20.4,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 87
+    },
+    {
+      "frame": 204,
+      "match_time": 20.5,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 88
+    },
+    {
+      "frame": 205,
+      "match_time": 20.6,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 88
+    },
+    {
+      "frame": 206,
+      "match_time": 20.7,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 1,
+      "shots": 88
+    },
+    {
+      "frame": 207,
+      "match_time": 20.8,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 89
+    },
+    {
+      "frame": 208,
+      "match_time": 20.9,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 89
+    },
+    {
+      "frame": 209,
+      "match_time": 21.0,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 90
+    },
+    {
+      "frame": 210,
+      "match_time": 21.1,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 90
+    },
+    {
+      "frame": 211,
+      "match_time": 21.2,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 1,
+      "shots": 90
+    },
+    {
+      "frame": 212,
+      "match_time": 21.3,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 1,
+      "shots": 90
+    },
+    {
+      "frame": 213,
+      "match_time": 21.4,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 91
+    },
+    {
+      "frame": 214,
+      "match_time": 21.5,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 92
+    },
+    {
+      "frame": 215,
+      "match_time": 21.6,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 92
+    },
+    {
+      "frame": 216,
+      "match_time": 21.7,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 92
+    },
+    {
+      "frame": 217,
+      "match_time": 21.8,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 93
+    },
+    {
+      "frame": 218,
+      "match_time": 21.9,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 93
+    },
+    {
+      "frame": 219,
+      "match_time": 22.0,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 94
+    },
+    {
+      "frame": 220,
+      "match_time": 22.1,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 94
+    },
+    {
+      "frame": 221,
+      "match_time": 22.2,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 94
+    },
+    {
+      "frame": 222,
+      "match_time": 22.3,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 95
+    },
+    {
+      "frame": 223,
+      "match_time": 22.4,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 95
+    },
+    {
+      "frame": 224,
+      "match_time": 22.5,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 96
+    },
+    {
+      "frame": 225,
+      "match_time": 22.6,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 96
+    },
+    {
+      "frame": 226,
+      "match_time": 22.7,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 96
+    },
+    {
+      "frame": 227,
+      "match_time": 22.8,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 97
+    },
+    {
+      "frame": 228,
+      "match_time": 22.9,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 97
+    },
+    {
+      "frame": 229,
+      "match_time": 23.0,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 98
+    },
+    {
+      "frame": 230,
+      "match_time": 23.1,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 98
+    },
+    {
+      "frame": 231,
+      "match_time": 23.2,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 98
+    },
+    {
+      "frame": 232,
+      "match_time": 23.3,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 99
+    },
+    {
+      "frame": 233,
+      "match_time": 23.4,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 99
+    },
+    {
+      "frame": 234,
+      "match_time": 23.5,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 100
+    },
+    {
+      "frame": 235,
+      "match_time": 23.6,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 100
+    },
+    {
+      "frame": 236,
+      "match_time": 23.7,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 100
+    },
+    {
+      "frame": 237,
+      "match_time": 23.8,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 101
+    },
+    {
+      "frame": 238,
+      "match_time": 23.9,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 101
+    },
+    {
+      "frame": 239,
+      "match_time": 24.0,
+      "alive": {
+        "Team 1": 1,
+        "Team 2": 1,
+        "Team 3": 0
+      },
+      "projectiles": 0,
+      "shots": 102
+    }
+  ]
+}
