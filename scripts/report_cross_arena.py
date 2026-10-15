@@ -19,6 +19,7 @@ import argparse
 import csv
 import json
 import math
+import statistics
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -78,11 +79,17 @@ def main() -> None:
         for key in ("survival_seconds", "duration_seconds"):
             row[key] = float(row[key])
 
-    # One record per match, rebuilt from the three team rows it produced.
-    matches: dict[tuple[str, int], dict[str, str]] = defaultdict(dict)
+    # One record per match, rebuilt from the three team rows it produced. The harness seed is part of the
+    # key: without it, five replicated runs of the same triple all collapse onto match index 0..29 and the
+    # paired tests silently see a fifth of the data.
+    def match_key(row: dict[str, object]) -> tuple:
+        seed = row.get("harness_seed", "")
+        return (str(seed), row["triple"], row["match"])
+
+    matches: dict[tuple, dict[str, str]] = defaultdict(dict)
     for row in rows:
-        matches[(row["triple"], row["match"])][row["paradigm"]] = row["winner"]
-    durations = {(row["triple"], row["match"]): row["duration_seconds"] for row in rows}
+        matches[match_key(row)][row["paradigm"]] = row["winner"]
+    durations = {match_key(row): row["duration_seconds"] for row in rows}
 
     per_arch: dict[str, dict[str, float]] = {}
     for row in rows:
@@ -96,7 +103,7 @@ def main() -> None:
         stats["hits"] += row["shots_hit"]
         stats[f"slot_{row['slot'][-1]}"] += int(row["winner"] == row["paradigm"])
 
-    print(f"\n{len(matches)} matches over {len({t for t, _ in matches})} triples, "
+    print(f"\n{len(matches)} matches over {len({key[1] for key in matches})} triples, "
           f"{len(per_arch)} architectures, {len(rows)} team-matches\n")
 
     match_outcomes = {"wipeout": 0, "timeout": 0, "draw": 0}
@@ -178,12 +185,50 @@ def main() -> None:
 
     out = PROJECT_ROOT / args.json_out if not args.json_out.is_absolute() else args.json_out
     out.parent.mkdir(parents=True, exist_ok=True)
+
+    stability: dict[str, object] = {}
+    if rows and "harness_seed" in rows[0]:
+        # Replication across harness seeds answers the question the pooled table cannot: whether the
+        # ordering is a property of the architectures or of one match stream.
+        per_seed: dict[str, dict[str, list[int]]] = defaultdict(lambda: defaultdict(lambda: [0, 0]))
+        for row in rows:
+            cell = per_seed[str(row["harness_seed"])][row["paradigm"]]
+            cell[1] += 1
+            cell[0] += int(row["winner"] == row["paradigm"])
+        seed_names = sorted(per_seed)
+        print("\nReplication across harness seeds: win rate per architecture, and where it ranked that run\n")
+        print("| architecture | " + " | ".join(f"seed {s}" for s in seed_names) + " | mean | SD | ranks seen |")
+        print("|---|" + "---:|" * (len(seed_names) + 3))
+        rates: dict[str, list[float]] = {}
+        for paradigm in sorted(names):
+            values = []
+            for s in seed_names:
+                wins, n = per_seed[s][paradigm]
+                values.append(wins / n if n else float("nan"))
+            rates[paradigm] = values
+            ranks = sorted(
+                1 + sum(1 for other in names if other != paradigm and per_seed[s][other][0] / max(per_seed[s][other][1], 1) > v)
+                for s, v in zip(seed_names, values)
+            )
+            mean = statistics.fmean(values)
+            sd = statistics.pstdev(values)
+            stability[paradigm] = {
+                "per_seed": [round(v, 4) for v in values], "mean": round(mean, 4),
+                "sd": round(sd, 4), "ranks": ranks,
+            }
+            print(f"| {paradigm} | " + " | ".join(f"{v:.3f}" for v in values)
+                  + f" | {mean:.3f} | {sd:.3f} | {ranks} |")
+        top = max(names, key=lambda p: statistics.fmean(rates[p]))
+        bottom = min(names, key=lambda p: statistics.fmean(rates[p]))
+        print(f"\nmean-ranked leader across seeds: {top}; mean-ranked laggard: {bottom}")
+
     out.write_text(json.dumps({
         "matches": total_matches,
         "match_outcomes": match_outcomes,
         "bonferroni_alpha": round(bonferroni, 6),
         "per_architecture": table,
         "pairwise_mcnemar": pairwise,
+        "harness_seed_stability": stability,
     }, indent=2), encoding="utf-8")
     print(f"\nwrote {out}")
 

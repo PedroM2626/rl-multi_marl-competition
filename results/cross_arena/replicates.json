@@ -1,0 +1,396 @@
+{
+  "matches": 3000,
+  "match_outcomes": {
+    "wipeout": 1885,
+    "timeout": 999,
+    "draw": 116
+  },
+  "bonferroni_alpha": 0.003333,
+  "per_architecture": {
+    "DTE": {
+      "matches": 1500,
+      "wins": 555,
+      "win_rate": 0.37,
+      "wilson_95_ci": [
+        0.3459,
+        0.3947
+      ],
+      "eliminations_per_match": 1.927,
+      "mean_survival_seconds": 19.75,
+      "shots_per_match": 84.25,
+      "shot_accuracy": 0.0229,
+      "win_rate_by_slot": {
+        "Team 1": 0.232,
+        "Team 2": 0.254,
+        "Team 3": 0.624
+      }
+    },
+    "CTDE-Comm": {
+      "matches": 1500,
+      "wins": 543,
+      "win_rate": 0.362,
+      "wilson_95_ci": [
+        0.3381,
+        0.3866
+      ],
+      "eliminations_per_match": 2.512,
+      "mean_survival_seconds": 19.04,
+      "shots_per_match": 111.22,
+      "shot_accuracy": 0.0226,
+      "win_rate_by_slot": {
+        "Team 1": 0.27,
+        "Team 2": 0.214,
+        "Team 3": 0.602
+      }
+    },
+    "CTE": {
+      "matches": 1500,
+      "wins": 509,
+      "win_rate": 0.3393,
+      "wilson_95_ci": [
+        0.3158,
+        0.3637
+      ],
+      "eliminations_per_match": 2.409,
+      "mean_survival_seconds": 20.07,
+      "shots_per_match": 112.38,
+      "shot_accuracy": 0.0214,
+      "win_rate_by_slot": {
+        "Team 1": 0.246,
+        "Team 2": 0.234,
+        "Team 3": 0.538
+      }
+    },
+    "CTDE-CAC": {
+      "matches": 1500,
+      "wins": 444,
+      "win_rate": 0.296,
+      "wilson_95_ci": [
+        0.2734,
+        0.3196
+      ],
+      "eliminations_per_match": 2.331,
+      "mean_survival_seconds": 16.22,
+      "shots_per_match": 89.97,
+      "shot_accuracy": 0.0259,
+      "win_rate_by_slot": {
+        "Team 1": 0.224,
+        "Team 2": 0.184,
+        "Team 3": 0.48
+      }
+    },
+    "CTDE-VD": {
+      "matches": 1500,
+      "wins": 433,
+      "win_rate": 0.2887,
+      "wilson_95_ci": [
+        0.2663,
+        0.3121
+      ],
+      "eliminations_per_match": 1.311,
+      "mean_survival_seconds": 28.12,
+      "shots_per_match": 92.56,
+      "shot_accuracy": 0.0142,
+      "win_rate_by_slot": {
+        "Team 1": 0.208,
+        "Team 2": 0.326,
+        "Team 3": 0.332
+      }
+    },
+    "CTDE": {
+      "matches": 1500,
+      "wins": 400,
+      "win_rate": 0.2667,
+      "wilson_95_ci": [
+        0.2449,
+        0.2896
+      ],
+      "eliminations_per_match": 1.845,
+      "mean_survival_seconds": 19.5,
+      "shots_per_match": 76.07,
+      "shot_accuracy": 0.0242,
+      "win_rate_by_slot": {
+        "Team 1": 0.252,
+        "Team 2": 0.156,
+        "Team 3": 0.392
+      }
+    }
+  },
+  "pairwise_mcnemar": {
+    "CTDE vs CTDE-CAC": {
+      "met": 600,
+      "a_wins": 167,
+      "b_wins": 193,
+      "discordant": [
+        167,
+        193
+      ],
+      "p": 0.18756,
+      "verdict": "not significant"
+    },
+    "CTDE vs CTDE-Comm": {
+      "met": 600,
+      "a_wins": 142,
+      "b_wins": 229,
+      "discordant": [
+        142,
+        229
+      ],
+      "p": 1e-05,
+      "verdict": "**significant**"
+    },
+    "CTDE vs CTDE-VD": {
+      "met": 600,
+      "a_wins": 160,
+      "b_wins": 182,
+      "discordant": [
+        160,
+        182
+      ],
+      "p": 0.25611,
+      "verdict": "not significant"
+    },
+    "CTDE vs CTE": {
+      "met": 600,
+      "a_wins": 162,
+      "b_wins": 210,
+      "discordant": [
+        162,
+        210
+      ],
+      "p": 0.01471,
+      "verdict": "nominal only"
+    },
+    "CTDE vs DTE": {
+      "met": 600,
+      "a_wins": 169,
+      "b_wins": 227,
+      "discordant": [
+        169,
+        227
+      ],
+      "p": 0.00412,
+      "verdict": "nominal only"
+    },
+    "CTDE-CAC vs CTDE-Comm": {
+      "met": 600,
+      "a_wins": 171,
+      "b_wins": 217,
+      "discordant": [
+        171,
+        217
+      ],
+      "p": 0.02222,
+      "verdict": "nominal only"
+    },
+    "CTDE-CAC vs CTDE-VD": {
+      "met": 600,
+      "a_wins": 189,
+      "b_wins": 176,
+      "discordant": [
+        189,
+        176
+      ],
+      "p": 0.52999,
+      "verdict": "not significant"
+    },
+    "CTDE-CAC vs CTE": {
+      "met": 600,
+      "a_wins": 168,
+      "b_wins": 213,
+      "discordant": [
+        168,
+        213
+      ],
+      "p": 0.02406,
+      "verdict": "nominal only"
+    },
+    "CTDE-CAC vs DTE": {
+      "met": 600,
+      "a_wins": 167,
+      "b_wins": 238,
+      "discordant": [
+        167,
+        238
+      ],
+      "p": 0.00049,
+      "verdict": "**significant**"
+    },
+    "CTDE-Comm vs CTDE-VD": {
+      "met": 600,
+      "a_wins": 204,
+      "b_wins": 175,
+      "discordant": [
+        204,
+        175
+      ],
+      "p": 0.15026,
+      "verdict": "not significant"
+    },
+    "CTDE-Comm vs CTE": {
+      "met": 600,
+      "a_wins": 222,
+      "b_wins": 199,
+      "discordant": [
+        222,
+        199
+      ],
+      "p": 0.28361,
+      "verdict": "not significant"
+    },
+    "CTDE-Comm vs DTE": {
+      "met": 600,
+      "a_wins": 214,
+      "b_wins": 213,
+      "discordant": [
+        214,
+        213
+      ],
+      "p": 1.0,
+      "verdict": "not significant"
+    },
+    "CTDE-VD vs CTE": {
+      "met": 600,
+      "a_wins": 170,
+      "b_wins": 209,
+      "discordant": [
+        170,
+        209
+      ],
+      "p": 0.0508,
+      "verdict": "not significant"
+    },
+    "CTDE-VD vs DTE": {
+      "met": 600,
+      "a_wins": 163,
+      "b_wins": 214,
+      "discordant": [
+        163,
+        214
+      ],
+      "p": 0.00993,
+      "verdict": "nominal only"
+    },
+    "CTE vs DTE": {
+      "met": 600,
+      "a_wins": 187,
+      "b_wins": 218,
+      "discordant": [
+        187,
+        218
+      ],
+      "p": 0.13594,
+      "verdict": "not significant"
+    }
+  },
+  "harness_seed_stability": {
+    "CTDE": {
+      "per_seed": [
+        0.2633,
+        0.2467,
+        0.2567,
+        0.3167,
+        0.25
+      ],
+      "mean": 0.2667,
+      "sd": 0.0256,
+      "ranks": [
+        4,
+        5,
+        6,
+        6,
+        6
+      ]
+    },
+    "CTDE-CAC": {
+      "per_seed": [
+        0.2967,
+        0.2833,
+        0.3167,
+        0.2567,
+        0.3267
+      ],
+      "mean": 0.296,
+      "sd": 0.0248,
+      "ranks": [
+        3,
+        4,
+        4,
+        5,
+        6
+      ]
+    },
+    "CTDE-Comm": {
+      "per_seed": [
+        0.3867,
+        0.3433,
+        0.35,
+        0.3467,
+        0.3833
+      ],
+      "mean": 0.362,
+      "sd": 0.0189,
+      "ranks": [
+        1,
+        1,
+        2,
+        3,
+        3
+      ]
+    },
+    "CTDE-VD": {
+      "per_seed": [
+        0.2633,
+        0.3,
+        0.3,
+        0.2733,
+        0.3067
+      ],
+      "mean": 0.2887,
+      "sd": 0.0171,
+      "ranks": [
+        4,
+        5,
+        5,
+        5,
+        5
+      ]
+    },
+    "CTE": {
+      "per_seed": [
+        0.32,
+        0.3733,
+        0.33,
+        0.3567,
+        0.3167
+      ],
+      "mean": 0.3393,
+      "sd": 0.0221,
+      "ranks": [
+        1,
+        2,
+        3,
+        3,
+        4
+      ]
+    },
+    "DTE": {
+      "per_seed": [
+        0.38,
+        0.3733,
+        0.38,
+        0.37,
+        0.3467
+      ],
+      "mean": 0.37,
+      "sd": 0.0123,
+      "ranks": [
+        1,
+        1,
+        1,
+        2,
+        2
+      ]
+    }
+  }
+}

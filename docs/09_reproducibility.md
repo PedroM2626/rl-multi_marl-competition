@@ -95,6 +95,7 @@ cp .env.example .env              # .env is tracked and identical to .env.exampl
 | `python scripts/random_baseline.py --matches 300` | either | Untrained reference point: outcome mix, durations and per-arm metrics from random policies |
 | `python scripts/run_cross_arena.py --matches-per-triple 30` | both | Play every three-architecture combination among the six versioned policies |
 | `python scripts/report_cross_arena.py` | root | McNemar pairwise tests and the slot control for the round-robin |
+| `python scripts/combine_cross_arena.py results/cross_arena_seed1 …` | root | Pool replicated round-robin runs, keeping the harness seed as a column |
 | `python scripts/report_inventory.py` | root | Regenerate the § 9.7 artefact table from `git ls-files` and live SHA-256 |
 | `python scripts/render_trailer.py --frames 240` | either | Render a gameplay clip from the promoted policies via Ursina offscreen |
 
@@ -243,7 +244,7 @@ checkpoints, and `run_experiment.py` passes `load_checkpoints=False`.
 
 ## 9.7 Artefact inventory
 
-Every versioned experiment artefact (53 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed.
+Every versioned experiment artefact (58 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed.
 
 **Promoted replicate.** The artefacts that match the current code. Chosen by `promote_run.py --seed median`, which is the replicate with the least L1 distance to the per-arm study means; `PROVENANCE.json` records the choice and the full run summary behind it.
 
@@ -272,9 +273,14 @@ Every versioned experiment artefact (53 files), with SHA-256 for integrity check
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
-| `results/cross_arena/matches.csv` | 117,408 | `f897d368a26b605126d6b044f502691d1e73b11b904326cf459a3c7f237a3eef` |
-| `results/cross_arena/pairwise.json` | 5,848 | `b40bd54cd3390234815875c7b26dfae18d56ca77f38173199de2ebacd40ef53f` |
-| `results/cross_arena/summary.json` | 3,097 | `95ecfd393c6da933607e9ba0f23df69a2b19a9a49445d61f3ec43b45b29e634f` |
+| `results/cross_arena/pairwise_first_run_600.json` | 5,848 | `b40bd54cd3390234815875c7b26dfae18d56ca77f38173199de2ebacd40ef53f` |
+| `results/cross_arena/replicates.csv` | 603,745 | `dbc8688efd011d5414d63db69857eff20d9d4d24514afeccf472a64722aa35eb` |
+| `results/cross_arena/replicates.json` | 7,559 | `e2e91652379bd3bc7e0d76821b3961a564b6981370a6d8a27c6c74262e0eb93e` |
+| `results/cross_arena/seeds/summary_seed1.json` | 2,935 | `9943959a95997955cf41c61a3d967ca8e828f1c6121306b441503111bd2240e0` |
+| `results/cross_arena/seeds/summary_seed2.json` | 2,936 | `b61fcf66b9396ebff9e3b610df0abf94e39e56505912b5672f1e478937fc6b59` |
+| `results/cross_arena/seeds/summary_seed3.json` | 2,924 | `9ec08be2e8acdcd8467f1f63a3091ae2c11f66cad88189d69d347b4826b50092` |
+| `results/cross_arena/seeds/summary_seed4.json` | 2,933 | `d95922889d9db58c10fe3b1fac4c37ab7b3f0131ae0c5ef4cf92e093476fe668` |
+| `results/cross_arena/seeds/summary_seed5.json` | 2,933 | `65d30c061e575c25e09e0412f3748475a8ed8944cce95bc457108243926d27c9` |
 | `results/study/analysis.json` | 4,437 | `69a1756130e3a04663eef8b1ad131b088dd43df7435f1218acac9ad994fe302b` |
 | `results/study/learning_curves.png` | 137,532 | `1915d48d117e8a96730b3659e0259e5ad6446c0fb7103d0642a6a5e7bd601cbe` |
 | `results/study/per_seed_metrics.csv` | 5,287 | `a23d366199cbb78e805b52ac7b8569f4b3b72c4d3c05dd3e6977efadbcdac52f` |

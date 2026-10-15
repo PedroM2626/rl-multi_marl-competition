@@ -1,12 +1,12 @@
 {
   "design": "all C(6,3) architecture triples, each played to completion with slot rotation",
   "policies": {
-    "CTE": "rl-multi_marl-competition\\data\\checkpoints\\team_1_cte.pt",
-    "DTE": "rl-multi_marl-competition\\data\\checkpoints\\team_2_dte.pt",
-    "CTDE": "rl-multi_marl-competition\\data\\checkpoints\\team_3_ctde.pt",
-    "CTDE-VD": "rl-multi_marl-competition\\ctde_arena\\data\\checkpoints\\team_2_ctde-vd.pt",
-    "CTDE-CAC": "rl-multi_marl-competition\\ctde_arena\\data\\checkpoints\\team_3_ctde-cac.pt",
-    "CTDE-Comm": "rl-multi_marl-competition\\ctde_arena\\data\\checkpoints\\team_1_ctde-comm.pt"
+    "CTE": "data\\checkpoints\\team_1_cte.pt",
+    "DTE": "data\\checkpoints\\team_2_dte.pt",
+    "CTDE": "data\\checkpoints\\team_3_ctde.pt",
+    "CTDE-VD": "ctde_arena\\data\\checkpoints\\team_2_ctde-vd.pt",
+    "CTDE-CAC": "ctde_arena\\data\\checkpoints\\team_3_ctde-cac.pt",
+    "CTDE-Comm": "ctde_arena\\data\\checkpoints\\team_1_ctde-comm.pt"
   },
   "triples": 20,
   "matches_per_triple": 30,

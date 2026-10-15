@@ -176,10 +176,14 @@ uniform random shots convert at 5–6 % while trained policies convert at 2.4–
 
 **And a fourth measurement that puts all six on one scale.** The two experiments never fought each
 other, so their tables were comparable only by assumption. [§ 8.10](docs/08_results.md#cross-arena) plays every three-architecture combination among the six
-trained policies — 600 matches, common opponents, slot-balanced — and finds Comm 0.387, DTE 0.380,
-CTE 0.320, CAC 0.297, CTDE and VD 0.263, with **no pair significant** under Bonferroni-corrected
-McNemar tests. It also measures the arena's own bias: the Team 3 spawn corner wins 49 % of matches
-against 24 % and 22 % for the other two, for every architecture
+trained policies — **3,000 matches over five harness seeds**, common opponents, slot-balanced — and
+finds DTE 0.370, Comm 0.362, CTE 0.339, CAC 0.296, VD 0.289, CTDE 0.267. Two cross-experiment pairs
+separate past Bonferroni-corrected McNemar tests (Comm > CTDE at *p* < 10⁻⁴, DTE > CAC at *p* =
+0.0005); the top three and bottom three are mutually indistinguishable. Plain CTDE — the architecture
+experiment 1 was built to promote — is last in all five seeds. The first 600-match run reached the
+opposite verdict, so this is the finding that replication produced. It also measures the arena's own
+bias: the Team 3 spawn corner wins 49.5 % of matches against 23.9 % and 22.8 % for the other two,
+for every architecture
 ([A-32](docs/11_code_audit.md#the-arena-spawn-geometry-is-not-symmetric)).
 
 The two historical single-seed 100k-step runs are still reported, relabelled, in

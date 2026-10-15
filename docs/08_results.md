@@ -572,81 +572,100 @@ rather than a measurement.
 `scripts/run_cross_arena.py` drops it. The six already-trained, already-versioned policies are loaded —
 each driven by the controller class of the tree that produced it, because re-implementing an actuator would
 silently invalidate the comparison — and every three-architecture combination is played to completion:
-C(6,3) = 20 triples x 30 matches = **600 matches**, no training, slot permutation cycled within every
-triple.
+C(6,3) = 20 triples x 30 matches, repeated over **five harness seeds = 3,000 matches**, no training, slot
+permutation cycled within every triple.
+
+Replicated over five harness seeds: **3,000 matches, 9,000 team-matches**. Pooled:
 
 | Rank | Architecture | Win rate | 95 % CI | vs 1/3 | Elim./match | Survival | Shots | Accuracy |
 |---|---|---:|---|---:|---:|---:|---:|---:|
-| 1 | CTDE-Comm | **0.387** | [0.333, 0.443] | +0.053 | 2.53 | 21.0 s | 122.2 | 2.07 % |
-| 2 | DTE | **0.380** | [0.327, 0.436] | +0.047 | 1.99 | 20.0 s | 94.2 | 2.12 % |
-| 3 | CTE | 0.320 | [0.270, 0.375] | −0.013 | 2.36 | 20.8 s | 116.8 | 2.02 % |
-| 4 | CTDE-CAC | 0.297 | [0.248, 0.351] | −0.037 | 2.35 | 16.7 s | 92.8 | 2.53 % |
-| 5 | CTDE | 0.263 | [0.217, 0.316] | −0.070 | 1.74 | 21.0 s | 83.9 | 2.07 % |
-| 6 | CTDE-VD | 0.263 | [0.217, 0.316] | −0.070 | 1.23 | 29.7 s | 98.5 | 1.25 % |
+| 1 | **DTE** | **0.370** | [0.346, 0.395] | +0.037 | 1.93 | 19.8 s | 84.2 | 2.29 % |
+| 2 | **CTDE-Comm** | **0.362** | [0.338, 0.387] | +0.029 | 2.51 | 19.0 s | 111.2 | 2.26 % |
+| 3 | CTE | 0.339 | [0.316, 0.364] | +0.006 | 2.41 | 20.1 s | 112.4 | 2.14 % |
+| 4 | CTDE-CAC | 0.296 | [0.273, 0.320] | −0.037 | 2.33 | 16.2 s | 90.0 | 2.59 % |
+| 5 | CTDE-VD | 0.289 | [0.266, 0.312] | −0.045 | 1.31 | 28.1 s | 92.6 | 1.42 % |
+| 6 | **CTDE** | 0.267 | [0.245, 0.290] | −0.067 | 1.84 | 19.5 s | 76.1 | 2.42 % |
 
 The three rows of a match are negatively coupled by construction, so overlapping intervals are the wrong
 test here. The pairwise comparison is McNemar's exact test on the discordant outcomes of the matches where
-the two architectures actually met (120 such matches per pair), Bonferroni-corrected over 15 pairs at
-alpha = 0.00333. The implementation was checked against `scipy.stats.binomtest` over 200 random discordant
-tables and agrees to 4.9e-14.
+the two architectures actually met — **600 such matches per pair** after the five seeds are pooled — with
+Bonferroni correction over 15 pairs at alpha = 0.00333. The implementation was checked against
+`scipy.stats.binomtest` over 200 random discordant tables and agrees to 4.9e-14.
 
-**Not one of the fifteen pairs survives the correction.** The smallest p is 0.0086 (CTDE vs CTDE-Comm),
-which fails Bonferroni and is the only pair below 0.01. On a common opponent pool, the six architectures
-are statistically indistinguishable.
+### Two pairs do separate, and replication is what showed it
 
-### The ordering re-shuffles a third time
+| Pair | Meetings | A won | B won | *p* | Verdict |
+|---|---:|---:|---:|---:|---|
+| CTDE vs CTDE-Comm | 600 | 142 | 229 | < 10⁻⁴ | **significant** |
+| CTDE-CAC vs DTE | 600 | 167 | 238 | 0.0005 | **significant** |
+| CTDE vs DTE | 600 | 169 | 227 | 0.0041 | nominal only |
+| CTDE-VD vs DTE | 600 | 163 | 214 | 0.0099 | nominal only |
+| CTDE vs CTE | 600 | 162 | 210 | 0.0147 | nominal only |
+| CTDE-CAC vs CTDE-Comm | 600 | 171 | 217 | 0.0222 | nominal only |
+| CTDE-CAC vs CTE | 600 | 168 | 213 | 0.0241 | nominal only |
+| remaining 8 pairs | 600 | — | — | 0.05–1.00 | not significant |
 
-| Measurement | Ordering |
-|---|---|
-| Historical, 1 seed, training-time, broken control law | CAC 42.9 > VD 40.7 >> Comm 16.4 (exp 2); CTDE 47.2 > CTE 27.4 > DTE 25.4 (exp 1) |
-| Study, 10 seeds, held out, own opponents | DTE 0.381 > CTDE 0.326 > CTE 0.252; VD 0.367 > Comm 0.331 > CAC 0.282 |
-| Cross-arena, common opponents | Comm 0.387 > DTE 0.380 > CTE 0.320 > CAC 0.297 > CTDE = VD 0.263 |
+**This supersedes what an earlier draft of this section concluded from the first 600-match run: that no
+pair survives correction.** At 120 meetings per pair the smallest *p* was 0.0086, which Bonferroni rejects;
+pooling five harness seeds multiplies the paired evidence five-fold and two comparisons cross the
+threshold. Both significant pairs are *cross-experiment* — plain CTDE is beaten by experiment 2's
+CTDE-Comm, and experiment 1's DTE beats experiment 2's CTDE-CAC — which is precisely the comparison the two
+separate campaigns could not make.
 
-CTDE-VD goes from first in its own experiment to tied last. Plain CTDE goes from second to tied last. This
-is the same phenomenon seen from a fourth direction: the ordering tracks the measurement design, not the
-architecture.
+The ordering is also stable across harness seeds, so this is not one lucky match stream:
 
-### Why this comparison is trustworthy, and where it is not
+| Architecture | seed 1 | seed 2 | seed 3 | seed 4 | seed 5 | SD | ranks seen |
+|---|---:|---:|---:|---:|---:|---:|---|
+| DTE | 0.380 | 0.373 | 0.380 | 0.370 | 0.347 | 0.012 | 1, 1, 1, 2, 2 |
+| CTDE-Comm | 0.387 | 0.343 | 0.350 | 0.347 | 0.383 | 0.019 | 1, 1, 2, 3, 3 |
+| CTE | 0.320 | 0.373 | 0.330 | 0.357 | 0.317 | 0.022 | 1, 2, 3, 3, 4 |
+| CTDE-CAC | 0.297 | 0.283 | 0.317 | 0.257 | 0.327 | 0.025 | 3, 4, 4, 5, 6 |
+| CTDE-VD | 0.263 | 0.300 | 0.300 | 0.273 | 0.307 | 0.017 | 4, 5, 5, 5, 5 |
+| CTDE | 0.263 | 0.247 | 0.257 | 0.317 | 0.250 | 0.026 | 4, 5, 6, 6, 6 |
 
-Two controls were run, and one of them found a problem with the harness before it found one with the result.
+Between-harness-seed SD is 0.012–0.026 — an order of magnitude below the 0.12–0.22 between-*training*-seed
+SD of [§ 8.1](#replicated-study). The evaluation is the reproducible part; the training is the noisy part.
 
-**Instrument check.** Replaying each experiment's own triple at its recorded seed and recorded slot order
-reproduces its held-out win rates to within 0.020–0.093 (experiment 1: CTE 0.320 vs 0.227, DTE 0.353 vs
-0.407, CTDE 0.307 vs 0.347; experiment 2: Comm 0.220 vs 0.253, VD 0.440 vs 0.367, CAC 0.313 vs 0.333).
-Two identical replays agree to the last digit, so the harness is deterministic; the residual gap is a
-different-but-equally-valid match stream, not sampling noise, and these win rates should be read as a
-separate measurement rather than a re-cut of the study's.
+What still does not separate: the top three (DTE, Comm, CTE) are mutually indistinguishable, as are the
+bottom three (CAC, VD, CTDE). The result is a **high band and a low band**, not a strict ranking — and the
+single most surprising member of the low band is plain CTDE, last in all five seeds, which is the
+architecture experiment 1 was built to promote.
 
-**Slot control, and the finding it produced.** Pooled over all six architectures and perfectly balanced
-(600 team-matches per slot), the spawn corner dominates everything else:
+### The slot effect, measured at scale
+
+Pooled over 3,000 balanced team-matches per slot:
 
 | Slot | Pooled win rate |
 |---|---:|
-| Team 1 | 0.242 |
-| Team 2 | 0.223 |
-| **Team 3** | **0.490** |
+| Team 1 | 0.239 |
+| Team 2 | 0.228 |
+| **Team 3** | **0.495** |
 
 Five of the six architectures do best in Team 3 regardless of what they are. The arena's three spawn
 centres are two far corners and the middle of the near edge, and the obstacle layout is not three-fold
-symmetric, so the third position is objectively worth about twice a corner. This is documented as
+symmetric, so the third position is objectively worth about twice a corner. Documented as
 [A-32](11_code_audit.md#the-arena-spawn-geometry-is-not-symmetric).
 
-It is also the explanation for a scare during development: the first version of this harness passed the
-paradigms in alphabetical order rather than the recorded order, which moved CTDE-Comm from 0.253 to 0.700.
-That looked like a broken instrument and was in fact a correct instrument measuring a biased arena.
+It also explains a scare during development: the first version of this harness passed the paradigms in
+alphabetical order rather than the recorded order, which moved CTDE-Comm from 0.253 to 0.700. That looked
+like a broken instrument and was in fact a correct instrument measuring a biased arena.
 
-Because every architecture spends exactly one third of its matches in each slot, the pooled comparison in
-the table above is fair in expectation — but the slot effect inflates the variance of every number here and
-of every number in [§ 8.1](#replicated-study), and it is a plausible contributor to the 0.12–0.22
-between-seed spread that makes the study's own ranking unresolvable.
+Every architecture spends exactly one third of its matches in each slot, so the pooled comparison is fair
+in expectation — but the slot effect inflates the variance of every number here and of every number in
+[§ 8.1](#replicated-study), and is a plausible contributor to the 0.12–0.22 between-seed spread that makes
+the study's own ranking unresolvable.
 
 ### What this adds to the conclusions
 
-The cross-arena result is the cleanest negative in the repository: with the co-adaptation confound removed,
-a balanced slot design, a deterministic instrument, and a paired test that respects the dependence between
-arms, six architectures trained in one engine with matched hyperparameters are indistinguishable. That is a
-stronger statement than the study's, because it is no longer conditional on each arm fighting its own
-neighbours.
+The cross-arena design removes the co-adaptation confound, balances slots, uses a deterministic instrument
+and a paired test that respects the dependence between arms. Under it the six architectures are **not**
+all indistinguishable — two cross-experiment pairs separate past Bonferroni — but neither is there a strict
+ordering: three arms share a top band and three share a bottom, and the plain CTDE arm that experiment 1
+was built to promote is in the bottom band in every seed.
+
+That is a stronger claim than the study's, because it is no longer conditional on each arm fighting its own
+neighbours — and it was only reachable by replicating the evaluation. The first 600-match run, with a fifth
+of the paired evidence, produced the opposite verdict on the two pairs that now separate.
 
 ---
 
@@ -657,7 +676,7 @@ neighbours.
 | **RQ1** — does CTDE beat CTE and DTE? | **No, and the ordering is not ours to report.** CTDE finishes **second** at 0.326 behind DTE at 0.381 and ahead of CTE at 0.252. The paired per-seed differences are +0.074 vs CTE (*p* = 0.348) and −0.055 vs DTE (*p* = 0.640); detecting them would need ~110 and ~450 replicates. Removing the single degenerate replicate (seed 6) puts CTDE first at 0.362 and flips the sign of the CTDE–DTE difference — so the honest answer is that **this study measures no exp-1 ordering at all.** |
 | **RQ2** — which CTDE variant wins? | **No detectable difference.** VD 0.367, Comm 0.331, CAC 0.282; every paired per-seed comparison has *p* ≥ 0.363, and the smallest gap costs ~117 replicates to confirm. The historical claim that Comm loses decisively **does not reproduce**, and the historical winner CAC is now last of three. |
 | **RQ3** — is it stable? | **No — and that is the headline result.** Between-seed SD is 0.122–0.218 against a 1/3 chance baseline; single replicates range from **0.000 to 0.767** within one architecture; 1 of 30 paradigm-slots reads out as a never-fires policy under greedy action selection while the same network led its own match on kills during training ([§ Readout](#readout-divergence)); 5 of 20 replicates play a different game entirely, matches decided by the 90 s clock rather than by kills. The dominant finding is variance, not ranking, and most of that variance is introduced by the readout rather than by training. |
-| **RQ4** — do the two experiments' numbers belong on the same scale? | **Nowhere near.** The cross-experiment round-robin ([§ 8.10](#cross-arena)) puts all six on common opponents: Comm 0.387 > DTE 0.380 > CTE 0.320 > CAC 0.297 > CTDE = VD 0.263, with **no pair significant** under Bonferroni-corrected McNemar tests over 15 comparisons. VD, first in its own experiment, is tied last here. |
+| **RQ4** — do the two experiments' numbers belong on the same scale? | **Partly, and only once replicated.** The cross-experiment round-robin ([§ 8.10](#cross-arena)) puts all six on common opponents over 3,000 matches: DTE 0.370 > Comm 0.362 > CTE 0.339 > CAC 0.296 > VD 0.289 > CTDE 0.267. Two cross-experiment pairs separate past Bonferroni-corrected McNemar tests (Comm > CTDE, *p* < 10⁻⁴; DTE > CAC, *p* = 0.0005); the top three and bottom three are mutually indistinguishable. Plain CTDE -- the architecture experiment 1 was built to promote -- is last in all five seeds. The first 600-match run said no pair separates, so this answer needed the replication. |
 
 **What this repository can defensibly claim:** six MARL information-flow architectures have been run against
 each other in one engine with matched hyperparameters, replicated ten times each with slot rotation, and

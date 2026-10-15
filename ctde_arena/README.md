@@ -223,8 +223,11 @@ replicate count, the curve is measuring initialisation.
 
 ### On a common opponent pool with experiment 1
 The three variants here only ever fight each other, so their ranking is conditional on that.
-[§ 8.10](../docs/08_results.md#cross-arena) plays all six architectures from both experiments against
-each other over 600 slot-balanced matches: **CTDE-Comm 0.387, CTDE-CAC 0.297, CTDE-VD 0.263**, against DTE 0.380, CTE 0.320 and CTDE 0.263 — and no pair is significant under Bonferroni-corrected McNemar tests. CTDE-VD, first in this experiment's own table, is tied last there. Reproduce with `python ../scripts/run_cross_arena.py` from this directory.
+[§ 8.10](../docs/08_results.md#cross-arena) plays all six architectures from both experiments against each other over 3,000 slot-balanced
+matches: **CTDE-Comm 0.362, CTDE-CAC 0.296, CTDE-VD 0.289**, against DTE 0.370, CTE 0.339 and CTDE
+0.267. Two pairs separate past Bonferroni-corrected McNemar tests and both are cross-experiment
+— Comm beats plain CTDE, DTE beats CAC — while the top three and bottom three are mutually
+indistinguishable. Reproduce with `python ../scripts/run_cross_arena.py` from this directory.
 
 ### Against untrained play
 
