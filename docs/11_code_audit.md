@@ -45,6 +45,8 @@ Every finding below was open at some point; the status column is the current sta
 | [A-31](#the-pinned-environment-does-not-reproduce-the-recorded-runs) | INFO | Measured: the pinned NumPy changes training outcomes at the first PPO update |
 | [A-32](#the-arena-spawn-geometry-is-not-symmetric) | MED | One of the three spawn positions wins ~2x as often as the other two, for every architecture |
 | [A-33](#the-study-runner-overrode-the-domain-randomisation-knob) | LOW · FIXED | The runner overwrote `DOMAIN_RANDOMIZATION`, and both training simulations then hard-coded it too |
+| [A-34](#the-termination-and-reward-knobs-are-configurable) | INFO · IMPLEMENTED | Reward constants and the clock-awards-win rule are now `CONFIG` fields, defaults unchanged and hash-verified |
+| [A-35](#the-study-collector-read-only-one-of-the-two-trees) | MED · FIXED | The study collector globbed one tree, so a two-experiment campaign aggregated as half a campaign |
 
 ---
 
@@ -191,7 +193,7 @@ Measured with `coverage run --source=src/marl_arena -m pytest`, before and after
 | `controllers/base.py` | 91 % | 89 % | 91 % | 89 % |
 | **total** | **73 %** | **93 %** | **14 %** | **87–88 %** |
 
-Test count went from 9 to 106 (59 and 47) at the time of that measurement, and to **151 (85 and 66)** with
+Test count went from 9 to 106 (59 and 47) at the time of that measurement, and to **157 (91 and 66)** with
 the suites added since — the collision, config, dashboard, render and round-robin-statistics tests. The
 totals have moved with them: experiment 1 is now **94 %** (1,542 statements, 84–90 missing) and experiment 2 **89 %**
 (1,654, 184–186 missing). Both totals move by a few statements between identical invocations, which is why
@@ -749,6 +751,62 @@ already been audited once, one layer above where the audit looked: A-16 checked 
 that the reader's value could still *reach* the engine.
 
 
+## The termination and reward knobs are configurable
+
+**A-34 · INFO · IMPLEMENTED**
+
+Chapter 8's two-regime analysis said the binding problem is the reward and termination design, not the step
+count — and at that point neither was reachable without editing source. Five reward constants and the
+clock-awards-win rule are now `CONFIG` fields with environment overrides
+(`REWARD_ALIVE_BONUS`, `REWARD_ALIVE_DECAY_HALF_LIFE_S`, `REWARD_KILL`, `REWARD_DEATH`, `REWARD_HIT`,
+`TERMINATION_CAP_AWARDS_WIN`); the decay half-life and the draw-on-cap rule are new behaviour, the rest
+replace literals.
+
+**Why this is recorded as information rather than as a fix:** the defaults are the old constants, so every
+number already in this repository still describes the arena it was measured in. That is asserted and then
+tested — `tests/test_arena_config.py` pins each default to the value it replaced, re-derives the previous
+reward arithmetic from the new code path, and checks that a capped match awards a winner unless the knob is
+off — and the refactor was additionally verified the way the seeded training runs are: `train_rl.py --seed
+42 --steps 4000` produced byte-identical checkpoints before and after the constants moved.
+
+**What it does not do:** change anything by default, or make the arena's reward shape defensible. The
+alive bonus is still worth more discounted return than an elimination
+([§ 4.4.1](04_mdp_formalisation.md#441-reward-scale-versus-horizon)) unless a campaign turns it down, and the
+campaign that does turn it down is what `scripts/run_arena_v2_campaign.sh` exists to run.
+
+
+## The study collector read only one of the two trees
+
+**A-35 · MED · FIXED**
+
+`run_study.py` launches one `run_experiment.py` per (experiment, seed) with `cwd` set to that experiment's
+tree, and each child resolves a relative `--out` against **its own** project root. So experiment 2's run
+directories live under `ctde_arena/data/…` while experiment 1's live under `data/…` — and `collect()` globbed
+only the launcher's root. Half of the campaign's replicates were trained, logged `[ok]`, and written to disk,
+and then silently dropped from the aggregate.
+
+**How it was found:** the arena-v2 study reported "20 runs, failures: none" and produced a 30-row
+`per_seed_metrics.csv`. Thirty rows is exactly what a complete 10-seed single-experiment study looks like, so
+the aggregate passed every eyeball test available; it was caught only because the report printed one
+experiment heading where two were expected.
+
+**Consequence had it not been caught:** a study whose CSV contains one experiment would be analysed and
+compared against the committed two-experiment study as if the missing half had never been run.
+
+**Fixed** in three parts (`scripts/run_study.py`): `summary_paths()` now unions the output directory under
+both roots; `collect()` returns the paths it could not read instead of silently skipping them; and main
+reconciles the number of summaries found against the number of runs launched, naming any missing label. A
+`--collect-only` flag rebuilds an aggregate from the run summaries already on disk, so a collection defect
+never again costs a re-training run.
+
+**Verification:** re-collecting the arena-v2 campaign yields 60 rows across `['exp1', 'exp2']` where the
+first pass yielded 30; re-collecting the committed study into a scratch directory gives the same 60 rows and
+an `analysis.json` that compares equal to the versioned one, so the fix changes collection and not
+measurement. Row *order* differs (paths sort `exp1_seed10` before `exp1_seed2`), which is cosmetic and was
+left alone rather than patched to preserve a hash — the analysis it feeds is order-independent, which is what
+the equality check shows.
+
+
 ## Open work: suggested measurements
 
 Items 1–3 were the original list and are done; 6 is done; 4 is partly done; 7 was deliberately not done;
@@ -773,10 +831,13 @@ Items 1–3 were the original list and are done; 6 is done; 4 is partly done; 7 
    continues. **Deliberately not done.** The 10-replicate study showed the curve *direction* flipping when
    the replicate count changed, so a longer budget would refine an estimate of a quantity that is not
    stable; the binding problem is the reward and termination design, not the step count.
-8. **New:** separate the two match regimes. A quarter of replicates decide matches on the 90 s clock rather
-   than on eliminations ([§ 8.1](08_results.md#two-regimes)), so any pooled win rate mixes "who wins a
-   fight" with "who is most alive at the buzzer". Either report the regimes separately or change the
-   termination rule so that survival-to-cap is not a winning outcome.
+8. **Partly done:** separate the two match regimes. A quarter of replicates decide matches on the 90 s clock
+   rather than on eliminations ([§ 8.1](08_results.md#two-regimes)), so any pooled win rate mixes "who wins a
+   fight" with "who is most alive at the buzzer". The round-robin now reports the regimes side by side
+   ([§ 8.10](08_results.md#cross-arena)) and the pooled order turns out to be the wipeout order; the study
+   tables in [§ 8.1](08_results.md#replicated-study) still pool them, and the termination rule is unchanged
+   — although `TERMINATION_CAP_AWARDS_WIN=false` now exists so a campaign can change it
+   ([A-34](#the-termination-and-reward-knobs-are-configurable)).
 9. **Superseded by a better diagnosis.** The seed-6 arm was first described as a never-fires reward basin.
    That is wrong: during training it *led its own match* on eliminations (2.68/match) and accuracy (10.4 %);
    only the greedy readout produces 3.8 shots and 0.000 wins. The open question is therefore about the

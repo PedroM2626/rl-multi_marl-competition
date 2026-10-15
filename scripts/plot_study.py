@@ -9,6 +9,7 @@ Usage:  python scripts/plot_study.py
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 from collections import defaultdict
@@ -25,7 +26,7 @@ OUT = ROOT / "results" / "study"
 PALETTE = ["#4c72b0", "#55a868", "#c44e52"]
 
 
-def load() -> dict[str, dict[str, dict[float, list[float]]]]:
+def load(runs: Path) -> dict[str, dict[str, dict[float, list[float]]]]:
     """series[experiment][paradigm][fraction] = one held-out win rate per replicate.
 
     Curve points fire at a match boundary, so each replicate's absolute step count differs slightly;
@@ -34,7 +35,7 @@ def load() -> dict[str, dict[str, dict[float, list[float]]]]:
     series: dict[str, dict[str, dict[float, list[float]]]] = defaultdict(
         lambda: defaultdict(lambda: defaultdict(list))
     )
-    for summary in sorted(RUNS.glob("*/evaluation/run_summary.json")):
+    for summary in sorted(runs.glob("*/evaluation/run_summary.json")):
         experiment = summary.parents[1].name.split("_seed")[0]
         payload = json.loads(summary.read_text(encoding="utf-8"))
         for point in payload["curve"]:
@@ -44,7 +45,15 @@ def load() -> dict[str, dict[str, dict[float, list[float]]]]:
 
 
 def main() -> None:
-    series = load()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--runs-dir", type=Path, default=RUNS,
+                        help="a run_study.py output root, e.g. data/runs_v2 for the arena-v2 campaign")
+    parser.add_argument("--out", type=Path, default=OUT,
+                        help="where learning_curves.png goes")
+    cli = parser.parse_args()
+    runs = cli.runs_dir if cli.runs_dir.is_absolute() else ROOT / cli.runs_dir
+    out = cli.out if cli.out.is_absolute() else ROOT / cli.out
+    series = load(runs)
     experiments = sorted(series)
     fig, axes = plt.subplots(1, len(experiments), figsize=(7.2 * len(experiments), 5.2), squeeze=False)
 
@@ -74,8 +83,8 @@ def main() -> None:
 
     fig.suptitle("Held-out win rate during training, one point per replicate", y=1.02)
     fig.tight_layout()
-    OUT.mkdir(parents=True, exist_ok=True)
-    destination = OUT / "learning_curves.png"
+    out.mkdir(parents=True, exist_ok=True)
+    destination = out / "learning_curves.png"
     fig.savefig(destination, dpi=140, bbox_inches="tight")
     plt.close(fig)
     print(f"wrote {destination}")

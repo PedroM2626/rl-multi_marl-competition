@@ -22,8 +22,10 @@ GROUPS = [
     ),
     (
         "Study aggregates",
-        "Recomputed by `report_study.py`, `plot_study.py` and `report_cross_arena.py` from the per-replicate and per-match summaries.",
-        ("results/study/", "results/cross_arena/"),
+        "Recomputed by `report_study.py`, `plot_study.py` and `report_cross_arena.py` from the per-replicate "
+        "and per-match summaries. `results/study_v2/` is the same study re-measured under the arena-v2 "
+        "reward and termination keys ([§ 8.12](08_results.md#arena-v2)).",
+        ("results/study/", "results/study_v2/", "results/cross_arena/"),
     ),
     (
         "Untrained baselines",
@@ -44,6 +46,13 @@ GROUPS = [
         "rest on them while `**/data/runs*/` is git-ignored. `exp1_seed9+exp2_seed2` is byte-identical to "
         "the promoted checkpoints above, which is what makes that block a parity control.",
         ("data/training_replicates/",),
+    ),
+    (
+        "Absolute-strength evaluation",
+        "`run_absolute_eval.py` output: one trained policy against two uniform-random controllers, trained "
+        "slot rotated. `absolute/` is the promoted checkpoint set at 150 matches per architecture per "
+        "harness seed; `summary.json` is re-derivable from `matches.csv` with `--report-only`.",
+        ("results/absolute/", "results/absolute_blocks/"),
     ),
     (
         "Gameplay clips",

@@ -227,6 +227,16 @@ that run's initialisation and geometry stream, so they are not independent draws
    `data/PROVENANCE.json`. What the rule does *not* buy is an ordering: the promoted replicate is one of the
    three checkpoint sets in [§ 8.10](08_results.md#cross-arena), and it is the set that placed plain CTDE
    last — a position it loses as soon as the other two are pooled in.
+10. **A fourth design measures strength against opponents that did not train at all.**
+    [§ 8.11](08_results.md#absolute-strength) puts one trained team against two teams whose controllers draw
+    uniformly from the action space, rotating the trained slot. Two rules make that number mean something:
+    the random opponents are *sampled*, never argmax'd from untrained weights
+    ([A-30](11_code_audit.md#greedy-evaluation-of-an-untrained-network-is-not-random-play)), and the null is
+    taken from the arena rather than from symmetry -- three mutually random teams split
+    0.257 / 0.270 / 0.463 by spawn slot ([§ 8.9](08_results.md#random-baseline)), so the slot-balanced chance
+    level is 0.330. Because the same six arms are ranked by two procedures that turn out to be
+    near-uncorrelated, neither is reported as "the" strength: every win rate in this repository is stated
+    with the opponent pool it was measured against.
 
 **Secondary — the historical single-seed runs.** Point estimates as `summary.json` reports them (a
 cumulative average over a non-stationary trajectory), Wilson intervals on the 46 recorded matches per

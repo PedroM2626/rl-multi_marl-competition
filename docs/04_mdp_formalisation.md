@@ -194,6 +194,35 @@ This is a genuine confound for both research questions: the architectures under 
 how well they *estimate value*, but the measured outcome is largely a function of *how long agents
 stood around*, which the alive bonus rewards directly regardless of what the critic looks like.
 
+### 4.4.2 The reward and the termination rule are configurable
+
+Every constant above is a `CONFIG` field read from the environment
+(`src/marl_arena/config.py`), because [§ 8.1](08_results.md#two-regimes) identified the survival term and
+the buzzer-win rule as the two things most likely to be driving the measured ranking, and an experiment
+cannot ablate a literal:
+
+| Field | Environment variable | Default | What it replaces |
+|---|---|---:|---|
+| `reward_alive_bonus` | `REWARD_ALIVE_BONUS` | 0.015 | the per-step alive constant |
+| `reward_alive_decay_half_life` | `REWARD_ALIVE_DECAY_HALF_LIFE_S` | 0 (off) | new: exponential decay of the alive bonus over the match |
+| `reward_kill` | `REWARD_KILL` | 1.2 | the scored-hit bonus |
+| `reward_death` | `REWARD_DEATH` | −0.5 | the dead-agent penalty |
+| `reward_hit` | `REWARD_HIT` | −1.0 | the was-hit penalty |
+| `termination_cap_awards_win` | `TERMINATION_CAP_AWARDS_WIN` | true | whether the 90 s clock awards the most-alive team a win |
+
+The defaults are the constants that were previously hard-coded, and that is tested rather than asserted:
+`tests/test_arena_config.py` pins each default to the old value, evaluates `_reward_for_agent` against the
+previous arithmetic expression, and checks that a capped match still awards the most-alive team unless the
+termination knob is off. A behaviour-preserving refactor was then verified the same way the seeded training
+runs are: `train_rl.py --seed 42 --steps 4000` produced byte-identical checkpoints before and after the
+constants moved into `CONFIG`.
+
+The arena-v2 campaign (`scripts/run_arena_v2_campaign.sh`) runs the study again with
+`REWARD_ALIVE_BONUS=0.0015`, `REWARD_ALIVE_DECAY_HALF_LIFE_S=30` and
+`TERMINATION_CAP_AWARDS_WIN=false` — the alive bonus an order of magnitude smaller and decaying with a
+30 s half-life, and a match that runs to the clock declared a draw rather than awarded. The knobs exist so
+that campaign can be run; its numbers are the subject of the results chapter's treatment of them.
+
 ## 4.5 Episode and transition bookkeeping
 
 The per-step pipeline in `ArenaSimulation.step(dt)` is:

@@ -128,14 +128,16 @@ def main() -> None:
           f"{len(per_arch)} architectures, {len(rows)} team-matches\n")
 
     match_outcomes = {"wipeout": 0, "timeout": 0, "draw": 0}
+    outcome_of: dict[MatchKey, str] = {}
     cap = max(durations.values())
     for key, winners in matches.items():
         if DRAW in winners.values():
-            match_outcomes["draw"] += 1
+            outcome_of[key] = "draw"
         elif durations[key] >= cap - 0.5:
-            match_outcomes["timeout"] += 1
+            outcome_of[key] = "timeout"
         else:
-            match_outcomes["wipeout"] += 1
+            outcome_of[key] = "wipeout"
+        match_outcomes[outcome_of[key]] += 1
     total_matches = len(matches)
     print("match outcomes: " + "  ".join(
         f"{name} {count / total_matches:.1%}" for name, count in match_outcomes.items()
@@ -254,6 +256,33 @@ def main() -> None:
         print(f"| {paradigm} | {values[0]:.3f} | {values[1]:.3f} | {values[2]:.3f} "
               f"| {max(values) - min(values):.3f} |")
 
+    # Win rate split by how the match was decided. A third of these matches end on the clock, so a pooled
+    # win rate mixes "won the fight" with "was most alive at the buzzer"; an arm whose order changes between
+    # the two columns is an arm whose ranking depends on that mixture.
+    regime: dict[str, dict[str, list[int]]] = defaultdict(lambda: defaultdict(lambda: [0, 0]))
+    for key, winners in matches.items():
+        kind = outcome_of[key]
+        for paradigm, winner in winners.items():
+            cell = regime[paradigm][kind]
+            cell[1] += 1
+            cell[0] += int(winner == paradigm)
+    kinds = [kind for kind in ("wipeout", "timeout", "draw") if any(kind in r for r in regime.values())]
+    print("\nWin rate by match regime. 'wipeout' is a finished fight, 'timeout' is the 90 s clock, and an "
+          "arm whose two columns disagree is one whose pooled ranking depends on how the match ended.\n")
+    print("| architecture | " + " | ".join(kinds) + " | pooled | wipeout minus timeout |")
+    print("|---|" + "---:|" * (len(kinds) + 2))
+    by_regime: dict[str, dict[str, object]] = {}
+    for paradigm in table:
+        rates = {kind: (regime[paradigm][kind][0] / max(regime[paradigm][kind][1], 1)) for kind in kinds}
+        gap = rates.get("wipeout", 0.0) - rates.get("timeout", 0.0)
+        by_regime[paradigm] = {
+            "rates": {kind: round(value, 4) for kind, value in rates.items()},
+            "matches": {kind: regime[paradigm][kind][1] for kind in kinds},
+            "gap": round(gap, 4),
+        }
+        print(f"| {paradigm} | " + " | ".join(f"{rates[kind]:.3f} ({regime[paradigm][kind][1]:,})"
+              for kind in kinds) + f" | {table[paradigm]['win_rate']:.3f} | {gap:+.3f} |")
+
     out = PROJECT_ROOT / args.json_out if not args.json_out.is_absolute() else args.json_out
     out.parent.mkdir(parents=True, exist_ok=True)
 
@@ -316,6 +345,7 @@ def main() -> None:
         "match_outcomes": match_outcomes,
         "bonferroni_alpha": round(bonferroni, 6),
         "per_architecture": table,
+        "win_rate_by_regime": by_regime,
         "pairwise_mcnemar": pairwise,
         "training_blocks": blocks,
         "block_sensitivity": sensitivity,

@@ -9,6 +9,7 @@ Usage:  python scripts/report_study.py
 
 from __future__ import annotations
 
+import argparse
 import csv
 import math
 import sys
@@ -16,7 +17,7 @@ from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-CSV_PATH = ROOT / "results" / "study" / "per_seed_metrics.csv"
+DEFAULT_RESULTS_DIR = ROOT / "results" / "study"
 
 # The tables contain em dashes; Windows consoles default to cp1252 and would raise on them.
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -159,7 +160,18 @@ def replicates_for_power(mean_diff: float, diff_sd: float, alpha: float, power: 
 
 
 def main() -> None:
-    rows = list(csv.DictReader(CSV_PATH.open(newline="", encoding="utf-8")))
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--results-dir", type=Path, default=DEFAULT_RESULTS_DIR,
+                        help="a run_study.py output directory; the arena-v2 campaign and the ablations are "
+                             "read with this flag rather than by editing the path")
+    parser.add_argument("--label", default="",
+                        help="a word for the banner, e.g. 'arena v2', so a re-measurement is not mistaken "
+                             "for the committed study")
+    args = parser.parse_args()
+    results_dir = args.results_dir if args.results_dir.is_absolute() else ROOT / args.results_dir
+    if args.label:
+        print(f"=== {args.label}: {results_dir.name} ===")
+    rows = list(csv.DictReader((results_dir / "per_seed_metrics.csv").open(newline="", encoding="utf-8")))
     for row in rows:
         for key in row:
             if key not in {"experiment", "team", "paradigm"}:

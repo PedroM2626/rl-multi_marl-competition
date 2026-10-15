@@ -34,7 +34,9 @@ Four distinct data sources exist, and they are not interchangeable:
 | `data/training_replicates/` | The three checkpoint sets the round-robin is played over: one experiment-1 and one experiment-2 replicate per block, 18 files | Yes |
 | `ctde_arena/data/mlflow_export/` | The 48 metric points actually logged to MLflow across two runs | Yes (exported) |
 | `results/study/` | 10 seeds × 500 k steps per experiment, slot-rotated, held-out greedy evaluation, paired *t*-tests, Fisher-exact tests and forward power | Yes |
-| `results/cross_arena/` | 9,000 matches over three independently trained checkpoint sets and five harness seeds: all six architectures on a common opponent pool, McNemar pairwise tests, the leave-one-block-out column, slot control and both stability tables | Yes |
+| `results/study_v2/` | the same study re-measured with a decayed, ten-times-smaller alive bonus and a clock-out declared a draw ([§ 8.12](08_results.md#arena-v2)) | Yes |
+| `results/cross_arena/` | 9,000 matches over three independently trained checkpoint sets and five harness seeds: all six architectures on a common opponent pool, McNemar pairwise tests, the leave-one-block-out column, slot control, per-regime win rates and both stability tables | Yes |
+| `results/absolute/` | Each trained policy against two uniform-random teams, trained slot rotated: the floor that does not depend on who else trained, with the slot-matched null from `results/baseline/` | Yes |
 
 The first two rows are **one promoted replicate each** — the run closest to its experiment's study means,
 selected mechanically by `promote_run.py --seed median` and described by `data/PROVENANCE.json`. They are
@@ -75,3 +77,4 @@ Experiment 1's artefacts were themselves only committed on 2026-09-27 — before
 | [§ 9.7](09_reproducibility.md#97-artefact-inventory) gameplay clips and their JSON sidecars | `python scripts/render_trailer.py --frames 240 --fps 14 --out docs/assets/gameplay_exp1.gif`, run again from `ctde_arena/` for experiment 2 |
 | Documentation cross-references | `python -m pytest tests/test_docs_links.py -q` |
 | [§ 8.10](08_results.md#cross-arena) cross-experiment round-robin | the fifteen-run loop of [§ 9.3](09_reproducibility.md#93-commands): `run_cross_arena.py` from `ctde_arena/` for each of the three blocks x five seeds, then `combine_cross_arena.py` and `report_cross_arena.py` from the repository root |
+| [§ 8.11](08_results.md#absolute-strength) absolute strength vs random opponents | `python scripts/run_absolute_eval.py --matches 150 --seeds 1,2,3 --compare-pool results/cross_arena/blocks.json`, run from `ctde_arena/` |

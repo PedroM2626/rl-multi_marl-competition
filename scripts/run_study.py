@@ -38,6 +38,8 @@ def parse_args() -> argparse.Namespace:
         help="where the aggregated CSV and JSON land; keep it separate for a re-measurement under "
              "different arena settings so the committed study is never overwritten"
     )
+    parser.add_argument("--collect-only", action="store_true",
+                        help="skip launching and rebuild the aggregate from the run summaries already on disk")
     return parser.parse_args()
 
 
@@ -93,9 +95,30 @@ def fisher_exact_two_sided(k1: int, n1: int, k2: int, n2: int) -> float:
     p = sum(exp(l) for l in log_pmf.values() if l <= observed + 1e-9)
     return min(1.0, p)
 
-def collect(out_dir: Path, args: argparse.Namespace) -> list[dict[str, object]]:
+def summary_paths(out_dir: Path) -> list[str]:
+    """Every run_summary.json under the output directory, in both trees.
+
+    Each child resolves a relative `--out` against its own tree, so experiment 2's runs land in
+    `ctde_arena/data/...` while experiment 1's land in `data/...`. Reading only the launcher's root silently
+    produced an aggregate with half the replicates and no failure to report.
+    """
+    found: list[str] = []
+    for base in (ROOT, ROOT / "ctde_arena"):
+        directory = out_dir if out_dir.is_absolute() else base / out_dir
+        if not directory.is_dir():
+            continue
+        found.extend(str(path) for path in directory.glob("*/evaluation/run_summary.json"))
+    return sorted(set(found))
+
+
+def collect(summaries: list[str]) -> tuple[list[dict[str, object]], list[str]]:
     records: list[dict[str, object]] = []
-    for summary in sorted(out_dir.glob("*/evaluation/run_summary.json")):
+    missing: list[str] = []
+    for path in summaries:
+        summary = Path(path)
+        if not summary.is_file():
+            missing.append(path)
+            continue
         payload = json.loads(summary.read_text(encoding="utf-8"))
         experiment = summary.parents[1].name.split("_seed")[0]
         for team, stats in payload["held_out_greedy"]["per_team"].items():
@@ -115,7 +138,7 @@ def collect(out_dir: Path, args: argparse.Namespace) -> list[dict[str, object]]:
                 "matches_played": payload["matches_played"],
                 "eval_matches": payload["held_out_greedy"]["matches"],
             })
-    return records
+    return records, missing
 
 
 def analyse(records: list[dict[str, object]]) -> dict[str, object]:
@@ -162,23 +185,42 @@ def main() -> int:
     seeds = [int(s) for s in args.seeds.split(",")]
     experiments = args.experiments.split(",")
     out_dir = args.out
-    out_dir.mkdir(parents=True, exist_ok=True)
 
-    jobs = [(exp, TREES[exp], out_dir, seed, args) for exp in experiments for seed in seeds]
-    print(f"launching {len(jobs)} runs, {min(args.jobs, len(jobs))} concurrent, {args.steps:,} steps each", flush=True)
-
-    started = time.time()
     failures: list[str] = []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as pool:
-        futures = [pool.submit(launch, *job) for job in jobs]
-        for future in concurrent.futures.as_completed(futures):
-            label, code, seconds, path = future.result()
-            status = "ok" if code == 0 else f"FAILED rc={code}"
-            print(f"  [{status}] {label} in {seconds/60:.1f} min -> {path}", flush=True)
-            if code != 0:
-                failures.append(label)
+    if args.collect_only:
+        # Re-aggregate a finished campaign without launching anything: the runs are the expensive part and
+        # a collection bug should never oblige a re-run.
+        summaries = summary_paths(out_dir)
+        print(f"collecting {len(summaries)} run summaries from {out_dir} (both trees), no runs launched",
+              flush=True)
+    else:
+        out_dir.mkdir(parents=True, exist_ok=True)
 
-    records = collect(out_dir, args)
+        jobs = [(exp, TREES[exp], out_dir, seed, args) for exp in experiments for seed in seeds]
+        print(f"launching {len(jobs)} runs, {min(args.jobs, len(jobs))} concurrent, {args.steps:,} steps each",
+              flush=True)
+
+        started = time.time()
+        with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as pool:
+            futures = [pool.submit(launch, *job) for job in jobs]
+            for future in concurrent.futures.as_completed(futures):
+                label, code, seconds, path = future.result()
+                status = "ok" if code == 0 else f"FAILED rc={code}"
+                print(f"  [{status}] {label} in {seconds/60:.1f} min -> {path}", flush=True)
+                if code != 0:
+                    failures.append(label)
+        summaries = summary_paths(out_dir)
+
+    records, missing = collect(summaries)
+    experiments_seen = sorted({str(r["experiment"]) for r in records})
+    print(f"collected rows for {experiments_seen} from {len(summaries)} summaries", flush=True)
+    if missing:
+        print(f"[warn] {len(missing)} summaries listed but not readable: {missing[:3]}", flush=True)
+    if not args.collect_only and len(summaries) != len(jobs):
+        got = {Path(path).parents[1].name for path in summaries}
+        wanted = {f"{exp}_seed{seed}" for exp in experiments for seed in seeds}
+        print(f"[warn] launched {len(jobs)} runs, found {len(summaries)} summaries; missing: "
+              f"{sorted(wanted - got)}", flush=True)
     results_dir = args.results_dir if args.results_dir.is_absolute() else ROOT / args.results_dir
     results_dir.mkdir(parents=True, exist_ok=True)
     if records:
@@ -188,7 +230,8 @@ def main() -> int:
             writer.writerows(records)
         (results_dir / "analysis.json").write_text(json.dumps(analyse(records), indent=2), encoding="utf-8")
 
-    print(f"\nwall clock {(time.time() - started)/60:.1f} min | {len(records)} per-seed rows | failures: {failures or 'none'}")
+    elapsed = f"{(time.time() - started)/60:.1f} min" if not args.collect_only else "n/a (collect only)"
+    print(f"\nwall clock {elapsed} | {len(records)} per-seed rows | failures: {failures or 'none'}")
     print(f"wrote {results_dir / 'per_seed_metrics.csv'}")
     return 1 if failures else 0
 

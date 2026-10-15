@@ -43,7 +43,7 @@ Honest summary of what is finished and what is not:
 | MLflow tracking | n/a | wired, but only **1 logged point** for the 100k run |
 | Cross-experiment round-robin | 9,000 matches, all six arms on common opponents, 3 checkpoint sets x 5 harness seeds (shared, run from `ctde_arena/`) | same |
 | Gameplay clips of the trained policies | yes (`docs/assets/`) | yes |
-| Tests | 85 (84 passed, 1 skipped), **94 %** statement coverage | 66 (65 passed, 1 skipped), **89 %** coverage |
+| Tests | 91 (90 passed, 1 skipped), **94 %** statement coverage | 66 (65 passed, 1 skipped), **89 %** coverage |
 | Docker | n/a | **never built or run** |
 
 Six defects documented in the audit were **fixed** during this work, and each changed what the results
@@ -151,7 +151,7 @@ match; paired per-seed *t*-tests give *p* = 0.158 to 0.746 across all six compar
 Fisher tests call five of the six significant —
 [§ 8.1](docs/08_results.md#replicated-study) shows why that treatment is anti-conservative here.
 
-Four findings worth knowing before reading anything else:
+Findings worth knowing before reading anything else:
 
 * **Both historical headline results fail to reproduce.** With one seed, CTDE-Comm finished last by 26
   points and CTDE-CAC first; replicated, Comm is middle and CAC is last. In experiment 1 the CTDE arm is
@@ -170,6 +170,11 @@ Four findings worth knowing before reading anything else:
 * **A quarter of replicates are not measuring fighting.** Five of twenty end most matches on the 90 s
   clock, where winning means "most alive at the buzzer"
   ([§ 8.1](docs/08_results.md#two-regimes)).
+* **"Stronger" is not one quantity.** Against a fixed pool of uniform-random opponents every arm clears its
+  slot-matched null, but the ordering that produces is uncorrelated with the ordering against trained peers:
+  CTE finishes last of six against peers and second against random play, DTE second against peers and fifth
+  against random. Any strength claim here has to name the opponent pool it was measured against
+  ([§ 8.11](docs/08_results.md#absolute-strength)).
 
 Against a genuine random-play baseline
 ([§ 8.9](docs/08_results.md#random-baseline)) training clearly does something — trained agents survive
@@ -291,7 +296,7 @@ rotation that the shipped checkpoints need. `RESPAWN_ENABLED` was removed rather
 │   ├── rl/                     # actions, buffer + GAE, networks, ppo
 │   ├── systems/                # match_variant, simulation, metrics, plotting
 │   └── ui/dashboard.py         # in-game overlay text
-├── tests/                      # 85 tests, incl. tree-parity, collision geometry and the round-robin statistics
+├── tests/                      # 91 tests, incl. tree-parity, collision geometry and the round-robin statistics
 ├── data/                       # experiment 1: promoted replicate + historical_100k/ + PROVENANCE.json
 ├── results/
 │   ├── study/                  # per_seed_metrics.csv, analysis.json, learning_curves.png

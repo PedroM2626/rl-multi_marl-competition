@@ -116,6 +116,86 @@
       }
     }
   },
+  "win_rate_by_regime": {
+    "CTDE-Comm": {
+      "rates": {
+        "wipeout": 0.4273,
+        "timeout": 0.3199,
+        "draw": 0.0
+      },
+      "matches": {
+        "wipeout": 2738,
+        "timeout": 1594,
+        "draw": 168
+      },
+      "gap": 0.1074
+    },
+    "DTE": {
+      "rates": {
+        "wipeout": 0.3939,
+        "timeout": 0.3688,
+        "draw": 0.0
+      },
+      "matches": {
+        "wipeout": 2653,
+        "timeout": 1654,
+        "draw": 193
+      },
+      "gap": 0.0251
+    },
+    "CTDE": {
+      "rates": {
+        "wipeout": 0.3495,
+        "timeout": 0.3316,
+        "draw": 0.0
+      },
+      "matches": {
+        "wipeout": 2747,
+        "timeout": 1574,
+        "draw": 179
+      },
+      "gap": 0.0178
+    },
+    "CTDE-VD": {
+      "rates": {
+        "wipeout": 0.2878,
+        "timeout": 0.3448,
+        "draw": 0.0
+      },
+      "matches": {
+        "wipeout": 2557,
+        "timeout": 1743,
+        "draw": 200
+      },
+      "gap": -0.057
+    },
+    "CTDE-CAC": {
+      "rates": {
+        "wipeout": 0.2793,
+        "timeout": 0.33,
+        "draw": 0.0
+      },
+      "matches": {
+        "wipeout": 2782,
+        "timeout": 1515,
+        "draw": 203
+      },
+      "gap": -0.0507
+    },
+    "CTE": {
+      "rates": {
+        "wipeout": 0.2613,
+        "timeout": 0.3026,
+        "draw": 0.0
+      },
+      "matches": {
+        "wipeout": 2717,
+        "timeout": 1616,
+        "draw": 167
+      },
+      "gap": -0.0413
+    }
+  },
   "pairwise_mcnemar": {
     "CTDE vs CTDE-CAC": {
       "met": 1800,

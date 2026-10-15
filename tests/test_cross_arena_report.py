@@ -1,19 +1,25 @@
-"""Regression tests for the round-robin statistics harness.
+"""Regression tests for the two evaluation instruments built on the round-robin harness.
 
 The pooled round-robin is the artefact every claim in chapter 8's cross-arena section rests on, and two of
 its bugs were silent: a match key that left out a replication column merged five match streams onto the
 same thirty keys, so the paired tests saw one fifth of the data and still printed a plausible table. Both
 the key composition and the header count that exposed it are gated here, on synthetic runs whose true
-match count is known by construction.
+match count is known by construction. The absolute-strength aggregators ([§ 8.11](08_results.md)) share the
+harness and the replication columns, so their counting and level-spread logic is gated on hand-counted rows.
 """
 
 from __future__ import annotations
 
 import csv
 import importlib.util
+import json
+import math
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
+
+import pytest
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = PROJECT_ROOT / "scripts"
@@ -148,3 +154,120 @@ def test_block_sensitivity_is_absent_for_a_single_block(tmp_path: Path) -> None:
     stdout, data = _pool(tmp_path, run_dirs)
     assert data["block_sensitivity"] == {}
     assert "Leave-one-training-block-out" not in stdout
+
+
+class _StubHarness:
+    """The absolute-eval aggregators take the round-robin harness for Wilson and the draw label."""
+    DRAW_TEAM = "draw"
+    POLICIES = {"CTE": Path("cte.pt"), "DTE": Path("dte.pt")}
+    wilson = staticmethod(report.wilson)
+    replicate_policies = None  # set by the module under test when needed
+
+
+def _abs_row(paradigm: str, trained: str, winner: str, block: str = "b1", seed: int = 1) -> dict:
+    return {"paradigm": paradigm, "trained_team": trained, "winner": winner, "duration_seconds": 10.0,
+            "training_block": block, "harness_seed": seed}
+
+
+def test_summarise_counts_wins_draws_losses_and_the_slot_split() -> None:
+    absolute = _load("run_absolute_eval")
+    rows = [_abs_row("CTE", "Team 1", "Team 1"), _abs_row("CTE", "Team 2", "Team 2"),
+            _abs_row("CTE", "Team 3", "draw"), _abs_row("CTE", "Team 1", "Team 3"),
+            _abs_row("DTE", "Team 1", "Team 1")]
+    out = absolute.summarise(rows, _StubHarness)
+    cte = out["CTE"]
+    assert (cte["matches"], cte["wins"], cte["draws"], cte["losses"]) == (4, 2, 1, 1)
+    assert cte["win_rate_vs_random"] == pytest.approx(0.5)
+    assert cte["loss_rate"] == pytest.approx(0.25)
+    assert cte["win_rate_by_trained_team"] == {"Team 1": 0.5, "Team 2": 1.0, "Team 3": 0.0}
+    # A win is the trained team winning; a random team taking the match is a loss, not a draw.
+    assert out["DTE"]["wins"] == 1 and out["DTE"]["losses"] == 0
+
+
+def test_spread_needs_two_levels_and_reports_the_levels_it_found() -> None:
+    absolute = _load("run_absolute_eval")
+    rows = [_abs_row("CTE", "Team 1", "Team 1", block="b1", seed=1),
+            _abs_row("CTE", "Team 1", "Team 3", block="b1", seed=2),
+            _abs_row("CTE", "Team 1", "Team 1", block="b2", seed=1),
+            _abs_row("CTE", "Team 1", "Team 1", block="b2", seed=2)]
+    assert absolute.by_level(rows, "harness_seed", _StubHarness)  # two streams
+    assert absolute.by_level(rows, "training_block", _StubHarness)  # two blocks
+    single = [r for r in rows if r["training_block"] == "b1"]
+    assert absolute.by_level(single, "training_block", _StubHarness) == {}
+    blocks = absolute.by_level(rows, "training_block", _StubHarness)
+    s = absolute.spread(blocks)["CTE"]
+    assert s["levels"] == {"b1": 0.5, "b2": 1.0}
+    assert s["sd"] == pytest.approx(0.25)
+
+
+def test_parse_blocks_labels_and_rejects_malformed_pairs(tmp_path: Path) -> None:
+    absolute = _load("run_absolute_eval")
+    label, policies = absolute.parse_blocks("", _StubHarness)[0]
+    assert label == "promoted" and set(policies) == {"CTE", "DTE"}
+    _StubHarness.replicate_policies = lambda s, m: {"CTE": Path("x.pt"), "DTE": Path("y.pt")}
+    blocks = absolute.parse_blocks("1:7,10:5", _StubHarness)
+    assert [label for label, _ in blocks] == ["exp1_seed1+exp2_seed7", "exp1_seed10+exp2_seed5"]
+    with pytest.raises(SystemExit):
+        absolute.parse_blocks("1-7", _StubHarness)
+
+
+def test_rank_pearson_and_the_two_scale_join() -> None:
+    """compare_scales is the instrument behind 'strength is not one quantity' (docs/08 section 8.11)."""
+    absolute = _load("run_absolute_eval")
+    assert absolute.rank_of({"a": 0.5, "b": 0.7, "c": 0.5, "d": 0.1}) == {"b": 1.0, "a": 2.5, "c": 2.5, "d": 4.0}
+    assert absolute.pearson([1, 2, 3], [1, 2, 3]) == pytest.approx(1.0)
+    assert absolute.pearson([1, 2, 3], [3, 2, 1]) == pytest.approx(-1.0)
+    assert math.isnan(absolute.pearson([1, 2], [1, 2]))  # two points cannot be correlated
+
+    peer = {"CTE": {"win_rate": 0.60, "eliminations_per_match": 2.0, "shots_per_match": 90.0,
+                    "mean_survival_seconds": 20.0, "shot_accuracy": 0.02},
+            "DTE": {"win_rate": 0.30, "eliminations_per_match": 1.0, "shots_per_match": 60.0,
+                    "mean_survival_seconds": 25.0, "shot_accuracy": 0.03},
+            "CTDE-Comm": {"win_rate": 0.45, "eliminations_per_match": 1.5, "shots_per_match": 75.0,
+                          "mean_survival_seconds": 15.0, "shot_accuracy": 0.04}}
+    pooled = {"CTE": {"win_rate_vs_random": 0.20}, "DTE": {"win_rate_vs_random": 0.80},
+              "CTDE-Comm": {"win_rate_vs_random": 0.50}}
+    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as handle:
+        json.dump({"per_architecture": peer}, handle)
+        path = Path(handle.name)
+    try:
+        out = absolute.compare_scales(pooled, path)
+    finally:
+        path.unlink()
+    # Perfect inversion of the peer order -> Spearman exactly -1, and the join is on architecture name.
+    assert out["spearman_rank_correlation"] == pytest.approx(-1.0)
+    assert out["pearson_win_rate"] == pytest.approx(-1.0)
+    assert set(out["per_arm"]) == {"CTE", "DTE", "CTDE-Comm"}
+    assert out["per_arm"]["CTE"]["rank_random"] == 3.0 and out["per_arm"]["CTE"]["rank_peers"] == 1.0
+
+
+def test_matched_null_requires_the_uniform_baseline(tmp_path: Path) -> None:
+    absolute = _load("run_absolute_eval")
+    greedy = tmp_path / "greedy.json"
+    greedy.write_text(json.dumps({"action_policy": "greedy",
+                                  "per_team": {"Team 1": {"win_rate": 0.167}}}), encoding="utf-8")
+    with pytest.raises(SystemExit):
+        absolute.matched_null(greedy)
+    uniform = tmp_path / "uniform.json"
+    uniform.write_text(json.dumps({"action_policy": "uniform", "per_team": {
+        "Team 1": {"win_rate": 0.2567}, "Team 2": {"win_rate": 0.27}, "Team 3": {"win_rate": 0.4633}}}),
+        encoding="utf-8")
+    null = absolute.matched_null(uniform)
+    assert null == {"Team 1": 0.2567, "Team 2": 0.27, "Team 3": 0.4633}
+    pooled = {"CTE": {"win_rate_vs_random": 0.7467,
+                      "win_rate_by_trained_team": {"Team 1": 0.6733, "Team 2": 0.72, "Team 3": 0.8467}}}
+    balanced = absolute.add_matched_null(pooled, null)
+    assert balanced == pytest.approx(0.33)
+    assert pooled["CTE"]["excess_vs_matched_null"] == pytest.approx(0.4167, abs=1e-4)
+    # The Team 3 excess is smaller than the Team 1 one because Team 3 is a better corner to begin with.
+    assert pooled["CTE"]["excess_by_trained_team"]["Team 3"] < pooled["CTE"]["excess_by_trained_team"]["Team 1"]
+
+
+def test_report_only_rederives_the_summary_from_the_recorded_matches(tmp_path: Path) -> None:
+    """The published summary must be recomputable from matches.csv, so a reader can check it cheaply."""
+    absolute = _load("run_absolute_eval")
+    rows = [_abs_row("CTE", "Team 1", "Team 1"), _abs_row("CTE", "Team 2", "Team 3"),
+            _abs_row("CTE", "Team 3", "draw")]
+    counts = absolute.summarise(rows, _StubHarness)["CTE"]
+    assert (counts["matches"], counts["wins"], counts["losses"], counts["draws"]) == (3, 1, 1, 1)
+    assert counts["median_duration_seconds"] == pytest.approx(10.0)

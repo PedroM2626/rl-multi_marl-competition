@@ -28,6 +28,7 @@ Each paradigm controls one team; three teams of three agents fight in the same a
 | MLflow curves | **1 logged point** for the 100k run — see [A-9](../docs/11_code_audit.md#mlflow-cadence) |
 | Tests | 66 (65 passed, 1 skipped), **89 %** statement coverage |
 | Cross-experiment round-robin | hosted here, since this tree's package is the superset holding all six architectures |
+| Absolute strength vs random opponents | `results/absolute/` at the repository root, from `scripts/run_absolute_eval.py` ([§ 8.11](../docs/08_results.md#absolute-strength)) |
 | Docker image | **never built or run** — unverified configuration |
 
 Read [Results](../docs/08_results.md) and [Threats to validity](../docs/10_threats_to_validity.md)

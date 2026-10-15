@@ -34,7 +34,7 @@ reassuring-sounding claim, it was measured, in a second environment holding ever
 
 | Check | NumPy 1.26.4 vs 2.2.6 | Result |
 |---|---|---|
-| Experiment 1 test suite (59 tests then, 85 now) | both versions | **pass** |
+| Experiment 1 test suite (59 tests then, 91 now) | both versions | **pass** |
 | Experiment 2 test suite (47 tests then, 66 now) | both versions | **pass** |
 | Collision geometry (14 hand-computed entry parameters and hit positions) | both versions | **identical to 1e-12** |
 | Domain-randomisation stream (`arena_size`, speeds, cooldowns of match 41) | both versions | **identical, all digits** |
@@ -96,7 +96,7 @@ pip install pandas                # not a dependency of anything measured
 | `python scripts/train_rl.py --seed S` | 1 | Headless PPO training; bit-for-bit reproducible for a given seed |
 | `python main.py` | 1 | Ursina 3D window, greedy policies loaded from `data/checkpoints/` |
 | `python scripts/plot_metrics.py` | 1 | Reads `data/metrics/summary.json` → `exports/metrics/` |
-| `python -m pytest tests/ -q` | 1 | 85 tests |
+| `python -m pytest tests/ -q` | 1 | 91 tests |
 | `cd ctde_arena && python scripts/train_rl.py` | 2 | Same, plus MLflow logging |
 | `cd ctde_arena && mlflow ui --backend-store-uri file:./mlruns` | 2 | Tracking UI |
 | `cd ctde_arena && python main.py` | 2 | 3D window for the CTDE variants |
@@ -104,6 +104,9 @@ pip install pandas                # not a dependency of anything measured
 | `cd ctde_arena && docker build -t ctde-arena . && docker run --rm -v ${PWD}/data:/app/data -v ${PWD}/mlruns:/app/mlruns ctde-arena` | 2 | Containerised training |
 | `python scripts/run_experiment.py --seed S --steps N --out DIR` | either | One seeded replicate: train, then greedy held-out evaluation |
 | `python scripts/run_study.py --steps 500000 --seeds 1..10 --jobs 20` | both | Fan replicates out across processes and collect `results/study/` |
+| `python scripts/run_study.py --collect-only --out data/runs_v2 --results-dir results/study_v2` | both | Rebuild an aggregate from run summaries already on disk, launching nothing |
+| `python scripts/report_study.py --results-dir results/study_v2 --label "arena v2"` | both | Render the study tables for any campaign directory, not just the committed one |
+| `python scripts/plot_study.py --runs-dir data/runs_v2 --out results/study_v2` | both | Draw `learning_curves.png` for any campaign directory |
 | `python scripts/report_study.py` | both | Render the study tables, paired tests, Fisher tests and forward-power table |
 | `python scripts/plot_study.py` | both | Draw `results/study/learning_curves.png` |
 | `python scripts/promote_run.py --experiment exp1 --list` | 1 or 2 | Show every replicate with its L1 distance to the study means |
@@ -173,7 +176,7 @@ ImportError: cannot import name 'ValueDecompositionCriticNetwork' from 'marl_are
 
 ```
 $ python -m pytest tests/ -q            # experiment 1
-84 passed, 1 skipped
+90 passed, 1 skipped
 $ cd ctde_arena && python -m pytest tests/ -q
 65 passed, 1 skipped
 ```
@@ -203,7 +206,7 @@ In both trees the bulk of the gap is now in the engine rather than the presentat
 and `systems/plotting.py` (8). `ui/dashboard.py`, which was the single largest uncovered file for most of
 this repository's life, is at 100 %.
 
-What the 151 tests do **not** cover is catalogued in
+What the 157 tests do **not** cover is catalogued in
 [§ Coverage](11_code_audit.md#coverage). The collision solver is now geometrically verified against
 hand-computed values, but no test checks a *metric* against an independent reference — see the note at the
 end of that section on coverage not being correctness.
@@ -232,6 +235,7 @@ implication for a JAX/vectorised-env port are in
 | 1,000,000 steps | ≈ 45 min | the superseded 5-seed budget |
 | 3,000,000 steps (code default) | ≈ 2.3 h | |
 | 500 k × 10 seeds × 2 experiments | **117.5 min total** | 20 processes at once on 32 cores; 31.5 CPU-h training + 4.7 h evaluation |
+| same again as arena v2 | **104.3 min total** | `scripts/run_arena_v2_campaign.sh`; 20 runs, same budget, three arena keys changed ([§ 8.12](08_results.md#arena-v2)) |
 
 The measured per-replicate throughput under full 20-way load is 82.6–92.9 steps/s against 368 steps/s for an
 isolated process, so 20 concurrent replicates cost 36.2 CPU-hours and take about as long as four sequential
@@ -296,15 +300,31 @@ checkpoints, and `run_experiment.py` passes `load_checkpoints=False`.
 3. **No code version is recorded inside the artefacts.** Checkpoints store `{paradigm, actor, critic}` and
    nothing else; `data/PROVENANCE.json` names the promoted replicate and the study, and Git supplies the
    commit, but a checkpoint file does not carry the hash that produced it.
-4. **No environment lock.** Pinned versions exist in `requirements.txt` but no hash lock file, and
-   CUDA/CPU selection is a `.env` value. Two machines with different resolved transitive dependencies can
-   therefore diverge even though the seeding is correct.
+4. **The declared pins are not the environment that produced the numbers.** `requirements.txt` pins
+   NumPy 2.2.6 / Torch 2.6.0; the measurements in this document were made on NumPy 1.26.4 / Torch 2.5.1, which
+   is what `requirements-measured.lock.txt` (both trees) now records as 37 exact pins. The lock does not fix
+   CUDA/CPU selection, which stays a `.env` value, and [A-31](11_code_audit.md#the-pinned-environment-does-not-reproduce-the-recorded-runs)
+   measured that swapping to the declared NumPy changes every saved checkpoint.
 5. **Torch determinism flags are not set.** Not needed at these shapes — the verification above is exact —
    but a kernel-level change in a future Torch release is not guarded against.
 
+**Derived artefacts are recomputable, and that was checked rather than assumed.** Three of the committed
+outputs are pure functions of other committed files, and each was re-derived and byte-compared:
+
+| Artefact | Re-derived from | Command | Result |
+|---|---|---|---|
+| `results/cross_arena/blocks.csv` | the 15 run-directory CSVs (git-ignored scratch) | `scripts/combine_cross_arena.py results/cross_arena_blocks/*` | identical SHA-256 |
+| `results/cross_arena/blocks.json` | `blocks.csv` | `scripts/report_cross_arena.py --in results/cross_arena/blocks.csv` | deterministic, no RNG |
+| `results/study/learning_curves.png` | `data/runs/*/evaluation/run_summary.json` | `scripts/plot_study.py --runs-dir data/runs` | identical SHA-256 (`1915d48d…`) |
+| `results/absolute/summary.json` | `results/absolute/matches.csv` | `scripts/run_absolute_eval.py --report-only --out results/absolute` | no matches replayed |
+
+The last row is the point of `--report-only`: the headline aggregation of chapter 8's absolute-strength
+section can be re-derived from the raw per-match record in seconds, on a machine with no GPU and no
+inclination to replay 2,700 matches.
+
 ## 9.7 Artefact inventory
 
-Every versioned experiment artefact (78 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed.
+Every versioned experiment artefact (83 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed.
 
 **Promoted replicate.** The artefacts that match the current code. Chosen by `promote_run.py --seed median`, which is the replicate with the least L1 distance to the per-arm study means; `PROVENANCE.json` records the choice and the full run summary behind it.
 
@@ -329,12 +349,12 @@ Every versioned experiment artefact (78 files), with SHA-256 for integrity check
 | `data/metrics/team_match_metrics.csv` | 10,945 | `2c03ab03f0cf2363ad2f039ab9a31b57e7070ccc6ca7ab8aacad4303f886afe7` |
 | `data/metrics/trajectory_metrics.csv` | 1,363,141 | `94182ae194f1df7bbdf30475b621cb93671d9ca21aec78c25a05b4a64d90f498` |
 
-**Study aggregates.** Recomputed by `report_study.py`, `plot_study.py` and `report_cross_arena.py` from the per-replicate and per-match summaries.
+**Study aggregates.** Recomputed by `report_study.py`, `plot_study.py` and `report_cross_arena.py` from the per-replicate and per-match summaries. `results/study_v2/` is the same study re-measured under the arena-v2 reward and termination keys ([§ 8.12](08_results.md#arena-v2)).
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
 | `results/cross_arena/blocks.csv` | 2,416,103 | `e2068397bf969077ed4fe32ca56cc7625900382a373a6e17edb57f3707b871bc` |
-| `results/cross_arena/blocks.json` | 15,992 | `cdfcfa82cf30f73e5f11739409240d2ad56cf8b0dbac97932c186b68b520158c` |
+| `results/cross_arena/blocks.json` | 17,546 | `a122215a5be61e10b9d92be7774906067727cf2f0871f43becca0ac570cbb33b` |
 | `results/cross_arena/pairwise_first_run_600.json` | 5,848 | `b40bd54cd3390234815875c7b26dfae18d56ca77f38173199de2ebacd40ef53f` |
 | `results/cross_arena/replicates.csv` | 603,745 | `dbc8688efd011d5414d63db69857eff20d9d4d24514afeccf472a64722aa35eb` |
 | `results/cross_arena/replicates.json` | 7,559 | `e2e91652379bd3bc7e0d76821b3961a564b6981370a6d8a27c6c74262e0eb93e` |
@@ -346,6 +366,9 @@ Every versioned experiment artefact (78 files), with SHA-256 for integrity check
 | `results/study/analysis.json` | 4,437 | `69a1756130e3a04663eef8b1ad131b088dd43df7435f1218acac9ad994fe302b` |
 | `results/study/learning_curves.png` | 137,532 | `1915d48d117e8a96730b3659e0259e5ad6446c0fb7103d0642a6a5e7bd601cbe` |
 | `results/study/per_seed_metrics.csv` | 5,287 | `a23d366199cbb78e805b52ac7b8569f4b3b72c4d3c05dd3e6977efadbcdac52f` |
+| `results/study_v2/analysis.json` | 4,433 | `c69e59585dec640871b66ef5241fd137c0576cf847045dc4ba005779089a0ce0` |
+| `results/study_v2/learning_curves.png` | 70,161 | `a2f19be70612de222a47c329f44730d4de78bb29b909db5e531ea3b3219274a0` |
+| `results/study_v2/per_seed_metrics.csv` | 5,339 | `9d8fb44357d5b6ca39e93107d74a2e44e542ee72b8d1b4af268d1da54b4e21e4` |
 
 **Untrained baselines.** `random_baseline.py` output, 300 fixed-variant headless matches per mode. The uniform files are byte-identical between the trees because that mode never queries a network.
 
@@ -398,6 +421,13 @@ Every versioned experiment artefact (78 files), with SHA-256 for integrity check
 | `data/training_replicates/exp2_seed7/team_1_ctde-cac.pt` | 304,400 | `bcb973516fc3e1141a24dda3243373de730ca6f52476f6227dc7162152506bf1` |
 | `data/training_replicates/exp2_seed7/team_2_ctde-comm.pt` | 313,778 | `5a22ef5f10fb96b78892ffb58e351876072573fd958f2874d8e7877c1794d14b` |
 | `data/training_replicates/exp2_seed7/team_3_ctde-vd.pt` | 217,330 | `d49f1fdfdd579ea443e6e253df7d814650b736551f51cd8f32a7e980b93f31c7` |
+
+**Absolute-strength evaluation.** `run_absolute_eval.py` output: one trained policy against two uniform-random controllers, trained slot rotated. `absolute/` is the promoted checkpoint set at 150 matches per architecture per harness seed; `summary.json` is re-derivable from `matches.csv` with `--report-only`.
+
+| Path | Bytes | SHA-256 |
+|---|---:|---|
+| `results/absolute/matches.csv` | 109,392 | `5ac29454838dac9ecde586431a42eb0a51a37dc0c14b5e1f550c8a761d95ac0b` |
+| `results/absolute/summary.json` | 14,584 | `d784fd6581d19a961c51f2cc8b097c789531122a890b0741b9223a2b35f355cc` |
 
 **Gameplay clips.** Rendered by `render_trailer.py` from the promoted replicate's trained policies; the JSON beside each clip records the seed, rotation, paradigm per slot and the per-frame alive and shot counts the caption asserts.
 

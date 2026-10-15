@@ -171,10 +171,23 @@ applied to the original single-seed evidence, and left three that no amount of r
    at their *earliest* checkpoint ([§ 8.1](08_results.md#replicated-study)).
 8. **No effect sizes with uncertainty on the secondary metrics.** Eliminations per match, survival and
    accuracy are reported as pooled means without intervals.
-9. **Win rate does not isolate fighting.** A quarter of replicates decide most matches on the 90 s clock,
-   and the untrained greedy baseline shows 41 % three-way draws and 88–398 shots per match at 0.1 %
-   accuracy ([§ 8.9](08_results.md#random-baseline)), so the construct being measured is partly
-   survival-to-buzzer. The termination rule, not the sample size, is what would have to change.
+9. **~~Win rate does not isolate fighting.~~ Measured; removing the route does not resolve the ranking.**
+   A quarter of replicates decide most matches on the 90 s clock, and the untrained greedy baseline shows
+   41 % three-way draws and 88–398 shots per match at 0.1 % accuracy
+   ([§ 8.9](08_results.md#random-baseline)), so the construct being measured was partly survival-to-buzzer.
+   The remedy was to stop awarding a win for surviving, and it has now been run: under
+   [§ 8.12](08_results.md#arena-v2) 44 % of experiment 1's and 39 % of experiment 2's held-out matches have
+   **no winner at all**, no arm separates (paired *p* ≥ 0.439), and experiment 1's first place moves from DTE
+   to CTDE inside noise. The confound was real and larger than the duration medians suggested; it was not
+   the reason the study cannot rank the paradigms.
+10. **~~The reward scale favours survival over engagement.~~ Measured; the behavioural half is refuted.**
+    At \(\gamma = 0.99\) the maximum discounted alive bonus (1.5) exceeds one elimination (1.2), so an agent
+    can earn more by avoiding fights than by winning them
+    ([§ 4.4.1](04_mdp_formalisation.md#441-reward-scale-versus-horizon)). Arena v2 cut the bonus ten-fold and
+    decayed it with a 30 s half-life. Shots per match did rise for CTDE (101.2 → 140.3) and DTE (105.2 →
+    119.0), but fell for CTE (121.7 → 107.4), and eliminations fell for both DTE (1.95 → 1.72) and CTE
+    (2.22 → 2.03). Cheap survival does not reliably buy aggression, so the incentive diagnosis stands and
+    the prediction built on it does not.
 11. **The readout is not the trained policy.** Greedy held-out win rate — the headline response variable
    of every table in [§ 8.1](08_results.md#replicated-study) — has 2.5× the spread of the
    sampled policy it summarises (SD 0.177 vs 0.072 across 60 arm-replicate cells) and preserves its
@@ -194,22 +207,32 @@ applied to the original single-seed evidence, and left three that no amount of r
     between training seeds (0.12–0.22) because a block is one seed of each experiment, and the three
     experiment-1 seeds and three experiment-2 seeds are paired identically in every block, so an exp-1 x
     exp-2 pairing effect cannot be separated from an architecture effect at this n.
-13. **~~No fixed-opponent evaluation.~~ Partly addressed.** The cross-experiment round-robin
-    ([§ 8.10](08_results.md#cross-arena)) puts all six arms on a common opponent pool, which removes the
-    co-adaptation confound *for evaluation* and is where the repository's only corrected-significant
-    differences appear. What remains open: the pool is still these six policies and no others, there are no
-    scripted opponents, and training itself is still three arms co-adapting inside one run.
+13. **~~No fixed-opponent evaluation, and no absolute reference point.~~ Partly closed.** Two instruments now
+    exist. The cross-experiment round-robin ([§ 8.10](08_results.md#cross-arena)) puts all six arms on a common
+    pool of *trained* opponents, which removes the co-adaptation confound for evaluation. And
+    [§ 8.11](08_results.md#absolute-strength) puts each arm against a fixed pool of **uniform-random** teams,
+    which is a floor that does not depend on who else was in the run — with a null matched slot by slot,
+    because the arena's three spawn positions are not equally winnable even when all three teams are random
+    ([§ 8.9](08_results.md#random-baseline): 0.257 / 0.270 / 0.463). The two scales turn out to be
+    near-uncorrelated, so the section also retires the habit of reading a pool win rate as strength. What
+    remains open: the random pool is the only non-self-referential opponent set here — there are no scripted
+    or human policies, no other game, and no published baseline, so no number in this repository is
+    comparable to the literature in absolute terms; and **training** itself is still three arms co-adapting
+    inside one run, so the confound is removed at measurement time only.
 
-*Next concrete steps:* change what win rate measures (items 9, 10 and 11); take the round-robin past three
-training blocks per architecture (item 12), which is evaluation time on checkpoints that already exist; and
-give the arms opponents that are not other trained policies at all. Three
-of the remedies a previous version of this list proposed have now been carried out — rotating the slot,
-evaluating on a common opponent pool, and replicating that evaluation over several sets of checkpoints — and
-each of them changed a conclusion that was in print: the rotation helped expose that a single replicate could
-reverse the ranking, the common pool reversed the round-robin's own first verdict once its seeds were
-pooled, and pooling *training* replicates on top of that moved two architectures to opposite ends of the
-same table
-([§ 8.10](08_results.md#cross-arena)).
+*Next concrete steps:* the objective-side remedies (items 9 and 10) have now been measured
+([§ 8.12](08_results.md#arena-v2)) and did not resolve the ranking, so the remaining levers are the
+measurement and the sample: fix or dual-report the readout (item 11), take the round-robin past three
+training blocks per architecture (item 12), which is evaluation time on checkpoints that already exist, and
+give the arms opponents that are not other trained policies at all. Four of the remedies a previous version
+of this list proposed have now been carried out — rotating the slot, evaluating on a common opponent pool,
+replicating that evaluation over several sets of checkpoints, and changing the objective (items 9 and 10) —
+and each of them changed a conclusion that was in print: the rotation helped expose that a single replicate
+could reverse the ranking, the common pool reversed the round-robin's own first verdict once its seeds were
+pooled, pooling *training* replicates on top of that moved two architectures to opposite ends of the same
+table, and turning the buzzer-win into a draw showed that 44 % and 39 % of the held-out matches had only
+ever been "won" by the clock
+([§ 8.10](08_results.md#cross-arena), [§ 8.12](08_results.md#arena-v2)).
 
 ## 10.5 Reporting validity
 

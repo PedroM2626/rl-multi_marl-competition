@@ -64,6 +64,12 @@ most files byte-for-byte but have diverged; the divergence is catalogued in
   critic (CAC), or an explicit differentiable communication channel (Comm) yield the highest win rate?
 * **RQ3.** Is the observed ranking stable — across seeds, across training length, and across the
   match-to-match variance of the arena?
+* **RQ4.** Do the two experiments' win rates belong on one scale? They were measured in separate campaigns
+  against separate opponents, so this is asked as a measurement rather than assumed: [§ 8.10](08_results.md#cross-arena)
+  plays all six arms against common opponents.
+* **RQ5.** Is any arm strong in absolute terms, rather than stronger than its three co-adapting rivals?
+  [§ 8.11](08_results.md#absolute-strength) answers it against a fixed pool of uniform-random opponents,
+  with a null matched slot by slot.
 
 RQ1 and RQ2 are answered in [§ Results](08_results.md#replicated-study) from a ten-seed, 500 000-step
 replicated study with held-out greedy evaluation and the paradigm-to-slot assignment rotated by seed. RQ3 is answered in two parts: **stability across seeds
@@ -112,7 +118,7 @@ not be relied on are set out in [§ Threats to validity](10_threats_to_validity.
    the measurement showing that a NumPy major-version change destroys it for training outcomes
    ([A-31](11_code_audit.md#the-pinned-environment-does-not-reproduce-the-recorded-runs)).
 9. A written account of what the implementation *actually computes*, as opposed to what the architecture
-   names conventionally imply — 33 audited findings, several of which are the reason the results changed on
+   names conventionally imply — 35 audited findings, several of which are the reason the results changed on
    re-measurement ([§ Optimisation procedure](06_optimisation_procedure.md#65-what-the-implementation-does-not-do)
    and [§ Code audit](11_code_audit.md)). This is the part that constrains how the results may be read.
 
@@ -120,13 +126,15 @@ not be relied on are set out in [§ Threats to validity](10_threats_to_validity.
 
 Out of scope, deliberately or as unfinished work:
 
-* ~~No evaluation against a fixed pool of opponents.~~ **Partly closed**: the cross-experiment round-robin
-  ([§ 8.10](08_results.md#cross-arena)) evaluates all six arms against common opponents, which is where the
-  repository's only corrected-significant differences come from. Still open: no scripted or human baselines,
-  no pool beyond these six policies, and **training** remains three arms co-adapting inside one run, so the
-  co-adaptation confound is removed at measurement time only.
-* No evaluation against published baselines on a shared benchmark, so no number here is comparable to the
-  literature in absolute terms.
+* ~~No evaluation against a fixed pool of opponents.~~ **Closed for the two pools that were cheap**: the
+  cross-experiment round-robin ([§ 8.10](08_results.md#cross-arena)) evaluates all six arms against common
+  *trained* opponents, and [§ 8.11](08_results.md#absolute-strength) evaluates each against a fixed pool of
+  uniform-random ones. The two orderings are near-uncorrelated, which is itself a finding. Still open: no
+  scripted or human opponents, no pool beyond these six policies, no other game, and **training** remains
+  three arms co-adapting inside one run, so the co-adaptation confound is removed at measurement time only.
+* ~~No absolute reference point.~~ **Partly closed** by the random-pool floor of
+  [§ 8.11](08_results.md#absolute-strength). What that does *not* buy is comparability with the literature:
+  uniform-random play in this arena is not any published baseline, and the benchmark itself is local.
 * No ablation of domain randomisation, reward coefficients, or network width.
 * Respawn is configured but not implemented; the flag has no effect
   ([§ Code audit](11_code_audit.md#dead-configuration)).
