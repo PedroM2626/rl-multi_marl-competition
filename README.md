@@ -68,7 +68,7 @@ mean:
 Still open, and load-bearing for how the results may be read: the study is **underpowered by a wide
 margin** (~47 to ~939 replicates, [§ 8.1](docs/08_results.md#power-analysis)), a quarter of replicates
 decide matches on the 90 s clock rather than by eliminations
-([§ 8.1](docs/08_results.md#two-regimes)), one replicate in sixty collapses to a never-fires policy
+([§ 8.1](docs/08_results.md#two-regimes)), one replicate in sixty reads out as a never-fires policy
 ([§ 8.1](docs/08_results.md#leave-one-out)), `ui/dashboard.py` is untested, and the `ctde_arena/` Docker
 image has never been built.
 
@@ -157,9 +157,14 @@ Four findings worth knowing before reading anything else:
 * **Run-to-run variance exceeds the architecture effects.** Single replicates of one architecture range
   from 0.000 to 0.767 win rate, and forward power puts the cheapest comparison at ~47 replicates and the
   rest at 110–939 ([§ 8.1](docs/08_results.md#power-analysis)).
-* **One replicate reverses the experiment 1 ranking.** Seed 6's CTDE arm learned to stop shooting — 3.8
-  shots per match, 0.000 wins. Remove that single replicate and CTDE goes from second to first, and the
-  sign of its difference against DTE flips ([§ 8.1](docs/08_results.md#leave-one-out)).
+* **One replicate reverses the experiment 1 ranking.** Seed 6's CTDE arm reads out at 3.8 shots per match
+  and 0.000 wins; remove it and CTDE goes from second to first, flipping the sign of its difference against
+  DTE ([§ 8.1](docs/08_results.md#leave-one-out)).
+* **The greedy readout is not the trained policy.** That same seed-6 arm *led its own match* during
+  training on kills (2.68/match) and accuracy (10.4 %) — only argmax turns it into something that never
+  fires. Pooled over all 60 arm-replicate cells, greedy win rate has **2.5× the spread** of the sampled
+  policy it summarises (SD 0.177 vs 0.072) and reproduces its rankings just **35.6 %** of the time
+  ([§ 8.1 Readout](docs/08_results.md#readout-divergence)). Fix the readout before adding replicates.
 * **A quarter of replicates are not measuring fighting.** Five of twenty end most matches on the 90 s
   clock, where winning means "most alive at the buzzer"
   ([§ 8.1](docs/08_results.md#two-regimes)).

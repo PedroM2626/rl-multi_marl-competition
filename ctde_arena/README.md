@@ -37,9 +37,9 @@ study; it is kept because those artefacts still ship.
 
 | Team | Paradigm | Actor | Critic | Actor params | Critic params |
 |---|---|---|---|---:|---:|
-| Team 1 | CTDE-VD | `ActorNetwork` (local obs) | `ValueDecompositionCriticNetwork` | 35,337 | 17,281 |
-| Team 2 | CTDE-CAC | `ActorNetwork` (local obs) | `CentralizedCriticNetwork` (joint state) | 35,337 | 37,889 |
-| Team 3 | CTDE-Comm | `CommActorNetwork` (local obs + message) | `CentralizedCriticNetwork` (joint state) | 37,388 | 37,889 |
+| Team 1 | CTDE-VD | `ActorNetwork` (local obs) | `ValueDecompositionCriticNetwork` | 35,465 | 17,409 |
+| Team 2 | CTDE-CAC | `ActorNetwork` (local obs) | `CentralizedCriticNetwork` (joint state) | 35,465 | 39,041 |
+| Team 3 | CTDE-Comm | `CommActorNetwork` (local obs + message) | `CentralizedCriticNetwork` (joint state) | 37,644 | 39,041 |
 
 Layer-by-layer specifications: [§ Network architectures](../docs/05_network_architectures.md).
 
@@ -315,9 +315,9 @@ because each tree prepends its own `src/`.
 2. ~~Rotate which team slot each variant occupies~~ **Done** — `paradigm_rotation = seed % 3`, recorded in
    every `run_summary.json`.
 3. Mask dead allies in `CommActorNetwork` instead of zero-filling their observations.
-4. Match critic capacity across VD and CAC before interpreting that contrast — VD's critic is 17,281
-   parameters against CAC's 37,889, and the study's exp-2 arms now differ in critic size as well as in
-   information flow.
+4. Match critic capacity across VD and CAC before interpreting that contrast — VD's critic is 17,409
+   parameters against CAC's 39,041, so the exp-2 arms differ in critic size as well as in information
+   flow.
 5. Report shots per second-of-alive-life per agent — the only measurement that separates "Comm shoots less"
    from "Comm dies sooner". [A-30](../docs/11_code_audit.md#greedy-evaluation-of-an-untrained-network-is-not-random-play)
    makes this urgent: untrained firing volume already spans 88 to 398 shots per match.

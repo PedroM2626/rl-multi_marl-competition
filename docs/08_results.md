@@ -118,11 +118,26 @@ the three pass Bonferroni at the match level and none come close to it at the se
 
 ### One replicate is enough to reverse the exp-1 ranking <a name="leave-one-out"></a>
 
-The exp-1 per-seed matrix contains a degenerate replicate: **seed 6's CTDE team never learned to shoot.**
-Over its 150 held-out matches it fired 3.8 shots per match against 325 and 372 for the other two teams,
-recorded 0.01 eliminations per match, and won **0.000** of its matches — a zero on a 1/3 chance baseline.
-It is the only such collapse in 60 paradigm-seed cells (threshold: held-out eliminations below 0.25 per
-match), and it is what drags CTDE's mean from 0.362 to 0.326.
+The exp-1 per-seed matrix contains one extreme replicate: **seed 6's CTDE arm scores 0.000 under greedy
+evaluation.** Over its 150 held-out matches it fired 3.8 shots per match against 325 and 372 for the other
+two teams, recorded 0.01 eliminations per match, and won nothing — a zero on a 1/3 chance baseline. It is
+the only such cell in 60 paradigm-seed evaluations (threshold: held-out eliminations below 0.25 per match),
+and it is what drags CTDE's mean from 0.362 to 0.326.
+
+**It is not a training collapse, and an earlier draft of this section said it was.** The same policy, read
+through the stochastic action sampler it was actually trained with, was the *best* arm of that run:
+
+| seed 6, CTDE | during training (4,929 matches, sampled actions) | held out (150 matches, greedy actions) |
+|---|---:|---:|
+| win rate | 0.315 | 0.000 |
+| eliminations per match | **2.68** (highest of the three arms) | 0.01 |
+| shot accuracy | **0.1041** (highest of the three arms) | 0.0018 |
+| mean survival | 4.84 s | 9.3 s |
+
+So the policy learned to fight — it led its own match in kills and accuracy — and only the argmax readout
+turns it into something that never fires. What this replicate reveals is a **readout divergence**, not a
+reward-landscape basin. The general form of it is in [§ 8.1 Readout](#readout-divergence) below, and it is
+the larger finding.
 
 Recomputing exp 1 with that one replicate removed, using the same shipped `paired_t`:
 
@@ -136,9 +151,40 @@ Recomputing exp 1 with that one replicate removed, using the same shipped `paire
 
 **A single replicate out of thirty paradigm-slots flips which architecture is reported as the winner**, in
 both the mean ordering and the sign of the paired difference, while nothing reaches significance either
-way. The exp-1 ranking is therefore not a finding of this study; the collapse itself is. It is a property of
-PPO in this reward landscape — a policy that stops firing forfeits nothing early, gets no negative signal
-until matches run to the 90 s cap, and can sit in that basin for the whole budget.
+way. The exp-1 ranking is therefore not a finding of this study; the divergence that produced the extreme
+cell is, and it is a property of the measurement rather than of the optimiser.
+
+### The readout diverges from the trained policy <a name="readout-divergence"></a>
+
+The study's response variable is held-out **greedy** win rate, on the argument that a deployed policy should
+be measured deterministically. That choice is defensible; treating the resulting numbers as a measurement of
+*what training produced* is not. Across all 60 arm-replicate cells:
+
+| | mean | SD | min | max |
+|---|---:|---:|---:|---:|
+| Win rate during training (sampled actions) | 0.331 | **0.072** | 0.176 | 0.464 |
+| Held-out win rate (greedy actions) | 0.323 | **0.177** | 0.000 | 0.767 |
+
+Two things follow. The greedy readout has **2.5× the spread** of the behaviour that was actually optimised,
+so most of the variance this study had to fight is introduced at measurement time. And the orderings
+disagree: across the 59 comparable within-replicate pairs, the greedy ranking matches the training ranking
+in **21 — 35.6 %, worse than a coin flip.**
+
+The largest single divergences are not marginal either:
+
+| cell | training win rate | greedy win rate |
+|---|---:|---:|
+| exp-2 seed 7, CTDE-CAC | 0.390 | 0.047 |
+| exp-2 seed 5, CTDE-CAC | 0.271 | 0.620 |
+| exp-1 seed 4, CTE | 0.176 | 0.533 |
+| exp-2 seed 6, CTDE-Comm | 0.271 | 0.767 |
+
+This does not invalidate the study's null result — a measurement with more noise cannot detect an effect, and
+the conclusion was that no effect is detectable. It does relocate the main finding: **the architecture
+differences the repository spent two campaigns chasing are smaller than the difference between sampling and
+argmax-ing the same network.** Any future campaign should fix the readout before it adds replicates: report
+both, or evaluate under the stochastic policy at a fixed temperature, and treat a one-sided greedy number as
+incomplete.
 
 ### Two regimes: wipeouts and timeouts <a name="two-regimes"></a>
 
@@ -610,14 +656,16 @@ neighbours.
 |---|---|
 | **RQ1** — does CTDE beat CTE and DTE? | **No, and the ordering is not ours to report.** CTDE finishes **second** at 0.326 behind DTE at 0.381 and ahead of CTE at 0.252. The paired per-seed differences are +0.074 vs CTE (*p* = 0.348) and −0.055 vs DTE (*p* = 0.640); detecting them would need ~110 and ~450 replicates. Removing the single degenerate replicate (seed 6) puts CTDE first at 0.362 and flips the sign of the CTDE–DTE difference — so the honest answer is that **this study measures no exp-1 ordering at all.** |
 | **RQ2** — which CTDE variant wins? | **No detectable difference.** VD 0.367, Comm 0.331, CAC 0.282; every paired per-seed comparison has *p* ≥ 0.363, and the smallest gap costs ~117 replicates to confirm. The historical claim that Comm loses decisively **does not reproduce**, and the historical winner CAC is now last of three. |
-| **RQ3** — is it stable? | **No — and that is the headline result.** Between-seed SD is 0.122–0.218 against a 1/3 chance baseline; single replicates range from **0.000 to 0.767** within one architecture; 1 of 30 paradigm-slots collapses to a never-fires policy; 5 of 20 replicates play a different game entirely (matches decided by the 90 s clock, not by kills). The dominant finding is variance, not ranking, and the [leave-one-out analysis](#leave-one-out) shows a ranking that a single replicate can reverse. |
+| **RQ3** — is it stable? | **No — and that is the headline result.** Between-seed SD is 0.122–0.218 against a 1/3 chance baseline; single replicates range from **0.000 to 0.767** within one architecture; 1 of 30 paradigm-slots reads out as a never-fires policy under greedy action selection while the same network led its own match on kills during training ([§ Readout](#readout-divergence)); 5 of 20 replicates play a different game entirely, matches decided by the 90 s clock rather than by kills. The dominant finding is variance, not ranking, and most of that variance is introduced by the readout rather than by training. |
 | **RQ4** — do the two experiments' numbers belong on the same scale? | **Nowhere near.** The cross-experiment round-robin ([§ 8.10](#cross-arena)) puts all six on common opponents: Comm 0.387 > DTE 0.380 > CTE 0.320 > CAC 0.297 > CTDE = VD 0.263, with **no pair significant** under Bonferroni-corrected McNemar tests over 15 comparisons. VD, first in its own experiment, is tied last here. |
 
 **What this repository can defensibly claim:** six MARL information-flow architectures have been run against
 each other in one engine with matched hyperparameters, replicated ten times each with slot rotation, and
 measured held out — and the resulting ranking is not statistically distinguishable, while the ranking a
 single seed produced turned out to be wrong in *both* experiments. It additionally contributes a concrete
-characterisation of a PPO degenerate-attractor failure mode in a sparse-elimination reward.
+a measurement finding that is probably the most consequential thing here: the greedy readout used as the
+headline response variable has 2.5× the spread of the sampled policy it summarises, and agrees with its
+rankings only 35.6 % of the time ([§ Readout](#readout-divergence)).
 
 **What it cannot claim:** that any of the six architectures is better than any other; that the CTDE
 advantage over CTE is anything more than suggestive; or that win rate here is measuring fighting skill

@@ -20,9 +20,9 @@ volume is decoupled from survival.
 
 ### Unmatched model capacity
 
-Parameter totals range from 35,337 (DTE) to 77,065 (CTE) — a 2.2× spread — and the arms differ in
-whether the value function shares a trunk with the policy. In Experiment 2, CTDE-VD's critic is 17,281
-parameters against CTDE-CAC's 37,889.
+Parameter totals range from 35,465 (DTE) to 79,369 (CTE) — a 2.24× spread — and the arms differ in
+whether the value function shares a trunk with the policy. In Experiment 2, CTDE-VD's critic is 17,409
+parameters against CTDE-CAC's 39,041.
 
 *Remedy:* match total trainable parameters per team, e.g. by widening the smaller network.
 

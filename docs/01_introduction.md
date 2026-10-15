@@ -81,7 +81,8 @@ not be relied on are set out in [§ Threats to validity](10_threats_to_validity.
 1. A self-contained, dependency-light MARL arena (NumPy physics + PPO, no external RL framework) in
    which six distinct information-flow architectures share one simulator, one reward and one
    observation encoding.
-2. A from-scratch implementation of all six architectures in ~1,900 lines of model and training code,
+2. A from-scratch implementation of all six architectures in 1,085 lines of model and training code
+   (`rl/`, `controllers/`, `models.py`; 949 excluding blank lines),
    including a swept-AABB projectile collision solver whose geometry is verified against hand-computed
    entry parameters, including a step long enough to tunnel a barrier
    ([§ Collision detection](03_arena_system_model.md#343-collision-detection), `tests/test_collision.py`).

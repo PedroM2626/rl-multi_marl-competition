@@ -20,7 +20,8 @@ nonlinearity. No normalisation layers, no dropout, no residual connections.
 Parameter counts below were measured by instantiating each module, not derived by hand. They reflect
 the 9-component local and 45-component global observation vectors of
 [§ 4.1](04_mdp_formalisation.md#41-local-observation-o_i); the pre-A-17 encoding (8 / 36) gave
-35,337 / 39,176 / 37,889 / 17,281 / 37,388.
+35,337 / 39,176 / 37,889 / 37,388 for the other four. `ValueDecompositionCriticNetwork` is 17,409 either
+way, because it consumes a fixed-width per-agent slice rather than the whole global vector.
 
 ## Overview
 
@@ -33,8 +34,8 @@ the 9-component local and 45-component global observation vectors of
 | 2 (exp. 2) | **CTDE-CAC** | `ActorNetwork` | `CentralizedCriticNetwork` | 35,465 | 39,041 | **74,506** |
 | 3 (exp. 2) | **CTDE-Comm** | `CommActorNetwork` | `CentralizedCriticNetwork` | 37,644 | 39,041 | **76,685** |
 
-> **Capacity is not matched across arms.** DTE carries 35 k parameters while CTE carries 77 k — a
-> 2.2× difference. Any CTE-vs-DTE reading of Experiment 1 is confounded by model size, and the
+> **Capacity is not matched across arms.** DTE carries 35 k parameters while CTE carries 79 k — a
+> 2.24× difference. Any CTE-vs-DTE reading of Experiment 1 is confounded by model size, and the
 > VD-vs-CAC contrast in Experiment 2 is confounded in the opposite direction (VD has less than half
 > the critic capacity). See
 > [§ Threats to validity](10_threats_to_validity.md#101-internal-validity).
@@ -56,7 +57,7 @@ Input is the 9-dim local observation of [§ 4.1](04_mdp_formalisation.md#41-loca
 For **DTE** the value head *is* the critic: policy and value share a trunk, which is the classic
 integrated actor-critic. For **CTDE/VD/CAC** the value head exists but is unused — the critic below
 supplies the baseline. Those wasted 129 parameters are harmless, but they mean DTE and CTDE differ in
-*two* ways (shared vs separate value function, and 35 k vs 73 k parameters), not one.
+*two* ways (shared vs separate value function, and 35 k vs 75 k parameters), not one.
 
 ## 5.2 `CentralizedActorNetwork` — joint-state actor (CTE)
 

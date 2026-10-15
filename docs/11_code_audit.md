@@ -714,8 +714,8 @@ Items 1–3 were the original list and are done; 6 is done; 4 is partly done; 7 
 4. Log `PPOStats` (A-15) and a real `approx_kl` (A-14) so convergence and divergence are distinguishable.
    **Partly done** — both are now computed and written to `run_summary.json`, but the study still judges the
    arms by outcome only; nothing correlates a replicate's win rate with its KL or value loss. The seed-6
-   collapse ([§ 8.1](08_results.md#leave-one-out)) is exactly the event those traces would have flagged, and
-   it went unrecorded.
+   divergence ([§ 8.1](08_results.md#readout-divergence)) is exactly the event those traces would have
+   flagged — the policy was fine and the readout was not — and it went undiagnosed for two campaigns.
 5. Report shots-per-second-of-alive-life per agent, which is the only way to separate the two candidate
    explanations for CTDE-Comm's deficit ([§ 8.3](08_results.md#decomposing-the-elimination-gap)).
    **Still open**, and A-30 makes it more urgent: firing rate differs by 18× at initialisation.
@@ -729,6 +729,10 @@ Items 1–3 were the original list and are done; 6 is done; 4 is partly done; 7 
    than on eliminations ([§ 8.1](08_results.md#two-regimes)), so any pooled win rate mixes "who wins a
    fight" with "who is most alive at the buzzer". Either report the regimes separately or change the
    termination rule so that survival-to-cap is not a winning outcome.
-9. **New:** test the reward against the never-fires basin. Seed 6's CTDE arm finished training with 3.8 shots
-   per match and a 0.000 held-out win rate; nothing in the reward punishes not engaging until the match is
-   already over.
+9. **Superseded by a better diagnosis.** The seed-6 arm was first described as a never-fires reward basin.
+   That is wrong: during training it *led its own match* on eliminations (2.68/match) and accuracy (10.4 %);
+   only the greedy readout produces 3.8 shots and 0.000 wins. The open question is therefore about the
+   **measurement**, not the reward — see [§ Readout](08_results.md#readout-divergence) and item 10.
+10. **New:** fix the readout before adding replicates. Greedy held-out win rate has 2.5× the spread of the
+    sampled policy it summarises (SD 0.177 vs 0.072) and agrees with its within-replicate ranking only
+    35.6 % of the time. Report both readouts, or evaluate the stochastic policy at a fixed temperature.
