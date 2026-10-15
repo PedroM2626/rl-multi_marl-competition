@@ -33,6 +33,7 @@ Four distinct data sources exist, and they are not interchangeable:
 | `ctde_arena/data/` | Experiment 2 same | Yes |
 | `ctde_arena/data/mlflow_export/` | The 48 metric points actually logged to MLflow across two runs | Yes (exported) |
 | `results/study/` | 10 seeds × 500 k steps per experiment, slot-rotated, held-out greedy evaluation, paired *t*-tests, Fisher-exact tests and forward power | Yes |
+| `results/cross_arena/` | 3,000 matches over five harness seeds: all six architectures on a common opponent pool, McNemar pairwise tests, slot control, per-seed stability | Yes |
 
 The first two rows are **one promoted replicate each** — the run closest to its experiment's study means,
 selected mechanically by `promote_run.py --seed median` and described by `data/PROVENANCE.json`. They are

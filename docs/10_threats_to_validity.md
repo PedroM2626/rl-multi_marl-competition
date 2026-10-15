@@ -148,7 +148,8 @@ applied to the original single-seed evidence, and left three that no amount of r
    per experiment, pooled with Wilson intervals reported per seed and in aggregate.
 3. ~~**Training metrics presented as results.**~~ The study measures the final policy under greedy
    action selection on the fixed evaluation variant, which is what the headline tables always claimed to
-   report.
+   report. **This remedy is only half right, and the other half is now a threat in its own right** — see
+   item 11.
 4. ~~**The cumulative denominator is not independent.**~~ Pooled estimates are now over held-out matches
    of a frozen policy, so the Bernoulli approximation is defensible; Fisher's exact test is used instead
    of a normal-approximation \(z\)-test because the counts are small.
@@ -174,14 +175,27 @@ applied to the original single-seed evidence, and left three that no amount of r
    and the untrained greedy baseline shows 41 % three-way draws and 88–398 shots per match at 0.1 %
    accuracy ([§ 8.9](08_results.md#random-baseline)), so the construct being measured is partly
    survival-to-buzzer. The termination rule, not the sample size, is what would have to change.
-10. **No fixed-opponent evaluation.** Arms are compared only against each other, never against a frozen
-    pool or scripted opponents, so absolute strength is unmeasured
-    ([§ 10.3](10_threats_to_validity.md)).
+11. **The readout is not the trained policy.** Greedy held-out win rate — the headline response variable
+   of every table in [§ 8.1](08_results.md#replicated-study) — has 2.5× the spread of the
+   sampled policy it summarises (SD 0.177 vs 0.072 across 60 arm-replicate cells) and preserves its
+   within-replicate ranking in only 35.6 % of comparable pairs. So part of what the study measures is
+   the argmax of a stochastic policy rather than its behaviour. This is a construct-validity problem
+   introduced by the remedy for the previous version of this threat, and it is the strongest argument
+   in the repository for reporting both readouts rather than one
+   ([§ Readout](08_results.md#readout-divergence)).
+12. **~~No fixed-opponent evaluation.~~ Partly addressed.** The cross-experiment round-robin
+    ([§ 8.10](08_results.md#cross-arena)) puts all six arms on a common opponent pool, which removes the
+    co-adaptation confound *for evaluation* and is where the repository's only corrected-significant
+    differences appear. What remains open: the pool is still these six policies and no others, there are no
+    scripted opponents, and training itself is still three arms co-adapting inside one run — so absolute
+    strength, in the sense of a number comparable to the literature, is still unmeasured.
 
-*Next concrete steps:* change what win rate measures (items 9 and 10) before adding replicates. Rotating
-the slot — the threat a modest re-run used to fix — has been done, and the ranking it might have exposed
-turned out to be reversible by a single degenerate replicate anyway
-([§ 8.1](08_results.md#leave-one-out)).
+*Next concrete steps:* change what win rate measures (items 9, 10 and 11) before adding replicates. Two of
+the three remedies a previous version of this list proposed have now been carried out — rotating the slot,
+and evaluating on a common opponent pool — and both changed conclusions that were in print: the rotation
+helped expose that a single replicate could reverse the ranking, and the common pool reversed the
+round-robin's own first verdict once it was replicated
+([§ 8.10](08_results.md#cross-arena)).
 
 ## 10.5 Reporting validity
 

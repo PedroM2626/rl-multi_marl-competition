@@ -82,38 +82,50 @@ not be relied on are set out in [§ Threats to validity](10_threats_to_validity.
    which six distinct information-flow architectures share one simulator, one reward and one
    observation encoding.
 2. A from-scratch implementation of all six architectures in 1,085 lines of model and training code
-   (`rl/`, `controllers/`, `models.py`; 949 excluding blank lines),
-   including a swept-AABB projectile collision solver whose geometry is verified against hand-computed
-   entry parameters, including a step long enough to tunnel a barrier
+   (`rl/`, `controllers/`, `models.py`; 949 excluding blank lines), including a swept-AABB projectile
+   collision solver whose geometry is verified against hand-computed entry parameters, including a step
+   long enough to tunnel a barrier
    ([§ Collision detection](03_arena_system_model.md#343-collision-detection), `tests/test_collision.py`).
 3. **A replicated, held-out study of both experiments — 10 seeds each, 500 000 steps, slot-rotated — that
    does not reproduce the single-seed conclusions the repository originally shipped, in either experiment.**
    The ordering reverses, no seed-level comparison reaches significance, and one replicate out of thirty
    paradigm-slots is enough to flip which architecture is reported as the winner
    ([§ 8.1](08_results.md#replicated-study)).
-4. Versioned training artefacts for **both** experiments — promoted policies, per-match metric CSVs,
-   aggregate summaries, dashboards, `PROVENANCE.json` recording how each replicate was chosen, the study
-   aggregates under `results/`, and the exact set of points that reached MLflow.
-5. Bit-for-bit reproducibility of training, verified by hashing checkpoints from repeated seeded runs
-   rather than asserted ([§ 9.6](09_reproducibility.md#96-what-is-and-is-not-reproducible)).
-6. A written account of what the implementation *actually computes*, as opposed to what the
-   architecture names conventionally imply — 30 audited findings, several of which are the reason the
-   results changed on re-measurement
-   ([§ Optimisation procedure](06_optimisation_procedure.md#65-what-the-implementation-does-not-do) and
-   [§ Code audit](11_code_audit.md)). This is the part that constrains how the results may be read.
-7. A characterisation of a PPO failure mode in this reward landscape: a policy that stops firing is not
-   punished until the match clock ends, and can occupy that basin for an entire training budget
-   ([§ 8.1](08_results.md#leave-one-out)).
+4. **A cross-experiment round-robin placing all six architectures on one common opponent pool** — 3,000
+   slot-balanced matches over five harness seeds, each policy driven by the code of the tree that trained
+   it. It yields the repository's only differences that survive multiplicity correction (CTDE-Comm over
+   plain CTDE, DTE over CTDE-CAC), and its first 600-match run reached the opposite verdict — which is the
+   case for replicating an *evaluation*, not only a training run
+   ([§ 8.10](08_results.md#cross-arena)).
+5. **Evidence that the headline readout is not the trained policy.** Greedy held-out win rate has 2.5× the
+   spread of the sampled policy it summarises (SD 0.177 vs 0.072) and preserves its within-replicate ranking
+   in only 35.6 % of comparable pairs ([§ Readout](08_results.md#readout-divergence)).
+6. Measurement of the test bed's own bias: one of the three spawn positions wins ~49 % of matches against
+   ~23 % for the other two, for every architecture
+   ([A-32](11_code_audit.md#the-arena-spawn-geometry-is-not-symmetric)).
+7. Versioned training artefacts for **both** experiments — promoted policies, per-match metric CSVs,
+   aggregate summaries, dashboards, `PROVENANCE.json` recording how each replicate was chosen, the study and
+   round-robin aggregates under `results/`, and the exact set of points that reached MLflow.
+8. Bit-for-bit reproducibility of training, verified by hashing checkpoints from repeated seeded runs
+   rather than asserted ([§ 9.6](09_reproducibility.md#96-what-is-and-is-not-reproducible)) — together with
+   the measurement showing that a NumPy major-version change destroys it for training outcomes
+   ([A-31](11_code_audit.md#the-pinned-environment-does-not-reproduce-the-recorded-runs)).
+9. A written account of what the implementation *actually computes*, as opposed to what the architecture
+   names conventionally imply — 32 audited findings, several of which are the reason the results changed on
+   re-measurement ([§ Optimisation procedure](06_optimisation_procedure.md#65-what-the-implementation-does-not-do)
+   and [§ Code audit](11_code_audit.md)). This is the part that constrains how the results may be read.
 
 ## 1.6 Scope boundaries
 
 Out of scope, deliberately or as unfinished work:
 
-* No comparison against published baselines on a shared benchmark; the arena is bespoke, so absolute
-  win rates are not comparable to any figure in the literature.
-* No evaluation against a fixed pool of opponents or scripted baselines — the only comparison available is
-  between the three arms inside one run, so a ranking cannot be separated from the co-adaptation dynamics
-  that produced it.
+* ~~No evaluation against a fixed pool of opponents.~~ **Partly closed**: the cross-experiment round-robin
+  ([§ 8.10](08_results.md#cross-arena)) evaluates all six arms against common opponents, which is where the
+  repository's only corrected-significant differences come from. Still open: no scripted or human baselines,
+  no pool beyond these six policies, and **training** remains three arms co-adapting inside one run, so the
+  co-adaptation confound is removed at measurement time only.
+* No evaluation against published baselines on a shared benchmark, so no number here is comparable to the
+  literature in absolute terms.
 * No ablation of domain randomisation, reward coefficients, or network width.
 * Respawn is configured but not implemented; the flag has no effect
   ([§ Code audit](11_code_audit.md#dead-configuration)).

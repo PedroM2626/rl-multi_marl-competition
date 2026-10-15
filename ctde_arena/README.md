@@ -26,7 +26,8 @@ Each paradigm controls one team; three teams of three agents fight in the same a
 | Untrained baseline | 300 matches in both greedy and uniform modes (`results/baseline/`) |
 | Bit-for-bit reproducible training | yes, verified with `--no-mlflow` |
 | MLflow curves | **1 logged point** for the 100k run — see [A-9](../docs/11_code_audit.md#mlflow-cadence) |
-| Tests | 47 passing, **87 %** statement coverage |
+| Tests | 47 passing, **87–88 %** statement coverage |
+| Cross-experiment round-robin | hosted here, since this tree's package is the superset holding all six architectures |
 | Docker image | **never built or run** — unverified configuration |
 
 Read [Results](../docs/08_results.md) and [Threats to validity](../docs/10_threats_to_validity.md)

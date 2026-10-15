@@ -202,7 +202,18 @@ that run's initialisation and geometry stream, so they are not independent draws
 6. **Sensitivity** is reported by leave-one-out: because one degenerate replicate in thirty paradigm-slots
    reverses the experiment 1 ordering, [§ 8.1](08_results.md#leave-one-out) recomputes every comparison
    with it removed, using the same shipped `paired_t`.
-7. **Which replicate ships** is decided mechanically, not by inspection: `promote_run.py --seed median`
+7. **A third design exists for cross-experiment questions.** The round-robin in
+   [§ 8.10](08_results.md#cross-arena) compares arms that never trained together, so its unit of evidence
+   is the *head-to-head meeting*, not the replicate. The test is McNemar's exact test on discordant
+   outcomes over the matches where the two arms actually met, Bonferroni-corrected over 15 pairs at
+   alpha = 0.00333. Wilson intervals on the pooled win rates are shown for scale only: the three rows of a
+   match are negatively coupled, so overlapping intervals are not a test of anything there. The McNemar
+   implementation was checked against `scipy.stats.binomtest` over 200 random discordant tables and agrees
+   to 4.9e-14.
+8. **Replicate the evaluation, not only the training.** The round-robin's first 600-match run and its
+   3,000-match replication reached *opposite* verdicts on the same pairs. Pooling harness seeds is therefore
+   reported as part of the method, and per-seed stability is shown alongside the pooled estimate.
+9. **Which replicate ships** is decided mechanically, not by inspection: `promote_run.py --seed median`
    selects the replicate with the least L1 distance to the per-arm study means, so the versioned `data/`
    cannot be the one that happens to confirm the hypothesis. The rule and its result are recorded in
    `data/PROVENANCE.json`.

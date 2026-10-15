@@ -99,10 +99,13 @@ cp .env.example .env              # .env is tracked and identical to .env.exampl
 | `python scripts/report_inventory.py` | root | Regenerate the § 9.7 artefact table from `git ls-files` and live SHA-256 |
 | `python scripts/render_trailer.py --frames 240` | either | Render a gameplay clip from the promoted policies via Ursina offscreen |
 
-`run_experiment.py` and `random_baseline.py` are byte-identical in both trees; which engine they bind to is
-decided by the working directory, exactly like `train_rl.py`. `run_study.py`, `report_study.py`,
-`plot_study.py` and `promote_run.py` exist only at the root and drive both trees — `promote_run.py` writes
-experiment 2's artefacts into `ctde_arena/data/`. `tests/test_tree_parity.py` enforces which files must stay
+`run_experiment.py`, `random_baseline.py` and `render_trailer.py` are byte-identical in both trees, and
+`tests/test_tree_parity.py` fails the suite if they drift; which engine they bind to is decided by the
+working directory, exactly like `train_rl.py`. `run_study.py`, `report_study.py`, `plot_study.py`,
+`promote_run.py`, `report_inventory.py`, `report_cross_arena.py` and `combine_cross_arena.py` exist only at
+the root and drive both trees — `promote_run.py` writes experiment 2's artefacts into `ctde_arena/data/`,
+and `run_cross_arena.py` is *run from* `ctde_arena/` because that tree's package is the superset holding all
+six architectures. `tests/test_tree_parity.py` enforces which files must stay
 identical across the two trees and which are allowed to differ, so drift in the shared engine fails the
 suite.
 

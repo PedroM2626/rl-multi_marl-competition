@@ -678,14 +678,25 @@ of the paired evidence, produced the opposite verdict on the two pairs that now 
 | **RQ3** — is it stable? | **No — and that is the headline result.** Between-seed SD is 0.122–0.218 against a 1/3 chance baseline; single replicates range from **0.000 to 0.767** within one architecture; 1 of 30 paradigm-slots reads out as a never-fires policy under greedy action selection while the same network led its own match on kills during training ([§ Readout](#readout-divergence)); 5 of 20 replicates play a different game entirely, matches decided by the 90 s clock rather than by kills. The dominant finding is variance, not ranking, and most of that variance is introduced by the readout rather than by training. |
 | **RQ4** — do the two experiments' numbers belong on the same scale? | **Partly, and only once replicated.** The cross-experiment round-robin ([§ 8.10](#cross-arena)) puts all six on common opponents over 3,000 matches: DTE 0.370 > Comm 0.362 > CTE 0.339 > CAC 0.296 > VD 0.289 > CTDE 0.267. Two cross-experiment pairs separate past Bonferroni-corrected McNemar tests (Comm > CTDE, *p* < 10⁻⁴; DTE > CAC, *p* = 0.0005); the top three and bottom three are mutually indistinguishable. Plain CTDE -- the architecture experiment 1 was built to promote -- is last in all five seeds. The first 600-match run said no pair separates, so this answer needed the replication. |
 
-**What this repository can defensibly claim:** six MARL information-flow architectures have been run against
-each other in one engine with matched hyperparameters, replicated ten times each with slot rotation, and
-measured held out — and the resulting ranking is not statistically distinguishable, while the ranking a
-single seed produced turned out to be wrong in *both* experiments. It additionally contributes a concrete
-a measurement finding that is probably the most consequential thing here: the greedy readout used as the
-headline response variable has 2.5× the spread of the sampled policy it summarises, and agrees with its
-rankings only 35.6 % of the time ([§ Readout](#readout-divergence)).
+**What this repository can defensibly claim.**
 
-**What it cannot claim:** that any of the six architectures is better than any other; that the CTDE
-advantage over CTE is anything more than suggestive; or that win rate here is measuring fighting skill
-rather than, in a quarter of replicates, survival to the clock.
+1. Six MARL information-flow architectures have been run against each other in one engine with matched
+   hyperparameters, replicated ten times each with slot rotation, and measured held out — and the ranking a
+   single seed produced turned out to be wrong in *both* experiments.
+2. On a common opponent pool, over 3,000 replicated matches, **two cross-experiment differences survive
+   multiplicity correction**: CTDE-Comm over plain CTDE (*p* < 10⁻⁴) and DTE over CTDE-CAC (*p* = 0.0005),
+   with the ordering stable across all five harness seeds. This is the only claim in the repository that
+   clears a corrected significance threshold, and it needed replication to appear
+   ([§ 8.10](#cross-arena)).
+3. A measurement finding that is probably the most consequential thing here: the greedy readout used as the
+   headline response variable has 2.5× the spread of the sampled policy it summarises, and agrees with its
+   rankings only 35.6 % of the time ([§ Readout](#readout-divergence)).
+4. The arena itself is biased: one of the three spawn positions wins ~49 % of matches against ~23 % for the
+   other two, for every architecture ([A-32](11_code_audit.md#the-arena-spawn-geometry-is-not-symmetric)).
+
+**What it cannot claim:** that any architecture is best, or that the six admit a strict ordering — the top
+three and bottom three are mutually indistinguishable; that the CTDE advantage over CTE is anything but
+suggestive (plain CTDE is last in every cross-arena seed, which is a *negative* result about the paradigm
+experiment 1 was built to promote, not a positive one about another); that within-experiment differences
+exist at all, since every corrected significance is *cross*-experiment; or that win rate here measures
+fighting skill rather than, in a third of matches, survival to the clock.

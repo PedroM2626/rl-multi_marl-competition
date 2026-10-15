@@ -41,7 +41,9 @@ Honest summary of what is finished and what is not:
 | Checkpoints committed | yes — newly versioned, and loadable by the current code | yes, re-promoted from the study |
 | Bit-for-bit reproducible training | verified | verified with `--no-mlflow` |
 | MLflow tracking | n/a | wired, but only **1 logged point** for the 100k run |
-| Tests | 55 passing, **92 %** statement coverage | 47 passing, **87 %** coverage |
+| Cross-experiment round-robin | 3,000 matches, all six arms on common opponents, 5 harness seeds (shared, run from `ctde_arena/`) | same |
+| Gameplay clips of the trained policies | yes (`docs/assets/`) | yes |
+| Tests | 59 passing, **93 %** statement coverage | 47 passing, **87–88 %** coverage |
 | Docker | n/a | **never built or run** |
 
 Six defects documented in the audit were **fixed** during this work, and each changed what the results
