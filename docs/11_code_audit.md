@@ -17,7 +17,7 @@ Every finding below was open at some point; the status column is the current sta
 | [A-3](#versioning) | FIXED | Root-anchored `.gitignore` excluded experiment 1's results and included experiment 2's |
 | [A-4](#silent-warm-start) | FIXED | Training silently resumed from versioned weights while resetting the step counter and optimizer |
 | [A-5](#test-suite-never-updates) | FIXED | The "and update" test never reached a PPO update |
-| [A-6](#coverage) | MOSTLY FIXED | Coverage raised from 73 % / 14 % to 92 % / 87 %; the collision solver is now geometrically verified |
+| [A-6](#coverage) | MOSTLY FIXED | Coverage raised from 73 % / 14 % to 94–95 % / 89 %; the collision solver is now geometrically verified |
 | [A-7](#terminal-state-crash) | FIXED | `IndexError` when stepping in an already-decided state |
 | [A-8](#unseeded-minibatch-shuffle) | FIXED | Minibatch order was unseeded; runs are now byte-reproducible |
 | [A-9](#mlflow-cadence) | FIXED | MLflow logged one point per 100 k-step run; a final entry is now always written |
@@ -190,8 +190,12 @@ Measured with `coverage run --source=src/marl_arena -m pytest`, before and after
 | `controllers/base.py` | 91 % | 89 % | 91 % | 89 % |
 | **total** | **73 %** | **93 %** | **14 %** | **87–88 %** |
 
-Test count went from 9 to 106 (59 and 47). Experiment 2's total moves by two statements between identical
-invocations, so it is quoted as a range. The additions that mattered:
+Test count went from 9 to 106 (59 and 47) at the time of that measurement, and to **145 (82 and 63)** with
+the suites added since — the collision, config, dashboard, render and round-robin-statistics tests. The
+totals have moved with them: experiment 1 is now **94–95 %** (1,542 statements) and experiment 2 **89 %**
+(1,654). Experiment 1's total moves by up to six missing statements between identical invocations — four
+consecutive runs gave 90, 84, 90, 90 — so it is quoted as a range; experiment 2 repeated 186 exactly. The
+additions that mattered:
 
 * `test_control_law.py` pins the A-1 fix, including a closed-loop check that repeated application of the
   commanded turn actually converges on the target bearing.
@@ -206,10 +210,13 @@ invocations, so it is quoted as a range. The additions that mattered:
   parameters and hit positions, and drives `_advance_projectiles` with a step long enough to jump a barrier
   outright — asserting both that the hit registers and that its position lands on the inflated box face.
 
-**Residual gaps.** `ui/dashboard.py` is 0 % (it only formats overlay text). Experiment 2's `ppo.py` is
-capped at 62 % for a structural reason worth naming: `update_actor_critic` and `update_cte` are the DTE
-and CTE paths, and experiment 2 configures none of its three teams as DTE or CTE, so **78 statements in
-that file are unreachable in that tree**. They are not bugs, they are the cost of forking the engine
+**Residual gaps.** `ui/dashboard.py` is not one of them any more: `tests/test_dashboard.py` and
+`tests/test_render.py` now put it at **100 %** in both trees, and the other per-file figures have moved with
+the suites — `systems/simulation.py` 92 % → 94 % in both trees, `rl/ppo.py` 97 % → 99 % in experiment 1 and
+62 % → 64 % in experiment 2. Experiment 2's `ppo.py` is capped for a structural reason worth naming:
+`update_actor_critic` and `update_cte` are the DTE and CTE paths, and experiment 2 configures none of its
+three teams as DTE or CTE, so **78 statements in that file are unreachable in that tree**. They are not bugs,
+they are the cost of forking the engine
 ([§ Cross-tree divergence](#cross-tree-divergence)) — but they mean experiment 2's headline coverage
 number understates how much of its own live code is tested.
 
@@ -634,7 +641,7 @@ NumPy 1.26.4. That gap was measured in a second environment differing only in Nu
 
 | Check | Outcome |
 |---|---|
-| Both test suites, 106 tests | pass under both versions |
+| Both test suites, the 106 tests as they stood at that measurement | pass under both versions |
 | The 14 hand-computed collision cases | identical to 1e-12 |
 | Domain-randomisation parameters of a match | identical, all digits |
 | `train_rl.py --seed 42 --steps 4000`, first PPO update | losses differ at 1e-6 – 1e-8 |
@@ -676,17 +683,20 @@ That is three positions related by no symmetry of the obstacle field, which is i
 `_default_obstacle_specs` without three-fold structure. The third position is therefore not equivalent to
 the first two, and the cross-experiment round-robin
 ([§ 8.10](08_results.md#cross-arena)) measured how much that matters. Pooling all six architectures over
-600 balanced team-matches per slot:
+**9,000 team-matches per slot**, every architecture spending exactly one third of its matches in each:
 
 | Slot | Pooled win rate |
 |---|---:|
-| Team 1 | 0.242 |
-| Team 2 | 0.223 |
-| **Team 3** | **0.490** |
+| Team 1 | 0.216 |
+| Team 2 | 0.276 |
+| **Team 3** | **0.467** |
 
-Five of the six architectures do best in Team 3 regardless of their information-flow design, and moving a
-single policy between corners changes its win rate by up to 0.45 -- larger than every architecture
-difference the repository has ever measured.
+All six architectures do best in Team 3 regardless of their information-flow design, and within an
+architecture the gap between its best and worst slot is 0.17–0.33 -- larger than every architecture
+difference the repository has ever measured. Two earlier versions of this table carried smaller pools of the
+same quantity (600 team-matches per slot: 0.242 / 0.223 / 0.490; 3,000: 0.239 / 0.228 / 0.495), which is the
+caution against quoting a slot estimate from one run: the direction never changed, the magnitude moved by
+about 0.03, and the current figure is the one with the sample behind it.
 
 **Consequences.** First, the arena is not a fair three-way test bed, so any single-replicate win rate
 carries a slot term of this size. Second, `paradigm_rotation` (A-27) balances the term in expectation but
@@ -700,13 +710,15 @@ means either a three-fold-symmetric obstacle layout or a different spawn arrange
 arena every committed number was measured in. That is a design decision for the next measurement campaign,
 not a patch to apply on top of the current evidence.
 
-**Reproduction:** `python scripts/run_cross_arena.py --matches-per-triple 30` then
-`python scripts/report_cross_arena.py`, which prints the per-slot table.
+**Reproduction:** the fifteen-run loop of [§ 9.3](09_reproducibility.md#93-commands) writes
+`results/cross_arena/blocks.csv`; `python scripts/report_cross_arena.py --in
+results/cross_arena/blocks.csv` prints the per-slot table over all 9,000 team-matches per slot.
 
 
 ## Open work: suggested measurements
 
-Items 1–3 were the original list and are done; 6 is done; 4 is partly done; 7 was deliberately not done.
+Items 1–3 were the original list and are done; 6 is done; 4 is partly done; 7 was deliberately not done;
+11 is done and 12 is the cheap extension of it.
 
 1. ~~Fix A-1, then re-run both experiments.~~ **Done** — see
    [§ Replicated study](08_results.md#replicated-study).
@@ -738,3 +750,16 @@ Items 1–3 were the original list and are done; 6 is done; 4 is partly done; 7 
 10. **New:** fix the readout before adding replicates. Greedy held-out win rate has 2.5× the spread of the
     sampled policy it summarises (SD 0.177 vs 0.072) and agrees with its within-replicate ranking only
     35.6 % of the time. Report both readouts, or evaluate the stochastic policy at a fixed temperature.
+11. ~~The round-robin measures one checkpoint per architecture, so it compares networks rather than
+    designs.~~ **Done** — three training blocks per architecture are versioned under
+    `data/training_replicates/` and the pool replayed over them (9,000 matches). It changed the answer twice
+    over: plain CTDE moved from last to third and CTE from third to last, and four of the eight
+    corrected-significant pairs turn out to be single-block effects, which is why the report now prints a
+    leave-one-block-out column. Remaining at this item: n = 3 blocks is enough to reverse a ranking and not
+    enough to settle one ([docs/10 item 12](10_threats_to_validity.md)).
+12. **New, cheap:** the round-robin's checkpoint pool is *the study's own* policies, so the eight
+    separations in [§ 8.10](08_results.md#cross-arena) are conditional on three training seeds per design.
+    `data/runs/` already holds the other 42 replicate checkpoints (14 of the study's 20 runs); extending the
+    block set to six costs evaluation time
+    only and would put the between-block SD (0.003–0.061) on the same footing as the between-seed SD
+    (0.12–0.22) that every other caveat in this document quotes.

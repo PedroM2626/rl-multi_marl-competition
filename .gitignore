@@ -41,5 +41,12 @@ mlruns/
 # which silently excluded experiment 1 while committing experiment 2.
 
 # Per-run study scratch (checkpoints, per-step trajectory CSVs). The aggregated analysis
-# it produces is versioned under results/study/ instead.
-**/data/runs/
+# it produces is versioned under results/study/ instead. The glob covers data/runs_v2/, the
+# arena-v2 replication of the same study, so a second campaign cannot accidentally become
+# tracked evidence while the first one is ignored.
+**/data/runs*/
+
+# Raw per-run round-robin output: 15 directories, one per (training block, harness seed) pair.
+# results/cross_arena/blocks.csv is those same 27,000 team-matches with the two replication
+# columns joined on, so the split copies are reproducible scratch rather than evidence.
+/results/cross_arena_blocks/

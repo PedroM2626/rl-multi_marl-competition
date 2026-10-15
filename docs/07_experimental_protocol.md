@@ -199,9 +199,11 @@ that run's initialisation and geometry stream, so they are not independent draws
    experiment) and both the raw verdict and the Bonferroni verdict are shown.
 5. **Power** is reported forward, not retrospectively: [§ 8.1](08_results.md#power-analysis) states how
    many replicates each observed effect size would need at 80 % power.
-6. **Sensitivity** is reported by leave-one-out: because one degenerate replicate in thirty paradigm-slots
-   reverses the experiment 1 ordering, [§ 8.1](08_results.md#leave-one-out) recomputes every comparison
-   with it removed, using the same shipped `paired_t`.
+6. **Sensitivity** is reported by leave-one-out in both places where a single replicate could carry a
+   result: because one degenerate replicate in thirty paradigm-slots reverses the experiment 1 ordering,
+   [§ 8.1](08_results.md#leave-one-out) recomputes every comparison with it removed, using the same shipped
+   `paired_t`; and [§ 8.10](08_results.md#cross-arena) re-runs every corrected-significant pair of the
+   round-robin with each training block in turn excluded, using the same `mcnemar_exact`.
 7. **A third design exists for cross-experiment questions.** The round-robin in
    [§ 8.10](08_results.md#cross-arena) compares arms that never trained together, so its unit of evidence
    is the *head-to-head meeting*, not the replicate. The test is McNemar's exact test on discordant
@@ -210,13 +212,21 @@ that run's initialisation and geometry stream, so they are not independent draws
    match are negatively coupled, so overlapping intervals are not a test of anything there. The McNemar
    implementation was checked against `scipy.stats.binomtest` over 200 random discordant tables and agrees
    to 4.9e-14.
-8. **Replicate the evaluation, not only the training.** The round-robin's first 600-match run and its
-   3,000-match replication reached *opposite* verdicts on the same pairs. Pooling harness seeds is therefore
-   reported as part of the method, and per-seed stability is shown alongside the pooled estimate.
+8. **Replicate the evaluation in both dimensions, and key every row by both.** The round-robin is played
+   over five harness seeds (independent match streams) *and* three training blocks (independently trained
+   networks per architecture), because it has now reversed its own conclusions twice: the first 600-match,
+   single-checkpoint run said no pair separates, and the 3,000-match replication of it said two did; at
+   9,000 matches over three checkpoint sets, eight separate and the ranking itself changes, with plain CTDE
+   moving from last to third. Both replication columns therefore have to be part of the match key, and
+   `tests/test_cross_arena_report.py` pins that: a key missing either one silently merges runs and reports a
+   quarter to a sixth of the evidence while printing a complete-looking table. Pooling is reported as part
+   of the method, and per-level stability is shown alongside the pooled estimate.
 9. **Which replicate ships** is decided mechanically, not by inspection: `promote_run.py --seed median`
    selects the replicate with the least L1 distance to the per-arm study means, so the versioned `data/`
    cannot be the one that happens to confirm the hypothesis. The rule and its result are recorded in
-   `data/PROVENANCE.json`.
+   `data/PROVENANCE.json`. What the rule does *not* buy is an ordering: the promoted replicate is one of the
+   three checkpoint sets in [§ 8.10](08_results.md#cross-arena), and it is the set that placed plain CTDE
+   last — a position it loses as soon as the other two are pooled in.
 
 **Secondary — the historical single-seed runs.** Point estimates as `summary.json` reports them (a
 cumulative average over a non-stationary trajectory), Wilson intervals on the 46 recorded matches per

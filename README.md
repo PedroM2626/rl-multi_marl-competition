@@ -41,9 +41,9 @@ Honest summary of what is finished and what is not:
 | Checkpoints committed | yes — newly versioned, and loadable by the current code | yes, re-promoted from the study |
 | Bit-for-bit reproducible training | verified | verified with `--no-mlflow` |
 | MLflow tracking | n/a | wired, but only **1 logged point** for the 100k run |
-| Cross-experiment round-robin | 3,000 matches, all six arms on common opponents, 5 harness seeds (shared, run from `ctde_arena/`) | same |
+| Cross-experiment round-robin | 9,000 matches, all six arms on common opponents, 3 checkpoint sets x 5 harness seeds (shared, run from `ctde_arena/`) | same |
 | Gameplay clips of the trained policies | yes (`docs/assets/`) | yes |
-| Tests | 59 passing, **93 %** statement coverage | 47 passing, **87–88 %** coverage |
+| Tests | 82 (81 passed, 1 skipped), **94–95 %** statement coverage | 63 (62 passed, 1 skipped), **89 %** coverage |
 | Docker | n/a | **never built or run** |
 
 Six defects documented in the audit were **fixed** during this work, and each changed what the results
@@ -177,15 +177,17 @@ Against a genuine random-play baseline
 uniform random shots convert at 5–6 % while trained policies convert at 2.4–3.6 % while firing ~2.5× more.
 
 **And a fourth measurement that puts all six on one scale.** The two experiments never fought each
-other, so their tables were comparable only by assumption. [§ 8.10](docs/08_results.md#cross-arena) plays every three-architecture combination among the six
-trained policies — **3,000 matches over five harness seeds**, common opponents, slot-balanced — and
-finds DTE 0.370, Comm 0.362, CTE 0.339, CAC 0.296, VD 0.289, CTDE 0.267. Two cross-experiment pairs
-separate past Bonferroni-corrected McNemar tests (Comm > CTDE at *p* < 10⁻⁴, DTE > CAC at *p* =
-0.0005); the top three and bottom three are mutually indistinguishable. Plain CTDE — the architecture
-experiment 1 was built to promote — is last in all five seeds. The first 600-match run reached the
-opposite verdict, so this is the finding that replication produced. It also measures the arena's own
-bias: the Team 3 spawn corner wins 49.5 % of matches against 23.9 % and 22.8 % for the other two,
-for every architecture
+other, so their tables were comparable only by assumption. [§ 8.10](docs/08_results.md#cross-arena) plays every
+three-architecture combination among the six trained policies — **9,000 matches**, common opponents,
+slot-balanced, over **three independently trained checkpoint sets per architecture** rather than the one the
+first version used — and finds Comm 0.373, DTE 0.368, CTDE 0.329, VD 0.297, CAC 0.284, CTE 0.266. Eight of
+the fifteen pairs clear Bonferroni-corrected McNemar tests, and four of those still clear the threshold with
+any one checkpoint set left out: DTE over CTE, CAC and VD, and Comm over CTE. Two conclusions of the
+single-checkpoint version did not survive the replication — plain CTDE, previously last in every seed, is
+**third**, and CTE, the paradigm experiment 1 was built to improve on, is **last**. The first 600-match run
+had said no pair separates at all, so this whole section is the finding that replication produced. It also
+measures the arena's own bias: the Team 3 spawn corner wins 46.7 % of matches against 21.6 % and 27.6 % for
+the other two, for every architecture
 ([A-32](docs/11_code_audit.md#the-arena-spawn-geometry-is-not-symmetric)).
 
 The two historical single-seed 100k-step runs are still reported, relabelled, in
@@ -289,7 +291,7 @@ rotation that the shipped checkpoints need. `RESPAWN_ENABLED` was removed rather
 │   ├── rl/                     # actions, buffer + GAE, networks, ppo
 │   ├── systems/                # match_variant, simulation, metrics, plotting
 │   └── ui/dashboard.py         # in-game overlay text
-├── tests/                      # 55 tests, incl. tree-parity and collision geometry
+├── tests/                      # 82 tests, incl. tree-parity, collision geometry and the round-robin statistics
 ├── data/                       # experiment 1: promoted replicate + historical_100k/ + PROVENANCE.json
 ├── results/
 │   ├── study/                  # per_seed_metrics.csv, analysis.json, learning_curves.png
@@ -300,7 +302,7 @@ rotation that the shipped checkpoints need. `RESPAWN_ENABLED` was removed rather
     ├── main.py  Dockerfile  requirements.txt  README.md
     ├── scripts/                # own train_rl.py (adds MLflow); the shared scripts are byte-identical
     ├── src/marl_arena/         # own copy; VD / CAC / Comm networks
-    ├── tests/                  # 47 tests
+    ├── tests/                  # 63 tests
     ├── results/baseline/       # experiment 2's untrained reference
     └── data/                   # promoted replicate, historical_100k/, mlflow_export/, PROVENANCE.json
 ```

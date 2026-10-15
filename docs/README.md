@@ -31,9 +31,10 @@ Four distinct data sources exist, and they are not interchangeable:
 |--------|----------|------------|
 | `data/metrics/summary.json` (root) | Experiment 1, one promoted study replicate | Yes |
 | `ctde_arena/data/` | Experiment 2 same | Yes |
+| `data/training_replicates/` | The three checkpoint sets the round-robin is played over: one experiment-1 and one experiment-2 replicate per block, 18 files | Yes |
 | `ctde_arena/data/mlflow_export/` | The 48 metric points actually logged to MLflow across two runs | Yes (exported) |
 | `results/study/` | 10 seeds × 500 k steps per experiment, slot-rotated, held-out greedy evaluation, paired *t*-tests, Fisher-exact tests and forward power | Yes |
-| `results/cross_arena/` | 3,000 matches over five harness seeds: all six architectures on a common opponent pool, McNemar pairwise tests, slot control, per-seed stability | Yes |
+| `results/cross_arena/` | 9,000 matches over three independently trained checkpoint sets and five harness seeds: all six architectures on a common opponent pool, McNemar pairwise tests, the leave-one-block-out column, slot control and both stability tables | Yes |
 
 The first two rows are **one promoted replicate each** — the run closest to its experiment's study means,
 selected mechanically by `promote_run.py --seed median` and described by `data/PROVENANCE.json`. They are
@@ -73,4 +74,4 @@ Experiment 1's artefacts were themselves only committed on 2026-09-27 — before
 | Coverage figures in [§ Code audit](11_code_audit.md#coverage) | `coverage run --source=src/marl_arena -m pytest tests/ -q && coverage report` |
 | [§ 9.7](09_reproducibility.md#97-artefact-inventory) gameplay clips and their JSON sidecars | `python scripts/render_trailer.py --frames 240 --fps 14 --out docs/assets/gameplay_exp1.gif`, run again from `ctde_arena/` for experiment 2 |
 | Documentation cross-references | `python -m pytest tests/test_docs_links.py -q` |
-| [§ 8.10](08_results.md#cross-arena) cross-experiment round-robin | `python scripts/run_cross_arena.py --seed S --matches-per-triple 30 --out ../results/cross_arena_seedS` from `ctde_arena/`, for S in 1..5; then `python scripts/combine_cross_arena.py results/cross_arena_seed{1..5}` and `python scripts/report_cross_arena.py --in results/cross_arena/replicates.csv` |
+| [§ 8.10](08_results.md#cross-arena) cross-experiment round-robin | the fifteen-run loop of [§ 9.3](09_reproducibility.md#93-commands): `run_cross_arena.py` from `ctde_arena/` for each of the three blocks x five seeds, then `combine_cross_arena.py` and `report_cross_arena.py` from the repository root |

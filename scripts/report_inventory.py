@@ -38,6 +38,14 @@ GROUPS = [
         ("data/historical_100k/", "ctde_arena/data/historical_100k/"),
     ),
     (
+        "Training replicates behind the round-robin",
+        "The three checkpoint sets `results/cross_arena/blocks.csv` is played over: one experiment-1 "
+        "replicate and one experiment-2 replicate per block. Versioned because the round-robin's claims "
+        "rest on them while `**/data/runs*/` is git-ignored. `exp1_seed9+exp2_seed2` is byte-identical to "
+        "the promoted checkpoints above, which is what makes that block a parity control.",
+        ("data/training_replicates/",),
+    ),
+    (
         "Gameplay clips",
         "Rendered by `render_trailer.py` from the promoted replicate's trained policies; the JSON beside "
         "each clip records the seed, rotation, paradigm per slot and the per-frame alive and shot counts "

@@ -34,8 +34,8 @@ reassuring-sounding claim, it was measured, in a second environment holding ever
 
 | Check | NumPy 1.26.4 vs 2.2.6 | Result |
 |---|---|---|
-| Experiment 1 test suite (59 tests) | both versions | **pass** |
-| Experiment 2 test suite (47 tests) | both versions | **pass** |
+| Experiment 1 test suite (59 tests then, 82 now) | both versions | **pass** |
+| Experiment 2 test suite (47 tests then, 63 now) | both versions | **pass** |
 | Collision geometry (14 hand-computed entry parameters and hit positions) | both versions | **identical to 1e-12** |
 | Domain-randomisation stream (`arena_size`, speeds, cooldowns of match 41) | both versions | **identical, all digits** |
 | `train_rl.py --seed 42 --steps 4000`, first PPO update | both versions | policy/value loss differ at the **1e-6 – 1e-8** level |
@@ -96,11 +96,11 @@ pip install pandas                # not a dependency of anything measured
 | `python scripts/train_rl.py --seed S` | 1 | Headless PPO training; bit-for-bit reproducible for a given seed |
 | `python main.py` | 1 | Ursina 3D window, greedy policies loaded from `data/checkpoints/` |
 | `python scripts/plot_metrics.py` | 1 | Reads `data/metrics/summary.json` → `exports/metrics/` |
-| `python -m pytest tests/ -q` | 1 | 59 tests |
+| `python -m pytest tests/ -q` | 1 | 82 tests |
 | `cd ctde_arena && python scripts/train_rl.py` | 2 | Same, plus MLflow logging |
 | `cd ctde_arena && mlflow ui --backend-store-uri file:./mlruns` | 2 | Tracking UI |
 | `cd ctde_arena && python main.py` | 2 | 3D window for the CTDE variants |
-| `cd ctde_arena && python -m pytest tests/ -q` | 2 | 47 tests |
+| `cd ctde_arena && python -m pytest tests/ -q` | 2 | 63 tests |
 | `cd ctde_arena && docker build -t ctde-arena . && docker run --rm -v ${PWD}/data:/app/data -v ${PWD}/mlruns:/app/mlruns ctde-arena` | 2 | Containerised training |
 | `python scripts/run_experiment.py --seed S --steps N --out DIR` | either | One seeded replicate: train, then greedy held-out evaluation |
 | `python scripts/run_study.py --steps 500000 --seeds 1..10 --jobs 20` | both | Fan replicates out across processes and collect `results/study/` |
@@ -110,18 +110,48 @@ pip install pandas                # not a dependency of anything measured
 | `python scripts/promote_run.py --experiment exp1 --seed median` | 1 or 2 | Copy one replicate into the versioned `data/` and write `PROVENANCE.json` |
 | `python scripts/random_baseline.py --matches 300` | either | Untrained reference point: outcome mix, durations and per-arm metrics from random policies |
 | `python scripts/run_cross_arena.py --matches-per-triple 30` | both | Play every three-architecture combination among the six versioned policies |
-| `python scripts/report_cross_arena.py` | root | McNemar pairwise tests and the slot control for the round-robin |
-| `python scripts/combine_cross_arena.py results/cross_arena_seed1 …` | root | Pool replicated round-robin runs, keeping the harness seed as a column |
+| `python scripts/run_cross_arena.py --exp1-replicate S --exp2-replicate M --seed H --out results/cross_arena_blocks/e1sS_e2sM_hH` | run from `ctde_arena/` | One block x one match stream of the round-robin, over replicate checkpoints instead of the promoted ones |
+| `python scripts/report_cross_arena.py --in results/cross_arena/blocks.csv --json-out results/cross_arena/blocks.json` | root | McNemar pairwise tests, the leave-one-training-block-out column, the slot control and both stability tables |
+| `python scripts/combine_cross_arena.py results/cross_arena_blocks/*` | root | Pool replicated round-robin runs, stamping each row with its training block and harness seed |
+| `python scripts/run_absolute_eval.py --matches 150 --seeds 1,2,3` | run from `ctde_arena/` | Absolute strength: each trained policy against two uniform-random controllers, trained slot rotated |
 | `python scripts/report_inventory.py` | root | Regenerate the § 9.7 artefact table from `git ls-files` and live SHA-256 |
 | `python scripts/render_trailer.py --frames 240` | either | Render a gameplay clip from the promoted policies via Ursina offscreen |
+
+**The fifteen-run round-robin loop.** `results/cross_arena/blocks.csv` is the concatenation of
+`run_cross_arena.py` over the three versioned training blocks x five harness seeds; the directory names are
+what carry the labels, so the loop is:
+
+```bash
+# The round-robin runs inside ctde_arena/; the pooling and the report run at the repository root.
+cd ctde_arena
+for pair in "1 7" "10 5" "9 2"; do
+  set -- $pair; S=$1; M=$2
+  for H in 1 2 3 4 5; do
+    python ../scripts/run_cross_arena.py --exp1-replicate $S --exp2-replicate $M --seed $H \
+      --out results/cross_arena_blocks/e1s${S}_e2s${M}_h${H}
+  done
+done
+cd ..
+python scripts/combine_cross_arena.py results/cross_arena_blocks/* --out results/cross_arena/blocks.csv
+python scripts/report_cross_arena.py --in results/cross_arena/blocks.csv \
+  --json-out results/cross_arena/blocks.json
+```
+
+`--out` and `--in` resolve against the **repository root**, not the working directory, because these scripts
+drive both trees; that is why the loop above runs from `ctde_arena/` and still writes to `results/`.
+`--exp1-replicate/--exp2-replicate` read `data/training_replicates/{experiment}_seedN/` first and fall back
+to the git-ignored `data/runs/`. The three pairings above are the versioned blocks; `run_cross_arena.py`
+without those flags plays the promoted `data/checkpoints/` instead, which is the same networks as
+`exp1_seed9+exp2_seed2`.
 
 `run_experiment.py`, `random_baseline.py` and `render_trailer.py` are byte-identical in both trees, and
 `tests/test_tree_parity.py` fails the suite if they drift; which engine they bind to is decided by the
 working directory, exactly like `train_rl.py`. `run_study.py`, `report_study.py`, `plot_study.py`,
-`promote_run.py`, `report_inventory.py`, `report_cross_arena.py` and `combine_cross_arena.py` exist only at
+`promote_run.py`, `report_inventory.py`, `report_cross_arena.py`, `combine_cross_arena.py`,
+`run_absolute_eval.py`, `run_arena_v2_campaign.sh` and `run_ablation_campaign.sh` exist only at
 the root and drive both trees — `promote_run.py` writes experiment 2's artefacts into `ctde_arena/data/`,
-and `run_cross_arena.py` is *run from* `ctde_arena/` because that tree's package is the superset holding all
-six architectures. `tests/test_tree_parity.py` enforces which files must stay
+and both `run_cross_arena.py` and `run_absolute_eval.py` are *run from* `ctde_arena/` because that tree's
+package is the superset holding all six architectures. `tests/test_tree_parity.py` enforces which files must stay
 identical across the two trees and which are allowed to differ, so drift in the shared engine fails the
 suite.
 
@@ -141,28 +171,36 @@ ImportError: cannot import name 'ValueDecompositionCriticNetwork' from 'marl_are
 
 ```
 $ python -m pytest tests/ -q            # experiment 1
-59 passed in 5.80s
+81 passed, 1 skipped
 $ cd ctde_arena && python -m pytest tests/ -q
-47 passed in 5.93s
+62 passed, 1 skipped
 ```
+
+The skipped test in each suite is `test_render.py`'s offscreen path, which needs `ursina`: the pinned
+requirement installs it, the verification environment above does not, so those assertions only run where the
+commented rendering block of `requirements-measured.lock.txt` has been installed. The clips in
+`docs/assets/` were rendered in such an environment, and the test numbers here are not from it — which means
+the render path is verified by inspection of its output, not by the suite that is quoted above. Runtimes are
+omitted from the transcript because they are dominated by whatever else is on the machine, not by the suites.
 
 Statement coverage over `src/marl_arena`, measured with `coverage run --source=src/marl_arena -m pytest`
 (`pytest-cov` is not installed, and the two suites must still be run separately):
 
 | Tree | Statements | Missing | Coverage |
 |---|---:|---:|---:|
-| Experiment 1 | 1,527 | 111 | **93 %** |
-| Experiment 2 (`ctde_arena/`) | 1,639 | 204–206 | **87–88 %** |
+| Experiment 1 | 1,542 | 84–90 | **94–95 %** |
+| Experiment 2 (`ctde_arena/`) | 1,654 | 186 | **89 %** |
 
-Experiment 2's total moves between two and three missing statements across repeated identical invocations,
-so a single quoted figure would be spurious precision. Quoting the range is more honest than quoting
-whichever run happened to be measured last. The cause was not tracked down; the effect is 0.1 %.
+Experiment 1's total moves by up to six missing statements between identical invocations; four consecutive
+runs gave 90, 84, 90, 90. The branch that varies was not tracked down and the effect is 0.4 %, so the range
+is quoted rather than whichever run happened to be measured last. Experiment 2 repeated 186 exactly.
 
-In both trees the bulk of the gap is `ui/dashboard.py` (8 statements, 0 %) plus the rendering-only paths,
-and in experiment 2 there is a structural component explained in
-[§ Coverage](11_code_audit.md#coverage).
+In both trees the bulk of the gap is now in the engine rather than the presentation: `simulation.py`
+(33 missing), `rl_controller.py` (15), `config.py` (11), `controllers/base.py` (9), `systems/metrics.py` (9)
+and `systems/plotting.py` (8). `ui/dashboard.py`, which was the single largest uncovered file for most of
+this repository's life, is at 100 %.
 
-What the 106 tests do **not** cover is catalogued in
+What the 145 tests do **not** cover is catalogued in
 [§ Coverage](11_code_audit.md#coverage). The collision solver is now geometrically verified against
 hand-computed values, but no test checks a *metric* against an independent reference — see the note at the
 end of that section on coverage not being correctness.
@@ -263,7 +301,7 @@ checkpoints, and `run_experiment.py` passes `load_checkpoints=False`.
 
 ## 9.7 Artefact inventory
 
-Every versioned experiment artefact (58 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed.
+Every versioned experiment artefact (78 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed.
 
 **Promoted replicate.** The artefacts that match the current code. Chosen by `promote_run.py --seed median`, which is the replicate with the least L1 distance to the per-arm study means; `PROVENANCE.json` records the choice and the full run summary behind it.
 
@@ -292,6 +330,8 @@ Every versioned experiment artefact (58 files), with SHA-256 for integrity check
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
+| `results/cross_arena/blocks.csv` | 2,416,103 | `e2068397bf969077ed4fe32ca56cc7625900382a373a6e17edb57f3707b871bc` |
+| `results/cross_arena/blocks.json` | 15,992 | `cdfcfa82cf30f73e5f11739409240d2ad56cf8b0dbac97932c186b68b520158c` |
 | `results/cross_arena/pairwise_first_run_600.json` | 5,848 | `b40bd54cd3390234815875c7b26dfae18d56ca77f38173199de2ebacd40ef53f` |
 | `results/cross_arena/replicates.csv` | 603,745 | `dbc8688efd011d5414d63db69857eff20d9d4d24514afeccf472a64722aa35eb` |
 | `results/cross_arena/replicates.json` | 7,559 | `e2e91652379bd3bc7e0d76821b3961a564b6981370a6d8a27c6c74262e0eb93e` |
@@ -332,6 +372,29 @@ Every versioned experiment artefact (58 files), with SHA-256 for integrity check
 | `data/historical_100k/metrics/summary.json` | 953 | `462070731a16d56162983ff7b3d08a6ed32e59025343c9be3d9fc827f3382a73` |
 | `data/historical_100k/metrics/team_match_metrics.csv` | 11,075 | `338ffa7442e0386227611996a0592a8643b6223fed658775a7083dc4d2890eda` |
 | `data/historical_100k/metrics/trajectory_metrics.csv` | 1,619,886 | `644342fc2f850c4a89fa35d0eb74b37d736339c2c9d51f3892f73d45f9edf406` |
+
+**Training replicates behind the round-robin.** The three checkpoint sets `results/cross_arena/blocks.csv` is played over: one experiment-1 replicate and one experiment-2 replicate per block. Versioned because the round-robin's claims rest on them while `**/data/runs*/` is git-ignored. `exp1_seed9+exp2_seed2` is byte-identical to the promoted checkpoints above, which is what makes that block a parity control.
+
+| Path | Bytes | SHA-256 |
+|---|---:|---|
+| `data/training_replicates/exp1_seed1/team_1_dte.pt` | 145,762 | `e74177b814dbb3dbe2ed2e9f5af67eadb9e94583f3d5b289d025a64532a84a92` |
+| `data/training_replicates/exp1_seed1/team_2_ctde.pt` | 304,248 | `d46a09bb4b044bb5915c82b454eda3a1c7ff741d30113477f6789c3f7dd6b3ae` |
+| `data/training_replicates/exp1_seed1/team_3_cte.pt` | 323,170 | `e7613fa2c40276695a35672016a2d5c170c018164f2ccef10cb8b3a92c82b22d` |
+| `data/training_replicates/exp1_seed10/team_1_dte.pt` | 145,762 | `1abf8cc62a757bc4bc61dbec67142a4159fb676eac4f7a856bd3803423715348` |
+| `data/training_replicates/exp1_seed10/team_2_ctde.pt` | 304,248 | `274e65e176ba5c07b356095b0bb1317bc1a77680df1629bd0344ec3f8b80fc6c` |
+| `data/training_replicates/exp1_seed10/team_3_cte.pt` | 323,170 | `3c9665d812d3719542413a00f5a7dc9da5e4001f41cd8df93599105e824595ca` |
+| `data/training_replicates/exp1_seed9/team_1_cte.pt` | 323,170 | `c978273409e60e45b9555d763d65c9ff13ba7774ffaf332ac4eccd11ffe59111` |
+| `data/training_replicates/exp1_seed9/team_2_dte.pt` | 145,762 | `93fc387fbfbd1cb935a271672954675230e1326565ae2680333a4ded4e4e3897` |
+| `data/training_replicates/exp1_seed9/team_3_ctde.pt` | 304,248 | `5a5273f3c73942e8fb0964bbb6a848734c58fee9cf0b52b4986f84cf8f2a4fae` |
+| `data/training_replicates/exp2_seed2/team_1_ctde-comm.pt` | 313,778 | `cb3fee053d68a7a3cc6e4cadbd3fdfc05a356e5a9542babad143a1aa2eb85ff1` |
+| `data/training_replicates/exp2_seed2/team_2_ctde-vd.pt` | 217,330 | `bf261e17c010ee0bb8f69b9d7e9ca1c4214cc9cfe0d8775038379dd71547d5f5` |
+| `data/training_replicates/exp2_seed2/team_3_ctde-cac.pt` | 304,400 | `451b14b4c8aae906c3e7b135f9e814426b268354e8eb222d420b42dcb981cccb` |
+| `data/training_replicates/exp2_seed5/team_1_ctde-comm.pt` | 313,778 | `3d9bb400a0694e5deda58bca87e6965c2699760bee62fe3b1dd03c5387be1667` |
+| `data/training_replicates/exp2_seed5/team_2_ctde-vd.pt` | 217,330 | `c8f3caa5094976f0bffc34aa4c8a0e1d6b5c653cb9ee65fbd5a30b8f345198de` |
+| `data/training_replicates/exp2_seed5/team_3_ctde-cac.pt` | 304,400 | `3898cd7a3ae8a1877c08e41a620e49cc5533be420cd0f10a7773147cc12cdca0` |
+| `data/training_replicates/exp2_seed7/team_1_ctde-cac.pt` | 304,400 | `bcb973516fc3e1141a24dda3243373de730ca6f52476f6227dc7162152506bf1` |
+| `data/training_replicates/exp2_seed7/team_2_ctde-comm.pt` | 313,778 | `5a22ef5f10fb96b78892ffb58e351876072573fd958f2874d8e7877c1794d14b` |
+| `data/training_replicates/exp2_seed7/team_3_ctde-vd.pt` | 217,330 | `d49f1fdfdd579ea443e6e253df7d814650b736551f51cd8f32a7e980b93f31c7` |
 
 **Gameplay clips.** Rendered by `render_trailer.py` from the promoted replicate's trained policies; the JSON beside each clip records the seed, rotation, paradigm per slot and the per-frame alive and shot counts the caption asserts.
 

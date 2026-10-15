@@ -26,7 +26,7 @@ Each paradigm controls one team; three teams of three agents fight in the same a
 | Untrained baseline | 300 matches in both greedy and uniform modes (`results/baseline/`) |
 | Bit-for-bit reproducible training | yes, verified with `--no-mlflow` |
 | MLflow curves | **1 logged point** for the 100k run — see [A-9](../docs/11_code_audit.md#mlflow-cadence) |
-| Tests | 47 passing, **87–88 %** statement coverage |
+| Tests | 63 (62 passed, 1 skipped), **89 %** statement coverage |
 | Cross-experiment round-robin | hosted here, since this tree's package is the superset holding all six architectures |
 | Docker image | **never built or run** — unverified configuration |
 
@@ -224,11 +224,15 @@ replicate count, the curve is measuring initialisation.
 
 ### On a common opponent pool with experiment 1
 The three variants here only ever fight each other, so their ranking is conditional on that.
-[§ 8.10](../docs/08_results.md#cross-arena) plays all six architectures from both experiments against each other over 3,000 slot-balanced
-matches: **CTDE-Comm 0.362, CTDE-CAC 0.296, CTDE-VD 0.289**, against DTE 0.370, CTE 0.339 and CTDE
-0.267. Two pairs separate past Bonferroni-corrected McNemar tests and both are cross-experiment
-— Comm beats plain CTDE, DTE beats CAC — while the top three and bottom three are mutually
-indistinguishable. Reproduce with `python ../scripts/run_cross_arena.py` from this directory.
+[§ 8.10](../docs/08_results.md#cross-arena) plays all six architectures from both experiments against each
+other over **9,000 slot-balanced matches** — three independently trained checkpoint sets per architecture,
+five match streams each: **CTDE-Comm 0.373, CTDE-VD 0.297, CTDE-CAC 0.284**, against DTE 0.368, CTDE 0.329
+and CTE 0.266. Eight of the fifteen pairs separate past Bonferroni-corrected McNemar tests, and four of
+those still clear the threshold with any one checkpoint set left out. Among this tree's own three variants
+Comm is separated above both VD (*p* = 1.30e-05) and CAC (*p* = 9.19e-08), while VD and CAC stay
+indistinguishable from each other (*p* = 0.35) — and both of those separations come from a single block, so
+they are the weaker kind of result. Reproduce with the fifteen-run loop of
+[§ 9.3](../docs/09_reproducibility.md#93-commands).
 
 ### Against untrained play
 
@@ -298,7 +302,7 @@ The values that matter most here:
 
 ```bash
 cd ctde_arena
-python -m pytest tests/ -q        # 47 passed, 87% statement coverage
+python -m pytest tests/ -q        # 62 passed, 1 skipped; 89% statement coverage of src/marl_arena
 ```
 
 `test_components.py` checks tensor shapes for the two new networks; `test_ctde_training.py` terminates real

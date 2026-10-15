@@ -23,9 +23,28 @@ import statistics
 import sys
 from collections import defaultdict
 from pathlib import Path
+from typing import NamedTuple
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DRAW = "draw"
+
+
+class MatchKey(NamedTuple):
+    """Identity of one match inside a pooled run.
+
+    A NamedTuple rather than a bare tuple because the first analysis silently dropped a replication column
+    from it and quietly pooled five match streams onto thirty keys; naming the fields is what keeps a later
+    column from being forgotten in the same way.
+    """
+    training_block: str
+    harness_seed: str
+    triple: str
+    index: int
+
+    @classmethod
+    def of(cls, row: dict) -> "MatchKey":
+        return cls(str(row.get("training_block", "")), str(row.get("harness_seed", "")),
+                   row["triple"], int(row["match"]))
 
 
 def parse_args() -> argparse.Namespace:
@@ -66,6 +85,11 @@ def mcnemar_exact(b: int, c: int) -> float:
     return min(1.0, 2.0 * tail)
 
 
+def fmt_p(p: float) -> str:
+    """Report tables print at four decimals, which turns the significant results into a column of 0.0000s."""
+    return f"{p:.2e}" if p < 1e-4 else f"{p:.5f}"
+
+
 def main() -> None:
     args = parse_args()
     if hasattr(sys.stdout, "reconfigure"):
@@ -79,17 +103,14 @@ def main() -> None:
         for key in ("survival_seconds", "duration_seconds"):
             row[key] = float(row[key])
 
-    # One record per match, rebuilt from the three team rows it produced. The harness seed is part of the
-    # key: without it, five replicated runs of the same triple all collapse onto match index 0..29 and the
-    # paired tests silently see a fifth of the data.
-    def match_key(row: dict[str, object]) -> tuple:
-        seed = row.get("harness_seed", "")
-        return (str(seed), row["triple"], row["match"])
-
-    matches: dict[tuple, dict[str, str]] = defaultdict(dict)
+    # One record per match, rebuilt from the three team rows it produced. Every replication column has to
+    # be part of the key: omitting the harness seed made five replicated runs collapse onto the same 30
+    # keys and the paired tests silently saw a fifth of the data, and the training block is the same trap
+    # one level up.
+    matches: dict[MatchKey, dict[str, str]] = defaultdict(dict)
     for row in rows:
-        matches[match_key(row)][row["paradigm"]] = row["winner"]
-    durations = {match_key(row): row["duration_seconds"] for row in rows}
+        matches[MatchKey.of(row)][row["paradigm"]] = row["winner"]
+    durations = {MatchKey.of(row): row["duration_seconds"] for row in rows}
 
     per_arch: dict[str, dict[str, float]] = {}
     for row in rows:
@@ -103,7 +124,7 @@ def main() -> None:
         stats["hits"] += row["shots_hit"]
         stats[f"slot_{row['slot'][-1]}"] += int(row["winner"] == row["paradigm"])
 
-    print(f"\n{len(matches)} matches over {len({key[1] for key in matches})} triples, "
+    print(f"\n{len(matches)} matches over {len({key.triple for key in matches})} triples, "
           f"{len(per_arch)} architectures, {len(rows)} team-matches\n")
 
     match_outcomes = {"wipeout": 0, "timeout": 0, "draw": 0}
@@ -169,9 +190,59 @@ def main() -> None:
         verdict = "**significant**" if p < bonferroni else ("nominal only" if p < args.alpha else "not significant")
         pairwise[f"{a} vs {b}"] = {
             "met": len(common), "a_wins": a_won, "b_wins": b_won,
-            "discordant": [b_disc, c_disc], "p": round(p, 5), "verdict": verdict,
+            "discordant": [b_disc, c_disc], "p": round(p, 12), "verdict": verdict,
         }
-        print(f"| {a} vs {b} | {len(common)} | {a_won} | {b_won} | {b_disc}/{c_disc} | {p:.4f} | {verdict} |")
+        print(f"| {a} vs {b} | {len(common)} | {a_won} | {b_won} | {b_disc}/{c_disc} | {fmt_p(p)} "
+              f"| {verdict} |")
+
+    # Sensitivity of each corrected-significant pair to the training block that produced it. Pooling blocks
+    # raises power but a pooled p can still come from one set of checkpoints, which is the unit-of-analysis
+    # mistake this chapter makes a point of elsewhere; leaving a block out and re-testing is what shows it.
+    blocks = sorted({key.training_block for key in matches})
+    sensitivity: dict[str, object] = {}
+    if len(blocks) >= 2:
+        def pair_p(arch_a: str, arch_b: str, keep) -> tuple[float, int, int]:
+            common = [w for key, w in matches.items()
+                      if arch_a in w and arch_b in w and keep(key)]
+            b_disc = sum(1 for w in common if w[arch_a] == arch_a and w[arch_b] != arch_b)
+            c_disc = sum(1 for w in common if w[arch_b] == arch_b and w[arch_a] != arch_a)
+            return mcnemar_exact(b_disc, c_disc), b_disc, c_disc
+
+        print(f"\nLeave-one-training-block-out for the pairs that pass correction, over {len(blocks)} blocks. "
+              f"Robust means every subset of {len(blocks) - 1} blocks still reaches "
+              f"alpha = {bonferroni:.5f}.\n")
+        print("| pair | pooled p | " + " | ".join(f"without block {i + 1}" for i in range(len(blocks)))
+              + " | per-block discordant | robust |")
+        print("|---|---:|" + "---:|" * len(blocks) + "---|---:|")
+        for name, record in pairwise.items():
+            if record["p"] >= bonferroni:
+                continue
+            arch_a, arch_b = name.split(" vs ")
+            # Re-derived rather than read back from the JSON record, whose p is rounded; the smallest pooled
+            # p here is 1e-15, which a ten-decimal rounding would print as zero.
+            pooled_p, _, _ = pair_p(arch_a, arch_b, lambda k: True)
+            dropped, per_block = {}, {}
+            for block in blocks:
+                leave_p, _, _ = pair_p(arch_a, arch_b, lambda k, _b=block: k.training_block != _b)
+                solo_p, solo_b, solo_c = pair_p(arch_a, arch_b, lambda k, _b=block: k.training_block == _b)
+                dropped[block] = leave_p
+                per_block[block] = {"discordant": [solo_b, solo_c], "solo_p": solo_p}
+            # The same rule as the verdict column: a pair is robust only if it still clears the corrected
+            # threshold with any one set of checkpoints removed.
+            robust = all(value < bonferroni for value in dropped.values())
+            sensitivity[name] = {
+                "pooled_p": round(pooled_p, 12),
+                "without_block_p": {k: round(v, 12) for k, v in dropped.items()},
+                "per_block": {k: {"discordant": v["discordant"], "solo_p": round(v["solo_p"], 12)}
+                              for k, v in per_block.items()},
+                "robust_to_block": robust,
+            }
+            print(f"| {name} | {fmt_p(pooled_p)} | "
+                  + " | ".join(fmt_p(dropped[blk]) for blk in blocks)
+                  + " | " + " ".join(f"{per_block[blk]['discordant'][0]}/"
+                                     f"{per_block[blk]['discordant'][1]}"
+                                     f"({fmt_p(per_block[blk]['solo_p'])})" for blk in blocks)
+                  + f" | {'**yes**' if robust else 'no'} |")
 
     print("\nSlot control: win rate of each architecture by the team slot it occupied. A flat profile means "
           "the rotation worked; a sloped one is the confound the study introduced rotation to remove.\n")
@@ -186,41 +257,59 @@ def main() -> None:
     out = PROJECT_ROOT / args.json_out if not args.json_out.is_absolute() else args.json_out
     out.parent.mkdir(parents=True, exist_ok=True)
 
-    stability: dict[str, object] = {}
-    if rows and "harness_seed" in rows[0]:
-        # Replication across harness seeds answers the question the pooled table cannot: whether the
-        # ordering is a property of the architectures or of one match stream.
-        per_seed: dict[str, dict[str, list[int]]] = defaultdict(lambda: defaultdict(lambda: [0, 0]))
+    def stability_for(key: str, title: str, dimension: str) -> dict[str, dict[str, object]]:
+        """Win rate per architecture within each level of a replication dimension, plus its rank there."""
+        if not rows or key not in rows[0]:
+            return {}
+        cells: dict[str, dict[str, list[int]]] = defaultdict(lambda: defaultdict(lambda: [0, 0]))
         for row in rows:
-            cell = per_seed[str(row["harness_seed"])][row["paradigm"]]
+            cell = cells[str(row[key])][row["paradigm"]]
             cell[1] += 1
             cell[0] += int(row["winner"] == row["paradigm"])
-        seed_names = sorted(per_seed)
-        print("\nReplication across harness seeds: win rate per architecture, and where it ranked that run\n")
-        print("| architecture | " + " | ".join(f"seed {s}" for s in seed_names) + " | mean | SD | ranks seen |")
-        print("|---|" + "---:|" * (len(seed_names) + 3))
-        rates: dict[str, list[float]] = {}
+        levels = sorted(cells)
+        print("")
+        print(title)
+        print("")
+        print("| architecture | " + " | ".join(str(level) for level in levels) + " | mean | SD | ranks seen |")
+        print("|---|" + "---:|" * (len(levels) + 3))
+        result: dict[str, dict[str, object]] = {}
         for paradigm in sorted(names):
             values = []
-            for s in seed_names:
-                wins, n = per_seed[s][paradigm]
-                values.append(wins / n if n else float("nan"))
-            rates[paradigm] = values
+            for level in levels:
+                wins, count = cells[level][paradigm]
+                values.append(wins / count if count else float("nan"))
             ranks = sorted(
-                1 + sum(1 for other in names if other != paradigm and per_seed[s][other][0] / max(per_seed[s][other][1], 1) > v)
-                for s, v in zip(seed_names, values)
+                1 + sum(
+                    1 for other in names
+                    if other != paradigm
+                    and cells[level][other][0] / max(cells[level][other][1], 1)
+                    > cells[level][paradigm][0] / max(cells[level][paradigm][1], 1)
+                )
+                for level in levels
             )
             mean = statistics.fmean(values)
-            sd = statistics.pstdev(values)
-            stability[paradigm] = {
-                "per_seed": [round(v, 4) for v in values], "mean": round(mean, 4),
-                "sd": round(sd, 4), "ranks": ranks,
+            result[paradigm] = {
+                "levels": {level: round(value, 4) for level, value in zip(levels, values)},
+                "mean": round(mean, 4), "sd": round(statistics.pstdev(values), 4), "ranks": ranks,
             }
             print(f"| {paradigm} | " + " | ".join(f"{v:.3f}" for v in values)
-                  + f" | {mean:.3f} | {sd:.3f} | {ranks} |")
-        top = max(names, key=lambda p: statistics.fmean(rates[p]))
-        bottom = min(names, key=lambda p: statistics.fmean(rates[p]))
-        print(f"\nmean-ranked leader across seeds: {top}; mean-ranked laggard: {bottom}")
+                  + f" | {mean:.3f} | {statistics.pstdev(values):.3f} | {ranks} |")
+        leader = max(names, key=lambda par: statistics.fmean(
+            [result[par]["levels"][level] for level in levels]))
+        laggard = min(names, key=lambda par: statistics.fmean(
+            [result[par]["levels"][level] for level in levels]))
+        print("")
+        print(f"leader across {dimension} ({len(levels)} levels): {leader}; laggard: {laggard}")
+        return result
+
+    seed_stability = stability_for(
+        "harness_seed",
+        "Replication across harness seeds (the match stream): win rate per architecture, and its rank",
+        "harness seeds")
+    block_stability = stability_for(
+        "training_block",
+        "Replication across TRAINING blocks (different checkpoints per architecture): win rate and rank",
+        "training blocks")
 
     out.write_text(json.dumps({
         "matches": total_matches,
@@ -228,7 +317,10 @@ def main() -> None:
         "bonferroni_alpha": round(bonferroni, 6),
         "per_architecture": table,
         "pairwise_mcnemar": pairwise,
-        "harness_seed_stability": stability,
+        "training_blocks": blocks,
+        "block_sensitivity": sensitivity,
+        "harness_seed_stability": seed_stability,
+        "training_block_stability": block_stability,
     }, indent=2), encoding="utf-8")
     print(f"\nwrote {out}")
 
