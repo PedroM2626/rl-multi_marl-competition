@@ -35,6 +35,7 @@ IDENTICAL = [
     "scripts/render_trailer.py",
     "scripts/run_experiment.py",
     "tests/test_collision.py",
+    "tests/test_render.py",
     "tests/test_arena_config.py",
     "tests/test_dashboard.py",
 ]

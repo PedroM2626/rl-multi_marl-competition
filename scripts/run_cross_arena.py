@@ -179,20 +179,29 @@ class CrossArena:
         )
         return replace(self.base_variant, team_spawns=spawns)
 
+    def policy_controller(self, team_name: str, paradigm: str, slot: int):
+        """One controller for one paradigm, driven by its own tree's class and loaded with its weights.
+
+        Exposed because the absolute-strength evaluation needs a single policy on the field rather than a
+        whole triple, and duplicating the class dispatch and the payload check there is how the two would
+        start to disagree about what "loaded correctly" means.
+        """
+        cls = self.root_controller if paradigm in ROOT_PARADIGMS else self.ctde_controller
+        controller = cls(team_name, paradigm, self.config.random_seed + 7 * slot, self.device, False)
+        path = self.policies[paradigm]
+        payload = self.load_checkpoint(path, self.device)
+        if payload.get("paradigm") != paradigm:
+            raise SystemExit(f"{path.name} records paradigm {payload.get('paradigm')!r}, expected {paradigm!r}")
+        controller.actor.load_state_dict(payload["actor"])
+        if controller.critic is not None and "critic" in payload:
+            controller.critic.load_state_dict(payload["critic"])
+        return controller
+
     def _controllers_for(self, paradigms: tuple[str, str, str]) -> dict:
-        controllers = {}
-        for slot, (spec, paradigm) in enumerate(zip(self.base_variant.team_spawns, paradigms, strict=True)):
-            cls = self.root_controller if paradigm in ROOT_PARADIGMS else self.ctde_controller
-            controller = cls(spec.team_name, paradigm, self.config.random_seed + 7 * slot, self.device, False)
-            path = self.policies[paradigm]
-            payload = self.load_checkpoint(path, self.device)
-            if payload.get("paradigm") != paradigm:
-                raise SystemExit(f"{path.name} records paradigm {payload.get('paradigm')!r}, expected {paradigm!r}")
-            controller.actor.load_state_dict(payload["actor"])
-            if controller.critic is not None and "critic" in payload:
-                controller.critic.load_state_dict(payload["critic"])
-            controllers[spec.team_name] = controller
-        return controllers
+        return {
+            spec.team_name: self.policy_controller(spec.team_name, paradigm, slot)
+            for slot, (spec, paradigm) in enumerate(zip(self.base_variant.team_spawns, paradigms, strict=True))
+        }
 
     def play(self, paradigms: tuple[str, str, str], matches: int,
              fixed_rotation: bool = False) -> list[dict[str, object]]:
