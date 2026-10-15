@@ -627,7 +627,7 @@ summary is that win rate in this arena cannot be interpreted against a chance le
 
 ## The pinned environment does not reproduce the recorded runs
 
-**A-31 · INFO · MEASURED**
+**A-31 · INFO · MEASURED, PARTLY FIXED**
 
 `requirements.txt` pins `numpy==2.2.6`, but every number in this documentation set was produced under
 NumPy 1.26.4. That gap was measured in a second environment differing only in NumPy:
@@ -650,10 +650,12 @@ independent corroboration of the central negative result, reached from outside t
 It also means anyone re-running the study from `requirements.txt` is generating new replicates, not
 reproducing these.
 
-**Not fixed.** Closing it needs a hash-locked environment file, which would make the recorded numbers
-reproducible but would not make them robust — the point of the measurement is that robustness is what is
-missing. Reproduction command, and the fuller table, in
-[§ 9.1](09_reproducibility.md#verification-environment-actually-used).
+**Partly fixed.** `requirements-measured.lock.txt` now pins the 37 packages the measurements actually ran
+on, in an isolated environment verified to reproduce the seeded training hashes bit-for-bit. Two things it
+cannot do. It gives versions, not digests — and the torch entry is a local-version wheel from PyTorch's own
+index, so `--require-hashes` is out of reach from this file alone. And pinning the environment makes the
+recorded numbers *reproducible* without making them *robust*, which is the actual finding. Reproduction
+command and the fuller table in [§ 9.1](09_reproducibility.md#verification-environment-actually-used).
 
 ## The arena spawn geometry is not symmetric
 

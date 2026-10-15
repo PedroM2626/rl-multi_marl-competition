@@ -33,6 +33,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--eval-matches", type=int, default=200)
     parser.add_argument("--curve-matches", type=int, default=60)
     parser.add_argument("--out", type=Path, default=ROOT / "data" / "runs")
+    parser.add_argument(
+        "--results-dir", type=Path, default=ROOT / "results" / "study",
+        help="where the aggregated CSV and JSON land; keep it separate for a re-measurement under "
+             "different arena settings so the committed study is never overwritten"
+    )
     return parser.parse_args()
 
 
@@ -174,7 +179,7 @@ def main() -> int:
                 failures.append(label)
 
     records = collect(out_dir, args)
-    results_dir = ROOT / "results" / "study"
+    results_dir = args.results_dir if args.results_dir.is_absolute() else ROOT / args.results_dir
     results_dir.mkdir(parents=True, exist_ok=True)
     if records:
         with (results_dir / "per_seed_metrics.csv").open("w", newline="", encoding="utf-8") as handle:
