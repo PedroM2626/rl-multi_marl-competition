@@ -42,6 +42,7 @@ SRC_DIR = CTDE_ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
+# Default policies: the promoted replicate of each experiment, versioned in the two data/ trees.
 POLICIES = {
     "CTE": CTDE_ROOT.parent / "data" / "checkpoints" / "team_1_cte.pt",
     "DTE": CTDE_ROOT.parent / "data" / "checkpoints" / "team_2_dte.pt",
@@ -58,7 +59,15 @@ DRAW_TEAM = "draw"
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--matches-per-triple", type=int, default=30)
-    parser.add_argument("--seed", type=int, default=1)
+    parser.add_argument("--seed", type=int, default=1, help="harness seed: the match stream, not the policy")
+    parser.add_argument(
+        "--exp1-replicate", type=int, default=None,
+        help="training seed of the experiment 1 policies, loaded from data/runs/exp1_seedN"
+    )
+    parser.add_argument(
+        "--exp2-replicate", type=int, default=None,
+        help="training seed of the experiment 2 policies, loaded from data/runs/exp2_seedN"
+    )
     parser.add_argument("--out", type=Path, default=Path("results/cross_arena"))
     parser.add_argument(
         "--fixed-rotation", action="store_true",
@@ -92,10 +101,42 @@ def wilson(wins: int, trials: int, z: float = 1.96) -> tuple[float, float]:
     return (centre - half, centre + half)
 
 
+def replicate_policies(exp1_seed: int, exp2_seed: int) -> dict[str, Path]:
+    """The six policies taken from named *training* replicates instead of the promoted ones.
+
+    Without this the round-robin measures two particular checkpoints per architecture and cannot say
+    anything about the architectures. With it, a block is one training run per experiment, and the spread
+    across blocks is the training variance the study has not been able to resolve.
+    """
+    runs = ROOT_ROOT / "data" / "runs"
+    versioned = ROOT_ROOT / "data" / "training_replicates"
+    out: dict[str, Path] = {}
+    for experiment, seed, paradigms in (
+        ("exp1", exp1_seed, ("CTE", "DTE", "CTDE")),
+        ("exp2", exp2_seed, ("CTDE-VD", "CTDE-CAC", "CTDE-Comm")),
+    ):
+        # Prefer the versioned copy so a reader who clones the repository runs the same policies; the
+        # git-ignored study scratch is only present on the machine that produced them.
+        directory = versioned / f"{experiment}_seed{seed}"
+        if not directory.is_dir():
+            directory = runs / f"{experiment}_seed{seed}" / "checkpoints"
+        if not directory.is_dir():
+            raise SystemExit(f"no such training replicate: {experiment}_seed{seed}")
+        for paradigm in paradigms:
+            found = sorted(directory.glob(f"*_{paradigm.lower()}.pt"))
+            if len(found) != 1:
+                raise SystemExit(
+                    f"expected one {paradigm} checkpoint in {directory}, found {[m.name for m in found]}"
+                )
+            out[paradigm] = found[0]
+    return out
+
+
 class CrossArena:
     """Owns one simulation whose match variant is supplied per match rather than sampled."""
 
-    def __init__(self, seed: int):
+    def __init__(self, seed: int, policies: dict[str, Path] | None = None):
+        self.policies = policies or POLICIES
         from marl_arena.config import CONFIG
         from marl_arena.controllers.rl_controller import resolve_device, set_rl_training
         from marl_arena.systems.match_variant import create_default_variant
@@ -143,7 +184,7 @@ class CrossArena:
         for slot, (spec, paradigm) in enumerate(zip(self.base_variant.team_spawns, paradigms, strict=True)):
             cls = self.root_controller if paradigm in ROOT_PARADIGMS else self.ctde_controller
             controller = cls(spec.team_name, paradigm, self.config.random_seed + 7 * slot, self.device, False)
-            path = POLICIES[paradigm]
+            path = self.policies[paradigm]
             payload = self.load_checkpoint(path, self.device)
             if payload.get("paradigm") != paradigm:
                 raise SystemExit(f"{path.name} records paradigm {payload.get('paradigm')!r}, expected {paradigm!r}")
@@ -277,7 +318,14 @@ def main() -> None:
                 print(f"| {paradigm} | {here:.3f} | {expected[paradigm]:.3f} | {here - expected[paradigm]:+.3f} |")
         return
 
-    arena = CrossArena(args.seed)
+    policies = POLICIES
+    block = "promoted"
+    if args.exp1_replicate is not None or args.exp2_replicate is not None:
+        if args.exp1_replicate is None or args.exp2_replicate is None:
+            raise SystemExit("--exp1-replicate and --exp2-replicate must be given together")
+        policies = replicate_policies(args.exp1_replicate, args.exp2_replicate)
+        block = f"exp1_seed{args.exp1_replicate}+exp2_seed{args.exp2_replicate}"
+    arena = CrossArena(args.seed, policies)
 
     triples = list(itertools.combinations(sorted(POLICIES), 3))
     all_rows: list[dict[str, object]] = []
@@ -304,6 +352,7 @@ def main() -> None:
         "matches_played": matches_played,
         "team_matches": len(all_rows),
         "seed": args.seed,
+        "training_block": block,
         "arena": {
             "arena_size": arena.base_variant.arena_size,
             "match_duration_seconds": arena.base_variant.match_duration_seconds,

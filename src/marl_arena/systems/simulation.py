@@ -623,11 +623,20 @@ class ArenaSimulation:
             )
 
     def _reward_for_agent(self, agent: SimAgent, was_hit: bool, scored_hit: bool) -> float:
-        reward = 0.015 if agent.alive else -0.5
+        config = self.config
+        if agent.alive:
+            bonus = config.reward_alive_bonus
+            # A half-life makes camping progressively worth less, which is the property the fixed
+            # per-step bonus lacks: surviving to the buzzer currently pays more than winning a fight.
+            if config.reward_alive_decay_half_life > 0.0:
+                bonus *= 0.5 ** (self.match_time / config.reward_alive_decay_half_life)
+            reward = bonus
+        else:
+            reward = config.reward_death
         if scored_hit:
-            reward += 1.2
+            reward += config.reward_kill
         if was_hit:
-            reward -= 1.0
+            reward += config.reward_hit
         return reward
 
     def step(self, dt: float) -> bool:
@@ -718,7 +727,13 @@ class ArenaSimulation:
         }
         ranked = sorted(team_alive.items(), key=lambda item: (item[1], kills_this_match[item[0]]), reverse=True)
         best, runner_up = ranked[0], ranked[1]
-        if best[1] == runner_up[1] and kills_this_match[best[0]] == kills_this_match[runner_up[0]]:
+        survivors = sum(1 for count in team_alive.values() if count > 0)
+        if survivors > 1 and not self.config.termination_cap_awards_win:
+            # The match ran to the clock with teams still standing. Awarding this to whoever is most alive
+            # measures hiding rather than fighting, so the option makes every timed-out match a draw and
+            # leaves elimination as the only way to win.
+            winner_team = DRAW_TEAM
+        elif best[1] == runner_up[1] and kills_this_match[best[0]] == kills_this_match[runner_up[0]]:
             winner_team = DRAW_TEAM
         else:
             winner_team = best[0]

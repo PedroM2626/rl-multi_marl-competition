@@ -37,6 +37,15 @@ class ArenaConfig:
     random_seed: int = int(os.getenv("RANDOM_SEED", "7"))
     sim_step_dt: float = float(os.getenv("SIM_STEP_DT", "0.1"))
     domain_randomization: bool = _read_bool("DOMAIN_RANDOMIZATION", True)
+    # Reward and termination shape. The defaults reproduce exactly the behaviour every committed number
+    # was measured under; "arena v2" (docs/08_results.md#arena-v2) is a set of overrides, not a rewrite,
+    # so the two are comparable and the old results stay reproducible.
+    reward_alive_bonus: float = float(os.getenv("REWARD_ALIVE_BONUS", "0.015"))
+    reward_alive_decay_half_life: float = float(os.getenv("REWARD_ALIVE_DECAY_HALF_LIFE_S", "0"))
+    reward_kill: float = float(os.getenv("REWARD_KILL", "1.2"))
+    reward_death: float = float(os.getenv("REWARD_DEATH", "-0.5"))
+    reward_hit: float = float(os.getenv("REWARD_HIT", "-1.0"))
+    termination_cap_awards_win: bool = _read_bool("TERMINATION_CAP_AWARDS_WIN", True)
     rl_train_total_steps: int = int(os.getenv("RL_TRAIN_TOTAL_STEPS", "3000000"))
     rl_save_every_steps: int = int(os.getenv("RL_SAVE_EVERY_STEPS", "100000"))
     rl_log_every_steps: int = int(os.getenv("RL_LOG_EVERY_STEPS", "50000"))
