@@ -51,7 +51,9 @@ GROUPS = [
         "Absolute-strength evaluation",
         "`run_absolute_eval.py` output: one trained policy against two uniform-random controllers, trained "
         "slot rotated. `absolute/` is the promoted checkpoint set at 150 matches per architecture per "
-        "harness seed; `summary.json` is re-derivable from `matches.csv` with `--report-only`.",
+        "harness seed; `absolute_blocks/` is the same instrument over the three training blocks above, 50 "
+        "matches per architecture per block per seed. Each `summary.json` re-derives from its `matches.csv` "
+        "with `--report-only`.",
         ("results/absolute/", "results/absolute_blocks/"),
     ),
     (

@@ -814,98 +814,114 @@ the match stream and once in the checkpoints.
 
 ## 8.11 Absolute strength against a fixed random pool <a name="absolute-strength"></a>
 
-Every win rate in this document so far is **relative**: an arm beating two other arms that trained against
-it, in a run whose opponents are the same three seeds as its own weights. That is why nothing in
-[§ 8.1](#replicated-study) or [§ 8.10](#cross-arena) can be placed next to a number from the literature.
-`scripts/run_absolute_eval.py` measures the other thing: one trained team, two teams whose controllers draw
-uniformly from the action space, and a floor that does not depend on who else was in the run.
+Every win rate above is **relative**: an arm beating two other arms that trained against it. That is why
+nothing in [§ 8.1](#replicated-study) or [§ 8.10](#cross-arena) can be placed next to a number from the
+literature. `scripts/run_absolute_eval.py` measures the other thing: one trained team, two teams whose
+controllers draw uniformly from the action space, and a floor that does not depend on who else was in the run.
 
-Two design points before the numbers.
+Three design points before the numbers.
 
 * **The opponents are drawn, not argmax'd.** The greedy action of an untrained network is a near-constant
   policy ([A-30](11_code_audit.md#greedy-evaluation-of-an-untrained-network-is-not-random-play)), so a
   "random" opponent read off untrained weights would be a stationary target rather than a random one. The
   controller here is the real class with its action selection replaced by a uniform draw.
-* **The null is 0.330, not 1/3.** Each arm spends a third of its matches in each spawn slot, and the slots
-  are not equal: [§ 8.9](#random-baseline) measured three *mutually random* teams splitting
-  0.257 / 0.270 / 0.463 by slot. Averaged over the rotation that gives 0.330, which is close to 1/3 by
-  construction rather than by symmetry — and it is the right comparison, because a random focal team in
-  that experiment also faced two random opponents.
+* **The null is 0.330, not 1/3.** Each arm spends nearly a third of its matches in each spawn slot, and the
+  slots are not equal: [§ 8.9](#random-baseline) measured three *mutually random* teams splitting
+  0.257 / 0.270 / 0.463 by slot. Averaged over the rotation that gives **0.3300**, which is close to 1/3 by
+  construction rather than by symmetry — and it is the matched comparison, because a random focal team in
+  that baseline run also faced two random opponents.
+* **Three checkpoint sets, 450 matches per architecture.** `results/absolute_blocks/` plays each arm's three
+  independently trained replicates (the same blocks as [§ 8.10](#cross-arena)) over three harness seeds at 50
+  matches per architecture per block per seed. The rotation is not exactly balanced, because 50 is not a
+  multiple of 3: the pooled slot counts are 918 / 918 / 864 rather than 900 each, and the largest effect on
+  an arm's pooled rate is 0.0025. `results/absolute/` is the same instrument on the promoted checkpoints
+  only, at 150 matches per architecture per seed; it is kept because it is the case study below.
 
-**450 matches per architecture** (150 per harness seed x 3 seeds), promoted checkpoints, greedy readout,
-arena-v1 rules, trained slot rotated.
+### Every arm clears the floor, and the two scales agree
 
-| Rank | Architecture | Win rate vs random | 95 % CI | Excess over the matched null | Draws | Losses | SD across seeds |
+Pooled over the three checkpoint sets:
+
+| Rank | Architecture | Win rate vs random | 95 % CI | Excess over the matched null | Draws | Losses | SD across blocks |
 |---|---|---:|---|---:|---:|---:|---:|
-| 1 | CTDE-Comm | **0.753** | [0.712, 0.791] | +0.423 | 0.000 | 0.247 | 0.020 |
-| 2 | CTE | **0.747** | [0.705, 0.785] | +0.417 | 0.002 | 0.251 | 0.030 |
-| 3= | CTDE-CAC | **0.689** | [0.645, 0.730] | +0.359 | 0.000 | 0.311 | 0.003 |
-| 3= | CTDE-VD | **0.689** | [0.645, 0.730] | +0.359 | 0.000 | 0.311 | 0.011 |
-| 5 | DTE | **0.676** | [0.631, 0.717] | +0.346 | 0.002 | 0.322 | 0.006 |
-| 6 | CTDE | **0.476** | [0.430, 0.522] | +0.146 | 0.004 | 0.520 | 0.030 |
+| 1 | DTE | **0.753** | [0.712, 0.791] | +0.423 | 0.002 | 0.244 | 0.022 |
+| 2 | CTDE-Comm | **0.740** | [0.698, 0.778] | +0.410 | 0.000 | 0.260 | 0.022 |
+| 3 | CTDE | **0.673** | [0.629, 0.715] | +0.343 | 0.002 | 0.324 | 0.153 |
+| 4 | CTDE-VD | **0.671** | [0.626, 0.713] | +0.341 | 0.002 | 0.327 | 0.079 |
+| 5 | CTDE-CAC | **0.607** | [0.561, 0.651] | +0.277 | 0.004 | 0.389 | 0.129 |
+| 6 | CTE | **0.558** | [0.512, 0.603] | +0.228 | 0.004 | 0.438 | 0.086 |
 
-Every architecture's interval clears the matched null, so training helps under every information-flow
-paradigm — but the margins differ by a factor of three, from +0.42 (Comm) to +0.15 (plain CTDE). Matches are
-short and decided by elimination: median 10.7 s of the 90 s cap (10.1 s when the trained team wins, 11.7 s
-when it loses), and draws are 0.0–0.4 % against the 4.1 % of the round-robin. Against random opponents the
-clock regime barely exists.
+Matches are short and decided by elimination: median 11.0 s of the 90 s cap (10.6 s when the trained team
+wins, 12.0 s when it loses), only 4.1 % reach the clock, and 0.0–0.4 % are drawn — against 35.9 % timeouts
+and 4.1 % draws in the round-robin. Against random opponents the buzzer regime barely exists, which is part
+of why this scale is cleaner than the peer-relative one.
 
-### The two scales order the six arms differently
+**This is the repository's strongest positive result.** Ranking the same six architectures by how often they
+beat *trained peers* and by how often they beat *uniform noise* — two opponent pools with nothing in common
+except the arena — gives:
 
-| Architecture | Rank vs random | Rank vs trained peers | Pooled win rate vs peers |
-|---|---:|---:|---:|
-| CTDE-Comm | 1 | 1 | 0.373 |
-| CTE | 2 | **6** | 0.266 |
-| CTDE-CAC | 3= | 5 | 0.284 |
-| CTDE-VD | 3= | 4 | 0.297 |
-| DTE | 5 | **2** | 0.368 |
-| CTDE | 6 | 3 | 0.329 |
+| Architecture | Rank vs random | Rank vs trained peers |
+|---|---:|---:|
+| DTE | 1 | 2 |
+| CTDE-Comm | 2 | 1 |
+| CTDE | 3 | 3 |
+| CTDE-VD | 4 | 4 |
+| CTDE-CAC | 5 | 5 |
+| CTE | 6 | 6 |
 
-Spearman rank correlation between the two orders is **−0.04** (average ranks, from
-`--compare-pool` on `run_absolute_eval.py`) and the Pearson correlation between the two win rates is −0.10 — that is, no relation at all. With six arms, two of which are tied on the absolute
-scale and several of which are statistically indistinguishable on the pool
-([§ 8.10](#cross-arena)), these coefficients are not precise estimates of anything; what carries the point
-is the qualitative inversion. **CTE is the worst arm against trained peers and the second best against
-random ones. DTE is second against peers and fifth against random.** Only CTDE-Comm is at the top of both
-scales, and no arm is at the bottom of both.
+Spearman **+0.94** (average ranks) and Pearson **+0.95** on the win rates, computed by
+`run_absolute_eval.py --compare-pool results/cross_arena/blocks.json`. The only disagreement at the top is
+which of DTE and CTDE-Comm is first — the two arms [§ 8.10](#cross-arena) could not separate from each other
+(*p* = 0.82). The bottom of one scale is the bottom of the other: CTE last against random play, last against
+trained opponents.
 
-That is not a contradiction between two measurements of one quantity: they are two quantities. Against a
-trained pool, 35.9 % of matches go to the clock and winning means surviving and out-coordinating agents that
-aim at you; against random opponents the task is finding and finishing six agents that scatter and shoot at
-nothing, and 95.3 % of them end by elimination, against 60.0 % in the round-robin. A paradigm whose per-agent engagement is strong
-(CTE fires 94 shots/match with no coordination requirement at all) can look effective on the second task and
-weak on the first. That is an interpretation of the two tables, not a measurement — the decomposition that
-would test it, win rate split by match regime, is already available for the study in
-[§ 8.1](#two-regimes) and has not yet been run on the round-robin.
+Per checkpoint set, rather than pooled, the agreement is **+0.77, +0.70 and +0.41** (blocks
+`exp1_seed1+exp2_seed7`, `exp1_seed10+exp2_seed5`, `exp1_seed9+exp2_seed2`). It rises as replicates are
+averaged, which is what noise-dominated measurement predicts: within one set of six networks the two
+instruments mostly agree, and averaging three sets makes them agree almost completely.
 
-### The slot bias survives even here
+### The correction that produced this result
 
-Pooled over the 900 matches in each slot: Team 1 0.684, Team 2 0.536, Team 3 0.794. A trained policy in the
-near-edge-middle position wins 26 points more often than the same policy in the Team 2 corner, against
-opponents that are uniform noise — and the two corners swap their order relative to the round-robin's
-0.216 / 0.276 / 0.467, so the arena's three positions are not even consistently ranked.
+An earlier version of this section, run on **one** checkpoint set, reported the opposite: that the two
+scales were uncorrelated (Spearman −0.04), with CTE last against peers and second against random play.
+That was wrong in two ways at once, and both are the same lesson [§ 8.10](#cross-arena) already teaches.
 
-The sharpest single cell in this section is plain CTDE from Team 2: **0.140**, where a purely random team in
-that slot against the same two random opponents wins 0.270 [0.223, 0.323]. That checkpoint, in that corner,
-loses to noise more often than noise loses to noise. Its other two slots are 0.640 and 0.647. No other arm
-falls below its slot's null, and the arms differ in slot sensitivity by a lot: CTDE's spread across slots is
-0.507, CTDE-VD's is 0.073.
+* **Scope mismatch.** The absolute numbers came from one checkpoint set while the peer ranks came from the
+  pooled three. Compared like for like, that same block gives **+0.41**, not −0.04.
+* **The block chosen was the atypical one.** It is the promoted replicate, the set that put plain CTDE last
+  in the round-robin and CTE third. On it, CTDE reads 0.460 against random play and CTE 0.673 — the two
+  arms exactly reversed relative to the three-block picture.
+
+The promoted-only measurement is still reported in `results/absolute/` and in the artefact inventory, so the
+reversal is checkable rather than hidden. The general point is the one worth keeping: **a single replicate
+destroys the correlation between two independent measurements of the same six networks**, even when each
+measurement uses 450 matches. Sample size inside a replicate is not a substitute for replication across
+replicates.
+
+### Slot sensitivity, and one cell that is not an architecture effect
+
+Pooled over the three sets, the trained team wins 0.662 / 0.588 / 0.756 from Team 1 / 2 / 3 — the same
+direction as the round-robin's 0.216 / 0.276 / 0.467, compressed because half the field is random noise.
+Per architecture the best-to-worst slot gap is 0.14–0.26.
+
+The sharpest cell in the whole instrument is plain CTDE from Team 2 in the promoted block: **0.118**, against
+0.765 and 0.745 for the other two blocks' CTDE in that same slot, and 0.270 for a purely random team there.
+A checkpoint of the CTDE architecture therefore lost to uniform noise from one corner far more often than
+noise loses to noise, while two other checkpoints of the same architecture won three quarters of the time.
+That is a property of one network, not of centralised training with decentralised execution, and the
+three-block value (0.542) is unremarkable.
 
 ### What this section can and cannot support
 
-**Can:** that all six trained policies beat uniform-random play by a margin whose interval excludes the
-matched null; that the margin is three times larger for CTDE-Comm than for plain CTDE; that "strength" in
-this arena is not one quantity, since the peer-relative and random-relative orderings of the same six
-networks are uncorrelated.
+**Can:** that all three trained replicates of every architecture beat uniform-random play by an interval
+that excludes the matched null; that the six architectures rank nearly identically on two opponent pools
+that share nothing but the engine (**+0.94** pooled, +0.41 to +0.77 within each set); and that a
+single-replicate measurement, at any sample size, can invert that relationship.
 
-**Cannot:** say that these are *architectural* differences — this is **one checkpoint set** (the promoted
-replicate), which is exactly the limitation [§ 8.10](#cross-arena) removed by playing three sets, so the
-ordering above is a statement about six particular networks. The two most extreme single cells (CTDE in
-Team 2, and the 0.753 that puts Comm first) rest on the same replicate that [§ 8.10](#cross-arena-limits)
-showed to be atypical for two of the six arms. Also not supported: any comparison with a published number,
-because the opponents here are uniform-random in *this* arena, not the baselines those papers use; and any
-claim that a 0.476 arm is weak in absolute terms — it is 15 points over its matched null, and the arena's
-own geometry accounts for 20 of those points elsewhere in the same table.
+**Cannot:** place any number here against a published result — uniform-random play in this arena is not any
+paper's baseline, and there is still no scripted opponent, no second game and no shared benchmark; claim
+that 0.558 for CTE means it is weak, since it is +0.228 over its own matched null; or treat the
+three-checkpoint agreement as a substitute for significance — [§ 8.10](#cross-arena) still cannot separate
+CTDE from CTDE-VD or CTDE-CAC, and agreement between two noisy scales is consistency, not proof.
 
 ---
 
@@ -1030,11 +1046,13 @@ moves the top of experiment 1 inside noise.
 4. The arena itself is biased: one of the three spawn positions wins 47 % of matches against 22 % and 28 %
    for the other two, for every architecture
    ([A-32](11_code_audit.md#the-arena-spawn-geometry-is-not-symmetric)).
-5. Every trained policy beats uniform-random play, by margins from **+0.15 to +0.42** over the slot-matched
-   null, and the random-relative ordering is **uncorrelated** with the peer-relative one (Spearman −0.04 over
-   six arms): CTE is last against trained peers and second against random ones, DTE second against peers and
-   fifth against random. "Stronger" in this arena is not one quantity, and any statement about strength has
-   to name the opponent pool it was measured against ([§ 8.11](#absolute-strength)).
+5. Every architecture — all three trained replicates of each — beats uniform-random play by an interval
+   that excludes the slot-matched null (+0.228 to +0.423), and the two opponent pools rank the six
+   architectures **nearly identically**: Spearman +0.94 and Pearson +0.95 between "beats trained peers" and
+   "beats random play", with the same arm last on both scales. The one disagreement is which of DTE and
+   CTDE-Comm is first, which [§ 8.10](#cross-arena) also cannot settle ([§ 8.11](#absolute-strength)). The
+   same comparison on a single replicate gave −0.04, which is the sharpest available demonstration that
+   checkpoint replication, not match count, is what this arena's measurements need.
 6. Re-measuring the study under an arena that removes both objective-side confounds — an alive bonus an
    order of magnitude smaller and decaying with a 30 s half-life, and no win for surviving the clock — shows
    that **44 % and 39 % of held-out matches have no winner at all**, that no arm separates (paired *p* ≥

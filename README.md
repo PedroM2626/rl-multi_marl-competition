@@ -170,11 +170,11 @@ Findings worth knowing before reading anything else:
 * **A quarter of replicates are not measuring fighting.** Five of twenty end most matches on the 90 s
   clock, where winning means "most alive at the buzzer"
   ([§ 8.1](docs/08_results.md#two-regimes)).
-* **"Stronger" is not one quantity.** Against a fixed pool of uniform-random opponents every arm clears its
-  slot-matched null, but the ordering that produces is uncorrelated with the ordering against trained peers:
-  CTE finishes last of six against peers and second against random play, DTE second against peers and fifth
-  against random. Any strength claim here has to name the opponent pool it was measured against
-  ([§ 8.11](docs/08_results.md#absolute-strength)).
+* **Two opponent pools agree, once each architecture is replicated.** Ranking the six architectures by how
+  often they beat trained peers and by how often they beat uniform-random teams gives Spearman **+0.94**
+  over three independently trained checkpoints per architecture, with the same arm (CTE) last on both
+  scales. Run on one checkpoint the identical statistic is **−0.04**: the agreement comes from replicating
+  the training, not from playing more matches ([§ 8.11](docs/08_results.md#absolute-strength)).
 
 Against a genuine random-play baseline
 ([§ 8.9](docs/08_results.md#random-baseline)) training clearly does something — trained agents survive

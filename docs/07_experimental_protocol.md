@@ -234,9 +234,10 @@ that run's initialisation and geometry stream, so they are not independent draws
     ([A-30](11_code_audit.md#greedy-evaluation-of-an-untrained-network-is-not-random-play)), and the null is
     taken from the arena rather than from symmetry -- three mutually random teams split
     0.257 / 0.270 / 0.463 by spawn slot ([§ 8.9](08_results.md#random-baseline)), so the slot-balanced chance
-    level is 0.330. Because the same six arms are ranked by two procedures that turn out to be
-    near-uncorrelated, neither is reported as "the" strength: every win rate in this repository is stated
-    with the opponent pool it was measured against.
+    level is 0.330. Over three checkpoint sets the two procedures agree almost perfectly (Spearman +0.94),
+    which is corroboration the peer-relative ranking previously had none of; on one checkpoint set the same
+    statistic is −0.04, so the agreement is credited to replicating the training and not to playing more
+    matches. Every win rate here is still stated with the opponent pool it was measured against.
 
 **Secondary — the historical single-seed runs.** Point estimates as `summary.json` reports them (a
 cumulative average over a non-stationary trajectory), Wilson intervals on the 46 recorded matches per

@@ -116,7 +116,9 @@ pip install pandas                # not a dependency of anything measured
 | `python scripts/run_cross_arena.py --exp1-replicate S --exp2-replicate M --seed H --out results/cross_arena_blocks/e1sS_e2sM_hH` | run from `ctde_arena/` | One block x one match stream of the round-robin, over replicate checkpoints instead of the promoted ones |
 | `python scripts/report_cross_arena.py --in results/cross_arena/blocks.csv --json-out results/cross_arena/blocks.json` | root | McNemar pairwise tests, the leave-one-training-block-out column, the slot control and both stability tables |
 | `python scripts/combine_cross_arena.py results/cross_arena_blocks/*` | root | Pool replicated round-robin runs, stamping each row with its training block and harness seed |
-| `python scripts/run_absolute_eval.py --matches 150 --seeds 1,2,3` | run from `ctde_arena/` | Absolute strength: each trained policy against two uniform-random controllers, trained slot rotated |
+| `python scripts/run_absolute_eval.py --matches 150 --seeds 1,2,3` | run from `ctde_arena/` | Absolute strength on the promoted checkpoints: each trained policy against two uniform-random controllers, trained slot rotated |
+| `python scripts/run_absolute_eval.py --blocks 1:7,10:5,9:2 --matches 50 --seeds 1,2,3 --out results/absolute_blocks --null-json results/baseline/random_baseline_uniform.json --compare-pool results/cross_arena/blocks.json` | run from `ctde_arena/` | The same over three training blocks, with the slot-matched null and the agreement with the peer pool |
+| `python scripts/run_absolute_eval.py --report-only --out results/absolute_blocks …` | run from `ctde_arena/` | Re-derive a summary from its recorded `matches.csv`, playing nothing |
 | `bash scripts/run_arena_v2_campaign.sh` | both | Queue the arena-v2 study: 10 seeds x 2 experiments at 500 k steps under the decayed alive bonus and draw-on-cap, waiting for whatever is already on the machine |
 | `bash scripts/run_ablation_campaign.sh` | 1 | Queue the three configuration ablations (`no_dr`, `narrow_64`, `wide_256`), each one key different from the committed study, after the v2 campaign |
 | `python scripts/report_inventory.py` | root | Regenerate the § 9.7 artefact table from `git ls-files` and live SHA-256 |
@@ -324,7 +326,7 @@ inclination to replay 2,700 matches.
 
 ## 9.7 Artefact inventory
 
-Every versioned experiment artefact (83 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed.
+Every versioned experiment artefact (85 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed.
 
 **Promoted replicate.** The artefacts that match the current code. Chosen by `promote_run.py --seed median`, which is the replicate with the least L1 distance to the per-arm study means; `PROVENANCE.json` records the choice and the full run summary behind it.
 
@@ -422,12 +424,14 @@ Every versioned experiment artefact (83 files), with SHA-256 for integrity check
 | `data/training_replicates/exp2_seed7/team_2_ctde-comm.pt` | 313,778 | `5a22ef5f10fb96b78892ffb58e351876072573fd958f2874d8e7877c1794d14b` |
 | `data/training_replicates/exp2_seed7/team_3_ctde-vd.pt` | 217,330 | `d49f1fdfdd579ea443e6e253df7d814650b736551f51cd8f32a7e980b93f31c7` |
 
-**Absolute-strength evaluation.** `run_absolute_eval.py` output: one trained policy against two uniform-random controllers, trained slot rotated. `absolute/` is the promoted checkpoint set at 150 matches per architecture per harness seed; `summary.json` is re-derivable from `matches.csv` with `--report-only`.
+**Absolute-strength evaluation.** `run_absolute_eval.py` output: one trained policy against two uniform-random controllers, trained slot rotated. `absolute/` is the promoted checkpoint set at 150 matches per architecture per harness seed; `absolute_blocks/` is the same instrument over the three training blocks above, 50 matches per architecture per block per seed. Each `summary.json` re-derives from its `matches.csv` with `--report-only`.
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
 | `results/absolute/matches.csv` | 109,392 | `5ac29454838dac9ecde586431a42eb0a51a37dc0c14b5e1f550c8a761d95ac0b` |
 | `results/absolute/summary.json` | 14,584 | `d784fd6581d19a961c51f2cc8b097c789531122a890b0741b9223a2b35f355cc` |
+| `results/absolute_blocks/matches.csv` | 144,153 | `f0be8d9004dce9e5c134bfbc189acb8f524f607345b3963db5fd3f3b0a947f19` |
+| `results/absolute_blocks/summary.json` | 24,550 | `dc543bddf5c8e3ee8922dc6c099858ea19de7d7e7b290c66484bf69e9caa679d` |
 
 **Gameplay clips.** Rendered by `render_trailer.py` from the promoted replicate's trained policies; the JSON beside each clip records the seed, rotation, paradigm per slot and the per-frame alive and shot counts the caption asserts.
 

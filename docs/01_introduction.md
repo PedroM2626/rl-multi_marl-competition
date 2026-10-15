@@ -129,7 +129,8 @@ Out of scope, deliberately or as unfinished work:
 * ~~No evaluation against a fixed pool of opponents.~~ **Closed for the two pools that were cheap**: the
   cross-experiment round-robin ([§ 8.10](08_results.md#cross-arena)) evaluates all six arms against common
   *trained* opponents, and [§ 8.11](08_results.md#absolute-strength) evaluates each against a fixed pool of
-  uniform-random ones. The two orderings are near-uncorrelated, which is itself a finding. Still open: no
+  uniform-random ones, and over three training replicates the two orderings agree almost perfectly
+  (Spearman +0.94). Still open: no
   scripted or human opponents, no pool beyond these six policies, no other game, and **training** remains
   three arms co-adapting inside one run, so the co-adaptation confound is removed at measurement time only.
 * ~~No absolute reference point.~~ **Partly closed** by the random-pool floor of
