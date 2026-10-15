@@ -43,6 +43,7 @@ Every finding below was open at some point; the status column is the current sta
 | [A-29](#zero-norm-shots-burn-the-cooldown-and-vanish-from-the-metrics) | LOW | A zero-norm aim consumes the shoot cooldown yet counts as neither hit nor miss — 8–18 per replicate |
 | [A-30](#greedy-evaluation-of-an-untrained-network-is-not-random-play) | MED | Argmax of random weights is a near-constant policy: untrained "random" arms differ by 18× in firing rate |
 | [A-31](#the-pinned-environment-does-not-reproduce-the-recorded-runs) | INFO | Measured: the pinned NumPy changes training outcomes at the first PPO update |
+| [A-32](#the-arena-spawn-geometry-is-not-symmetric) | MED | One of the three spawn positions wins ~2x as often as the other two, for every architecture |
 
 ---
 
@@ -653,6 +654,53 @@ reproducing these.
 reproducible but would not make them robust — the point of the measurement is that robustness is what is
 missing. Reproduction command, and the fuller table, in
 [§ 9.1](09_reproducibility.md#verification-environment-actually-used).
+
+## The arena spawn geometry is not symmetric
+
+**A-32 · MED · MEASURED, NOT FIXED**
+
+`_default_team_spawns` places the three teams at two far corners and the middle of the near edge:
+
+```python
+margin = config.arena_size * 0.32
+centers = (
+    np.array([-margin, 1.0, -margin], dtype=float),
+    np.array([ margin, 1.0, -margin], dtype=float),
+    np.array([0.0, 1.0,  margin], dtype=float),
+)
+```
+
+That is three positions related by no symmetry of the obstacle field, which is itself laid out by
+`_default_obstacle_specs` without three-fold structure. The third position is therefore not equivalent to
+the first two, and the cross-experiment round-robin
+([§ 8.10](08_results.md#cross-arena)) measured how much that matters. Pooling all six architectures over
+600 balanced team-matches per slot:
+
+| Slot | Pooled win rate |
+|---|---:|
+| Team 1 | 0.242 |
+| Team 2 | 0.223 |
+| **Team 3** | **0.490** |
+
+Five of the six architectures do best in Team 3 regardless of their information-flow design, and moving a
+single policy between corners changes its win rate by up to 0.45 -- larger than every architecture
+difference the repository has ever measured.
+
+**Consequences.** First, the arena is not a fair three-way test bed, so any single-replicate win rate
+carries a slot term of this size. Second, `paradigm_rotation` (A-27) balances the term in expectation but
+does not remove it: it converts a bias into variance, which is a plausible contributor to the 0.12-0.22
+between-seed spread that makes the study's ranking unresolvable. Third, it means a harness bug and an
+arena property look identical from the inside -- this was discovered while chasing what appeared to be a
+broken evaluator.
+
+**Not fixed.** Rotating the spawn assignment across seeds was the fix for the confound; fixing the geometry
+means either a three-fold-symmetric obstacle layout or a different spawn arrangement, which changes the
+arena every committed number was measured in. That is a design decision for the next measurement campaign,
+not a patch to apply on top of the current evidence.
+
+**Reproduction:** `python scripts/run_cross_arena.py --matches-per-triple 30` then
+`python scripts/report_cross_arena.py`, which prints the per-slot table.
+
 
 ## Open work: suggested measurements
 

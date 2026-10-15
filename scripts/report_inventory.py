@@ -22,9 +22,8 @@ GROUPS = [
     ),
     (
         "Study aggregates",
-        "Recomputed by `report_study.py` and `plot_study.py` from the per-replicate summaries; every table in "
-        "[§ 8.1](08_results.md#replicated-study) is derived from these three files.",
-        ("results/study/",),
+        "Recomputed by `report_study.py`, `plot_study.py` and `report_cross_arena.py` from the per-replicate and per-match summaries.",
+        ("results/study/", "results/cross_arena/"),
     ),
     (
         "Untrained baselines",

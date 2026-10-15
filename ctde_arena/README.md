@@ -221,6 +221,11 @@ to test. At 25 % of the budget Comm was the **best** arm in the 5-seed study (0.
 (0.190); there it drifted down, here it drifts up (+0.141). When the sign of a learning curve flips on the
 replicate count, the curve is measuring initialisation.
 
+### On a common opponent pool with experiment 1
+The three variants here only ever fight each other, so their ranking is conditional on that.
+[§ 8.10](../docs/08_results.md#cross-arena) plays all six architectures from both experiments against
+each other over 600 slot-balanced matches: **CTDE-Comm 0.387, CTDE-CAC 0.297, CTDE-VD 0.263**, against DTE 0.380, CTE 0.320 and CTDE 0.263 — and no pair is significant under Bonferroni-corrected McNemar tests. CTDE-VD, first in this experiment's own table, is tied last there. Reproduce with `python ../scripts/run_cross_arena.py` from this directory.
+
 ### Against untrained play
 
 `scripts/random_baseline.py`, 300 headless matches. [§ 8.9](../docs/08_results.md#random-baseline) has both

@@ -72,3 +72,4 @@ Experiment 1's artefacts were themselves only committed on 2026-09-27 — before
 | Coverage figures in [§ Code audit](11_code_audit.md#coverage) | `coverage run --source=src/marl_arena -m pytest tests/ -q && coverage report` |
 | [§ 9.7](09_reproducibility.md#97-artefact-inventory) gameplay clips and their JSON sidecars | `python scripts/render_trailer.py --frames 240 --fps 14 --out docs/assets/gameplay_exp1.gif`, run again from `ctde_arena/` for experiment 2 |
 | Documentation cross-references | `python -m pytest tests/test_docs_links.py -q` |
+| [§ 8.10](08_results.md#cross-arena) cross-experiment round-robin | `python scripts/run_cross_arena.py --matches-per-triple 30` from `ctde_arena/`, then `python scripts/report_cross_arena.py` |

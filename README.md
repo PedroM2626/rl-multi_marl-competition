@@ -6,7 +6,7 @@ against each other inside one engine, so the competitive outcome is itself the m
 
 > **Full technical documentation lives in [`docs/`](docs/README.md)** — system model, MDP
 > formalisation, architectures, optimisation, protocol, results with confidence intervals and power
-> analysis, reproducibility, limitations, and a 31-item code audit. This file is the quick start.
+> analysis, reproducibility, limitations, and a 32-item code audit. This file is the quick start.
 
 ## Documentation
 
@@ -168,6 +168,14 @@ Against a genuine random-play baseline
 ([§ 8.9](docs/08_results.md#random-baseline)) training clearly does something — trained agents survive
 2–3× longer and end matches by elimination instead of timing out — but it does **not** improve aim:
 uniform random shots convert at 5–6 % while trained policies convert at 2.4–3.6 % while firing ~2.5× more.
+
+**And a fourth measurement that puts all six on one scale.** The two experiments never fought each
+other, so their tables were comparable only by assumption. [§ 8.10](docs/08_results.md#cross-arena) plays every three-architecture combination among the six
+trained policies — 600 matches, common opponents, slot-balanced — and finds Comm 0.387, DTE 0.380,
+CTE 0.320, CAC 0.297, CTDE and VD 0.263, with **no pair significant** under Bonferroni-corrected
+McNemar tests. It also measures the arena's own bias: the Team 3 spawn corner wins 49 % of matches
+against 24 % and 22 % for the other two, for every architecture
+([A-32](docs/11_code_audit.md#the-arena-spawn-geometry-is-not-symmetric)).
 
 The two historical single-seed 100k-step runs are still reported, relabelled, in
 [§ 8.2](docs/08_results.md#historical-single-seed-runs); their artefacts now live in
