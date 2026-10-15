@@ -34,8 +34,8 @@ reassuring-sounding claim, it was measured, in a second environment holding ever
 
 | Check | NumPy 1.26.4 vs 2.2.6 | Result |
 |---|---|---|
-| Experiment 1 test suite (59 tests then, 82 now) | both versions | **pass** |
-| Experiment 2 test suite (47 tests then, 63 now) | both versions | **pass** |
+| Experiment 1 test suite (59 tests then, 85 now) | both versions | **pass** |
+| Experiment 2 test suite (47 tests then, 66 now) | both versions | **pass** |
 | Collision geometry (14 hand-computed entry parameters and hit positions) | both versions | **identical to 1e-12** |
 | Domain-randomisation stream (`arena_size`, speeds, cooldowns of match 41) | both versions | **identical, all digits** |
 | `train_rl.py --seed 42 --steps 4000`, first PPO update | both versions | policy/value loss differ at the **1e-6 – 1e-8** level |
@@ -96,11 +96,11 @@ pip install pandas                # not a dependency of anything measured
 | `python scripts/train_rl.py --seed S` | 1 | Headless PPO training; bit-for-bit reproducible for a given seed |
 | `python main.py` | 1 | Ursina 3D window, greedy policies loaded from `data/checkpoints/` |
 | `python scripts/plot_metrics.py` | 1 | Reads `data/metrics/summary.json` → `exports/metrics/` |
-| `python -m pytest tests/ -q` | 1 | 82 tests |
+| `python -m pytest tests/ -q` | 1 | 85 tests |
 | `cd ctde_arena && python scripts/train_rl.py` | 2 | Same, plus MLflow logging |
 | `cd ctde_arena && mlflow ui --backend-store-uri file:./mlruns` | 2 | Tracking UI |
 | `cd ctde_arena && python main.py` | 2 | 3D window for the CTDE variants |
-| `cd ctde_arena && python -m pytest tests/ -q` | 2 | 63 tests |
+| `cd ctde_arena && python -m pytest tests/ -q` | 2 | 66 tests |
 | `cd ctde_arena && docker build -t ctde-arena . && docker run --rm -v ${PWD}/data:/app/data -v ${PWD}/mlruns:/app/mlruns ctde-arena` | 2 | Containerised training |
 | `python scripts/run_experiment.py --seed S --steps N --out DIR` | either | One seeded replicate: train, then greedy held-out evaluation |
 | `python scripts/run_study.py --steps 500000 --seeds 1..10 --jobs 20` | both | Fan replicates out across processes and collect `results/study/` |
@@ -114,6 +114,8 @@ pip install pandas                # not a dependency of anything measured
 | `python scripts/report_cross_arena.py --in results/cross_arena/blocks.csv --json-out results/cross_arena/blocks.json` | root | McNemar pairwise tests, the leave-one-training-block-out column, the slot control and both stability tables |
 | `python scripts/combine_cross_arena.py results/cross_arena_blocks/*` | root | Pool replicated round-robin runs, stamping each row with its training block and harness seed |
 | `python scripts/run_absolute_eval.py --matches 150 --seeds 1,2,3` | run from `ctde_arena/` | Absolute strength: each trained policy against two uniform-random controllers, trained slot rotated |
+| `bash scripts/run_arena_v2_campaign.sh` | both | Queue the arena-v2 study: 10 seeds x 2 experiments at 500 k steps under the decayed alive bonus and draw-on-cap, waiting for whatever is already on the machine |
+| `bash scripts/run_ablation_campaign.sh` | 1 | Queue the three configuration ablations (`no_dr`, `narrow_64`, `wide_256`), each one key different from the committed study, after the v2 campaign |
 | `python scripts/report_inventory.py` | root | Regenerate the § 9.7 artefact table from `git ls-files` and live SHA-256 |
 | `python scripts/render_trailer.py --frames 240` | either | Render a gameplay clip from the promoted policies via Ursina offscreen |
 
@@ -171,9 +173,9 @@ ImportError: cannot import name 'ValueDecompositionCriticNetwork' from 'marl_are
 
 ```
 $ python -m pytest tests/ -q            # experiment 1
-81 passed, 1 skipped
+84 passed, 1 skipped
 $ cd ctde_arena && python -m pytest tests/ -q
-62 passed, 1 skipped
+65 passed, 1 skipped
 ```
 
 The skipped test in each suite is `test_render.py`'s offscreen path, which needs `ursina`: the pinned
@@ -188,19 +190,20 @@ Statement coverage over `src/marl_arena`, measured with `coverage run --source=s
 
 | Tree | Statements | Missing | Coverage |
 |---|---:|---:|---:|
-| Experiment 1 | 1,542 | 84–90 | **94–95 %** |
-| Experiment 2 (`ctde_arena/`) | 1,654 | 186 | **89 %** |
+| Experiment 1 | 1,542 | 84–90 | **94 %** |
+| Experiment 2 (`ctde_arena/`) | 1,654 | 184–186 | **89 %** |
 
-Experiment 1's total moves by up to six missing statements between identical invocations; four consecutive
-runs gave 90, 84, 90, 90. The branch that varies was not tracked down and the effect is 0.4 %, so the range
-is quoted rather than whichever run happened to be measured last. Experiment 2 repeated 186 exactly.
+Both totals move by a few missing statements between identical invocations: experiment 1 gave 90, 84, 88 and
+90 across four runs, experiment 2 gave 186 and then 184 after three configuration tests were added. The
+branch that varies was not tracked down and the effect is at most 0.4 %, so the range is quoted rather than
+whichever run happened to be measured last.
 
 In both trees the bulk of the gap is now in the engine rather than the presentation: `simulation.py`
 (33 missing), `rl_controller.py` (15), `config.py` (11), `controllers/base.py` (9), `systems/metrics.py` (9)
 and `systems/plotting.py` (8). `ui/dashboard.py`, which was the single largest uncovered file for most of
 this repository's life, is at 100 %.
 
-What the 145 tests do **not** cover is catalogued in
+What the 151 tests do **not** cover is catalogued in
 [§ Coverage](11_code_audit.md#coverage). The collision solver is now geometrically verified against
 hand-computed values, but no test checks a *metric* against an independent reference — see the note at the
 end of that section on coverage not being correctness.

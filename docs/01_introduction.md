@@ -112,7 +112,7 @@ not be relied on are set out in [§ Threats to validity](10_threats_to_validity.
    the measurement showing that a NumPy major-version change destroys it for training outcomes
    ([A-31](11_code_audit.md#the-pinned-environment-does-not-reproduce-the-recorded-runs)).
 9. A written account of what the implementation *actually computes*, as opposed to what the architecture
-   names conventionally imply — 32 audited findings, several of which are the reason the results changed on
+   names conventionally imply — 33 audited findings, several of which are the reason the results changed on
    re-measurement ([§ Optimisation procedure](06_optimisation_procedure.md#65-what-the-implementation-does-not-do)
    and [§ Code audit](11_code_audit.md)). This is the part that constrains how the results may be read.
 

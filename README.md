@@ -43,7 +43,7 @@ Honest summary of what is finished and what is not:
 | MLflow tracking | n/a | wired, but only **1 logged point** for the 100k run |
 | Cross-experiment round-robin | 9,000 matches, all six arms on common opponents, 3 checkpoint sets x 5 harness seeds (shared, run from `ctde_arena/`) | same |
 | Gameplay clips of the trained policies | yes (`docs/assets/`) | yes |
-| Tests | 82 (81 passed, 1 skipped), **94–95 %** statement coverage | 63 (62 passed, 1 skipped), **89 %** coverage |
+| Tests | 85 (84 passed, 1 skipped), **94 %** statement coverage | 66 (65 passed, 1 skipped), **89 %** coverage |
 | Docker | n/a | **never built or run** |
 
 Six defects documented in the audit were **fixed** during this work, and each changed what the results
@@ -291,7 +291,7 @@ rotation that the shipped checkpoints need. `RESPAWN_ENABLED` was removed rather
 │   ├── rl/                     # actions, buffer + GAE, networks, ppo
 │   ├── systems/                # match_variant, simulation, metrics, plotting
 │   └── ui/dashboard.py         # in-game overlay text
-├── tests/                      # 82 tests, incl. tree-parity, collision geometry and the round-robin statistics
+├── tests/                      # 85 tests, incl. tree-parity, collision geometry and the round-robin statistics
 ├── data/                       # experiment 1: promoted replicate + historical_100k/ + PROVENANCE.json
 ├── results/
 │   ├── study/                  # per_seed_metrics.csv, analysis.json, learning_curves.png
@@ -302,7 +302,7 @@ rotation that the shipped checkpoints need. `RESPAWN_ENABLED` was removed rather
     ├── main.py  Dockerfile  requirements.txt  README.md
     ├── scripts/                # own train_rl.py (adds MLflow); the shared scripts are byte-identical
     ├── src/marl_arena/         # own copy; VD / CAC / Comm networks
-    ├── tests/                  # 63 tests
+    ├── tests/                  # 66 tests
     ├── results/baseline/       # experiment 2's untrained reference
     └── data/                   # promoted replicate, historical_100k/, mlflow_export/, PROVENANCE.json
 ```

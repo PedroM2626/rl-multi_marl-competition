@@ -17,7 +17,7 @@ Every finding below was open at some point; the status column is the current sta
 | [A-3](#versioning) | FIXED | Root-anchored `.gitignore` excluded experiment 1's results and included experiment 2's |
 | [A-4](#silent-warm-start) | FIXED | Training silently resumed from versioned weights while resetting the step counter and optimizer |
 | [A-5](#test-suite-never-updates) | FIXED | The "and update" test never reached a PPO update |
-| [A-6](#coverage) | MOSTLY FIXED | Coverage raised from 73 % / 14 % to 94–95 % / 89 %; the collision solver is now geometrically verified |
+| [A-6](#coverage) | MOSTLY FIXED | Coverage raised from 73 % / 14 % to 94 % / 89 %; the collision solver is now geometrically verified |
 | [A-7](#terminal-state-crash) | FIXED | `IndexError` when stepping in an already-decided state |
 | [A-8](#unseeded-minibatch-shuffle) | FIXED | Minibatch order was unseeded; runs are now byte-reproducible |
 | [A-9](#mlflow-cadence) | FIXED | MLflow logged one point per 100 k-step run; a final entry is now always written |
@@ -44,6 +44,7 @@ Every finding below was open at some point; the status column is the current sta
 | [A-30](#greedy-evaluation-of-an-untrained-network-is-not-random-play) | MED | Argmax of random weights is a near-constant policy: untrained "random" arms differ by 18× in firing rate |
 | [A-31](#the-pinned-environment-does-not-reproduce-the-recorded-runs) | INFO | Measured: the pinned NumPy changes training outcomes at the first PPO update |
 | [A-32](#the-arena-spawn-geometry-is-not-symmetric) | MED | One of the three spawn positions wins ~2x as often as the other two, for every architecture |
+| [A-33](#the-study-runner-overrode-the-domain-randomisation-knob) | LOW · FIXED | The runner overwrote `DOMAIN_RANDOMIZATION`, and both training simulations then hard-coded it too |
 
 ---
 
@@ -190,11 +191,11 @@ Measured with `coverage run --source=src/marl_arena -m pytest`, before and after
 | `controllers/base.py` | 91 % | 89 % | 91 % | 89 % |
 | **total** | **73 %** | **93 %** | **14 %** | **87–88 %** |
 
-Test count went from 9 to 106 (59 and 47) at the time of that measurement, and to **145 (82 and 63)** with
+Test count went from 9 to 106 (59 and 47) at the time of that measurement, and to **151 (85 and 66)** with
 the suites added since — the collision, config, dashboard, render and round-robin-statistics tests. The
-totals have moved with them: experiment 1 is now **94–95 %** (1,542 statements) and experiment 2 **89 %**
-(1,654). Experiment 1's total moves by up to six missing statements between identical invocations — four
-consecutive runs gave 90, 84, 90, 90 — so it is quoted as a range; experiment 2 repeated 186 exactly. The
+totals have moved with them: experiment 1 is now **94 %** (1,542 statements, 84–90 missing) and experiment 2 **89 %**
+(1,654, 184–186 missing). Both totals move by a few statements between identical invocations, which is why
+they are quoted as ranges. The
 additions that mattered:
 
 * `test_control_law.py` pins the A-1 fix, including a closed-loop check that repeated application of the
@@ -713,6 +714,39 @@ not a patch to apply on top of the current evidence.
 **Reproduction:** the fifteen-run loop of [§ 9.3](09_reproducibility.md#93-commands) writes
 `results/cross_arena/blocks.csv`; `python scripts/report_cross_arena.py --in
 results/cross_arena/blocks.csv` prints the per-slot table over all 9,000 team-matches per slot.
+
+
+## The study runner overrode the domain-randomisation knob
+
+**A-33 · LOW · FIXED**
+
+`scripts/run_experiment.py` — the entry point `run_study.py` fans replicates out through — set
+`os.environ["DOMAIN_RANDOMIZATION"] = "true"` unconditionally. An ablation that exported
+`DOMAIN_RANDOMIZATION=false` had its value overwritten before `CONFIG` was even imported, so the arm would
+have trained the control again and the difference between the two would have been reported as an effect.
+
+That was the first half of the defect, and fixing it exposed the second: both training entry points then
+passed `domain_randomization=True` **literally** to `ArenaSimulation`, which overrides the config value
+because the constructor treats an explicit argument as the higher-precedence source. So even with the
+environment respected, the knob was still dead at the point of use. The two hard-codings lived in
+`run_experiment.py:122` and `train_rl.py:38`, in both trees.
+
+**Fixed** by `os.environ.setdefault(...)` in the runner, dropping the explicit argument from the two
+training simulations (the held-out evaluation and the window keep theirs: those are protocol, not
+configuration), and recording `"domain_randomization"` in `evaluation/run_summary.json` so every future arm
+states which arena it actually trained in.
+
+**Verification, both arms, 600 steps each:** with `DOMAIN_RANDOMIZATION=false` exported, the summary reports
+`false`; with nothing exported it reports `true`, so every committed number still describes the arena it was
+measured in. Three tests pin the shape rather than the instance: the simulation defers to `CONFIG` when the
+argument is omitted, neither training runner may pass `domain_randomization=True` (a source-level guard,
+because the failure is invisible at runtime), and the runner must use `setdefault`.
+
+**Why it survived.** Nothing in the repository ever asked for `DOMAIN_RANDOMIZATION=false` until the
+ablation campaign was queued, and the knob's own documentation ([§ 9.3](09_reproducibility.md#93-commands))
+was written from the code that ignored it. This is A-16's class of defect recurring in a file that had
+already been audited once, one layer above where the audit looked: A-16 checked that keys were *read*, not
+that the reader's value could still *reach* the engine.
 
 
 ## Open work: suggested measurements

@@ -109,3 +109,34 @@ def test_a_wipeout_still_awards_a_winner_with_the_knob_off(monkeypatch) -> None:
             agent.alive = False
     result = sim.finish_match()
     assert result.winner_team == "Team 1"
+
+
+def test_simulation_defers_to_config_when_the_argument_is_omitted(monkeypatch) -> None:
+    """The no-DR ablation reaches training only because the runner omits the argument; pin that fallback."""
+    monkeypatch.setattr(simulation_module, "CONFIG",
+                        dataclasses.replace(CONFIG, domain_randomization=False))
+    assert ArenaSimulation(seed=5, load_checkpoints=False).domain_randomization is False
+    # ... and an explicit argument still wins, which is what the held-out evaluation relies on.
+    assert ArenaSimulation(seed=5, domain_randomization=True, load_checkpoints=False).domain_randomization is True
+
+
+def test_the_training_runners_do_not_hard_code_domain_randomization() -> None:
+    """A knob the runner overrides is not a knob (A-16's shape, one layer up).
+
+    Both training entry points used to pass `domain_randomization=True` literally, so an ablation arm that
+    set DOMAIN_RANDOMIZATION=false trained the control twice and reported the difference as an effect.
+    """
+    for relative in ("scripts/run_experiment.py", "scripts/train_rl.py"):
+        source = (PROJECT_ROOT / relative).read_text(encoding="utf-8")
+        hits = [line.strip() for line in source.splitlines()
+                if "ArenaSimulation(" in line and "load_checkpoints" in line]
+        assert hits, f"{relative} no longer constructs the training simulation where this test can see it"
+        for line in hits:
+            assert "domain_randomization=True" not in line, f"{relative}: {line}"
+
+
+def test_the_study_runner_sets_domain_randomization_only_if_absent() -> None:
+    """`os.environ[...] = ...` would clobber whatever the campaign script exported."""
+    source = (PROJECT_ROOT / "scripts" / "run_experiment.py").read_text(encoding="utf-8")
+    assert 'os.environ.setdefault("DOMAIN_RANDOMIZATION"' in source
+    assert 'os.environ["DOMAIN_RANDOMIZATION"] =' not in source

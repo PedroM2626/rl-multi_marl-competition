@@ -26,7 +26,7 @@ Each paradigm controls one team; three teams of three agents fight in the same a
 | Untrained baseline | 300 matches in both greedy and uniform modes (`results/baseline/`) |
 | Bit-for-bit reproducible training | yes, verified with `--no-mlflow` |
 | MLflow curves | **1 logged point** for the 100k run — see [A-9](../docs/11_code_audit.md#mlflow-cadence) |
-| Tests | 63 (62 passed, 1 skipped), **89 %** statement coverage |
+| Tests | 66 (65 passed, 1 skipped), **89 %** statement coverage |
 | Cross-experiment round-robin | hosted here, since this tree's package is the superset holding all six architectures |
 | Docker image | **never built or run** — unverified configuration |
 
@@ -302,7 +302,7 @@ The values that matter most here:
 
 ```bash
 cd ctde_arena
-python -m pytest tests/ -q        # 62 passed, 1 skipped; 89% statement coverage of src/marl_arena
+python -m pytest tests/ -q        # 65 passed, 1 skipped; 89% statement coverage of src/marl_arena
 ```
 
 `test_components.py` checks tensor shapes for the two new networks; `test_ctde_training.py` terminates real

@@ -99,7 +99,10 @@ def main() -> None:
     os.environ["RANDOM_SEED"] = str(args.seed)
     os.environ["RL_TRAIN_TOTAL_STEPS"] = str(args.steps)
     os.environ["RL_METRICS_EVERY_MATCHES"] = str(args.metrics_every)
-    os.environ["DOMAIN_RANDOMIZATION"] = "true"
+    # Respect an inherited value: an ablation of domain randomisation has to be able to turn it off, and
+    # pinning it here made the config knob unreachable through the study runner -- the same shape of
+    # defect the audit records for RESPAWN_ENABLED (A-16).
+    os.environ.setdefault("DOMAIN_RANDOMIZATION", "true")
 
     seed_everything(args.seed)
 
@@ -116,7 +119,9 @@ def main() -> None:
     next_curve = 0
 
     metrics = MetricsStore()
-    sim = ArenaSimulation(seed=args.seed, domain_randomization=True, load_checkpoints=False)
+    # No explicit domain_randomization: passing True here overrode CONFIG and made the knob dead even once
+    # the runner stopped overwriting it, so a no-DR ablation would have silently re-run the control arm.
+    sim = ArenaSimulation(seed=args.seed, load_checkpoints=False)
     set_rl_training(sim.controllers, True)
 
     started = time.time()
@@ -169,6 +174,7 @@ def main() -> None:
         "evaluation_seconds": round(eval_seconds, 1),
         "steps_per_second": round(sim.total_env_steps / max(train_seconds, 1e-9), 1),
         "device": CONFIG.rl_device,
+        "domain_randomization": sim.domain_randomization,
         "paradigm_rotation": sim.paradigm_rotation,
         "paradigms": {name: controller.paradigm for name, controller in sim.controllers.items()},
         "training_cumulative": {t: m.as_summary() for t, m in sim.cumulative_metrics.items()},

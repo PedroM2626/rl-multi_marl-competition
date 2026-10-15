@@ -45,7 +45,8 @@ def main() -> None:
         mlflow.set_experiment("CTDE_Comparison_Arena")
 
     metrics = MetricsStore()
-    simulation = ArenaSimulation(seed=seed, domain_randomization=True, load_checkpoints=not args.from_scratch)
+    # Honour DOMAIN_RANDOMIZATION rather than hard-coding True; the print below reports which won.
+    simulation = ArenaSimulation(seed=seed, load_checkpoints=not args.from_scratch)
     set_rl_training(simulation.controllers, True)
     target_steps = CONFIG.rl_train_total_steps if args.steps is None else args.steps
     dt = CONFIG.sim_step_dt

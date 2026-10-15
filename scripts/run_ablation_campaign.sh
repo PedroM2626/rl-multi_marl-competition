@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Ablations the documentation listed as "not done", chained onto the arena-v2 campaign.
+#
+# Each arm differs from the committed study by exactly one configuration key, uses the same seeds 1-3 so
+# it is comparable against the same three seeds of results/study, and writes to its own results directory
+# so nothing committed is touched. Experiment 1 only: three arms x three seeds x 500k steps is already
+# ~16 CPU-hours, and doubling it for experiment 2 buys a second copy of the same conclusion.
+set -u
+cd "$(dirname "$0")/.."
+
+while [ ! -f /tmp/study_v2.flag ]; do sleep 120; done
+echo "arena v2 study complete; starting ablations at $(date -Is)"
+
+PY=.venv-check/Scripts/python.exe
+[ -x "$PY" ] || PY=.venv/Scripts/python.exe
+
+run_arm() {
+  local name="$1"; shift
+  echo "=== $name ==="
+  env "$@" "$PY" scripts/run_study.py \
+    --steps 500000 --seeds 1,2,3 --jobs 3 --eval-matches 150 \
+    --out "data/runs_ablation_$name" --results-dir "results/ablation_$name" \
+    > "/tmp/ablation_$name.log" 2>&1
+  echo "$name exit $? at $(date -Is)" >> "/tmp/ablation_$name.log"
+}
+
+# Baseline for all three is results/study (domain randomisation on, hidden dim 128).
+run_arm no_dr      DOMAIN_RANDOMIZATION=false
+run_arm narrow_64  RL_HIDDEN_DIM=64
+run_arm wide_256   RL_HIDDEN_DIM=256
+
+echo ABLATIONS_DONE > /tmp/ablations.flag
