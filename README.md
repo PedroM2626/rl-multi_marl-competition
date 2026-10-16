@@ -170,6 +170,11 @@ Findings worth knowing before reading anything else:
 * **A quarter of replicates are not measuring fighting.** Five of twenty end most matches on the 90 s
   clock, where winning means "most alive at the buzzer"
   ([§ 8.1](docs/08_results.md#two-regimes)).
+* **One configuration key moves the outcome more than the paradigm does.** Turning domain randomisation
+  off shifts a paradigm's held-out win rate by up to **0.253** and inverts the ranking of both experiments,
+  while the whole between-paradigm spread of the ten-seed study is 0.085–0.129. Halving the network costs at
+  most 0.064. So every "X beats Y" claim in this repository is to be read as "under hidden width 128 and
+  domain randomisation on" ([§ 8.13](docs/08_results.md#ablations)).
 * **Two opponent pools agree, once each architecture is replicated.** Ranking the six architectures by how
   often they beat trained peers and by how often they beat uniform-random teams gives Spearman **+0.94**
   over three independently trained checkpoints per architecture, with the same arm (CTE) last on both

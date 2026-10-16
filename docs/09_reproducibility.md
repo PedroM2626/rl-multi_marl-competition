@@ -107,7 +107,7 @@ pip install pandas                # not a dependency of anything measured
 | `python scripts/run_study.py --collect-only --out data/runs_v2 --results-dir results/study_v2` | both | Rebuild an aggregate from run summaries already on disk, launching nothing |
 | `python scripts/report_study.py --results-dir results/study_v2 --label "arena v2"` | both | Render the study tables for any campaign directory, not just the committed one |
 | `python scripts/plot_study.py --runs-dir data/runs_v2 --out results/study_v2` | both | Draw `learning_curves.png` for any campaign directory |
-| `python scripts/report_study.py` | both | Render the study tables, paired tests, Fisher tests and forward-power table |
+| `python scripts/report_study.py [--results-dir DIR] [--compare-to CONTROL]` | both | Render the study tables, paired tests and forward power; with `--compare-to`, the per-seed paired table for an ablation arm or arena-v2 against a control campaign |
 | `python scripts/plot_study.py` | both | Draw `results/study/learning_curves.png` |
 | `python scripts/promote_run.py --experiment exp1 --list` | 1 or 2 | Show every replicate with its L1 distance to the study means |
 | `python scripts/promote_run.py --experiment exp1 --seed median` | 1 or 2 | Copy one replicate into the versioned `data/` and write `PROVENANCE.json` |
@@ -120,7 +120,7 @@ pip install pandas                # not a dependency of anything measured
 | `python scripts/run_absolute_eval.py --blocks 1:7,10:5,9:2 --matches 50 --seeds 1,2,3 --out results/absolute_blocks --null-json results/baseline/random_baseline_uniform.json --compare-pool results/cross_arena/blocks.json` | run from `ctde_arena/` | The same over three training blocks, with the slot-matched null and the agreement with the peer pool |
 | `python scripts/run_absolute_eval.py --report-only --out results/absolute_blocks …` | run from `ctde_arena/` | Re-derive a summary from its recorded `matches.csv`, playing nothing |
 | `bash scripts/run_arena_v2_campaign.sh` | both | Queue the arena-v2 study: 10 seeds x 2 experiments at 500 k steps under the decayed alive bonus and draw-on-cap, waiting for whatever is already on the machine |
-| `bash scripts/run_ablation_campaign.sh` | 1 | Queue the three configuration ablations (`no_dr`, `narrow_64`, `wide_256`), each one key different from the committed study, after the v2 campaign |
+| `bash scripts/run_ablation_campaign.sh` | both | Queue the three configuration ablations (`no_dr`, `narrow_64`, `wide_256`), each one key different from the committed study, after the v2 campaign |
 | `python scripts/report_inventory.py` | root | Regenerate the § 9.7 artefact table from `git ls-files` and live SHA-256 |
 | `python scripts/render_trailer.py --frames 240` | either | Render a gameplay clip from the promoted policies via Ursina offscreen |
 
@@ -238,6 +238,7 @@ implication for a JAX/vectorised-env port are in
 | 3,000,000 steps (code default) | ≈ 2.3 h | |
 | 500 k × 10 seeds × 2 experiments | **117.5 min total** | 20 processes at once on 32 cores; 31.5 CPU-h training + 4.7 h evaluation |
 | same again as arena v2 | **104.3 min total** | `scripts/run_arena_v2_campaign.sh`; 20 runs, same budget, three arena keys changed ([§ 8.12](08_results.md#arena-v2)) |
+| 500 k × 3 seeds × 2 experiments, one arm | **69–81 min per arm** | `scripts/run_ablation_campaign.sh`; 6 concurrent, so 24–34 min of training per replicate at 243–350 steps/s (against 85–92 steps/s under 20-way load) plus the held-out evaluation. Three arms in series: 3.9 h |
 
 The measured per-replicate throughput under full 20-way load is 82.6–92.9 steps/s against 368 steps/s for an
 isolated process, so 20 concurrent replicates cost 36.2 CPU-hours and take about as long as four sequential
@@ -326,7 +327,7 @@ inclination to replay 2,700 matches.
 
 ## 9.7 Artefact inventory
 
-Every versioned experiment artefact (85 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed.
+Every versioned experiment artefact (109 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed.
 
 **Promoted replicate.** The artefacts that match the current code. Chosen by `promote_run.py --seed median`, which is the replicate with the least L1 distance to the per-arm study means; `PROVENANCE.json` records the choice and the full run summary behind it.
 
@@ -351,7 +352,7 @@ Every versioned experiment artefact (85 files), with SHA-256 for integrity check
 | `data/metrics/team_match_metrics.csv` | 10,945 | `2c03ab03f0cf2363ad2f039ab9a31b57e7070ccc6ca7ab8aacad4303f886afe7` |
 | `data/metrics/trajectory_metrics.csv` | 1,363,141 | `94182ae194f1df7bbdf30475b621cb93671d9ca21aec78c25a05b4a64d90f498` |
 
-**Study aggregates.** Recomputed by `report_study.py`, `plot_study.py` and `report_cross_arena.py` from the per-replicate and per-match summaries. `results/study_v2/` is the same study re-measured under the arena-v2 reward and termination keys ([§ 8.12](08_results.md#arena-v2)).
+**Study aggregates.** Recomputed by `report_study.py`, `plot_study.py` and `report_cross_arena.py` from the per-replicate and per-match summaries.
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
@@ -368,9 +369,6 @@ Every versioned experiment artefact (85 files), with SHA-256 for integrity check
 | `results/study/analysis.json` | 4,437 | `69a1756130e3a04663eef8b1ad131b088dd43df7435f1218acac9ad994fe302b` |
 | `results/study/learning_curves.png` | 137,532 | `1915d48d117e8a96730b3659e0259e5ad6446c0fb7103d0642a6a5e7bd601cbe` |
 | `results/study/per_seed_metrics.csv` | 5,287 | `a23d366199cbb78e805b52ac7b8569f4b3b72c4d3c05dd3e6977efadbcdac52f` |
-| `results/study_v2/analysis.json` | 4,433 | `c69e59585dec640871b66ef5241fd137c0576cf847045dc4ba005779089a0ce0` |
-| `results/study_v2/learning_curves.png` | 70,161 | `a2f19be70612de222a47c329f44730d4de78bb29b909db5e531ea3b3219274a0` |
-| `results/study_v2/per_seed_metrics.csv` | 5,339 | `9d8fb44357d5b6ca39e93107d74a2e44e542ee72b8d1b4af268d1da54b4e21e4` |
 
 **Untrained baselines.** `random_baseline.py` output, 300 fixed-variant headless matches per mode. The uniform files are byte-identical between the trees because that mode never queries a network.
 
@@ -411,18 +409,50 @@ Every versioned experiment artefact (85 files), with SHA-256 for integrity check
 | `data/training_replicates/exp1_seed10/team_1_dte.pt` | 145,762 | `1abf8cc62a757bc4bc61dbec67142a4159fb676eac4f7a856bd3803423715348` |
 | `data/training_replicates/exp1_seed10/team_2_ctde.pt` | 304,248 | `274e65e176ba5c07b356095b0bb1317bc1a77680df1629bd0344ec3f8b80fc6c` |
 | `data/training_replicates/exp1_seed10/team_3_cte.pt` | 323,170 | `3c9665d812d3719542413a00f5a7dc9da5e4001f41cd8df93599105e824595ca` |
+| `data/training_replicates/exp1_seed2/team_1_ctde.pt` | 304,248 | `b41e0d05894b970efecb7ecd10fc90a0f8ebc260a7f5f4de845c2b1e95b2f8bc` |
+| `data/training_replicates/exp1_seed2/team_2_cte.pt` | 323,170 | `fa5584c0366c673c0b20bbe4958f295b59160eb24144e69fb90a129874f872a7` |
+| `data/training_replicates/exp1_seed2/team_3_dte.pt` | 145,762 | `6cf716c85db237143de4c1ffda5bd0bfff7c0ed3cda43e53878365f4f24285ae` |
+| `data/training_replicates/exp1_seed3/team_1_cte.pt` | 323,170 | `26bec8463a68eab36e8b8181cfd97f40be8d8e05b258375de62b2a8005e75cf1` |
+| `data/training_replicates/exp1_seed3/team_2_dte.pt` | 145,762 | `31d610801fcf770282dea3276e8a6a0951277f286e60ceee89c801ef0192bad0` |
+| `data/training_replicates/exp1_seed3/team_3_ctde.pt` | 304,248 | `b01513cf107717860ee511dcf692eacfcc4b7f6aa02f39caa078c44be6367b28` |
+| `data/training_replicates/exp1_seed4/team_1_dte.pt` | 145,762 | `c8af14b70143e669c270335cd12db21b1771271c938b2b2493e29c8b3ccc1590` |
+| `data/training_replicates/exp1_seed4/team_2_ctde.pt` | 304,248 | `0666cfb5d45545b45b41d76733e850b46bc63378b597eafb9ca5c886368e2718` |
+| `data/training_replicates/exp1_seed4/team_3_cte.pt` | 323,170 | `e91e83c806d4e368126d572343be1c4e66d5079339a8396116d1c10b6ecf01c7` |
 | `data/training_replicates/exp1_seed9/team_1_cte.pt` | 323,170 | `c978273409e60e45b9555d763d65c9ff13ba7774ffaf332ac4eccd11ffe59111` |
 | `data/training_replicates/exp1_seed9/team_2_dte.pt` | 145,762 | `93fc387fbfbd1cb935a271672954675230e1326565ae2680333a4ded4e4e3897` |
 | `data/training_replicates/exp1_seed9/team_3_ctde.pt` | 304,248 | `5a5273f3c73942e8fb0964bbb6a848734c58fee9cf0b52b4986f84cf8f2a4fae` |
+| `data/training_replicates/exp2_seed1/team_1_ctde-cac.pt` | 304,400 | `7c3eb6de6b1388f1b37eb3c334f8185ffce543829a4db796d907f4ae3498c054` |
+| `data/training_replicates/exp2_seed1/team_2_ctde-comm.pt` | 313,778 | `baae4dda211f526da971587b58fbba379f1f9b2a06b3530d3310f4d3bda38b2f` |
+| `data/training_replicates/exp2_seed1/team_3_ctde-vd.pt` | 217,330 | `e7d7790c164ee0cbfb6c2346a2f947e4c9ac2b1c976d6ddededb0a0c286d4c8d` |
 | `data/training_replicates/exp2_seed2/team_1_ctde-comm.pt` | 313,778 | `cb3fee053d68a7a3cc6e4cadbd3fdfc05a356e5a9542babad143a1aa2eb85ff1` |
 | `data/training_replicates/exp2_seed2/team_2_ctde-vd.pt` | 217,330 | `bf261e17c010ee0bb8f69b9d7e9ca1c4214cc9cfe0d8775038379dd71547d5f5` |
 | `data/training_replicates/exp2_seed2/team_3_ctde-cac.pt` | 304,400 | `451b14b4c8aae906c3e7b135f9e814426b268354e8eb222d420b42dcb981cccb` |
+| `data/training_replicates/exp2_seed3/team_1_ctde-vd.pt` | 217,330 | `14feaae8a70a214b4eba09ac9cf41d14ef2ea1837e8d8c4bf3dbdc7524950e1a` |
+| `data/training_replicates/exp2_seed3/team_2_ctde-cac.pt` | 304,400 | `77c98639e3d2e86d64c1640a266127fd255549e2709007ade734f9562b95682e` |
+| `data/training_replicates/exp2_seed3/team_3_ctde-comm.pt` | 313,778 | `d06e8316b86063471a03b28bab4a1c3652b09a80e8666c8202dfcc3d1dab2c70` |
+| `data/training_replicates/exp2_seed4/team_1_ctde-cac.pt` | 304,400 | `1cd86ec8561ae603768bb1f37baa23484d1599cd96bc7f9668d46b4768948106` |
+| `data/training_replicates/exp2_seed4/team_2_ctde-comm.pt` | 313,778 | `1ee645fd0afe4da4a574b92ba72427221778555135ccef12b1729c0de7279136` |
+| `data/training_replicates/exp2_seed4/team_3_ctde-vd.pt` | 217,330 | `319e3e0beb661142d823dcce8e38c7356c0cc49833aa88b1d0bba307f8f83a9d` |
 | `data/training_replicates/exp2_seed5/team_1_ctde-comm.pt` | 313,778 | `3d9bb400a0694e5deda58bca87e6965c2699760bee62fe3b1dd03c5387be1667` |
 | `data/training_replicates/exp2_seed5/team_2_ctde-vd.pt` | 217,330 | `c8f3caa5094976f0bffc34aa4c8a0e1d6b5c653cb9ee65fbd5a30b8f345198de` |
 | `data/training_replicates/exp2_seed5/team_3_ctde-cac.pt` | 304,400 | `3898cd7a3ae8a1877c08e41a620e49cc5533be420cd0f10a7773147cc12cdca0` |
 | `data/training_replicates/exp2_seed7/team_1_ctde-cac.pt` | 304,400 | `bcb973516fc3e1141a24dda3243373de730ca6f52476f6227dc7162152506bf1` |
 | `data/training_replicates/exp2_seed7/team_2_ctde-comm.pt` | 313,778 | `5a22ef5f10fb96b78892ffb58e351876072573fd958f2874d8e7877c1794d14b` |
 | `data/training_replicates/exp2_seed7/team_3_ctde-vd.pt` | 217,330 | `d49f1fdfdd579ea443e6e253df7d814650b736551f51cd8f32a7e980b93f31c7` |
+
+**Ablation and arena-v2 campaigns.** `run_arena_v2_campaign.sh` and `run_ablation_campaign.sh` output, each aggregated by `run_study.py` from 500 k-step replicates on seeds 1-3 (v2: 10 seeds). Every arm differs from `results/study/` by exactly one configuration key.
+
+| Path | Bytes | SHA-256 |
+|---|---:|---|
+| `results/ablation_narrow_64/analysis.json` | 3,647 | `32a5ca8ea05fb2a1bce956e2b3394b6459c2e95d544854defa67ce0c2d7c51c3` |
+| `results/ablation_narrow_64/per_seed_metrics.csv` | 1,750 | `80f457a8fdd848f0548a491342bb5ca5e133e65e1733307ae60406408c8b2682` |
+| `results/ablation_no_dr/analysis.json` | 3,629 | `f9595dfa7b717a2e2c8d816b7374d0e5cf1684b9825f6996bd67a8bce13a2d70` |
+| `results/ablation_no_dr/per_seed_metrics.csv` | 1,725 | `be43ad74cdb32817f040bbf89c16a3252035c96cf991161d5a402a97c1f4ec9a` |
+| `results/ablation_wide_256/analysis.json` | 3,645 | `0aa12f68a1ed4b72d6651ce2d19716119cdd68eef0da12c697449a11143f11cf` |
+| `results/ablation_wide_256/per_seed_metrics.csv` | 1,742 | `a9acc767b534ec1ad0e7984796e1aac9fe6348c09900945d8b2f6be450448ec4` |
+| `results/study_v2/analysis.json` | 4,433 | `c69e59585dec640871b66ef5241fd137c0576cf847045dc4ba005779089a0ce0` |
+| `results/study_v2/learning_curves.png` | 70,161 | `a2f19be70612de222a47c329f44730d4de78bb29b909db5e531ea3b3219274a0` |
+| `results/study_v2/per_seed_metrics.csv` | 5,339 | `9d8fb44357d5b6ca39e93107d74a2e44e542ee72b8d1b4af268d1da54b4e21e4` |
 
 **Absolute-strength evaluation.** `run_absolute_eval.py` output: one trained policy against two uniform-random controllers, trained slot rotated. `absolute/` is the promoted checkpoint set at 150 matches per architecture per harness seed; `absolute_blocks/` is the same instrument over the three training blocks above, 50 matches per architecture per block per seed. Each `summary.json` re-derives from its `matches.csv` with `--report-only`.
 

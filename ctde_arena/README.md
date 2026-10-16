@@ -235,6 +235,14 @@ indistinguishable from each other (*p* = 0.35) — and both of those separations
 they are the weaker kind of result. Reproduce with the fifteen-run loop of
 [§ 9.3](../docs/09_reproducibility.md#93-commands).
 
+### Configuration ablations (this experiment too)
+
+`no_dr`, `narrow_64` and `wide_256` re-train these three variants on seeds 1-3 with one key changed each
+([§ 8.13](../docs/08_results.md#ablations)). Domain randomisation off drops CTDE-Comm from 0.353 to 0.100 —
+below the control's worst seed in all three of its own — and moves CTDE-VD from last of three to first,
+while halving the hidden width costs Comm 0.020. Neither experiment's ranking is a property of the
+paradigms alone.
+
 ### Against untrained play
 
 `scripts/random_baseline.py`, 300 headless matches. [§ 8.9](../docs/08_results.md#random-baseline) has both

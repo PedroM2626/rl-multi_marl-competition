@@ -136,7 +136,11 @@ Out of scope, deliberately or as unfinished work:
 * ~~No absolute reference point.~~ **Partly closed** by the random-pool floor of
   [§ 8.11](08_results.md#absolute-strength). What that does *not* buy is comparability with the literature:
   uniform-random play in this arena is not any published baseline, and the benchmark itself is local.
-* No ablation of domain randomisation, reward coefficients, or network width.
+* ~~No ablation of domain randomisation, reward coefficients, or network width.~~ **Closed**: the reward
+  and termination keys are varied by [§ 8.12](08_results.md#arena-v2) and domain randomisation and network
+  width by [§ 8.13](08_results.md#ablations). What those two sections establish is that this is not a
+  neutral backdrop -- one key reorders both experiments -- and the ablated configurations have not been
+  re-measured through the common-opponent or random-pool instruments.
 * Respawn is configured but not implemented; the flag has no effect
   ([§ Code audit](11_code_audit.md#dead-configuration)).
 * No recurrent policies, no opponent modelling, no self-play league. Teams train concurrently against

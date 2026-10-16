@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import csv
 import math
+import statistics
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -159,6 +160,55 @@ def replicates_for_power(mean_diff: float, diff_sd: float, alpha: float, power: 
     return min(int(math.ceil(n)), 10**9)
 
 
+def read_metrics(results_dir: Path) -> list[dict]:
+    rows = list(csv.DictReader((results_dir / "per_seed_metrics.csv").open(newline="", encoding="utf-8")))
+    for row in rows:
+        for key in row:
+            if key not in {"experiment", "team", "paradigm"}:
+                row[key] = float(row[key]) if key != "seed" else int(row[key])
+    return rows
+
+
+def compare_arms(control: list[dict], arm: list[dict], arm_name: str) -> None:
+    """Paired per-seed comparison of one campaign against the control, paradigm by paradigm.
+
+    The seed is the unit, and the pairing is on the seed number, which is what makes the arms comparable:
+    each arm reuses the control's seeds, so the paradigm-to-slot rotation is identical in both.
+    """
+    def keyed(rows: list[dict]) -> dict:
+        return {(r["experiment"], r["paradigm"], int(r["seed"])): r for r in rows}
+
+    left, right = keyed(control), keyed(arm)
+    shared = sorted(set(left) & set(right))
+    if not shared:
+        print(f"\n### {arm_name}: no seeds in common with the control, nothing to pair\n")
+        return
+    groups: dict[tuple[str, str], list[float]] = defaultdict(list)
+    for key in shared:
+        groups[(key[0], key[1])].append(key[2])
+
+    print(f"\n### {arm_name} vs control, paired on seed ({len(shared) // len(groups)} shared seeds per arm)\n")
+    print("| experiment | paradigm | control | arm | paired diff | t | p | seeds below control | "
+          "survival (control -> arm) | elim./match | shots/match |")
+    print("|---|---|---:|---:|---:|---:|---:|---|---|---:|---:|")
+    for (experiment, paradigm), seeds in sorted(groups.items()):
+        c = [left[(experiment, paradigm, s)] for s in seeds]
+        a = [right[(experiment, paradigm, s)] for s in seeds]
+        differences = [x["eval_win_rate"] - y["eval_win_rate"] for x, y in zip(a, c)]
+        mean = sum(differences) / len(differences)
+        t_stat, p = paired_t(differences)
+        below = sum(1 for d in differences if d < 0)
+        print(f"| {experiment} | {paradigm} | {statistics.fmean([r['eval_win_rate'] for r in c]):.3f} "
+              f"| {statistics.fmean([r['eval_win_rate'] for r in a]):.3f} | {mean:+.3f} "
+              f"| {t_stat:+.2f} | {p:.3f} | {below}/{len(seeds)} "
+              f"| {statistics.fmean([r['eval_mean_survival'] for r in c]):.1f} -> "
+              f"{statistics.fmean([r['eval_mean_survival'] for r in a]):.1f}s "
+              f"| {statistics.fmean([r['eval_eliminations_per_match'] for r in c]):.2f} -> "
+              f"{statistics.fmean([r['eval_eliminations_per_match'] for r in a]):.2f} "
+              f"| {statistics.fmean([r['eval_shots_per_match'] for r in c]):.0f} -> "
+              f"{statistics.fmean([r['eval_shots_per_match'] for r in a]):.0f} |")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--results-dir", type=Path, default=DEFAULT_RESULTS_DIR,
@@ -167,15 +217,13 @@ def main() -> None:
     parser.add_argument("--label", default="",
                         help="a word for the banner, e.g. 'arena v2', so a re-measurement is not mistaken "
                              "for the committed study")
+    parser.add_argument("--compare-to", type=Path, default=None, metavar="CONTROL_DIR",
+                        help="pair this campaign against a control campaign, per paradigm and per seed")
     args = parser.parse_args()
     results_dir = args.results_dir if args.results_dir.is_absolute() else ROOT / args.results_dir
     if args.label:
         print(f"=== {args.label}: {results_dir.name} ===")
-    rows = list(csv.DictReader((results_dir / "per_seed_metrics.csv").open(newline="", encoding="utf-8")))
-    for row in rows:
-        for key in row:
-            if key not in {"experiment", "team", "paradigm"}:
-                row[key] = float(row[key]) if key != "seed" else int(row[key])
+    rows = read_metrics(results_dir)
 
     by_experiment: dict[str, list[dict]] = defaultdict(list)
     for row in rows:
@@ -272,6 +320,10 @@ def main() -> None:
                 odds = (ka / max(na - ka, 1)) / max(kb / max(nb - kb, 1), 1e-12)
                 verdict = "**significant**" if p < 0.0167 else ("nominal only" if p < 0.05 else "not significant")
                 print(f"| {a} vs {b} | {ka}/{na} vs {kb}/{nb} | {odds:.2f} | {p:.4f} | {verdict} |")
+
+    if args.compare_to is not None:
+        control_dir = args.compare_to if args.compare_to.is_absolute() else ROOT / args.compare_to
+        compare_arms(read_metrics(control_dir), rows, results_dir.name)
 
 
 if __name__ == "__main__":

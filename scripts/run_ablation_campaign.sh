@@ -3,8 +3,12 @@
 #
 # Each arm differs from the committed study by exactly one configuration key, uses the same seeds 1-3 so
 # it is comparable against the same three seeds of results/study, and writes to its own results directory
-# so nothing committed is touched. Experiment 1 only: three arms x three seeds x 500k steps is already
-# ~16 CPU-hours, and doubling it for experiment 2 buys a second copy of the same conclusion.
+# so nothing committed is touched.
+#
+# As launched it covers BOTH experiments -- run_study.py defaults to --experiments exp1,exp2, so each arm is
+# 6 runs and the campaign is 18, roughly 4 hours of wall clock at three concurrent. An earlier version of
+# this comment claimed experiment 1 only, which is not what ran; the results in
+# [docs/08 section 8.13](../docs/08_results.md) are the wider ones.
 set -u
 cd "$(dirname "$0")/.."
 

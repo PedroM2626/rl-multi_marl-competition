@@ -106,10 +106,16 @@ stochastic action sampling. Neither the final policy nor a greedy-action evaluat
 ([§ 7.2](07_experimental_protocol.md#72-procedure)). The headline "win rate" is thus an average over
 ~460 different policies, not a property of the checkpoint that ships.
 
-### Domain randomisation is unmeasured
+### ~~Domain randomisation is unmeasured~~ Measured, and it is not a neutral control
 
-Randomisation is applied during training and disabled during evaluation, with no ablation. Its
-contribution is unknown.
+Randomisation is applied during training and disabled during evaluation. Turning it off
+([§ 8.13](08_results.md#ablations)) moves a paradigm's held-out win rate by up to 0.253, inverts the ranking
+of both experiments, and roughly triples mean survival time -- so its contribution was not merely unknown, it
+was larger than the effect the study set out to measure. Two consequences remain open: the ablated arms were
+evaluated only against their own co-adapted teammates, so the common-opponent
+([§ 8.10](08_results.md#cross-arena)) and random-pool ([§ 8.11](08_results.md#absolute-strength)) results are still
+single-configuration measurements; and survival changing that much means part of what `no_dr` "wins" is the
+buzzer, which [§ 8.12](08_results.md#arena-v2) shows is a separate large effect.
 
 ### Win rate is not the same construct as competence
 

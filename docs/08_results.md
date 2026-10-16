@@ -6,7 +6,9 @@ hand. The mapping from section to command is in
 `scripts/report_study.py` (every study table, the paired *t* and Fisher tests, and the forward-power
 table), `scripts/plot_study.py` (`results/study/learning_curves.png`), `scripts/random_baseline.py`
 ([§ 8.9](#random-baseline)), `scripts/run_cross_arena.py` + `scripts/report_cross_arena.py`
-([§ 8.10](#cross-arena)) and `scripts/run_absolute_eval.py` ([§ 8.11](#absolute-strength)). The
+([§ 8.10](#cross-arena)), `scripts/run_absolute_eval.py` ([§ 8.11](#absolute-strength)),
+`scripts/run_study.py` again for the arena-v2 and ablation campaigns ([§ 8.12](#arena-v2),
+[§ 8.13](#ablations)) and `scripts/report_study.py --compare-to` for the paired arm tables. The
 leave-one-out table in [§ 8.1](#leave-one-out) calls
 `report_study.paired_t` on the same per-seed matrix with one replicate dropped, so it is not a second
 statistics implementation.
@@ -1016,9 +1018,106 @@ variable was decided by the clock rather than by fighting (about four matches in
 that route does not resolve the ranking — it lowers every win rate, leaves the spread almost as large, and
 moves the top of experiment 1 inside noise.
 
----
 
-## 8.13 Summary of answers <a name="summary-of-answers"></a>
+## 8.13 Configuration ablations: one key at a time <a name="ablations"></a>
+
+The study fixes every knob by convention and varies only the paradigm, which the protocol calls a control.
+A control that is never varied cannot say whether the ranking came from the paradigm or from the
+configuration. Three arms re-train experiment 1 **and** experiment 2 at 500,000 steps on seeds 1, 2 and 3 —
+the same seed numbers as the committed study, so the paradigm-to-slot rotation matches the control seed by
+seed and every comparison is paired — changing exactly one key each.
+
+| Arm | Key | Control → arm |
+|---|---|---|
+| `no_dr` | `DOMAIN_RANDOMIZATION` | true → false |
+| `narrow_64` | `RL_HIDDEN_DIM` | 128 → 64 |
+| `wide_256` | `RL_HIDDEN_DIM` | 128 → 256 |
+
+**The knobs were checked before their results were believed.** Actor parameter counts read back from the
+saved checkpoints are 9,545 / 35,465 / 136,457 for the three widths, and every `no_dr` run records
+`"domain_randomization": false` in its own `run_summary.json`. The second is only possible because of
+[A-33](11_code_audit.md#the-study-runner-overrode-the-domain-randomisation-knob): before that fix the arm
+would have re-trained the control and the difference would have been reported as an effect.
+
+Reproduce with `python scripts/report_study.py --results-dir results/ablation_no_dr --compare-to results/study`
+(same for the other two arms).
+
+### A configuration key moves the outcome more than a paradigm does
+
+Held-out greedy win rate, mean over seeds 1-3, paired against the control on the same seeds:
+
+| Paradigm | Control | `no_dr` | Δ | *p* | below | `narrow_64` | Δ | *p* | `wide_256` | Δ | *p* |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| **exp1** CTDE | 0.478 | 0.284 | −0.193 | 0.430 | 2/3 | 0.438 | −0.040 | 0.750 | 0.491 | +0.013 | 0.774 |
+| **exp1** CTE | 0.184 | 0.287 | +0.102 | 0.518 | 1/3 | 0.120 | −0.064 | 0.255 | 0.124 | −0.060 | **0.016** |
+| **exp1** DTE | 0.320 | 0.202 | −0.118 | 0.496 | 2/3 | 0.351 | +0.031 | 0.894 | 0.373 | +0.053 | 0.340 |
+| **exp2** CAC | 0.318 | 0.302 | −0.016 | 0.935 | 2/3 | 0.302 | −0.016 | 0.916 | 0.320 | +0.002 | 0.965 |
+| **exp2** Comm | 0.353 | 0.100 | **−0.253** | 0.238 | **3/3** | 0.333 | −0.020 | 0.737 | 0.280 | −0.073 | 0.076 |
+| **exp2** VD | 0.302 | 0.349 | +0.047 | 0.892 | 2/3 | 0.331 | +0.029 | 0.703 | 0.382 | +0.080 | 0.276 |
+
+"below" counts the arm's seeds that landed under the control's value on the same seed. With three seeds and
+18 comparisons the corrected threshold is alpha = 0.0028 and **no cell in this table is significant** — two
+reach nominal p < 0.05. What carries the finding is the size of the columns, not their p-values:
+
+* **The largest single-key move is 0.253** (CTDE-Comm, `no_dr`) and the second is 0.193 (CTDE, `no_dr`).
+  For scale, the entire between-paradigm spread in the ten-seed study is 0.129 in experiment 1 (DTE 0.381
+  over CTE 0.252) and 0.085 in experiment 2 (VD 0.367 over CAC 0.282). **One configuration key moves these
+  outcomes further than the thing the study was built to measure.**
+* **The rankings invert.** In experiment 1 the control on these seeds reads CTDE > DTE > CTE; `no_dr` reads
+  CTE ≈ CTDE > DTE, putting the control's last arm first. In experiment 2 the control reads Comm > CAC > VD
+  and `no_dr` reads VD > CAC > Comm, with Comm at 0.100 — under the control's *worst* seed in every one of
+  its own three.
+* **Capacity is nearly free, which is the opposite of what the parameter counts suggest.** Halving the
+  network costs at most 0.064 and changes no ranking. Doubling it is similarly mild, and in both
+  directions the arms stay within the seed-to-seed noise the study already reports (between-seed SD
+  0.122–0.218 in the ten-seed run). A reader who inferred "CTDE-Comm loses because its critic is too
+  small" from the parameter table would be wrong in the direction of that inference.
+
+### The arms play a different game, not only a different score
+
+The behavioural columns show the configuration changes *what the policies do*, which matters for how much
+weight their win rates can carry:
+
+* Turning domain randomisation off roughly **triples mean survival** (13.9–21.8 s in the control to
+  40.0–46.1 s) while eliminations fall (2.77 → 1.94 for CTDE, 2.29 → 0.24 for Comm). With a fixed arena the
+  agents do not finish each other; they stall. Those win rates are therefore more contaminated by the
+  buzzer than the control's, which [§ 8.12](#arena-v2) showed to be a large effect on its own — the two
+  knobs interact through the termination rule, and neither arm's number can be read as pure fighting skill.
+* `narrow_64` **doubles CTDE's firing rate** (95 → 203 shots per match) at lower accuracy (3.40 % → 1.82 %):
+  a smaller network shoots more and hits less. The same pattern appears for CTE (60 → 154 shots).
+* `wide_256` raises CTDE's accuracy to 4.64 % while cutting its volume to 59 shots — the opposite policy,
+  same nominal win rate (0.491 against the control's 0.478). Two configurations reaching the same score by
+  different means is exactly what makes the pooled win rate a weak summary.
+
+### Status of this section
+
+`scripts/run_ablation_campaign.sh` runs the three arms in series behind the arena-v2 campaign. Its header
+comment said experiment 1 only, while `run_study.py` defaults to both experiments, so what actually ran is
+**both** — 6 runs per arm and 18 in total. The campaign was left as launched rather than restarted, so the
+results are the wider ones, and the script's comment has since been corrected to describe the command.
+
+Two collection notes. `no_dr`'s first aggregate came out with 9 rows instead of 18 because of
+[A-35](11_code_audit.md#the-study-collector-read-only-one-of-the-two-trees); `--collect-only` rebuilt it
+from the run summaries already on disk, with no re-training. And on this mostly-idle machine six concurrent
+replicates run at 243–350 steps/s in 24–34 minutes, against the 85–92 steps/s and 90–101 minutes the
+committed study measured under its 20-way load ([§ 9.5](09_reproducibility.md#95-cost-of-a-run)).
+
+**What this does not do:** it does not re-run the common-opponent pool or the random-pool instrument under
+these configurations, so it cannot say whether the [§ 8.10](#cross-arena) band structure or the
+[§ 8.11](#absolute-strength) agreement survives a different `RL_HIDDEN_DIM` or no domain randomisation —
+each arm still measures teams that co-adapted inside their own run. It also does not close the power gap:
+three seeds is the sample the study's own forward-power table puts an order of magnitude short of what
+would resolve the differences it reports.
+
+**What it establishes:** the repository's architecture comparisons are conditional on one configuration, and
+that configuration is not a neutral backdrop — moving one key reorders both experiments. Any statement of
+the form "paradigm X beats paradigm Y" in this document should be read as "under hidden width 128 and
+domain randomisation on".
+
+
+------
+
+## 8.14 Summary of answers <a name="summary-of-answers"></a>
 
 | Question | Answer from the replicated study (10 replicates per arm) |
 |---|---|
@@ -1059,11 +1158,17 @@ moves the top of experiment 1 inside noise.
    0.439), and that experiment 1's top place moves from DTE to CTDE inside noise. The study's inability to
    rank the paradigms is not an artefact of the buzzer rule, and removing that route is not a path to a
    resolution ([§ 8.12](#arena-v2)).
+7. The comparison is **conditional on one configuration**, and that configuration is not a neutral
+   backdrop: changing one key — domain randomisation off — moves a paradigm's held-out win rate by up to
+   **0.253** and inverts the ranking of both experiments, while the whole between-paradigm spread of the
+   ten-seed study is 0.085–0.129. Every "X beats Y" statement here should be read as "under hidden width
+   128 and domain randomisation on" ([§ 8.13](#ablations)).
 
 **What it cannot claim:** that any architecture is best, or that the six admit a strict ordering — CTDE-Comm
 and DTE cannot be told apart, and neither can CTDE-CAC, CTDE-VD and CTE; that the ordering is settled by
 three checkpoints per architecture, since replacing one block of three reversed two positions in the pooled
 table; that within-experiment differences exist at all, since every corrected significance is
 *cross*-experiment; that win rate here measures fighting skill rather than, in a third of matches,
-survival to the clock; or that the absolute-strength numbers are architectural — they are one checkpoint set,
-the same limitation [§ 8.10](#cross-arena) used to carry.
+survival to the clock; that the ablated configurations generalise, since the three arms were measured only
+inside their own co-adapted runs and never through the common-opponent or random pools; or that any of it
+holds under a different setting of the keys [§ 8.13](#ablations) shows to matter.

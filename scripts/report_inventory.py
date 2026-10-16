@@ -23,9 +23,8 @@ GROUPS = [
     (
         "Study aggregates",
         "Recomputed by `report_study.py`, `plot_study.py` and `report_cross_arena.py` from the per-replicate "
-        "and per-match summaries. `results/study_v2/` is the same study re-measured under the arena-v2 "
-        "reward and termination keys ([§ 8.12](08_results.md#arena-v2)).",
-        ("results/study/", "results/study_v2/", "results/cross_arena/"),
+        "and per-match summaries.",
+        ("results/study/", "results/cross_arena/"),
     ),
     (
         "Untrained baselines",
@@ -46,6 +45,14 @@ GROUPS = [
         "rest on them while `**/data/runs*/` is git-ignored. `exp1_seed9+exp2_seed2` is byte-identical to "
         "the promoted checkpoints above, which is what makes that block a parity control.",
         ("data/training_replicates/",),
+    ),
+    (
+        "Ablation and arena-v2 campaigns",
+        "`run_arena_v2_campaign.sh` and `run_ablation_campaign.sh` output, each aggregated by "
+        "`run_study.py` from 500 k-step replicates on seeds 1-3 (v2: 10 seeds). Every arm differs from "
+        "`results/study/` by exactly one configuration key.",
+        ("results/study_v2/", "results/ablation_no_dr/", "results/ablation_narrow_64/",
+         "results/ablation_wide_256/"),
     ),
     (
         "Absolute-strength evaluation",
