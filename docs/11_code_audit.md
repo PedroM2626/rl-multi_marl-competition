@@ -847,11 +847,12 @@ Items 1–3 were the original list and are done; 6 is done; 4 is partly done; 7 
     35.6 % of the time. Report both readouts, or evaluate the stochastic policy at a fixed temperature.
 11. ~~The round-robin measures one checkpoint per architecture, so it compares networks rather than
     designs.~~ **Done** — three training blocks per architecture are versioned under
-    `data/training_replicates/` and the pool replayed over them (9,000 matches). It changed the answer twice
-    over: plain CTDE moved from last to third and CTE from third to last, and four of the eight
-    corrected-significant pairs turn out to be single-block effects, which is why the report now prints a
-    leave-one-block-out column. Remaining at this item: n = 3 blocks is enough to reverse a ranking and not
-    enough to settle one ([docs/10 item 12](10_threats_to_validity.md)).
+    `data/training_replicates/` and the pool replayed over them, first three blocks (9,000 matches) and then
+    six (18,000). It changed the answer at every step: plain CTDE went from last to third to fourth, the
+    corrected-significant count went 8 then 5, and four of the eight pairs reported at three blocks —
+    including the then-headline, Comm over CTDE — did not survive. The report prints a leave-one-block-out
+    column, which is what identified them. Remaining at this item: the separations still move with n, so
+    n = 6 is not convergence either ([docs/10 item 12](10_threats_to_validity.md)).
 12. **New, cheap:** the round-robin's checkpoint pool is *the study's own* policies, so the eight
     separations in [§ 8.10](08_results.md#cross-arena) are conditional on three training seeds per design.
     `data/runs/` already holds the other 42 replicate checkpoints (14 of the study's 20 runs); extending the

@@ -31,11 +31,11 @@ Four distinct data sources exist, and they are not interchangeable:
 |--------|----------|------------|
 | `data/metrics/summary.json` (root) | Experiment 1, one promoted study replicate | Yes |
 | `ctde_arena/data/` | Experiment 2 same | Yes |
-| `data/training_replicates/` | The three checkpoint sets the round-robin is played over: one experiment-1 and one experiment-2 replicate per block, 18 files | Yes |
+| `data/training_replicates/` | The six checkpoint sets the round-robin is played over: one experiment-1 and one experiment-2 replicate per block, 36 files | Yes |
 | `ctde_arena/data/mlflow_export/` | The 48 metric points actually logged to MLflow across two runs | Yes (exported) |
 | `results/study/` | 10 seeds × 500 k steps per experiment, slot-rotated, held-out greedy evaluation, paired *t*-tests, Fisher-exact tests and forward power | Yes |
 | `results/study_v2/` | the same study re-measured with a decayed, ten-times-smaller alive bonus and a clock-out declared a draw ([§ 8.12](08_results.md#arena-v2)) | Yes |
-| `results/cross_arena/` | 9,000 matches over three independently trained checkpoint sets and five harness seeds: all six architectures on a common opponent pool, McNemar pairwise tests, the leave-one-block-out column, slot control, per-regime win rates and both stability tables | Yes |
+| `results/cross_arena/` | 18,000 matches over six independently trained checkpoint sets and five harness seeds (`blocks6.csv`): all six architectures on a common opponent pool, McNemar pairwise tests, the leave-one-block-out column, slot control, per-regime win rates and both stability tables. `blocks.csv` is the three-block run, kept because [§ 8.11](08_results.md#absolute-strength) is measured at that replication count | Yes |
 | `results/ablation_no_dr/`, `results/ablation_narrow_64/`, `results/ablation_wide_256/` | three configuration ablations at 500 k steps on seeds 1-3, both experiments, each one key away from `results/study/` ([§ 8.13](08_results.md#ablations)) | Yes |
 | `results/absolute/` | Each trained policy against two uniform-random teams, trained slot rotated: the floor that does not depend on who else trained, with the slot-matched null from `results/baseline/` | Yes |
 

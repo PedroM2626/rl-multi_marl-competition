@@ -41,7 +41,10 @@ Honest summary of what is finished and what is not:
 | Checkpoints committed | yes — newly versioned, and loadable by the current code | yes, re-promoted from the study |
 | Bit-for-bit reproducible training | verified | verified with `--no-mlflow` |
 | MLflow tracking | n/a | wired, but only **1 logged point** for the 100k run |
-| Cross-experiment round-robin | 9,000 matches, all six arms on common opponents, 3 checkpoint sets x 5 harness seeds (shared, run from `ctde_arena/`) | same |
+| Cross-experiment round-robin | 18,000 matches, all six arms on common opponents, 6 checkpoint sets x 5 harness seeds (shared, run from `ctde_arena/`) | same |
+| Absolute strength vs random opponents | 2,700 matches per instrument, 3 checkpoint sets, slot-matched null ([§ 8.11](docs/08_results.md#absolute-strength)) | same |
+| Arena-v2 re-measurement | 10 seeds × 500k steps under a decayed alive bonus and draw-on-cap ([§ 8.12](docs/08_results.md#arena-v2)) | same |
+| Configuration ablations | `no_dr`, `narrow_64`, `wide_256` at 3 seeds × both experiments ([§ 8.13](docs/08_results.md#ablations)) | same |
 | Gameplay clips of the trained policies | yes (`docs/assets/`) | yes |
 | Tests | 91 (90 passed, 1 skipped), **94 %** statement coverage | 66 (65 passed, 1 skipped), **89 %** coverage |
 | Docker | n/a | **never built or run** |
@@ -188,17 +191,16 @@ uniform random shots convert at 5–6 % while trained policies convert at 2.4–
 
 **And a fourth measurement that puts all six on one scale.** The two experiments never fought each
 other, so their tables were comparable only by assumption. [§ 8.10](docs/08_results.md#cross-arena) plays every
-three-architecture combination among the six trained policies — **9,000 matches**, common opponents,
-slot-balanced, over **three independently trained checkpoint sets per architecture** rather than the one the
-first version used — and finds Comm 0.373, DTE 0.368, CTDE 0.329, VD 0.297, CAC 0.284, CTE 0.266. Eight of
-the fifteen pairs clear Bonferroni-corrected McNemar tests, and four of those still clear the threshold with
-any one checkpoint set left out: DTE over CTE, CAC and VD, and Comm over CTE. Two conclusions of the
-single-checkpoint version did not survive the replication — plain CTDE, previously last in every seed, is
-**third**, and CTE, the paradigm experiment 1 was built to improve on, is **last**. The first 600-match run
-had said no pair separates at all, so this whole section is the finding that replication produced. It also
-measures the arena's own bias: the Team 3 spawn corner wins 46.7 % of matches against 21.6 % and 27.6 % for
-the other two, for every architecture
-([A-32](docs/11_code_audit.md#the-arena-spawn-geometry-is-not-symmetric)).
+three-architecture combination among the six trained policies — **18,000 matches**, common opponents,
+slot-balanced, over **six independently trained checkpoint sets per architecture** rather than the one the
+first version used — and finds Comm 0.355, DTE 0.349, CAC 0.321, CTDE 0.314, VD 0.307, CTE 0.290. Five of
+the fifteen pairs clear Bonferroni-corrected McNemar tests and three of those survive leaving any one
+checkpoint set out. What the replication taught is worth more than the table: the number of separated pairs
+went **2, then 8, then 5** as the checkpoint sets went 1, 3, 6, so pairs appeared and dissolved with more
+training replicates, including this section's first two headlines. The stable residue is a top band (Comm,
+DTE), one arm below chance (CTE), and an indistinguishable middle. It also measures the arena's own bias:
+the Team 3 spawn corner wins 49.2 % of matches against 21.7 % and 25.9 % for the other two, for every
+architecture ([A-32](docs/11_code_audit.md#the-arena-spawn-geometry-is-not-symmetric)).
 
 The two historical single-seed 100k-step runs are still reported, relabelled, in
 [§ 8.2](docs/08_results.md#historical-single-seed-runs); their artefacts now live in

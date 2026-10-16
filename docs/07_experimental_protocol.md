@@ -216,8 +216,9 @@ that run's initialisation and geometry stream, so they are not independent draws
    over five harness seeds (independent match streams) *and* three training blocks (independently trained
    networks per architecture), because it has now reversed its own conclusions twice: the first 600-match,
    single-checkpoint run said no pair separates, and the 3,000-match replication of it said two did; at
-   9,000 matches over three checkpoint sets, eight separate and the ranking itself changes, with plain CTDE
-   moving from last to third. Both replication columns therefore have to be part of the match key, and
+   18,000 matches over six checkpoint sets, five separate and the ranking keeps moving — the count of
+   separated pairs went 2, then 8, then 5 as blocks went 1, 3, 6, so separations appear and dissolve with
+   replication in both directions. Both replication columns therefore have to be part of the match key, and
    `tests/test_cross_arena_report.py` pins that: a key missing either one silently merges runs and reports a
    quarter to a sixth of the evidence while printing a complete-looking table. Pooling is reported as part
    of the method, and per-level stability is shown alongside the pooled estimate.

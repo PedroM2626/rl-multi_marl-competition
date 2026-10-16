@@ -205,7 +205,7 @@ applied to the original single-seed evidence, and left three that no amount of r
 12. **~~The round-robin tests six checkpoints, not six architectures.~~ Partly closed; a smaller version
     remains.** The single-checkpoint version represented each arm by its promoted replicate, so its two
     corrected-significant results were statements about particular trained networks — and that is exactly how
-    it turned out: the replication over three independently trained checkpoint sets per arm (9,000 matches)
+    it turned out: the replication over six independently trained checkpoint sets per arm (18,000 matches)
     moved plain CTDE from last to third, moved CTE from third to last, and made four of the eight
     corrected-significant pairs lose their threshold as soon as one checkpoint set is excluded
     ([§ 8.10](08_results.md#cross-arena-limits)). What remains: **n = 3 is enough to reverse a ranking and not

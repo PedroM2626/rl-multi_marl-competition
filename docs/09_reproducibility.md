@@ -124,14 +124,14 @@ pip install pandas                # not a dependency of anything measured
 | `python scripts/report_inventory.py` | root | Regenerate the § 9.7 artefact table from `git ls-files` and live SHA-256 |
 | `python scripts/render_trailer.py --frames 240` | either | Render a gameplay clip from the promoted policies via Ursina offscreen |
 
-**The fifteen-run round-robin loop.** `results/cross_arena/blocks.csv` is the concatenation of
-`run_cross_arena.py` over the three versioned training blocks x five harness seeds; the directory names are
+**The thirty-run round-robin loop.** `results/cross_arena/blocks6.csv` is the concatenation of
+`run_cross_arena.py` over the six versioned training blocks x five harness seeds; the directory names are
 what carry the labels, so the loop is:
 
 ```bash
 # The round-robin runs inside ctde_arena/; the pooling and the report run at the repository root.
 cd ctde_arena
-for pair in "1 7" "10 5" "9 2"; do
+for pair in "1 7" "10 5" "2 1" "3 3" "4 4" "9 2"; do
   set -- $pair; S=$1; M=$2
   for H in 1 2 3 4 5; do
     python ../scripts/run_cross_arena.py --exp1-replicate $S --exp2-replicate $M --seed $H \
@@ -139,17 +139,26 @@ for pair in "1 7" "10 5" "9 2"; do
   done
 done
 cd ..
-python scripts/combine_cross_arena.py results/cross_arena_blocks/* --out results/cross_arena/blocks.csv
-python scripts/report_cross_arena.py --in results/cross_arena/blocks.csv \
-  --json-out results/cross_arena/blocks.json
+python scripts/combine_cross_arena.py results/cross_arena_blocks/* --out results/cross_arena/blocks6.csv
+python scripts/report_cross_arena.py --in results/cross_arena/blocks6.csv \
+  --json-out results/cross_arena/blocks6.json
 ```
 
 `--out` and `--in` resolve against the **repository root**, not the working directory, because these scripts
 drive both trees; that is why the loop above runs from `ctde_arena/` and still writes to `results/`.
 `--exp1-replicate/--exp2-replicate` read `data/training_replicates/{experiment}_seedN/` first and fall back
-to the git-ignored `data/runs/`. The three pairings above are the versioned blocks; `run_cross_arena.py`
+to the git-ignored `data/runs/`. The six pairings above are the versioned blocks; `run_cross_arena.py`
 without those flags plays the promoted `data/checkpoints/` instead, which is the same networks as
 `exp1_seed9+exp2_seed2`.
+
+`bash scripts/run_six_block_campaign.sh` runs the loop with two guards that the first version of it lacked:
+every one of the thirty run directories must contain a `matches.csv` before anything is merged, and the
+merge must report six blocks. Both were written after that script silently produced nothing -- a
+repository-root-relative interpreter path inside a `cd ctde_arena` subshell -- and then re-merged the
+fifteen existing directories as if they were the new thirty. The three-block `blocks.csv` is still in the
+repository because [§ 8.11](08_results.md#absolute-strength) is measured at that replication count, and the
+two must not be mixed: an agreement statistic computed between a three-block and a six-block measurement is
+the scope error that section documents.
 
 `run_experiment.py`, `random_baseline.py` and `render_trailer.py` are byte-identical in both trees, and
 `tests/test_tree_parity.py` fails the suite if they drift; which engine they bind to is decided by the
@@ -327,7 +336,7 @@ inclination to replay 2,700 matches.
 
 ## 9.7 Artefact inventory
 
-Every versioned experiment artefact (109 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed.
+Every versioned experiment artefact (111 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed.
 
 **Promoted replicate.** The artefacts that match the current code. Chosen by `promote_run.py --seed median`, which is the replicate with the least L1 distance to the per-arm study means; `PROVENANCE.json` records the choice and the full run summary behind it.
 
@@ -358,6 +367,8 @@ Every versioned experiment artefact (109 files), with SHA-256 for integrity chec
 |---|---:|---|
 | `results/cross_arena/blocks.csv` | 2,416,103 | `e2068397bf969077ed4fe32ca56cc7625900382a373a6e17edb57f3707b871bc` |
 | `results/cross_arena/blocks.json` | 17,546 | `a122215a5be61e10b9d92be7774906067727cf2f0871f43becca0ac570cbb33b` |
+| `results/cross_arena/blocks6.csv` | 4,826,725 | `06b23f4d1419ab56e42660bf5a8eac1fbf759d8ca4a414748287aa83b7c5c40a` |
+| `results/cross_arena/blocks6.json` | 19,405 | `1d7f1f5fd0af88b369f457dc019d529226ceae7b05269a198c72b1b42f7db7f3` |
 | `results/cross_arena/pairwise_first_run_600.json` | 5,848 | `b40bd54cd3390234815875c7b26dfae18d56ca77f38173199de2ebacd40ef53f` |
 | `results/cross_arena/replicates.csv` | 603,745 | `dbc8688efd011d5414d63db69857eff20d9d4d24514afeccf472a64722aa35eb` |
 | `results/cross_arena/replicates.json` | 7,559 | `e2e91652379bd3bc7e0d76821b3961a564b6981370a6d8a27c6c74262e0eb93e` |
@@ -399,7 +410,7 @@ Every versioned experiment artefact (109 files), with SHA-256 for integrity chec
 | `data/historical_100k/metrics/team_match_metrics.csv` | 11,075 | `338ffa7442e0386227611996a0592a8643b6223fed658775a7083dc4d2890eda` |
 | `data/historical_100k/metrics/trajectory_metrics.csv` | 1,619,886 | `644342fc2f850c4a89fa35d0eb74b37d736339c2c9d51f3892f73d45f9edf406` |
 
-**Training replicates behind the round-robin.** The three checkpoint sets `results/cross_arena/blocks.csv` is played over: one experiment-1 replicate and one experiment-2 replicate per block. Versioned because the round-robin's claims rest on them while `**/data/runs*/` is git-ignored. `exp1_seed9+exp2_seed2` is byte-identical to the promoted checkpoints above, which is what makes that block a parity control.
+**Training replicates behind the round-robin.** The checkpoint sets the round-robin is played over: one experiment-1 replicate and one experiment-2 replicate per block, six blocks in `blocks6.csv` and the first three in `blocks.csv`. Versioned because the round-robin's claims rest on them while `**/data/runs*/` is git-ignored. `exp1_seed9+exp2_seed2` is byte-identical to the promoted checkpoints above, which is what makes that block a parity control.
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|

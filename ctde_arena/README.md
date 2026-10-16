@@ -226,13 +226,14 @@ replicate count, the curve is measuring initialisation.
 ### On a common opponent pool with experiment 1
 The three variants here only ever fight each other, so their ranking is conditional on that.
 [§ 8.10](../docs/08_results.md#cross-arena) plays all six architectures from both experiments against each
-other over **9,000 slot-balanced matches** — three independently trained checkpoint sets per architecture,
-five match streams each: **CTDE-Comm 0.373, CTDE-VD 0.297, CTDE-CAC 0.284**, against DTE 0.368, CTDE 0.329
-and CTE 0.266. Eight of the fifteen pairs separate past Bonferroni-corrected McNemar tests, and four of
-those still clear the threshold with any one checkpoint set left out. Among this tree's own three variants
-Comm is separated above both VD (*p* = 1.30e-05) and CAC (*p* = 9.19e-08), while VD and CAC stay
-indistinguishable from each other (*p* = 0.35) — and both of those separations come from a single block, so
-they are the weaker kind of result. Reproduce with the fifteen-run loop of
+other over **18,000 slot-balanced matches** — six independently trained checkpoint sets per architecture,
+five match streams each: **CTDE-Comm 0.355, CTDE-VD 0.307, CTDE-CAC 0.321**, against DTE 0.349, CTDE 0.314
+and CTE 0.290. Five of the fifteen pairs separate past Bonferroni-corrected McNemar tests, three of them
+robust to leaving any checkpoint set out. Among this tree's own three variants that means **one** separation:
+Comm above VD (*p* = 0.00021), with VD and CAC indistinguishable (*p* = 0.40) and Comm against CAC nominal
+only (*p* = 0.020). At three checkpoint sets the same two arms looked separated (Comm > CAC at
+*p* = 9.19e-08); that result went away when the sets were doubled, which is why the leave-one-block-out
+column is printed beside every pooled p. Reproduce with the thirty-run loop of
 [§ 9.3](../docs/09_reproducibility.md#93-commands).
 
 ### Configuration ablations (this experiment too)
