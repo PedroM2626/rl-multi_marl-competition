@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-10-16T17:33:07+00:00",
+  "generated_utc": "2026-10-16T23:02:19+00:00",
   "purpose": "Checkpoints of the configuration ablations in docs/08_results.md#ablations, versioned so an arm can be replayed without retraining it and its capacity is recorded somewhere other than the campaign script.",
   "produced_by": "bash scripts/run_ablation_campaign.sh",
   "baseline": "results/study (seeds 1-3 of both experiments, 500000 steps, domain randomisation on, RL_HIDDEN_DIM=128)",
@@ -14,7 +14,7 @@
           "trained_as": {
             "DOMAIN_RANDOMIZATION": "false"
           },
-          "source_scratch": "data\\runs_ablation_no_dr\\exp1_seed1",
+          "source_scratch": "data/runs_ablation_no_dr/exp1_seed1",
           "seed": 1,
           "completed_steps": 500000,
           "target_steps": 500000,
@@ -53,7 +53,7 @@
           "trained_as": {
             "DOMAIN_RANDOMIZATION": "false"
           },
-          "source_scratch": "data\\runs_ablation_no_dr\\exp1_seed2",
+          "source_scratch": "data/runs_ablation_no_dr/exp1_seed2",
           "seed": 2,
           "completed_steps": 500000,
           "target_steps": 500000,
@@ -92,7 +92,7 @@
           "trained_as": {
             "DOMAIN_RANDOMIZATION": "false"
           },
-          "source_scratch": "data\\runs_ablation_no_dr\\exp1_seed3",
+          "source_scratch": "data/runs_ablation_no_dr/exp1_seed3",
           "seed": 3,
           "completed_steps": 500000,
           "target_steps": 500000,
@@ -131,7 +131,7 @@
           "trained_as": {
             "DOMAIN_RANDOMIZATION": "false"
           },
-          "source_scratch": "ctde_arena\\data\\runs_ablation_no_dr\\exp2_seed1",
+          "source_scratch": "ctde_arena/data/runs_ablation_no_dr/exp2_seed1",
           "seed": 1,
           "completed_steps": 500000,
           "target_steps": 500000,
@@ -170,7 +170,7 @@
           "trained_as": {
             "DOMAIN_RANDOMIZATION": "false"
           },
-          "source_scratch": "ctde_arena\\data\\runs_ablation_no_dr\\exp2_seed2",
+          "source_scratch": "ctde_arena/data/runs_ablation_no_dr/exp2_seed2",
           "seed": 2,
           "completed_steps": 500000,
           "target_steps": 500000,
@@ -209,7 +209,7 @@
           "trained_as": {
             "DOMAIN_RANDOMIZATION": "false"
           },
-          "source_scratch": "ctde_arena\\data\\runs_ablation_no_dr\\exp2_seed3",
+          "source_scratch": "ctde_arena/data/runs_ablation_no_dr/exp2_seed3",
           "seed": 3,
           "completed_steps": 500000,
           "target_steps": 500000,
@@ -255,7 +255,7 @@
           "trained_as": {
             "RL_HIDDEN_DIM": "64"
           },
-          "source_scratch": "data\\runs_ablation_narrow_64\\exp1_seed1",
+          "source_scratch": "data/runs_ablation_narrow_64/exp1_seed1",
           "seed": 1,
           "completed_steps": 500000,
           "target_steps": 500000,
@@ -294,7 +294,7 @@
           "trained_as": {
             "RL_HIDDEN_DIM": "64"
           },
-          "source_scratch": "data\\runs_ablation_narrow_64\\exp1_seed2",
+          "source_scratch": "data/runs_ablation_narrow_64/exp1_seed2",
           "seed": 2,
           "completed_steps": 500000,
           "target_steps": 500000,
@@ -333,7 +333,7 @@
           "trained_as": {
             "RL_HIDDEN_DIM": "64"
           },
-          "source_scratch": "data\\runs_ablation_narrow_64\\exp1_seed3",
+          "source_scratch": "data/runs_ablation_narrow_64/exp1_seed3",
           "seed": 3,
           "completed_steps": 500000,
           "target_steps": 500000,
@@ -372,7 +372,7 @@
           "trained_as": {
             "RL_HIDDEN_DIM": "64"
           },
-          "source_scratch": "ctde_arena\\data\\runs_ablation_narrow_64\\exp2_seed1",
+          "source_scratch": "ctde_arena/data/runs_ablation_narrow_64/exp2_seed1",
           "seed": 1,
           "completed_steps": 500000,
           "target_steps": 500000,
@@ -411,7 +411,7 @@
           "trained_as": {
             "RL_HIDDEN_DIM": "64"
           },
-          "source_scratch": "ctde_arena\\data\\runs_ablation_narrow_64\\exp2_seed2",
+          "source_scratch": "ctde_arena/data/runs_ablation_narrow_64/exp2_seed2",
           "seed": 2,
           "completed_steps": 500000,
           "target_steps": 500000,
@@ -450,7 +450,7 @@
           "trained_as": {
             "RL_HIDDEN_DIM": "64"
           },
-          "source_scratch": "ctde_arena\\data\\runs_ablation_narrow_64\\exp2_seed3",
+          "source_scratch": "ctde_arena/data/runs_ablation_narrow_64/exp2_seed3",
           "seed": 3,
           "completed_steps": 500000,
           "target_steps": 500000,
@@ -496,7 +496,7 @@
           "trained_as": {
             "RL_HIDDEN_DIM": "256"
           },
-          "source_scratch": "data\\runs_ablation_wide_256\\exp1_seed1",
+          "source_scratch": "data/runs_ablation_wide_256/exp1_seed1",
           "seed": 1,
           "completed_steps": 500000,
           "target_steps": 500000,
@@ -535,7 +535,7 @@
           "trained_as": {
             "RL_HIDDEN_DIM": "256"
           },
-          "source_scratch": "data\\runs_ablation_wide_256\\exp1_seed2",
+          "source_scratch": "data/runs_ablation_wide_256/exp1_seed2",
           "seed": 2,
           "completed_steps": 500000,
           "target_steps": 500000,
@@ -574,7 +574,7 @@
           "trained_as": {
             "RL_HIDDEN_DIM": "256"
           },
-          "source_scratch": "data\\runs_ablation_wide_256\\exp1_seed3",
+          "source_scratch": "data/runs_ablation_wide_256/exp1_seed3",
           "seed": 3,
           "completed_steps": 500000,
           "target_steps": 500000,
@@ -613,7 +613,7 @@
           "trained_as": {
             "RL_HIDDEN_DIM": "256"
           },
-          "source_scratch": "ctde_arena\\data\\runs_ablation_wide_256\\exp2_seed1",
+          "source_scratch": "ctde_arena/data/runs_ablation_wide_256/exp2_seed1",
           "seed": 1,
           "completed_steps": 500000,
           "target_steps": 500000,
@@ -652,7 +652,7 @@
           "trained_as": {
             "RL_HIDDEN_DIM": "256"
           },
-          "source_scratch": "ctde_arena\\data\\runs_ablation_wide_256\\exp2_seed2",
+          "source_scratch": "ctde_arena/data/runs_ablation_wide_256/exp2_seed2",
           "seed": 2,
           "completed_steps": 500000,
           "target_steps": 500000,
@@ -691,7 +691,7 @@
           "trained_as": {
             "RL_HIDDEN_DIM": "256"
           },
-          "source_scratch": "ctde_arena\\data\\runs_ablation_wide_256\\exp2_seed3",
+          "source_scratch": "ctde_arena/data/runs_ablation_wide_256/exp2_seed3",
           "seed": 3,
           "completed_steps": 500000,
           "target_steps": 500000,

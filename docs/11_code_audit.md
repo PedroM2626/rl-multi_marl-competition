@@ -53,6 +53,7 @@ Every finding below was open at some point; the status column is the current sta
 | [A-39](#the-pooled-round-robin-analysis-dropped-a-replication-column-from-its-match-key) | MED · FIXED | The pooled round-robin keyed matches without `harness_seed`, so pairs met 600 times while the report claimed 3,000 |
 | [A-40](#a-script-was-committed-without-the-helper-it-calls) | MED · FIXED | A script was committed in one commit and the helper it calls in the next, leaving a documented command that raises for any reader |
 | [A-41](#a-stored-p-value-of-zero-where-the-real-one-was-1e-37) | LOW · FIXED | p-values below 1e-12 were stored as 0.0 by rounding to twelve decimal places; verdicts and tables were computed from the unrounded value |
+| [A-42](#a-committed-artefact-recorded-windows-paths) | MED · FIXED | Five artefact families stored `str(Path)`, so a POSIX reader could not re-open what the record pointed at; CI's re-derivation gate died on it while every local gate passed |
 
 ---
 
@@ -1022,6 +1023,45 @@ Before the fix that printed `0.0 [754, 335]`; the same discordant counts through
 from it without pretending to more. `tests/test_cross_arena_report.py::test_a_published_p_value_is_never_zero`
 walks every committed pooled report and fails on a stored zero, because the failure mode hides in the most
 significant results — the ones nobody suspects.
+
+
+## A committed artefact recorded Windows paths
+
+**A-42 · MED · FIXED**
+
+Every script that wrote a path into a JSON artefact used `str(Path)`, which spells a path with the host's
+separator. The repository was produced on Windows, so the committed records carried
+`results\\baseline\\random_baseline_uniform.json`, `data\\runs_ablation_no_dr\\exp1_seed1`,
+`docs\\assets\\gameplay_exp1.gif` and six more. Nothing in the test suite reads those strings back, so both
+suites were green — but `run_absolute_eval.py --report-only` *does*: it inherits the null and the peer pool
+from the summary it is re-deriving, joins them onto the repository root, and on a POSIX host that yields one
+filename containing backslashes. The first CI run therefore failed its own artefact gate
+([§ 9.4](09_reproducibility.md#continuous-integration)) with:
+
+```
+FileNotFoundError: [Errno 2] No such file or directory:
+  '/home/runner/work/rl-multi_marl-competition/.../results\baseline\random_baseline_uniform.json'
+```
+
+**Reproduction:** the gate is the reproduction — on any POSIX host, `python
+scripts/run_absolute_eval.py --report-only --out results/absolute` before this fix raised the traceback
+above, and the same command on Windows succeeded, which is the shape of the defect: a record that only
+re-reads on the machine that wrote it.
+
+**Fixed** at the writers (`run_absolute_eval.recorded_path`, `run_cross_arena`'s `policies` block,
+`version_campaign_checkpoints`' `source_scratch`, `render_trailer._display`, all now `.as_posix()` and
+resolved), by regenerating the three absolute summaries, `data/campaign_replicates/MANIFEST.json` and both
+clip sidecars, and by `tests/test_artefact_path_portability.py`, which walks every tracked JSON and fails on
+a host separator outside the five archived per-seed summaries of A-39 — those are evidence of what a
+superseded run recorded, and rewriting them would falsify an artefact to satisfy a lint. Verified by
+mutation: restoring one backslash into `results/absolute/summary.json` turns the gate red.
+
+The same sweep found a second, quieter half: the command the README gives for regenerating a clip passed
+`--out` but not `--sidecar`, so it rewrote the GIF and left the JSON that is supposed to make the caption
+checkable describing the previous render. `--sidecar` now defaults to the clip's own path with a `.json`
+suffix, and the two clips were re-rendered in the same Ursina environment that produced them
+(`panda3d==1.10.16`): the sidecars' 240-frame timelines, seeds, rotations, alive counts and shot counts came
+back identical, which is what lets the fix be a path-spelling change rather than a new measurement.
 
 
 ## Open work: suggested measurements

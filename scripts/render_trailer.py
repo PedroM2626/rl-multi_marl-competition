@@ -71,12 +71,16 @@ def _display(path: Path) -> str:
     """Path relative to the repository root when it is inside it, absolute otherwise.
 
     Experiment 2 renders from inside ctde_arena/ but writes its clip into the shared docs/assets/, so the
-    two are not in a relative relationship and relative_to() would raise.
+    two are not in a relative relationship and relative_to() would raise. Resolved, and with forward slashes
+    in both branches: the sidecar is a committed artefact, so `ctde_arena/../docs/...` would be a path that
+    only reads correctly after normalisation and a Windows spelling of it is unreadable on a POSIX host
+    (A-42).
     """
     try:
-        return str(path.relative_to(PROJECT_ROOT.parent if PROJECT_ROOT.name == "ctde_arena" else PROJECT_ROOT))
+        base = (PROJECT_ROOT.parent if PROJECT_ROOT.name == "ctde_arena" else PROJECT_ROOT).resolve()
+        return path.resolve().relative_to(base).as_posix()
     except ValueError:
-        return str(path)
+        return path.resolve().as_posix()
 
 
 def parse_args() -> argparse.Namespace:
@@ -91,7 +95,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--untrained", action="store_true", help="render random initialisation instead")
     parser.add_argument(
-        "--sidecar", type=Path, default=None, help="write a JSON describing what the clip shows"
+        "--sidecar", type=Path, default=None,
+        help="JSON describing what the clip shows; defaults to the clip's own path with a .json suffix"
     )
     return parser.parse_args()
 
@@ -279,10 +284,13 @@ def main() -> None:
         "final_alive": alive_counts(arena.simulation),
         "total_shots": int(sum(m.shots_hit + m.shots_missed for m in arena.simulation.cumulative_metrics.values())),
     }
-    if args.sidecar:
-        sidecar = args.sidecar if args.sidecar.is_absolute() else PROJECT_ROOT / args.sidecar
-        sidecar.parent.mkdir(parents=True, exist_ok=True)
-        sidecar.write_text(json.dumps({"clip": summary, "timeline": timeline}, indent=2), encoding="utf-8")
+    # Written for every render, not only when asked: the sidecar is what makes the caption checkable, and the
+    # documented regenerate command names only --out, so an opt-in sidecar silently decays into a clip whose
+    # recorded evidence no longer matches the clip.
+    sidecar = args.sidecar if args.sidecar is not None else out_path.with_suffix(".json")
+    sidecar = sidecar if sidecar.is_absolute() else PROJECT_ROOT / sidecar
+    sidecar.parent.mkdir(parents=True, exist_ok=True)
+    sidecar.write_text(json.dumps({"clip": summary, "timeline": timeline}, indent=2), encoding="utf-8")
     print(json.dumps(summary, indent=2))
     print(f"wrote {out_path} ({out_path.stat().st_size:,} bytes)")
     shutil.rmtree(scratch.parent, ignore_errors=True)

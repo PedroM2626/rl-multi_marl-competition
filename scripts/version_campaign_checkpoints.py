@@ -177,7 +177,7 @@ def main() -> None:
                     copied += 1
                 sets[f"{experiment}_seed{seed}"] = {
                     "trained_as": {**overrides},
-                    "source_scratch": str(run_dir.relative_to(ROOT)),
+                    "source_scratch": run_dir.relative_to(ROOT).as_posix(),
                     **record(run_dir, files),
                 }
         arms[arm] = {"overrides": overrides, "sets": sets}

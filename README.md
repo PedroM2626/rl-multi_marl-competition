@@ -6,7 +6,7 @@ against each other inside one engine, so the competitive outcome is itself the m
 
 > **Full technical documentation lives in [`docs/`](docs/README.md)** — system model, MDP
 > formalisation, architectures, optimisation, protocol, results with confidence intervals and power
-> analysis, reproducibility, limitations, and a 41-item code audit. This file is the quick start.
+> analysis, reproducibility, limitations, and a 42-item code audit. This file is the quick start.
 
 ## Documentation
 
@@ -133,7 +133,9 @@ cd ctde_arena && python scripts/render_trailer.py --frames 240 --fps 14 \
 ```
 
 Requires `ursina==6.1.2` and `pillow`, and a GPU context that accepts an offscreen window — this one does,
-but the render path is not covered by the test suite, so treat a failure there as environment, not code.
+but the render path is not covered by the test suite, so treat a failure there as environment, not code. The
+command writes the sidecar beside the clip in the same run, so a regenerated clip cannot lose the record that
+makes its caption checkable.
 
 Each experiment is self-contained: its own `marl_arena` package, `.env`, `requirements.txt` and `data/`.
 Run all commands **from the experiment's own directory**.

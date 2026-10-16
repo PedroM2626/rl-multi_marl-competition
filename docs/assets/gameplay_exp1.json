@@ -1,6 +1,6 @@
 {
   "clip": {
-    "clip": "docs\\assets\\gameplay_exp1.gif",
+    "clip": "docs/assets/gameplay_exp1.gif",
     "frames": 240,
     "fps": 14,
     "sim_step_dt": 0.1,

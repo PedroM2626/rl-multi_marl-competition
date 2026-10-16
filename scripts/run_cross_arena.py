@@ -420,7 +420,7 @@ def main() -> None:
     matches_played = len(all_rows) // 3
     summary = {
         "design": "all C(6,3) architecture triples, each played to completion with slot rotation",
-        "policies": {p: str(path.relative_to(ROOT_ROOT)) for p, path in policies.items()},
+        "policies": {p: path.relative_to(ROOT_ROOT).as_posix() for p, path in policies.items()},
         "triples": len(triples),
         "matches_per_triple": args.matches_per_triple,
         "matches_played": matches_played,

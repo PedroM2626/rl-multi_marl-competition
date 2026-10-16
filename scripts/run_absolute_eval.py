@@ -44,6 +44,23 @@ def load_harness():
     return module
 
 
+def recorded_path(value: "Path | None") -> "str | None":
+    """How a path the summary names should be spelled: repository-relative, forward slashes.
+
+    `str(Path)` uses the host separator, so a summary written on Windows recorded
+    `results\\baseline\\...`. `--report-only` inherits that string and joins it onto the repository root,
+    which on a POSIX host is a single file whose name contains backslashes -- so the artefact gate in CI
+    died reading its own provenance while passing on the machine that wrote it (A-42).
+    """
+    if value is None:
+        return None
+    resolved = value if value.is_absolute() else PROJECT_ROOT / value
+    try:
+        return resolved.relative_to(PROJECT_ROOT).as_posix()
+    except ValueError:
+        return resolved.as_posix()
+
+
 def parse_blocks(spec: str, harness, campaign: str = "") -> list[tuple[str, dict]]:
     """(label, policies) per training block; an empty spec means the promoted checkpoint set.
 
@@ -416,9 +433,11 @@ def main() -> None:
         "arena": arena_settings,
         # Provenance of the two derived blocks below: which file supplied the slot-matched null, and which
         # peer pool the agreement statistic was computed against. Section 8.11's scope-mismatch lesson is the
-        # reason this is recorded rather than left to the command line of whoever ran it.
-        "inputs": {"null_json": str(args.null_json) if args.null_json else None,
-                   "compare_pool": str(args.compare_pool) if args.compare_pool else None},
+        # reason this is recorded rather than left to the command line of whoever ran it, and the separators
+        # are forward slashes because `--report-only` reads these strings back on hosts where a backslash is
+        # a filename character, not a directory one (A-42).
+        "inputs": {"null_json": recorded_path(args.null_json),
+                   "compare_pool": recorded_path(args.compare_pool)},
         # In --report-only the cell size is a property of the record being re-derived, not of this
         # invocation: inherit what the run wrote instead of blanking a published figure.
         "matches_per_architecture_per_block_per_seed": (

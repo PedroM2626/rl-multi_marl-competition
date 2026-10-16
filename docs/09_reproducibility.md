@@ -145,7 +145,7 @@ of them in the same place.
 | `bash scripts/run_arena_v2_campaign.sh` | both | Queue the arena-v2 study: 10 seeds x 2 experiments at 500 k steps under the decayed alive bonus and draw-on-cap, waiting for whatever is already on the machine |
 | `bash scripts/run_ablation_campaign.sh` | both | Queue the three configuration ablations (`no_dr`, `narrow_64`, `wide_256`), each one key different from the committed study, after the v2 campaign |
 | `python scripts/report_inventory.py` | root | Regenerate the § 9.7 artefact table from `git ls-files` and live SHA-256 |
-| `python scripts/render_trailer.py --frames 240` | either | Render a gameplay clip from the promoted policies via Ursina offscreen |
+| `python scripts/render_trailer.py --frames 240` | either | Render a gameplay clip from the promoted policies via Ursina offscreen, and the JSON sidecar beside it that records what the caption asserts |
 
 **The thirty-run round-robin loop.** `results/cross_arena/blocks6.csv` is the concatenation of
 `run_cross_arena.py` over the six versioned training blocks x five harness seeds; the directory names are
@@ -267,6 +267,18 @@ now re-derives it on a different operating system than the one that produced it.
 scripts exists after two of them "completed" while launching nothing (see [§ 9.3](#93-commands) and the
 six-block campaign's post-mortem); a syntax check does not catch that, but it does catch the family of
 quoting and variable-name errors in the same scripts.
+
+**Five runs were red, and the gate was right.** Both suite jobs passed throughout; the artefact job died
+re-deriving `results/absolute*/summary.json`, because those records name their matched null and their peer
+pool with Windows separators, and a Linux runner cannot open `results\baseline\…`. The failure arrived with
+`43429ed`, the commit that made `--report-only` inherit the inputs a summary was derived from: the same
+inheritance that makes a re-derivation faithful is what reads back a path spelled for the host that wrote it,
+so runs #11 to #15 were red. This is the chapter's own promise — a published table re-derives from a clone —
+being checked on a machine that is not this one.
+[A-42](11_code_audit.md#a-committed-artefact-recorded-windows-paths) is the post-mortem, and
+`tests/test_artefact_path_portability.py` is the gate that keeps it from coming back; the writers now emit
+POSIX paths and the affected records were regenerated, which the next push to the runner is what actually
+tests.
 
 **What CI does not do, and why that is deliberate.** It installs `requirements.txt` (NumPy 2.2.6, Torch
 2.6.0), not `requirements-measured.lock.txt` — the question it answers is whether the code does what its
@@ -550,7 +562,7 @@ Every versioned experiment artefact (200 files), with SHA-256 for integrity chec
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
-| `data/campaign_replicates/MANIFEST.json` | 25,514 | `876872f7b702ec46327a2df7a2c4a18cfab7499d524ec38f0d8d39731471d7f2` |
+| `data/campaign_replicates/MANIFEST.json` | 25,469 | `5b888d5d653fce2034ff75730310985d4d404f9b7ab63f5f7f0eb510c91a8c76` |
 | `data/campaign_replicates/narrow_64/exp1_seed1/team_1_dte.pt` | 42,082 | `7ad507f6be709f8d6e1b68b5fc3fe08d24fe152d0b88f14f4365b30e1716d92e` |
 | `data/campaign_replicates/narrow_64/exp1_seed1/team_2_ctde.pt` | 89,720 | `ec9e1b3f931f6bbeecbf7400944b9a4da3bbd855a93facb33c516f9a5959f3b5` |
 | `data/campaign_replicates/narrow_64/exp1_seed1/team_3_cte.pt` | 98,914 | `02f49b03fcd359ec64b1b0fe8e02edc0723fae487bb421705f41c7c8dbe08970` |
@@ -634,20 +646,20 @@ Every versioned experiment artefact (200 files), with SHA-256 for integrity chec
 | Path | Bytes | SHA-256 |
 |---|---:|---|
 | `results/absolute/matches.csv` | 106,691 | `9267675ed8f90a0da3efbb2f9d93dc89e9ec2ccdc03938efefc1f8fee7a9b0dd` |
-| `results/absolute/summary.json` | 14,146 | `ee0466f94cfc76e8b34937a9600bf864755e98f1a167b5067bf4811a765b51af` |
+| `results/absolute/summary.json` | 14,142 | `9f5b1b2798d7e2f53f13d5b8fe7a211598226eff2a745353a999fef6500c0014` |
 | `results/absolute_blocks/matches.csv` | 141,452 | `ce745d9df991588cce5f8d7b34db4e963f813ccbe43d2b5eba9e49c9654946ac` |
-| `results/absolute_blocks/summary.json` | 23,712 | `dafcc86b5e77cb2ea133cac393f2fcf596673824d5b916cc3a11fab9835559db` |
+| `results/absolute_blocks/summary.json` | 23,708 | `eaff0097f88b98816689bae8c8e2f96ba1df65eabd12ba272f8c6b6782f1f98d` |
 | `results/absolute_six/matches.csv` | 140,415 | `33a771cc57f2562ca7821040442e28723541be57d5c04a7bf64f5e3dff311c11` |
-| `results/absolute_six/summary.json` | 32,524 | `751ba119c9639c39b8d00907877af952f4fcfdacc220afe8a3430af52251da85` |
+| `results/absolute_six/summary.json` | 32,520 | `ce5bf03714ed4af11c3d84eecab2f0b23c2b909438001fc07ba45815589ca777` |
 
 **Gameplay clips.** Rendered by `render_trailer.py` from the promoted replicate's trained policies; the JSON beside each clip records the seed, rotation, paradigm per slot and the per-frame alive and shot counts the caption asserts.
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
-| `docs/assets/gameplay_exp1.gif` | 698,135 | `585a470d26a2d818637bd60de802a145074bae31dc9a4d1cd6932ed1f6f7aa31` |
-| `docs/assets/gameplay_exp1.json` | 45,654 | `7d76f7371263588483203fde3cf736304f3f88df904f2e1a27e34a48560e70fe` |
-| `docs/assets/gameplay_exp2.gif` | 530,170 | `424e5c2c1952d23fb0c693dd3a8e14fd828f5d0c1045012ab15e9398f8d9c32e` |
-| `docs/assets/gameplay_exp2.json` | 45,824 | `c32af9c524ee71b37839e54e4d33705df5cc62352829a7551d0673bdf9cc55a7` |
+| `docs/assets/gameplay_exp1.gif` | 701,949 | `9fb159c403a737cb78b723d9945a55475f90135b7f90fb24a761361a5ec8e307` |
+| `docs/assets/gameplay_exp1.json` | 45,652 | `ccef910a688e078c482bb23daab9071de386fea80fbcb6a34539e35e5157fca2` |
+| `docs/assets/gameplay_exp2.gif` | 531,137 | `fd2bd6429861d9c23398659c284e615996bfb57d639fd28c1911c0f676e09653` |
+| `docs/assets/gameplay_exp2.json` | 45,806 | `4681ffbf26888759644fc2e04ee216b1ecaaf56b8cb16f767e057e2b75f04c2c` |
 
 **MLflow export and derived charts.** The 48 points that reached MLflow, plus the `plot_metrics.py` output for each tree.
 

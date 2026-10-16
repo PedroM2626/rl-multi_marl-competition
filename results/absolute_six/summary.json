@@ -16,8 +16,8 @@
   "campaign": "study",
   "arena": null,
   "inputs": {
-    "null_json": "results\\baseline\\random_baseline_uniform.json",
-    "compare_pool": "results\\cross_arena\\blocks6.json"
+    "null_json": "results/baseline/random_baseline_uniform.json",
+    "compare_pool": "results/cross_arena/blocks6.json"
   },
   "matches_per_architecture_per_block_per_seed": 25,
   "chance_level": 0.3333,
