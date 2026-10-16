@@ -42,7 +42,7 @@ Honest summary of what is finished and what is not:
 | Bit-for-bit reproducible training | verified | verified with `--no-mlflow` |
 | MLflow tracking | n/a | wired, but only **1 logged point** for the 100k run |
 | Cross-experiment round-robin | 18,000 matches, all six arms on common opponents, 6 checkpoint sets x 5 harness seeds (shared, run from `ctde_arena/`) | same |
-| Absolute strength vs random opponents | 2,700 matches per instrument, 3 checkpoint sets, slot-matched null ([§ 8.11](docs/08_results.md#absolute-strength)) | same |
+| Absolute strength vs random opponents | 2,700 matches over 6 checkpoint sets, slot-matched null 0.330 ([§ 8.11](docs/08_results.md#absolute-strength)) | same |
 | Arena-v2 re-measurement | 10 seeds × 500k steps under a decayed alive bonus and draw-on-cap ([§ 8.12](docs/08_results.md#arena-v2)) | same |
 | Configuration ablations | `no_dr`, `narrow_64`, `wide_256` at 3 seeds × both experiments ([§ 8.13](docs/08_results.md#ablations)) | same |
 | Gameplay clips of the trained policies | yes (`docs/assets/`) | yes |
@@ -179,10 +179,11 @@ Findings worth knowing before reading anything else:
   most 0.064. So every "X beats Y" claim in this repository is to be read as "under hidden width 128 and
   domain randomisation on" ([§ 8.13](docs/08_results.md#ablations)).
 * **Two opponent pools agree, once each architecture is replicated.** Ranking the six architectures by how
-  often they beat trained peers and by how often they beat uniform-random teams gives Spearman **+0.94**
-  over three independently trained checkpoints per architecture, with the same arm (CTE) last on both
-  scales. Run on one checkpoint the identical statistic is **−0.04**: the agreement comes from replicating
-  the training, not from playing more matches ([§ 8.11](docs/08_results.md#absolute-strength)).
+  often they beat trained peers and by how often they beat uniform-random teams gives Spearman **+0.77** over
+  six independently trained checkpoints per architecture, with the same arm first (CTDE-Comm) and the same
+  arm last (CTE). Compared on one checkpoint set against a three-set peer table the identical statistic is
+  **−0.04** — the agreement comes from replicating the training and matching the counts, not from playing
+  more matches ([§ 8.11](docs/08_results.md#absolute-strength)).
 
 Against a genuine random-play baseline
 ([§ 8.9](docs/08_results.md#random-baseline)) training clearly does something — trained agents survive

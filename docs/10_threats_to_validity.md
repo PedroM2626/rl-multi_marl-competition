@@ -219,10 +219,11 @@ applied to the original single-seed evidence, and left three that no amount of r
     [§ 8.11](08_results.md#absolute-strength) puts each arm against a fixed pool of **uniform-random** teams,
     which is a floor that does not depend on who else was in the run — with a null matched slot by slot,
     because the arena's three spawn positions are not equally winnable even when all three teams are random
-    ([§ 8.9](08_results.md#random-baseline): 0.257 / 0.270 / 0.463). Over three checkpoint sets the two
-    scales rank the six architectures nearly identically (Spearman +0.94), which is corroboration the
-    peer-relative ranking previously had none of; on a single checkpoint set the same statistic is −0.04,
-    which is why the corroboration is stated with its replication count. What
+    ([§ 8.9](08_results.md#random-baseline): 0.257 / 0.270 / 0.463). Over six checkpoint sets the two
+    scales rank the six architectures the same way (Spearman +0.77, same arm first and same arm last), which
+    is corroboration the peer-relative ranking previously had none of; the statistic is +0.41 and +0.94 at
+    one and three sets, and −0.04 only when a one-set measurement is compared against a three-set peer table,
+    which is why the corroboration is always stated with its replication count. What
     remains open: the random pool is the only non-self-referential opponent set here — there are no scripted
     or human policies, no other game, and no published baseline, so no number in this repository is
     comparable to the literature in absolute terms; and **training** itself is still three arms co-adapting

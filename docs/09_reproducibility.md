@@ -156,9 +156,10 @@ every one of the thirty run directories must contain a `matches.csv` before anyt
 merge must report six blocks. Both were written after that script silently produced nothing -- a
 repository-root-relative interpreter path inside a `cd ctde_arena` subshell -- and then re-merged the
 fifteen existing directories as if they were the new thirty. The three-block `blocks.csv` is still in the
-repository because [§ 8.11](08_results.md#absolute-strength) is measured at that replication count, and the
-two must not be mixed: an agreement statistic computed between a three-block and a six-block measurement is
-the scope error that section documents.
+repository because the agreement between the two opponent pools, reported in
+[§ 8.11](08_results.md#absolute-strength) at one, three and six sets, is quoted from them. Those counts have
+to be matched: the −0.04 that section reports as its own past error was produced by comparing a one-set
+measurement against a three-set peer table.
 
 `run_experiment.py`, `random_baseline.py` and `render_trailer.py` are byte-identical in both trees, and
 `tests/test_tree_parity.py` fails the suite if they drift; which engine they bind to is decided by the
@@ -336,7 +337,7 @@ inclination to replay 2,700 matches.
 
 ## 9.7 Artefact inventory
 
-Every versioned experiment artefact (111 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed.
+Every versioned experiment artefact (113 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed.
 
 **Promoted replicate.** The artefacts that match the current code. Chosen by `promote_run.py --seed median`, which is the replicate with the least L1 distance to the per-arm study means; `PROVENANCE.json` records the choice and the full run summary behind it.
 
@@ -465,7 +466,7 @@ Every versioned experiment artefact (111 files), with SHA-256 for integrity chec
 | `results/study_v2/learning_curves.png` | 70,161 | `a2f19be70612de222a47c329f44730d4de78bb29b909db5e531ea3b3219274a0` |
 | `results/study_v2/per_seed_metrics.csv` | 5,339 | `9d8fb44357d5b6ca39e93107d74a2e44e542ee72b8d1b4af268d1da54b4e21e4` |
 
-**Absolute-strength evaluation.** `run_absolute_eval.py` output: one trained policy against two uniform-random controllers, trained slot rotated. `absolute/` is the promoted checkpoint set at 150 matches per architecture per harness seed; `absolute_blocks/` is the same instrument over the three training blocks above, 50 matches per architecture per block per seed. Each `summary.json` re-derives from its `matches.csv` with `--report-only`.
+**Absolute-strength evaluation.** `run_absolute_eval.py` output: one trained policy against two uniform-random controllers, trained slot rotated. `absolute/` is the promoted checkpoint set, `absolute_blocks/` three sets and `absolute_six/` six, each at 450 matches per architecture; each `summary.json` re-derives from its `matches.csv` with `--report-only`.
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
@@ -473,6 +474,8 @@ Every versioned experiment artefact (111 files), with SHA-256 for integrity chec
 | `results/absolute/summary.json` | 14,584 | `d784fd6581d19a961c51f2cc8b097c789531122a890b0741b9223a2b35f355cc` |
 | `results/absolute_blocks/matches.csv` | 144,153 | `f0be8d9004dce9e5c134bfbc189acb8f524f607345b3963db5fd3f3b0a947f19` |
 | `results/absolute_blocks/summary.json` | 24,550 | `dc543bddf5c8e3ee8922dc6c099858ea19de7d7e7b290c66484bf69e9caa679d` |
+| `results/absolute_six/matches.csv` | 143,116 | `91b4e8a3e6e38bf15c9118ae246bfe747dba155abfac024e18602d1131fce043` |
+| `results/absolute_six/summary.json` | 33,730 | `0d4ecc300bf6a33dbe3d026694bff07f3f2ec90059015abb22ac404239985995` |
 
 **Gameplay clips.** Rendered by `render_trailer.py` from the promoted replicate's trained policies; the JSON beside each clip records the seed, rotation, paradigm per slot and the per-frame alive and shot counts the caption asserts.
 
