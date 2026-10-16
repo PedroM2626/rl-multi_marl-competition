@@ -197,7 +197,7 @@ Measured with `coverage run --source=src/marl_arena -m pytest`, before and after
 | `controllers/base.py` | 91 % | 89 % | 91 % | 89 % |
 | **total** | **73 %** | **93 %** | **14 %** | **87–88 %** |
 
-Test count went from 9 to 106 (59 and 47) at the time of that measurement, and to **184 (115 and 69)** with
+Test count went from 9 to 106 (59 and 47) at the time of that measurement, and to **185 (116 and 69)** with
 the suites added since — the collision, config, dashboard, render and round-robin-statistics tests. The
 totals have moved with them: experiment 1 is now **94 %** (1,542 statements, 89–91 missing) and experiment 2 **89 %**
 (1,654, 185–187 missing). Both totals move by a few statements between identical invocations, which is why
@@ -911,12 +911,13 @@ picky" but "the published hash is not the committed object".
 **Reproduction** (any host):
 
 ```bash
-git cat-file -s HEAD:results/study/per_seed_metrics.csv   # 5226, the committed object
-wc -c < results/study/per_seed_metrics.csv                # 5287 on a CRLF checkout
+git cat-file -s :results/study/per_seed_metrics.csv   # 5226, the object Git holds
+wc -c < results/study/per_seed_metrics.csv            # 5287 on a CRLF checkout
 ```
 
-**Fixed:** `scripts/report_inventory.py` hashes `git cat-file blob HEAD:<path>` and publishes that object's
-size. `tests/test_inventory_integrity.py` re-derives every row from the batched `git cat-file --batch`
+**Fixed:** `scripts/report_inventory.py` hashes `git cat-file blob :<path>` -- the index, so a staged-but-uncommitted
+artefact is hashable and an unstaged edit cannot leak into a published number -- and writes that object's size.
+`tests/test_inventory_integrity.py` re-derives every row from the batched `git cat-file --batch`
 output, asserts the byte column is the committed size, and carries a discriminating case: when the working
 tree and the blob differ, the row must be the blob's hash and not the disk's. The gate was checked by
 regenerating the section with the old working-tree read — both tests fail.

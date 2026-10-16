@@ -40,11 +40,16 @@ _CACHE: dict[str, bytes] = {}
 
 
 def committed_blobs(paths: list[str]) -> dict[str, bytes]:
-    """The committed objects for `paths`, read in one `git cat-file --batch` pass and memoised."""
+    """The staged objects for `paths`, read in one `git cat-file --batch` pass and memoised.
+
+    `:path` rather than `HEAD:path`, matching the generator: the table is regenerated after staging and
+    before committing, and in CI -- where the index mirrors the checked-out commit -- the two are the same
+    object.
+    """
     missing = [p for p in paths if p not in _CACHE]
     if missing:
         proc = subprocess.run(["git", "cat-file", "--batch"], cwd=ROOT,
-                              input=b"".join(f"HEAD:{p}\n".encode("utf-8") for p in missing),
+                              input=b"".join(f":{p}\n".encode("utf-8") for p in missing),
                               capture_output=True, check=True).stdout
         position = 0
         for path in missing:

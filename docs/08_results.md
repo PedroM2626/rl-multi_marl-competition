@@ -635,7 +635,7 @@ The first version of this section used one checkpoint per architecture over five
 matches). The caveat it recorded — see [below](#cross-arena-limits) — was that a single checkpoint makes any
 statement a claim about *two particular networks that were measured many times*, not about two
 architectures. That caveat has now been closed twice over: the study's replicates have been versioned under
-`data/training_replicates/` (36 checkpoints) and the whole round-robin replayed over
+`data/training_replicates/` (60 checkpoints, every seed either experiment trained) and the whole round-robin replayed over
 
 * **six training blocks** — each block pairs one experiment-1 replicate with one experiment-2 replicate, so
   every architecture is represented by six independently trained networks:
@@ -644,6 +644,12 @@ architectures. That caveat has now been closed twice over: the study's replicate
 * **five harness seeds** — five independent match streams over the same checkpoints.
 
 **18,000 matches / 54,000 team-matches, 9,000 per architecture, 3,600 head-to-head meetings per pair.**
+
+Four further blocks are versioned and unplayed — `exp1_seed5+exp2_seed6`, `exp1_seed6+exp2_seed8`,
+`exp1_seed7+exp2_seed9`, `exp1_seed8+exp2_seed10`, which together with the six above use all twenty study
+replicates with no seed repeated. `scripts/run_ten_block_campaign.sh` plays them and re-pools all fifty run
+directories; nothing in this section is quoted from that pool until it exists, and the ladder 1 → 3 → 6 blocks
+below is the evidence that a fourth step can move the answer again.
 
 The sixth block, `exp1_seed9+exp2_seed2`, is the promoted checkpoint set: its six `.pt` files are
 byte-identical (SHA-256) to `data/checkpoints/` and `ctde_arena/data/checkpoints/`, which makes the re-run a

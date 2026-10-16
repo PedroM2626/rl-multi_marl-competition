@@ -134,11 +134,11 @@ def replicate_policies(exp1_seed: int, exp2_seed: int, campaign: str = "") -> di
     else:
         versioned = ROOT_ROOT / "data" / "training_replicates"
     scratch_name = f"runs_ablation_{campaign}" if campaign else "runs"
-    # Each experiment's scratch lives in its own tree; experiment 2's runs are not under the repository root.
-    scratch = {
-        "exp1": ROOT_ROOT / "data" / scratch_name,
-        "exp2": CTDE_ROOT / "data" / scratch_name,
-    }
+    # Which tree a campaign wrote experiment 2's runs into depends on how it was launched: the study's are
+    # under the repository root (`data/runs/exp2_seedN`), the ablation campaign's under `ctde_arena/`. Both
+    # are searched rather than guessed. The versioned set above is what a reader normally resolves to; this
+    # scratch fallback only exists on the machine that trained them.
+    scratch_roots = (ROOT_ROOT, CTDE_ROOT)
     out: dict[str, Path] = {}
     for experiment, seed, paradigms in (
         ("exp1", exp1_seed, ("CTE", "DTE", "CTDE")),
@@ -148,7 +148,9 @@ def replicate_policies(exp1_seed: int, exp2_seed: int, campaign: str = "") -> di
         # git-ignored study scratch is only present on the machine that produced them.
         directory = versioned / f"{experiment}_seed{seed}"
         if not directory.is_dir():
-            directory = scratch[experiment] / f"{experiment}_seed{seed}" / "checkpoints"
+            candidates = [root / "data" / scratch_name / f"{experiment}_seed{seed}" / "checkpoints"
+                          for root in scratch_roots]
+            directory = next((path for path in candidates if path.is_dir()), candidates[0])
         if not directory.is_dir():
             raise SystemExit(f"no such training replicate: {experiment}_seed{seed}"
                              + (f" in campaign {campaign}" if campaign else ""))

@@ -68,7 +68,9 @@ GROUPS = [
         "experiment-2 replicate per block, six blocks in `blocks6.csv` and the first three in `blocks.csv`. "
         "Versioned because the round-robin's claims rest on them while `**/data/runs*/` is git-ignored. "
         "`exp1_seed9+exp2_seed2` is byte-identical to the promoted checkpoints above, which is what makes "
-        "that block a parity control.",
+        "that block a parity control. Ten blocks are now versioned -- all twenty study replicates -- and the "
+        "four beyond `blocks6.csv` are waiting for `scripts/run_ten_block_campaign.sh`, so they are listed "
+        "here as available checkpoints, not as a pooled result.",
         ("data/training_replicates/",),
     ),
     (
@@ -134,15 +136,20 @@ def tracked_artefacts() -> list[str]:
 
 
 def committed_blob(path: str) -> bytes:
-    """The bytes as Git stores them, not the bytes on this disk.
+    """The bytes as Git will store them, not the bytes on this disk.
 
     The repository is committed with LF line endings and this host checks text files out with CRLF
     (`core.autocrlf=true`), so hashing the working tree published hashes that no Linux or macOS clone can
     reproduce -- for the text artefacts the two differ, and the table cannot be an integrity check while it
     describes one checkout configuration. A clone's `git verify-file` and a reader's own hash then agree
     with this table on every platform. Binary files are unaffected: Git does not convert them.
+
+    The object is read from the *index* (`git cat-file blob :path`), not from `HEAD`, because the normal
+    sequence here is stage the artefact, regenerate the table, commit: a `HEAD:` lookup fails on a file that
+    is staged but not yet committed, and an unstaged edit must not leak into a published hash either. In CI,
+    where the index mirrors the fresh checkout's commit, the two forms are the same object.
     """
-    result = subprocess.run(["git", "cat-file", "blob", f"HEAD:{path}"], cwd=ROOT,
+    result = subprocess.run(["git", "cat-file", "blob", f":{path}"], cwd=ROOT,
                             capture_output=True, check=True).stdout
     return result
 

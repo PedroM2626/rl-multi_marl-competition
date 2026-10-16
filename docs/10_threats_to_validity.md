@@ -212,7 +212,9 @@ applied to the original single-seed evidence, and left three that no amount of r
     enough to settle one**, the between-block spread (0.018–0.063) is between a seventh and a half of what the
     study measures between training seeds (0.12–0.22) because a block is one seed of each experiment, and each
     block pairs one experiment-1 seed with exactly one experiment-2 seed without any pairing being crossed, so
-    an exp-1 x exp-2 pairing effect cannot be separated from a block effect at this n.
+    an exp-1 x exp-2 pairing effect cannot be separated from a block effect at this n. Four more blocks are
+    versioned and queued for play (`scripts/run_ten_block_campaign.sh`), which would take the estimate to ten
+    draws using every study replicate once; until that pool exists, nothing here is quoted from it.
 13. **~~No fixed-opponent evaluation, and no absolute reference point.~~ Partly closed.** Two instruments now
     exist. The cross-experiment round-robin ([§ 8.10](08_results.md#cross-arena)) puts all six arms on a common
     pool of *trained* opponents, which removes the co-adaptation confound for evaluation. And

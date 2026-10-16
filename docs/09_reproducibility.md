@@ -34,7 +34,7 @@ reassuring-sounding claim, it was measured, in a second environment holding ever
 
 | Check | NumPy 1.26.4 vs 2.2.6 | Result |
 |---|---|---|
-| Experiment 1 test suite (59 tests then, 115 now) | both versions | **pass** |
+| Experiment 1 test suite (59 tests then, 116 now) | both versions | **pass** |
 | Experiment 2 test suite (47 tests then, 69 now) | both versions | **pass** |
 | Collision geometry (14 hand-computed entry parameters and hit positions) | both versions | **identical to 1e-12** |
 | Domain-randomisation stream (`arena_size`, speeds, cooldowns of match 41) | both versions | **identical, all digits** |
@@ -111,7 +111,7 @@ of them in the same place.
 | `python scripts/train_rl.py --seed S` | 1 | Headless PPO training; bit-for-bit reproducible for a given seed |
 | `python main.py` | 1 | Ursina 3D window, greedy policies loaded from `data/checkpoints/` |
 | `python scripts/plot_metrics.py` | 1 | Reads `data/metrics/summary.json` → `exports/metrics/` |
-| `python -m pytest tests/ -q` | 1 | 115 tests |
+| `python -m pytest tests/ -q` | 1 | 116 tests |
 | `cd ctde_arena && python scripts/train_rl.py` | 2 | Same, plus MLflow logging |
 | `cd ctde_arena && mlflow ui --backend-store-uri file:./mlruns` | 2 | Tracking UI |
 | `cd ctde_arena && python main.py` | 2 | 3D window for the CTDE variants |
@@ -133,6 +133,8 @@ of them in the same place.
 | `python scripts/combine_cross_arena.py results/cross_arena_blocks/*` | root | Pool replicated round-robin runs, stamping each row with its training block and harness seed |
 | `python scripts/run_cross_arena.py --campaign no_dr --exp1-replicate S --exp2-replicate M --seed H --out results/cross_arena_campaign/no_dr__e1sS_e2sM_hH` | run from `ctde_arena/` | One block of the round-robin over an **ablation** checkpoint set from `data/campaign_replicates/`; the capacity guard runs first, so `RL_HIDDEN_DIM` must equal the arm's width |
 | `python scripts/version_campaign_checkpoints.py` (or `--check`) | root | Copy the three ablation sets into `data/campaign_replicates/` and write the manifest that records each set's override, hidden width and hashes; `--check` verifies the versioned bytes without writing |
+| `python scripts/version_training_replicates.py --pairs 5:6,6:8,7:9,8:10` | root | Version further study blocks into `data/training_replicates/`, resolving each replicate from the git-ignored scratch in whichever tree it was written; `--check --pairs …` verifies the bytes and writes nothing |
+| `bash scripts/run_ten_block_campaign.sh` | both | Queue the four extra blocks (20 runs, 12,000 matches) behind the pool campaign, then re-pool all fifty run directories into `results/cross_arena/blocks10.csv` and its report — the merge refuses to run unless every new directory wrote a `matches.csv` |
 | `python scripts/run_absolute_eval.py --matches 150 --seeds 1,2,3` | run from `ctde_arena/` | Absolute strength on the promoted checkpoints: each trained policy against two uniform-random controllers, trained slot rotated |
 | `python scripts/run_absolute_eval.py --blocks 1:7,10:5,9:2 --matches 50 --seeds 1,2,3 --out results/absolute_blocks --null-json results/baseline/random_baseline_uniform.json --compare-pool results/cross_arena/blocks.json` | run from `ctde_arena/` | The same over three training blocks, with the slot-matched null and the agreement with the peer pool; `--campaign <arm>` takes the ablation sets instead, behind the same capacity guard |
 | `python scripts/run_absolute_eval.py --blocks 1:7,10:5,2:1,3:3,4:4,9:2 --matches 25 --seeds 1,2,3 --out results/absolute_six --null-json results/baseline/random_baseline_uniform.json --compare-pool results/cross_arena/blocks6.json` | run from `ctde_arena/` | The headline [§ 8.11](08_results.md#absolute-strength) artefact: six blocks, and the peer pool at the *same* replication count, which is what the −0.04 story says the comparison requires |
@@ -207,7 +209,7 @@ ImportError: cannot import name 'ValueDecompositionCriticNetwork' from 'marl_are
 
 ```
 $ python -m pytest tests/ -q            # experiment 1
-114 passed, 1 skipped
+115 passed, 1 skipped
 $ cd ctde_arena && python -m pytest tests/ -q
 68 passed, 1 skipped
 ```
@@ -241,7 +243,7 @@ statements: `simulation.py` (33), `controllers/rl_controller.py` (15), `config.p
 `controllers/rl_controller.py` (+17) and `rl/actions.py` (+2). `ui/dashboard.py`, which was the single
 largest uncovered file for most of this repository's life, is at 100 % in both trees.
 
-What the 184 tests do **not** cover is catalogued in
+What the 185 tests do **not** cover is catalogued in
 [§ Coverage](11_code_audit.md#coverage). The collision solver is now geometrically verified against
 hand-computed values, but no test checks a *metric* against an independent reference — see the note at the
 end of that section on coverage not being correctness.
@@ -390,7 +392,7 @@ inclination to replay 2,700 matches.
 
 ## 9.7 Artefact inventory
 
-Every versioned experiment artefact (172 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed, and each hash is of the blob Git stores rather than of the file on disk — a text artefact checked out with CRLF on Windows hashes differently from the same committed bytes on Linux, and a reader on any platform should be able to reproduce this column.
+Every versioned experiment artefact (196 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed, and each hash is of the blob Git stores rather than of the file on disk — a text artefact checked out with CRLF on Windows hashes differently from the same committed bytes on Linux, and a reader on any platform should be able to reproduce this column.
 
 **Promoted replicate.** The artefacts that match the current code. Chosen by `promote_run.py --seed median`, which is the replicate with the least L1 distance to the per-arm study means; `PROVENANCE.json` records the choice and the full run summary behind it.
 
@@ -469,7 +471,7 @@ Every versioned experiment artefact (172 files), with SHA-256 for integrity chec
 | `data/historical_100k/metrics/team_match_metrics.csv` | 10,936 | `491117a1b37256e621bd0130b36a976cc55d748afd3845617e0be387aaea1a07` |
 | `data/historical_100k/metrics/trajectory_metrics.csv` | 1,595,699 | `c7142281233095d790647f25059cfd2ac3d62e2d8a10a05384eb2ff0925a7bee` |
 
-**Training replicates behind the round-robin.** The checkpoint sets the round-robin is played over: one experiment-1 replicate and one experiment-2 replicate per block, six blocks in `blocks6.csv` and the first three in `blocks.csv`. Versioned because the round-robin's claims rest on them while `**/data/runs*/` is git-ignored. `exp1_seed9+exp2_seed2` is byte-identical to the promoted checkpoints above, which is what makes that block a parity control.
+**Training replicates behind the round-robin.** The checkpoint sets the round-robin is played over: one experiment-1 replicate and one experiment-2 replicate per block, six blocks in `blocks6.csv` and the first three in `blocks.csv`. Versioned because the round-robin's claims rest on them while `**/data/runs*/` is git-ignored. `exp1_seed9+exp2_seed2` is byte-identical to the promoted checkpoints above, which is what makes that block a parity control. Ten blocks are now versioned -- all twenty study replicates -- and the four beyond `blocks6.csv` are waiting for `scripts/run_ten_block_campaign.sh`, so they are listed here as available checkpoints, not as a pooled result.
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
@@ -488,12 +490,27 @@ Every versioned experiment artefact (172 files), with SHA-256 for integrity chec
 | `data/training_replicates/exp1_seed4/team_1_dte.pt` | 145,762 | `c8af14b70143e669c270335cd12db21b1771271c938b2b2493e29c8b3ccc1590` |
 | `data/training_replicates/exp1_seed4/team_2_ctde.pt` | 304,248 | `0666cfb5d45545b45b41d76733e850b46bc63378b597eafb9ca5c886368e2718` |
 | `data/training_replicates/exp1_seed4/team_3_cte.pt` | 323,170 | `e91e83c806d4e368126d572343be1c4e66d5079339a8396116d1c10b6ecf01c7` |
+| `data/training_replicates/exp1_seed5/team_1_ctde.pt` | 304,248 | `1e278dd3bb5509f1b95a155531232a7d8bfbe3f086eca202e374f8e968273dd7` |
+| `data/training_replicates/exp1_seed5/team_2_cte.pt` | 323,170 | `595a178634ea529c5f55b05ddf6a67e249479d111aa1abdccac3ae63d7977f25` |
+| `data/training_replicates/exp1_seed5/team_3_dte.pt` | 145,762 | `22b72dc327e273c862089228321e797e2d4b116f3d770c201ef1f18bf9e77939` |
+| `data/training_replicates/exp1_seed6/team_1_cte.pt` | 323,170 | `8a02c8963f8a608b316daadda3f4064eacf2955b3b4cc3b4be46d8b88e593b77` |
+| `data/training_replicates/exp1_seed6/team_2_dte.pt` | 145,762 | `5e4ea3bf157826833cc577e51fa80623178e94e5cc979260892cc1b5d7bc445f` |
+| `data/training_replicates/exp1_seed6/team_3_ctde.pt` | 304,248 | `a6b23a421642da04dc4257956615280d28acd885185c7da43e676f3eeb077396` |
+| `data/training_replicates/exp1_seed7/team_1_dte.pt` | 145,762 | `9b72962182b4547d9c0dbd5baa15890b3eb62279534c6c0d437bbbdd6745ab74` |
+| `data/training_replicates/exp1_seed7/team_2_ctde.pt` | 304,248 | `420d02ca60393ef2433e650c6df76aecbcb785c11d6f4b06b3db0764ad8eaa6f` |
+| `data/training_replicates/exp1_seed7/team_3_cte.pt` | 323,170 | `22a6392d8a63319aceacc39857c1636bdb15cb147988cd3fb7aadbaee4b05887` |
+| `data/training_replicates/exp1_seed8/team_1_ctde.pt` | 304,248 | `65765a1ee0b6976e40674dce1f82576bc20fc2f7e39adc86f1f50a208ec16ddb` |
+| `data/training_replicates/exp1_seed8/team_2_cte.pt` | 323,170 | `d3da6724d37a26c763a084c49035dd1357b097299a4305efb3bc3587f2fce3db` |
+| `data/training_replicates/exp1_seed8/team_3_dte.pt` | 145,762 | `e7a6663165b19c85e7dfcf72259d4dcd2720dd7071dcc7c7258698ab1a2550d1` |
 | `data/training_replicates/exp1_seed9/team_1_cte.pt` | 323,170 | `c978273409e60e45b9555d763d65c9ff13ba7774ffaf332ac4eccd11ffe59111` |
 | `data/training_replicates/exp1_seed9/team_2_dte.pt` | 145,762 | `93fc387fbfbd1cb935a271672954675230e1326565ae2680333a4ded4e4e3897` |
 | `data/training_replicates/exp1_seed9/team_3_ctde.pt` | 304,248 | `5a5273f3c73942e8fb0964bbb6a848734c58fee9cf0b52b4986f84cf8f2a4fae` |
 | `data/training_replicates/exp2_seed1/team_1_ctde-cac.pt` | 304,400 | `7c3eb6de6b1388f1b37eb3c334f8185ffce543829a4db796d907f4ae3498c054` |
 | `data/training_replicates/exp2_seed1/team_2_ctde-comm.pt` | 313,778 | `baae4dda211f526da971587b58fbba379f1f9b2a06b3530d3310f4d3bda38b2f` |
 | `data/training_replicates/exp2_seed1/team_3_ctde-vd.pt` | 217,330 | `e7d7790c164ee0cbfb6c2346a2f947e4c9ac2b1c976d6ddededb0a0c286d4c8d` |
+| `data/training_replicates/exp2_seed10/team_1_ctde-cac.pt` | 304,400 | `587aba36f719d9a9af3c01fec30866d0fc403682f12b15e2e40cc2e371db577a` |
+| `data/training_replicates/exp2_seed10/team_2_ctde-comm.pt` | 313,778 | `43f12f9a7b62380042640f27a1230f03991ed81c301d4b95bac6b3242a238a15` |
+| `data/training_replicates/exp2_seed10/team_3_ctde-vd.pt` | 217,330 | `8bef5ccb2d26c2857c9918393004b3daa6de731bb0a4e0061b0f1c86c7309f6c` |
 | `data/training_replicates/exp2_seed2/team_1_ctde-comm.pt` | 313,778 | `cb3fee053d68a7a3cc6e4cadbd3fdfc05a356e5a9542babad143a1aa2eb85ff1` |
 | `data/training_replicates/exp2_seed2/team_2_ctde-vd.pt` | 217,330 | `bf261e17c010ee0bb8f69b9d7e9ca1c4214cc9cfe0d8775038379dd71547d5f5` |
 | `data/training_replicates/exp2_seed2/team_3_ctde-cac.pt` | 304,400 | `451b14b4c8aae906c3e7b135f9e814426b268354e8eb222d420b42dcb981cccb` |
@@ -506,9 +523,18 @@ Every versioned experiment artefact (172 files), with SHA-256 for integrity chec
 | `data/training_replicates/exp2_seed5/team_1_ctde-comm.pt` | 313,778 | `3d9bb400a0694e5deda58bca87e6965c2699760bee62fe3b1dd03c5387be1667` |
 | `data/training_replicates/exp2_seed5/team_2_ctde-vd.pt` | 217,330 | `c8f3caa5094976f0bffc34aa4c8a0e1d6b5c653cb9ee65fbd5a30b8f345198de` |
 | `data/training_replicates/exp2_seed5/team_3_ctde-cac.pt` | 304,400 | `3898cd7a3ae8a1877c08e41a620e49cc5533be420cd0f10a7773147cc12cdca0` |
+| `data/training_replicates/exp2_seed6/team_1_ctde-vd.pt` | 217,330 | `fa1ccd9518a7b121b31bcd3ec2c6d2f21a50839a90deb83fe20d9f8631e22aa8` |
+| `data/training_replicates/exp2_seed6/team_2_ctde-cac.pt` | 304,400 | `15331b2abd0aa3312261ecf9cdee069bbff0fcff52119d7047a42c4918f09e08` |
+| `data/training_replicates/exp2_seed6/team_3_ctde-comm.pt` | 313,778 | `a39b067f11a28d3316f184248d262ce2c9bca044f8287fb4140c19805d051ed6` |
 | `data/training_replicates/exp2_seed7/team_1_ctde-cac.pt` | 304,400 | `bcb973516fc3e1141a24dda3243373de730ca6f52476f6227dc7162152506bf1` |
 | `data/training_replicates/exp2_seed7/team_2_ctde-comm.pt` | 313,778 | `5a22ef5f10fb96b78892ffb58e351876072573fd958f2874d8e7877c1794d14b` |
 | `data/training_replicates/exp2_seed7/team_3_ctde-vd.pt` | 217,330 | `d49f1fdfdd579ea443e6e253df7d814650b736551f51cd8f32a7e980b93f31c7` |
+| `data/training_replicates/exp2_seed8/team_1_ctde-comm.pt` | 313,778 | `a93f6b1000f5034e7bcd7b5349daf3529b3f63c1f91d14091bdc4b958d0818d8` |
+| `data/training_replicates/exp2_seed8/team_2_ctde-vd.pt` | 217,330 | `a414c55167c467d3670d54e6987fa5143919a672355d6037e68fa698d591975d` |
+| `data/training_replicates/exp2_seed8/team_3_ctde-cac.pt` | 304,400 | `2d0195ccf746bcca740148ab91f0a42e616370a369ede29a074fa5f1eb9bc761` |
+| `data/training_replicates/exp2_seed9/team_1_ctde-vd.pt` | 217,330 | `a1be765533b7a16476aef4a4cbfd53bb347ba62e78159ab3104a104176cb0651` |
+| `data/training_replicates/exp2_seed9/team_2_ctde-cac.pt` | 304,400 | `9d5fd224b499af62b0a28de54e5a14ed9db402ebc808f085c939b9629ccd0318` |
+| `data/training_replicates/exp2_seed9/team_3_ctde-comm.pt` | 313,778 | `6f9355bd19f43e84b5d18519ebc175e26048d00eb5cbb67f0b5a9ed13bcc1760` |
 
 **Ablation checkpoints behind the arm tables.** The three configuration-ablation sets of [§ 8.13](08_results.md#ablations), versioned for the same reason as the round-robin blocks -- the scratch they were trained into is git-ignored -- so an arm can be replayed without retraining it. `MANIFEST.json` beside them records each set's single override, the hidden width read out of its own weights, and a SHA-256 per file; a `.pt` in this repository stores no capacity metadata, which is the one thing that distinguishes `narrow_64` and `wide_256` from the control.
 

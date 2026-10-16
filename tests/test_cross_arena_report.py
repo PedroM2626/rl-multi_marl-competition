@@ -238,6 +238,57 @@ def test_parse_blocks_prefixes_an_ablation_set_and_checks_its_capacity() -> None
         absolute.parse_blocks("", _StubHarness, "no_dr")
 
 
+def test_replicate_policies_falls_back_to_the_scratch_of_the_right_tree(tmp_path: Path, monkeypatch) -> None:
+    """A replicate that was never versioned must resolve from `data/runs`, in whichever tree it sits.
+
+    The study wrote both experiments under the repository root; the ablation campaign wrote experiment 2 inside
+    `ctde_arena/`. A fallback that assumed one tree raised "no such training replicate" for the other case --
+    the failure a reader hits when asking for a block that was never versioned. Built on synthetic trees
+    because every study seed is versioned now, and a real scratch would make the test machine-dependent.
+    """
+    harness = _load("run_cross_arena")
+    root, other = tmp_path / "root", tmp_path / "ctde"
+    monkeypatch.setattr(harness, "ROOT_ROOT", root)
+    monkeypatch.setattr(harness, "CTDE_ROOT", other)
+
+    def scratch(base: Path, experiment: str, seed: int) -> None:
+        directory = base / "data" / "runs" / f"{experiment}_seed{seed}" / "checkpoints"
+        directory.mkdir(parents=True)
+        paradigms = ("cte", "dte", "ctde") if experiment == "exp1" else ("ctde-vd", "ctde-cac", "ctde-comm")
+        for index, paradigm in enumerate(paradigms, 1):
+            (directory / f"team_{index}_{paradigm}.pt").write_bytes(b"x")
+
+    # Experiment 2's study replicate is in the ROOT tree; experiment 1's is in the versioned set.
+    scratch(root, "exp2", 6)
+    versioned = root / "data" / "training_replicates" / "exp1_seed5"
+    versioned.mkdir(parents=True)
+    for index, paradigm in enumerate(("cte", "dte", "ctde"), 1):
+        (versioned / f"team_{index}_{paradigm}.pt").write_bytes(b"v")
+    policies = harness.replicate_policies(5, 6)
+    assert len(policies) == 6, policies
+    from_versioned = [p for p in policies.values() if str(versioned) in str(p)]
+    from_scratch = [p for p in policies.values() if str(root / "data" / "runs") in str(p)]
+    assert len(from_versioned) == 3, from_versioned
+    assert len(from_scratch) == 3, from_scratch
+    assert all(p.is_file() for p in policies.values())
+
+    # The ablation shape: experiment 2's scratch inside its own tree, under runs_ablation_<arm>/.
+    ablation = other / "data" / "runs_ablation_no_dr" / "exp2_seed6" / "checkpoints"
+    ablation.mkdir(parents=True)
+    for index, paradigm in enumerate(("ctde-vd", "ctde-cac", "ctde-comm"), 1):
+        (ablation / f"team_{index}_{paradigm}.pt").write_bytes(b"a")
+    campaign_versioned = root / "data" / "campaign_replicates" / "no_dr"
+    campaign_versioned.mkdir(parents=True)
+    (campaign_versioned / "exp1_seed5").mkdir()
+    for index, paradigm in enumerate(("cte", "dte", "ctde"), 1):
+        (campaign_versioned / "exp1_seed5" / f"team_{index}_{paradigm}.pt").write_bytes(b"v")
+    resolved = harness.replicate_policies(5, 6, "no_dr")
+    assert any(str(ablation) in str(path) for path in resolved.values()), \
+        "the campaign fallback did not look in the ctde tree"
+    with pytest.raises(SystemExit):
+        harness.replicate_policies(99, 6, "no_dr")
+
+
 def test_the_pool_report_carries_a_firing_rate_per_unit_of_alive_life(tmp_path: Path) -> None:
     """shots / (3 x mean survival): an arm that is dead earlier also shoots less.
 
