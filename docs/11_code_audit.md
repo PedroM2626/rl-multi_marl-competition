@@ -194,7 +194,7 @@ Measured with `coverage run --source=src/marl_arena -m pytest`, before and after
 | `controllers/base.py` | 91 % | 89 % | 91 % | 89 % |
 | **total** | **73 %** | **93 %** | **14 %** | **87–88 %** |
 
-Test count went from 9 to 106 (59 and 47) at the time of that measurement, and to **166 (97 and 69)** with
+Test count went from 9 to 106 (59 and 47) at the time of that measurement, and to **174 (105 and 69)** with
 the suites added since — the collision, config, dashboard, render and round-robin-statistics tests. The
 totals have moved with them: experiment 1 is now **94 %** (1,542 statements, 89–91 missing) and experiment 2 **89 %**
 (1,654, 185–187 missing). Both totals move by a few statements between identical invocations, which is why
@@ -800,8 +800,12 @@ reconciles the number of summaries found against the number of runs launched, na
 `--collect-only` flag rebuilds an aggregate from the run summaries already on disk, so a collection defect
 never again costs a re-training run.
 
-**Verification:** re-collecting the arena-v2 campaign yields 60 rows across `['exp1', 'exp2']` where the
-first pass yielded 30; re-collecting the committed study into a scratch directory gives the same 60 rows and
+**Verification:** `tests/test_study_collection.py` writes one scratch replicate into each tree and asserts the
+collector finds two summaries and both experiment labels; the gate was then checked against the defect it is
+meant to catch, by running the same fixture over a copy of the module with `ROOT / "ctde_arena"` removed from
+the loop — one summary, `['exp1']`, and the test fails. Re-collecting the arena-v2 campaign yields 60 rows
+across `['exp1', 'exp2']` where the first pass yielded 30; re-collecting the committed study into a scratch
+directory gives the same 60 rows and
 an `analysis.json` that compares equal to the versioned one, so the fix changes collection and not
 measurement. Row *order* differs (paths sort `exp1_seed10` before `exp1_seed2`), which is cosmetic and was
 left alone rather than patched to preserve a hash — the analysis it feeds is order-independent, which is what

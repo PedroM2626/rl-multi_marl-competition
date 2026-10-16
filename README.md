@@ -46,7 +46,7 @@ Honest summary of what is finished and what is not:
 | Arena-v2 re-measurement | 10 seeds × 500k steps under a decayed alive bonus and draw-on-cap ([§ 8.12](docs/08_results.md#arena-v2)) | same |
 | Configuration ablations | `no_dr`, `narrow_64`, `wide_256` at 3 seeds × both experiments ([§ 8.13](docs/08_results.md#ablations)) | same |
 | Gameplay clips of the trained policies | yes (`docs/assets/`) | yes |
-| Tests | 97 (96 passed, 1 skipped), **94 %** statement coverage | 69 (68 passed, 1 skipped), **89 %** coverage |
+| Tests | 105 (104 passed, 1 skipped), **94 %** statement coverage | 69 (68 passed, 1 skipped), **89 %** coverage |
 | Docker | n/a | **never built or run** |
 
 Six defects documented in the audit were **fixed** during this work, and each changed what the results
@@ -312,7 +312,7 @@ rule were the two likeliest drivers of the ranking
 │   ├── rl/                     # actions, buffer + GAE, networks, ppo
 │   ├── systems/                # match_variant, simulation, metrics, plotting
 │   └── ui/dashboard.py         # in-game overlay text
-├── tests/                      # 97 tests, incl. tree-parity, collision geometry and the round-robin statistics
+├── tests/                      # 105 tests, incl. tree-parity, collision geometry and the round-robin statistics
 ├── data/                       # experiment 1: promoted replicate + historical_100k/ + PROVENANCE.json
 ├── results/
 │   ├── study/                  # per_seed_metrics.csv, analysis.json, learning_curves.png
