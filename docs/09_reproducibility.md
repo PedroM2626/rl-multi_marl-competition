@@ -89,6 +89,19 @@ pip install -r requirements-measured.lock.txt --extra-index-url https://download
 pip install pandas                # not a dependency of anything measured
 ```
 
+Each committed `.env` lists 48 of the 49 environment variables that tree's `CONFIG` reads — the two trees
+read the same 49 names, and the reward and termination keys of
+[§ 4.4.2](04_mdp_formalisation.md#442-the-reward-and-the-termination-rule-are-configurable) were added to the
+file so that reading it describes the whole instrument. Only two of the 48 values differ from the code
+default in `src/marl_arena/config.py` — `RANDOM_SEED`, which selects the slot rotation the shipped
+checkpoints need, and `RL_TRAIN_TOTAL_STEPS`, which the file pins to 1,000,000 against a code default of
+3,000,000 ([§ 6.7](06_optimisation_procedure.md#67-hyperparameters-as-trained)) — so the file can be checked
+against the published numbers without opening the source. The single deliberate omission is
+`ARENA_DATA_DIR`: it re-roots the entire data tree,
+`run_experiment.py` sets it to a fresh directory per replicate to guarantee random initialisation
+([A-4](11_code_audit.md#silent-warm-start)), and pinning it in a file that every run shares would put all
+of them in the same place.
+
 ## 9.3 Commands
 
 | Command | Experiment | What it does |
@@ -96,11 +109,11 @@ pip install pandas                # not a dependency of anything measured
 | `python scripts/train_rl.py --seed S` | 1 | Headless PPO training; bit-for-bit reproducible for a given seed |
 | `python main.py` | 1 | Ursina 3D window, greedy policies loaded from `data/checkpoints/` |
 | `python scripts/plot_metrics.py` | 1 | Reads `data/metrics/summary.json` → `exports/metrics/` |
-| `python -m pytest tests/ -q` | 1 | 91 tests |
+| `python -m pytest tests/ -q` | 1 | 94 tests |
 | `cd ctde_arena && python scripts/train_rl.py` | 2 | Same, plus MLflow logging |
 | `cd ctde_arena && mlflow ui --backend-store-uri file:./mlruns` | 2 | Tracking UI |
 | `cd ctde_arena && python main.py` | 2 | 3D window for the CTDE variants |
-| `cd ctde_arena && python -m pytest tests/ -q` | 2 | 66 tests |
+| `cd ctde_arena && python -m pytest tests/ -q` | 2 | 69 tests |
 | `cd ctde_arena && docker build -t ctde-arena . && docker run --rm -v ${PWD}/data:/app/data -v ${PWD}/mlruns:/app/mlruns ctde-arena` | 2 | Containerised training |
 | `python scripts/run_experiment.py --seed S --steps N --out DIR` | either | One seeded replicate: train, then greedy held-out evaluation |
 | `python scripts/run_study.py --steps 500000 --seeds 1..10 --jobs 20` | both | Fan replicates out across processes and collect `results/study/` |
@@ -188,9 +201,9 @@ ImportError: cannot import name 'ValueDecompositionCriticNetwork' from 'marl_are
 
 ```
 $ python -m pytest tests/ -q            # experiment 1
-90 passed, 1 skipped
+93 passed, 1 skipped
 $ cd ctde_arena && python -m pytest tests/ -q
-65 passed, 1 skipped
+68 passed, 1 skipped
 ```
 
 The skipped test in each suite is `test_render.py`'s offscreen path, which needs `ursina`: the pinned
@@ -205,18 +218,22 @@ Statement coverage over `src/marl_arena`, measured with `coverage run --source=s
 
 | Tree | Statements | Missing | Coverage |
 |---|---:|---:|---:|
-| Experiment 1 | 1,542 | 84–90 | **94 %** |
-| Experiment 2 (`ctde_arena/`) | 1,654 | 184–186 | **89 %** |
+| Experiment 1 | 1,542 | 89–91 | **94 %** |
+| Experiment 2 (`ctde_arena/`) | 1,654 | 185–187 | **89 %** |
 
-Both totals move by a few missing statements between identical invocations: experiment 1 gave 90, 84, 88 and
-90 across four runs, experiment 2 gave 186 and then 184 after three configuration tests were added. The
-branch that varies was not tracked down and the effect is at most 0.4 %, so the range is quoted rather than
-whichever run happened to be measured last.
+Both totals move by a couple of missing statements between identical invocations: three repeat runs of each
+suite gave 91, 89 and 91 for experiment 1, and 185, 187 and 187 for experiment 2. Earlier runs of the same
+measurement recorded as few as 84 for experiment 1. The branch that varies was not tracked down; the spread
+is two statements out of 1,542, so the range is quoted rather than whichever run happened to be measured
+last.
 
-In both trees the bulk of the gap is now in the engine rather than the presentation: `simulation.py`
-(33 missing), `rl_controller.py` (15), `config.py` (11), `controllers/base.py` (9), `systems/metrics.py` (9)
-and `systems/plotting.py` (8). `ui/dashboard.py`, which was the single largest uncovered file for most of
-this repository's life, is at 100 %.
+The gap is in the engine rather than the presentation. Nine files account for experiment 1's 91 missing
+statements: `simulation.py` (33), `controllers/rl_controller.py` (15), `config.py` (12),
+`controllers/base.py` (9), `systems/metrics.py` (9), `systems/plotting.py` (8), `systems/match_variant.py`
+(3), `rl/actions.py` (1) and `rl/ppo.py` (1). Experiment 2's extra 96 are its own architectures and optimiser:
+`rl/ppo.py` (+60), `rl/networks.py` (+17, a file experiment 1 does not have),
+`controllers/rl_controller.py` (+17) and `rl/actions.py` (+2). `ui/dashboard.py`, which was the single
+largest uncovered file for most of this repository's life, is at 100 % in both trees.
 
 What the 157 tests do **not** cover is catalogued in
 [§ Coverage](11_code_audit.md#coverage). The collision solver is now geometrically verified against

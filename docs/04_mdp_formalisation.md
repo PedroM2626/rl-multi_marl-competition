@@ -223,6 +223,10 @@ The arena-v2 campaign (`scripts/run_arena_v2_campaign.sh`) runs the study again 
 30 s half-life, and a match that runs to the clock declared a draw rather than awarded. The knobs exist so
 that campaign can be run; its numbers are the subject of the results chapter's treatment of them.
 
+All six are written into the committed `.env` and `.env.example` of both trees at the values in the table
+above, which is what makes the file a description of the instrument rather than a partial one — see
+[§ 9.2](09_reproducibility.md#92-setup).
+
 ## 4.5 Episode and transition bookkeeping
 
 The per-step pipeline in `ArenaSimulation.step(dt)` is:

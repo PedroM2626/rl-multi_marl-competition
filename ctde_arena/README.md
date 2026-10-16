@@ -27,7 +27,7 @@ Each paradigm controls one team; three teams of three agents fight in the same a
 | Bit-for-bit reproducible training | yes, verified with `--no-mlflow` |
 | License | MIT — [`LICENSE`](../LICENSE) at the repository root covers this tree as well as experiment 1 |
 | MLflow curves | **1 logged point** for the 100k run — see [A-9](../docs/11_code_audit.md#mlflow-cadence) |
-| Tests | 66 (65 passed, 1 skipped), **89 %** statement coverage |
+| Tests | 69 (68 passed, 1 skipped), **89 %** statement coverage |
 | Cross-experiment round-robin | hosted here, since this tree's package is the superset holding all six architectures |
 | Absolute strength vs random opponents | `results/absolute/` at the repository root, from `scripts/run_absolute_eval.py` ([§ 8.11](../docs/08_results.md#absolute-strength)) |
 | Docker image | **never built or run** — unverified configuration |
@@ -302,18 +302,19 @@ The values that matter most here:
 
 | Variable | Committed value | Note |
 |---|---|---|
-| `RL_TRAIN_TOTAL_STEPS` | 1,000,000 | matches the code default; the study overrode it to 500,000 per replicate |
+| `RL_TRAIN_TOTAL_STEPS` | 1,000,000 | the code default is 3,000,000, so this committed file is what sets the budget; the study overrode it to 500,000 per replicate |
 | `RL_LOG_EVERY_STEPS` | 50,000 | with the historical 100k budget this yields one MLflow point |
 | `RL_METRICS_EVERY_MATCHES` | 10 | the CSVs hold one match in ten |
 | `RL_HIDDEN_DIM` | 128 | two Tanh layers |
 | `RL_DEVICE` | cpu | `cuda` / `mps` supported, and both are *slower* here — [A-26](../docs/11_code_audit.md#gpu-and-thread-scaling) |
 | `RANDOM_SEED` | 2 | also the slot rotation: `2 % 3 = 2`, which is what the promoted checkpoints need |
+| `REWARD_*`, `TERMINATION_CAP_AWARDS_WIN` | committed defaults | the six knobs [§ 4.4.2](../docs/04_mdp_formalisation.md#442-the-reward-and-the-termination-rule-are-configurable) makes configurable, pinned in `.env` at the values the study ran with: 0.015 / 0 (decay off) / 1.2 / −0.5 / −1.0 / true |
 
 ## Tests
 
 ```bash
 cd ctde_arena
-python -m pytest tests/ -q        # 65 passed, 1 skipped; 89% statement coverage of src/marl_arena
+python -m pytest tests/ -q        # 68 passed, 1 skipped; 89% statement coverage of src/marl_arena
 ```
 
 `test_components.py` checks tensor shapes for the two new networks; `test_ctde_training.py` terminates real

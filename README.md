@@ -46,7 +46,7 @@ Honest summary of what is finished and what is not:
 | Arena-v2 re-measurement | 10 seeds × 500k steps under a decayed alive bonus and draw-on-cap ([§ 8.12](docs/08_results.md#arena-v2)) | same |
 | Configuration ablations | `no_dr`, `narrow_64`, `wide_256` at 3 seeds × both experiments ([§ 8.13](docs/08_results.md#ablations)) | same |
 | Gameplay clips of the trained policies | yes (`docs/assets/`) | yes |
-| Tests | 91 (90 passed, 1 skipped), **94 %** statement coverage | 66 (65 passed, 1 skipped), **89 %** coverage |
+| Tests | 94 (93 passed, 1 skipped), **94 %** statement coverage | 69 (68 passed, 1 skipped), **89 %** coverage |
 | Docker | n/a | **never built or run** |
 
 Six defects documented in the audit were **fixed** during this work, and each changed what the results
@@ -278,10 +278,18 @@ Every tunable is read from `.env` by `src/marl_arena/config.py`. The full table 
 and units is in [§ Hyperparameters as trained](docs/06_optimisation_procedure.md#67-hyperparameters-as-trained)
 and [§ Match variants](docs/03_arena_system_model.md#36-match-variants-and-domain-randomisation).
 
-Note: `RL_TRAIN_TOTAL_STEPS` is **1,000,000** in both committed `.env` files, matching the code default;
+Note: `RL_TRAIN_TOTAL_STEPS` is **1,000,000** in both committed `.env` files, while the code default when
+the variable is absent is 3,000,000 — the file, not the default, is what sets the budget of a bare
+`python scripts/train_rl.py` run ([§ 6.7](docs/06_optimisation_procedure.md#67-hyperparameters-as-trained));
 `RANDOM_SEED` is deliberately different per tree (9 and 2) because it also selects the paradigm-to-slot
-rotation that the shipped checkpoints need. `RESPAWN_ENABLED` was removed rather than left inert
-([A-16](docs/11_code_audit.md#dead-configuration)).
+rotation that the shipped checkpoints need. Of the 48 keys the committed `.env` files list, only these two
+differ from the code defaults. `RESPAWN_ENABLED` was removed rather than left inert
+([A-16](docs/11_code_audit.md#dead-configuration)). The six reward and termination keys
+(`REWARD_ALIVE_BONUS`, `REWARD_ALIVE_DECAY_HALF_LIFE_S`, `REWARD_KILL`, `REWARD_DEATH`, `REWARD_HIT`,
+`TERMINATION_CAP_AWARDS_WIN`) are pinned there too, at the values every published number used; they are
+configuration rather than literals because the study's own analysis said the survival term and the buzzer
+rule were the two likeliest drivers of the ranking
+([§ 4.4.2](docs/04_mdp_formalisation.md#442-the-reward-and-the-termination-rule-are-configurable)).
 
 ## Repository layout
 
@@ -304,7 +312,7 @@ rotation that the shipped checkpoints need. `RESPAWN_ENABLED` was removed rather
 │   ├── rl/                     # actions, buffer + GAE, networks, ppo
 │   ├── systems/                # match_variant, simulation, metrics, plotting
 │   └── ui/dashboard.py         # in-game overlay text
-├── tests/                      # 91 tests, incl. tree-parity, collision geometry and the round-robin statistics
+├── tests/                      # 94 tests, incl. tree-parity, collision geometry and the round-robin statistics
 ├── data/                       # experiment 1: promoted replicate + historical_100k/ + PROVENANCE.json
 ├── results/
 │   ├── study/                  # per_seed_metrics.csv, analysis.json, learning_curves.png
@@ -315,7 +323,7 @@ rotation that the shipped checkpoints need. `RESPAWN_ENABLED` was removed rather
     ├── main.py  Dockerfile  requirements.txt  README.md
     ├── scripts/                # own train_rl.py (adds MLflow); the shared scripts are byte-identical
     ├── src/marl_arena/         # own copy; VD / CAC / Comm networks
-    ├── tests/                  # 66 tests
+    ├── tests/                  # 69 tests
     ├── results/baseline/       # experiment 2's untrained reference
     └── data/                   # promoted replicate, historical_100k/, mlflow_export/, PROVENANCE.json
 ```
