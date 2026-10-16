@@ -655,7 +655,10 @@ it had one checkpoint per architecture, to four decimals, on all six arms.
 first pooled analysis omitted `harness_seed`, which merged the five match streams of a block onto the same 600
 keys (20 triples x 30 matches): it
 ran its paired tests on one fifth of the evidence and still printed a complete-looking table with plausible
-p-values. Adding the training block one level up reproduced the same trap, and
+p-values ([A-39](11_code_audit.md#the-pooled-round-robin-analysis-dropped-a-replication-column-from-its-match-key)
+reproduces it from the archived `results/cross_arena/replicates.json`, which reports 3,000 matches and 600
+meetings for every pair; that file and its five per-seed summaries are kept, labelled as superseded, in
+[§ 9.7](09_reproducibility.md#97-artefact-inventory)). Adding the training block one level up reproduced the same trap, and
 `tests/test_cross_arena_report.py` now pins the seam — three runs of two matches must count six, and a key
 that drops either column reports four or two. The McNemar implementation was checked against
 `scipy.stats.binomtest` over 200 random discordant tables and agrees to 4.9e-14. Its tail is summed in log

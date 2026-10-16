@@ -415,14 +415,22 @@ Every versioned experiment artefact (172 files), with SHA-256 for integrity chec
 | `data/metrics/team_match_metrics.csv` | 10,809 | `25a31953f7198bd676752f18d4aa7dca6b305307eed05866fcfdfc99d2649b2f` |
 | `data/metrics/trajectory_metrics.csv` | 1,343,793 | `e3539dd0a2667159b63559869c9ca391d670406850e2af69c7e5102a3f6db59f` |
 
-**Study aggregates.** Recomputed by `report_study.py`, `plot_study.py` and `report_cross_arena.py` from the per-replicate and per-match summaries.
+**Study aggregates.** Recomputed by `report_study.py`, `plot_study.py` and `report_cross_arena.py` from the per-replicate and per-match summaries. The round-robin rows are the pooled tables chapter 8 quotes: `blocks6.csv` and `blocks6.json` (six checkpoint sets x five match streams, the current result), `blocks.csv` (the first three sets, kept because two of the three agreement statistics in [§ 8.11](08_results.md#absolute-strength) are computed against it), and the v2 and ablation pools the re-measurement campaign writes.
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
 | `results/cross_arena/blocks.csv` | 2,389,102 | `8891db57a270a5b32c187e3d086171736ce113c0cf772172f401ec34e5e04ca7` |
-| `results/cross_arena/blocks.json` | 16,722 | `633114425dc7e70add2bb457ff513ecd98b9087e5231f38e6a3ac7cf09a9c0e1` |
+| `results/cross_arena/blocks.json` | 16,962 | `2e8de9065de10772718ac28560d05e3c393bce5d0249ef2f3e6a830ef1db52c2` |
 | `results/cross_arena/blocks6.csv` | 4,772,724 | `fec107ccfba9b8ad3f681659f1161659523878804c39be399987883891e2c89f` |
-| `results/cross_arena/blocks6.json` | 18,518 | `fda14625dda348dbd7739b098a6c75c6a2999c01b60301d3cce276145e1d1307` |
+| `results/cross_arena/blocks6.json` | 18,755 | `03844029813cb1cb73ea9173c5e607d48a1dae429386f01e6c8283c1dd691108` |
+| `results/study/analysis.json` | 4,226 | `0761e5fa08f9be1cbee21f515b28eb17ad48e65b7207868bc161ce933f87527b` |
+| `results/study/learning_curves.png` | 137,532 | `1915d48d117e8a96730b3659e0259e5ad6446c0fb7103d0642a6a5e7bd601cbe` |
+| `results/study/per_seed_metrics.csv` | 5,226 | `a69098a4e88eef37c1291f73b1cb2526f0d31a98c0c2c6f0da27af0263b30d17` |
+
+**Superseded round-robin pools.** The earlier replication counts of the same instrument, kept because chapter 8's history is quoted from them and not from the current table: `pairwise_first_run_600.json` is the first single-checkpoint run (600 matches) whose verdict was 'no pair separates'; `seeds/` holds the five 600-match runs that made up `replicates.csv` (3,000 matches, one checkpoint set, and the pooled analysis whose missing `harness_seed` key left every pair meeting 600 times -- [A-39](11_code_audit.md#the-pooled-round-robin-analysis-dropped-a-replication-column-from-its-match-key)); `replicates.json` is that 3,000-match report. None of them is evidence about the current ranking, and the chain 600 -> 3,000 -> 9,000 -> 18,000 is the reason every separation in [§ 8.10](08_results.md#cross-arena) is quoted with its replication count.
+
+| Path | Bytes | SHA-256 |
+|---|---:|---|
 | `results/cross_arena/pairwise_first_run_600.json` | 5,563 | `99bb2ca332c212669a899b0c8d31f89a6e35fab71791df91f22d91efbd2f80ce` |
 | `results/cross_arena/replicates.csv` | 594,744 | `df1b3bd556f700a49ffa24015f62a37594523cbdb2b1f58898fe7e5f02393f09` |
 | `results/cross_arena/replicates.json` | 7,164 | `2b31001ac1ab1f1a5965b4aa48061fa2289cb34d88bc2391c332695dd1279104` |
@@ -431,9 +439,6 @@ Every versioned experiment artefact (172 files), with SHA-256 for integrity chec
 | `results/cross_arena/seeds/summary_seed3.json` | 2,811 | `e5e847f5d525f94f4d7ad19f1365c9879eaec64d0c5fabb77463bd0fa1d1dd90` |
 | `results/cross_arena/seeds/summary_seed4.json` | 2,820 | `272adeb3a59349573431fe8fd3e71bb8b4fb77c906f1d13ffe8325fa73b232ee` |
 | `results/cross_arena/seeds/summary_seed5.json` | 2,820 | `fc0028d8d7811f32d5483da563ec57cc6b294ad3006d267a4d2e01c11700a63c` |
-| `results/study/analysis.json` | 4,226 | `0761e5fa08f9be1cbee21f515b28eb17ad48e65b7207868bc161ce933f87527b` |
-| `results/study/learning_curves.png` | 137,532 | `1915d48d117e8a96730b3659e0259e5ad6446c0fb7103d0642a6a5e7bd601cbe` |
-| `results/study/per_seed_metrics.csv` | 5,226 | `a69098a4e88eef37c1291f73b1cb2526f0d31a98c0c2c6f0da27af0263b30d17` |
 
 **Untrained baselines.** `random_baseline.py` output, 300 fixed-variant headless matches per mode. The uniform files are byte-identical between the trees because that mode never queries a network.
 

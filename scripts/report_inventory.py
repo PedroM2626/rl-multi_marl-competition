@@ -26,8 +26,29 @@ GROUPS = [
     (
         "Study aggregates",
         "Recomputed by `report_study.py`, `plot_study.py` and `report_cross_arena.py` from the per-replicate "
-        "and per-match summaries.",
-        ("results/study/", "results/cross_arena/"),
+        "and per-match summaries. The round-robin rows are the pooled tables chapter 8 quotes: `blocks6.csv` "
+        "and `blocks6.json` (six checkpoint sets x five match streams, the current result), `blocks.csv` "
+        "(the first three sets, kept because two of the three agreement statistics in [§ 8.11]"
+        "(08_results.md#absolute-strength) are computed against it), and the v2 and ablation pools the "
+        "re-measurement campaign writes.",
+        ("results/study/", "results/cross_arena/blocks.csv", "results/cross_arena/blocks.json",
+         "results/cross_arena/blocks6.csv", "results/cross_arena/blocks6.json",
+         "results/cross_arena/v2_blocks.csv", "results/cross_arena/v2_blocks.json",
+         "results/cross_arena/no_dr_blocks.csv", "results/cross_arena/no_dr_blocks.json"),
+    ),
+    (
+        "Superseded round-robin pools",
+        "The earlier replication counts of the same instrument, kept because chapter 8's history is quoted "
+        "from them and not from the current table: `pairwise_first_run_600.json` is the first single-"
+        "checkpoint run (600 matches) whose verdict was 'no pair separates'; `seeds/` holds the five 600-match "
+        "runs that made up `replicates.csv` (3,000 matches, one checkpoint set, and the pooled analysis whose "
+        "missing `harness_seed` key left every pair meeting 600 times -- [A-39](11_code_audit.md#the-pooled-"
+        "round-robin-analysis-dropped-a-replication-column-from-its-match-key)); `replicates.json` is "
+        "that 3,000-match report. None of them is evidence about the current ranking, and the chain 600 -> "
+        "3,000 -> 9,000 -> 18,000 is the reason every separation in [§ 8.10](08_results.md#cross-arena) is "
+        "quoted with its replication count.",
+        ("results/cross_arena/pairwise_first_run_600.json", "results/cross_arena/replicates.csv",
+         "results/cross_arena/replicates.json", "results/cross_arena/seeds/"),
     ),
     (
         "Untrained baselines",

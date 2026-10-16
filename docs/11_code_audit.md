@@ -50,6 +50,7 @@ Every finding below was open at some point; the status column is the current sta
 | [A-36](#a-round-robin-run-summary-named-the-wrong-checkpoints) | MED · FIXED | Every round-robin run summary named the promoted checkpoints rather than the replicate set it played |
 | [A-37](#the-measured-environment-carries-a-critical-advisory-that-cannot-be-patched-without-invalidating-it) | INFO · ACCEPTED RISK | OSV: 33 of 34 measured-environment pins are clean, torch is not, and its one CRITICAL is the `weights_only=True` path A-25 relies on |
 | [A-38](#the-published-integrity-hashes-were-windows-checkout-hashes) | MED · FIXED | The artefact table hashed the file on disk, so every text row was a CRLF hash no other platform could reproduce |
+| [A-39](#the-pooled-round-robin-analysis-dropped-a-replication-column-from-its-match-key) | MED · FIXED | The pooled round-robin keyed matches without `harness_seed`, so pairs met 600 times while the report claimed 3,000 |
 
 ---
 
@@ -923,6 +924,43 @@ regenerating the section with the old working-tree read — both tests fail.
 **Scope note:** the table also lists the two `requirements-measured.lock.txt` copies and `LICENSE`, which the
 prefix filter previously excluded, so a governance artefact could be added or removed without the inventory
 noticing. `test_no_artefact_is_listed_twice_or_missing` now compares the row set against `git ls-files`.
+
+## The pooled round-robin analysis dropped a replication column from its match key
+
+**A-39 · MED · FIXED**
+
+`report_cross_arena.py` pairs architectures match by match, so it needs a key identifying one match across
+the rows a match contributes per arm. The first pooled version left `harness_seed` out of that key: five
+harness seeds are five independent streams over the same checkpoints, each stream reusing the match indices,
+so pooling them collapsed every stream onto one stream's keys. The paired tests then ran on a fifth of the
+meetings they claimed — and the report said so in its own numbers, which is how it was found.
+
+**Reproduction** (a committed artefact, no re-run needed):
+
+```bash
+python -c "import json;r=json.load(open('results/cross_arena/replicates.json'));\
+print(r['matches'], sorted({v['met'] for v in r['pairwise_mcnemar'].values()}))"
+# 3000 [600]  -- the header reports 3,000 matches; every pair met 600 times
+```
+
+`results/cross_arena/blocks6.json`, produced by the corrected key, reports `met = 3600` for every pair over
+its 18,000 matches — exactly one fifth of them, which is what four triples containing a given pair at thirty
+matches each across six blocks and five streams is. The direction of the error was loss of power, not
+inflated significance: the p-values were computed on 600 meetings while the text described 3,000.
+
+**Fixed** by `MatchKey(training_block, harness_seed, triple, index)` as a `NamedTuple` with a `.of(row)`
+constructor, so a new column can be added to the row schema and the key will show the omission at a glance.
+`tests/test_cross_arena_report.py::test_match_key_keeps_runs_apart_that_differ_only_by_replication` builds
+five synthetic runs whose true match count is known by construction and asserts the pooled count; a key
+missing either the harness seed or the training block reports four or two instead of six and the test fails.
+`combine_cross_arena.py` refuses to pool runs whose columns differ and refuses inputs that already carry its
+own `training_block`/`harness_seed` columns, which is what stops a re-merged file being merged a second time.
+
+**Consequence had it not been caught:** every separation in the first two versions of
+[§ 8.10](08_results.md#cross-arena) was computed on a fifth of the matches it claimed to use. The 3,000-match
+pool in `results/cross_arena/replicates.csv` (§ 9.7) is that artefact, kept because its two published
+verdicts are the history the section recounts.
+
 
 ## Open work: suggested measurements
 
