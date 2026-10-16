@@ -25,6 +25,7 @@ Each paradigm controls one team; three teams of three agents fight in the same a
 | Promoted replicate in `data/` | seed 2, chosen as the one least distant from the study means (`data/PROVENANCE.json`) |
 | Untrained baseline | 300 matches in both greedy and uniform modes (`results/baseline/`) |
 | Bit-for-bit reproducible training | yes, verified with `--no-mlflow` |
+| License | MIT — [`LICENSE`](../LICENSE) at the repository root covers this tree as well as experiment 1 |
 | MLflow curves | **1 logged point** for the 100k run — see [A-9](../docs/11_code_audit.md#mlflow-cadence) |
 | Tests | 66 (65 passed, 1 skipped), **89 %** statement coverage |
 | Cross-experiment round-robin | hosted here, since this tree's package is the superset holding all six architectures |

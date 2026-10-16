@@ -358,6 +358,13 @@ The image installs OpenGL/X11 libraries but defaults to headless training. **It 
 run** — this is a known, accepted gap, not an oversight; every number in the documentation was produced on
 the host. Treat the Dockerfile as unverified configuration.
 
+## License
+
+MIT — the full text is in [LICENSE](LICENSE). It covers the whole repository: both experiment trees
+(`src/marl_arena/` and `ctde_arena/`), the documentation, the versioned checkpoints under `data/`, and every
+committed table under `results/`. Third-party dependencies keep their own licences; nothing here is a
+re-licensed copy of upstream source, and the arena is original code.
+
 ## Contact
 
 Open an issue or a pull request in this repository to discuss the experiments, the audit findings, or

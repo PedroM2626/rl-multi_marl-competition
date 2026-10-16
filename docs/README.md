@@ -80,3 +80,11 @@ Experiment 1's artefacts were themselves only committed on 2026-09-27 — before
 | [§ 8.10](08_results.md#cross-arena) cross-experiment round-robin | the thirty-run loop of [§ 9.3](09_reproducibility.md#93-commands): `run_cross_arena.py` from `ctde_arena/` for each of the six blocks x five seeds, then `combine_cross_arena.py` and `report_cross_arena.py` from the repository root |
 | [§ 8.13](08_results.md#ablations) configuration ablations | `bash scripts/run_ablation_campaign.sh`, then `python scripts/report_study.py --results-dir results/ablation_no_dr --compare-to results/study` (same for the other two arms) |
 | [§ 8.11](08_results.md#absolute-strength) absolute strength vs random opponents | `python scripts/run_absolute_eval.py --matches 150 --seeds 1,2,3 --compare-pool results/cross_arena/blocks.json`, run from `ctde_arena/` |
+
+## License
+
+MIT, in [LICENSE](../LICENSE). The grant covers this whole repository — both experiment trees, the twelve
+chapters, the versioned checkpoints under `data/training_replicates/` and `data/checkpoints/`, and every
+table under `results/` — because the artefacts of a study are the part other people need to reuse, not just
+the prose that reports them. Third-party dependencies keep their own licenses; nothing in either tree is a
+modified copy of upstream source.
