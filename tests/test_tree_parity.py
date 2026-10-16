@@ -34,9 +34,11 @@ IDENTICAL = [
     "scripts/random_baseline.py",
     "scripts/render_trailer.py",
     "scripts/run_experiment.py",
+    "scripts/eval_readout.py",
     "tests/test_collision.py",
     "tests/test_render.py",
     "tests/test_arena_config.py",
+    "tests/test_readout_parity.py",
     "tests/test_dashboard.py",
 ]
 

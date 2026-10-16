@@ -190,6 +190,17 @@ argmax-ing the same network.** Any future campaign should fix the readout before
 both, or evaluate under the stochastic policy at a fixed temperature, and treat a one-sided greedy number as
 incomplete.
 
+**That remedy is now an instrument, and this section's numbers are still greedy-only.** `EVAL_TEMPERATURE`
+(§ 7.6, point 11) switches the held-out readout from argmax to a fixed-temperature sample of the same
+network's logits, and `scripts/eval_readout.py` replays a trained replicate under both without touching its
+weights — the protocol is copied from the study's own held-out evaluation and pinned by
+`tests/test_readout_parity.py`, with the same run directory, the same `seed + 9000` stream, the same fixed
+variant and the same 150 matches, so the two arms differ only in the action rule. `--temperature 0` is the
+control: its difference from `results/study/` is what re-measurement noise alone amounts to, which is the
+yardstick every temperature row should be read against. `scripts/run_readout_campaign.sh` plays all twenty
+replicates at T = 0, 0.5 and 1; until that pool exists, nothing here quotes a sampled win rate, and the 2.5×
+spread and 35.6 % agreement above — measured from the artefacts the training runs wrote — remain the evidence.
+
 ### Two regimes: wipeouts and timeouts <a name="two-regimes"></a>
 
 Held-out median match duration is bimodal across replicates, not noisy around a mean:

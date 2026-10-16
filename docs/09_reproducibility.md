@@ -34,8 +34,8 @@ reassuring-sounding claim, it was measured, in a second environment holding ever
 
 | Check | NumPy 1.26.4 vs 2.2.6 | Result |
 |---|---|---|
-| Experiment 1 test suite (59 tests then, 116 now) | both versions | **pass** |
-| Experiment 2 test suite (47 tests then, 69 now) | both versions | **pass** |
+| Experiment 1 test suite (59 tests then, 121 now) | both versions | **pass** |
+| Experiment 2 test suite (47 tests then, 74 now) | both versions | **pass** |
 | Collision geometry (14 hand-computed entry parameters and hit positions) | both versions | **identical to 1e-12** |
 | Domain-randomisation stream (`arena_size`, speeds, cooldowns of match 41) | both versions | **identical, all digits** |
 | `train_rl.py --seed 42 --steps 4000`, first PPO update | both versions | policy/value loss differ at the **1e-6 – 1e-8** level |
@@ -91,10 +91,10 @@ pip install -r requirements-measured.lock.txt --extra-index-url https://download
 pip install pandas                # not a dependency of anything measured
 ```
 
-Each committed `.env` lists 48 of the 49 environment variables that tree's `CONFIG` reads — the two trees
+Each committed `.env` lists 49 of the 50 environment variables that tree's `CONFIG` reads — the two trees
 read the same 49 names, and the reward and termination keys of
 [§ 4.4.2](04_mdp_formalisation.md#442-the-reward-and-the-termination-rule-are-configurable) were added to the
-file so that reading it describes the whole instrument. Only two of the 48 values differ from the code
+file so that reading it describes the whole instrument. Only two of the 49 values differ from the code
 default in `src/marl_arena/config.py` — `RANDOM_SEED`, which selects the slot rotation the shipped
 checkpoints need, and `RL_TRAIN_TOTAL_STEPS`, which the file pins to 1,000,000 against a code default of
 3,000,000 ([§ 6.7](06_optimisation_procedure.md#67-hyperparameters-as-trained)) — so the file can be checked
@@ -111,11 +111,11 @@ of them in the same place.
 | `python scripts/train_rl.py --seed S` | 1 | Headless PPO training; bit-for-bit reproducible for a given seed |
 | `python main.py` | 1 | Ursina 3D window, greedy policies loaded from `data/checkpoints/` |
 | `python scripts/plot_metrics.py` | 1 | Reads `data/metrics/summary.json` → `exports/metrics/` |
-| `python -m pytest tests/ -q` | 1 | 116 tests |
+| `python -m pytest tests/ -q` | 1 | 121 tests |
 | `cd ctde_arena && python scripts/train_rl.py` | 2 | Same, plus MLflow logging |
 | `cd ctde_arena && mlflow ui --backend-store-uri file:./mlruns` | 2 | Tracking UI |
 | `cd ctde_arena && python main.py` | 2 | 3D window for the CTDE variants |
-| `cd ctde_arena && python -m pytest tests/ -q` | 2 | 69 tests |
+| `cd ctde_arena && python -m pytest tests/ -q` | 2 | 74 tests |
 | `cd ctde_arena && docker build -t ctde-arena . && docker run --rm -v ${PWD}/data:/app/data -v ${PWD}/mlruns:/app/mlruns ctde-arena` | 2 | Containerised training |
 | `python scripts/run_experiment.py --seed S --steps N --out DIR` | either | One seeded replicate: train, then greedy held-out evaluation |
 | `python scripts/run_study.py --steps 500000 --seeds 1..10 --jobs 20` | both | Fan replicates out across processes and collect `results/study/` |
@@ -135,6 +135,8 @@ of them in the same place.
 | `python scripts/version_campaign_checkpoints.py` (or `--check`) | root | Copy the three ablation sets into `data/campaign_replicates/` and write the manifest that records each set's override, hidden width and hashes; `--check` verifies the versioned bytes without writing |
 | `python scripts/version_training_replicates.py --pairs 5:6,6:8,7:9,8:10` | root | Version further study blocks into `data/training_replicates/`, resolving each replicate from the git-ignored scratch in whichever tree it was written; `--check --pairs …` verifies the bytes and writes nothing |
 | `bash scripts/run_ten_block_campaign.sh` | both | Queue the four extra blocks (20 runs, 12,000 matches) behind the pool campaign, then re-pool all fifty run directories into `results/cross_arena/blocks10.csv` and its report — the merge refuses to run unless every new directory wrote a `matches.csv` |
+| `python scripts/eval_readout.py --temperature 1 --seeds 1,…,10 --matches 150` | either tree, on its own replicates | Re-evaluate existing checkpoints under the sampled readout (`--temperature 0` replays the published argmax as the control), writing `per_seed_metrics.csv` in the study schema so `report_study.py --results-dir … --compare-to results/study` pairs it against the published numbers |
+| `bash scripts/run_readout_campaign.sh` | both | Queue all three readout arms (T = 0, 0.5, 1) over both experiments' ten seeds each, merge the per-tree parts, and report each arm against `results/study/`; chained behind the pool campaigns so no cost figure in § 9.5 is measured under two campaigns at once |
 | `python scripts/run_absolute_eval.py --matches 150 --seeds 1,2,3` | run from `ctde_arena/` | Absolute strength on the promoted checkpoints: each trained policy against two uniform-random controllers, trained slot rotated |
 | `python scripts/run_absolute_eval.py --blocks 1:7,10:5,9:2 --matches 50 --seeds 1,2,3 --out results/absolute_blocks --null-json results/baseline/random_baseline_uniform.json --compare-pool results/cross_arena/blocks.json` | run from `ctde_arena/` | The same over three training blocks, with the slot-matched null and the agreement with the peer pool; `--campaign <arm>` takes the ablation sets instead, behind the same capacity guard |
 | `python scripts/run_absolute_eval.py --blocks 1:7,10:5,2:1,3:3,4:4,9:2 --matches 25 --seeds 1,2,3 --out results/absolute_six --null-json results/baseline/random_baseline_uniform.json --compare-pool results/cross_arena/blocks6.json` | run from `ctde_arena/` | The headline [§ 8.11](08_results.md#absolute-strength) artefact: six blocks, and the peer pool at the *same* replication count, which is what the −0.04 story says the comparison requires |
@@ -209,9 +211,9 @@ ImportError: cannot import name 'ValueDecompositionCriticNetwork' from 'marl_are
 
 ```
 $ python -m pytest tests/ -q            # experiment 1
-115 passed, 1 skipped
+120 passed, 1 skipped
 $ cd ctde_arena && python -m pytest tests/ -q
-68 passed, 1 skipped
+73 passed, 1 skipped
 ```
 
 The skipped test in each suite is `test_render.py`'s offscreen path, which needs `ursina`: the pinned
@@ -226,14 +228,14 @@ Statement coverage over `src/marl_arena`, measured with `coverage run --source=s
 
 | Tree | Statements | Missing | Coverage |
 |---|---:|---:|---:|
-| Experiment 1 | 1,542 | 89–91 | **94 %** |
-| Experiment 2 (`ctde_arena/`) | 1,654 | 185–187 | **89 %** |
+| Experiment 1 | 1,548 | 91 | **94 %** |
+| Experiment 2 (`ctde_arena/`) | 1,660 | 187 | **89 %** |
 
-Both totals move by a couple of missing statements between identical invocations: three repeat runs of each
-suite gave 91, 89 and 91 for experiment 1, and 185, 187 and 187 for experiment 2. Earlier runs of the same
-measurement recorded as few as 84 for experiment 1. The branch that varies was not tracked down; the spread
-is two statements out of 1,542, so the range is quoted rather than whichever run happened to be measured
-last.
+Three consecutive runs of each suite gave the totals above unchanged. Earlier in the project the same
+measurement did move by a couple of missing statements between identical invocations — four runs of
+experiment 1 gave 90, 84, 88 and 90, which is why this table carried ranges for a while — and CI re-runs both
+suites on Linux with `requirements.txt` ([§ 9.4](#continuous-integration)), where a statement or two is
+expected to differ from the host numbers quoted here.
 
 The gap is in the engine rather than the presentation. Nine files account for experiment 1's 91 missing
 statements: `simulation.py` (33), `controllers/rl_controller.py` (15), `config.py` (12),
@@ -243,7 +245,7 @@ statements: `simulation.py` (33), `controllers/rl_controller.py` (15), `config.p
 `controllers/rl_controller.py` (+17) and `rl/actions.py` (+2). `ui/dashboard.py`, which was the single
 largest uncovered file for most of this repository's life, is at 100 % in both trees.
 
-What the 185 tests do **not** cover is catalogued in
+What the 195 tests do **not** cover is catalogued in
 [§ Coverage](11_code_audit.md#coverage). The collision solver is now geometrically verified against
 hand-computed values, but no test checks a *metric* against an independent reference — see the note at the
 end of that section on coverage not being correctness.

@@ -47,7 +47,7 @@ Honest summary of what is finished and what is not:
 | Configuration ablations | `no_dr`, `narrow_64`, `wide_256` at 3 seeds × both experiments ([§ 8.13](docs/08_results.md#ablations)) | same |
 | Dependency audit | 33 of the 34 pins in the measured lock have no known OSV vulnerability; `torch` does, and its one CRITICAL is the `weights_only=True` path — accepted risk, quantified in [§ 9.10](docs/09_reproducibility.md#dependency-audit) | same |
 | Gameplay clips of the trained policies | yes (`docs/assets/`) | yes |
-| Tests | 116 (115 passed, 1 skipped), **94 %** statement coverage | 69 (68 passed, 1 skipped), **89 %** coverage |
+| Tests | 121 (120 passed, 1 skipped), **94 %** statement coverage | 74 (73 passed, 1 skipped), **89 %** coverage |
 | Continuous integration | both suites plus tree parity, documentation links, inventory and round-robin re-derivation, campaign-script syntax ([§ 9.4](docs/09_reproducibility.md#continuous-integration)) | same job |
 | Docker | n/a | **never built or run** |
 
@@ -284,14 +284,17 @@ Note: `RL_TRAIN_TOTAL_STEPS` is **1,000,000** in both committed `.env` files, wh
 the variable is absent is 3,000,000 — the file, not the default, is what sets the budget of a bare
 `python scripts/train_rl.py` run ([§ 6.7](docs/06_optimisation_procedure.md#67-hyperparameters-as-trained));
 `RANDOM_SEED` is deliberately different per tree (9 and 2) because it also selects the paradigm-to-slot
-rotation that the shipped checkpoints need. Of the 48 keys the committed `.env` files list, only these two
+rotation that the shipped checkpoints need. Of the 49 keys the committed `.env` files list, only these two
 differ from the code defaults. `RESPAWN_ENABLED` was removed rather than left inert
 ([A-16](docs/11_code_audit.md#dead-configuration)). The six reward and termination keys
 (`REWARD_ALIVE_BONUS`, `REWARD_ALIVE_DECAY_HALF_LIFE_S`, `REWARD_KILL`, `REWARD_DEATH`, `REWARD_HIT`,
 `TERMINATION_CAP_AWARDS_WIN`) are pinned there too, at the values every published number used; they are
 configuration rather than literals because the study's own analysis said the survival term and the buzzer
 rule were the two likeliest drivers of the ranking
-([§ 4.4.2](docs/04_mdp_formalisation.md#442-the-reward-and-the-termination-rule-are-configurable)).
+([§ 4.4.2](docs/04_mdp_formalisation.md#442-the-reward-and-the-termination-rule-are-configurable)). So is
+`EVAL_TEMPERATURE=0`, the held-out **readout**: 0 is argmax — the readout of every number in this repository —
+and a positive value samples the policy's softmax at that temperature
+([§ 7.6](docs/07_experimental_protocol.md#76-statistical-treatment-used-in-this-documentation), point 11).
 
 ## Repository layout
 
@@ -314,7 +317,7 @@ rule were the two likeliest drivers of the ranking
 │   ├── rl/                     # actions, buffer + GAE, networks, ppo
 │   ├── systems/                # match_variant, simulation, metrics, plotting
 │   └── ui/dashboard.py         # in-game overlay text
-├── tests/                      # 116 tests, incl. tree-parity, collision geometry and the round-robin statistics
+├── tests/                      # 121 tests, incl. tree-parity, collision geometry and the round-robin statistics
 ├── data/                       # experiment 1: promoted replicate + historical_100k/ + PROVENANCE.json
 ├── results/
 │   ├── study/                  # per_seed_metrics.csv, analysis.json, learning_curves.png

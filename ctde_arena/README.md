@@ -27,7 +27,7 @@ Each paradigm controls one team; three teams of three agents fight in the same a
 | Bit-for-bit reproducible training | yes, verified with `--no-mlflow` |
 | License | MIT — [`LICENSE`](../LICENSE) at the repository root covers this tree as well as experiment 1 |
 | MLflow curves | **1 logged point** for the 100k run — see [A-9](../docs/11_code_audit.md#mlflow-cadence) |
-| Tests | 69 (68 passed, 1 skipped), **89 %** statement coverage |
+| Tests | 74 (73 passed, 1 skipped), **89 %** statement coverage |
 | Cross-experiment round-robin | hosted here, since this tree's package is the superset holding all six architectures |
 | Absolute strength vs random opponents | `results/absolute_six/` at the repository root (six checkpoint sets), from `scripts/run_absolute_eval.py`; `results/absolute_blocks/` and `results/absolute/` are the three-set and promoted-set predecessors, kept because [§ 8.11](../docs/08_results.md#absolute-strength) quotes their history ([§ 8.11](../docs/08_results.md#absolute-strength)) |
 | Docker image | **never built or run** — unverified configuration |
@@ -314,7 +314,7 @@ The values that matter most here:
 
 ```bash
 cd ctde_arena
-python -m pytest tests/ -q        # 68 passed, 1 skipped; 89% statement coverage of src/marl_arena
+python -m pytest tests/ -q        # 73 passed, 1 skipped; 89% statement coverage of src/marl_arena
 ```
 
 `test_components.py` checks tensor shapes for the two new networks; `test_ctde_training.py` terminates real

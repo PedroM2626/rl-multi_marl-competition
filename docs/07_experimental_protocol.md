@@ -242,6 +242,16 @@ that run's initialisation and geometry stream, so they are not independent draws
     compared against a three-set peer table. The agreement is therefore credited to replicating the training
     and to matching the replication counts, not to playing more matches. Every win rate here is still stated
     with the opponent pool it was measured against.
+11. **The readout is a chosen instrument, and it is now switchable.** Every held-out number in this repository
+    is argmax: `EVAL_TEMPERATURE=0`, and the controller takes `torch.argmax` of the policy's logits. The
+    trained policy is stochastic — that is what PPO optimises — and
+    [§ 8.1](08_results.md#readout-divergence) measured that the greedy readout carries 2.5× the between-seed
+    spread of the sampled policy it summarises and keeps the within-replicate ordering in only 35.6 % of
+    comparable pairs. `scripts/eval_readout.py` re-plays existing checkpoints under both readouts with the
+    study's own protocol — same run directory, same `seed + 9000` held-out stream, same fixed variant, same
+    150 matches — so the two arms differ only in how an action is chosen from the logits, and
+    `--temperature 0` is the control that prices re-measurement noise against the readout difference.
+    `tests/test_readout_parity.py` pins that protocol line for line rather than trusting a docstring.
 
 **Secondary — the historical single-seed runs.** Point estimates as `summary.json` reports them (a
 cumulative average over a non-stationary trajectory), Wilson intervals on the 46 recorded matches per

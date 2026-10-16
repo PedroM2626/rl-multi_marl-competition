@@ -74,6 +74,11 @@ class ArenaConfig:
     rl_ppo_epochs: int = int(os.getenv("RL_PPO_EPOCHS", "4"))
     rl_batch_size: int = int(os.getenv("RL_BATCH_SIZE", "256"))
     rl_hidden_dim: int = int(os.getenv("RL_HIDDEN_DIM", "128"))
+    # Evaluation readout. 0 keeps the argmax policy — the readout every published number was measured with.
+    # A positive value makes a held-out evaluation sample from the policy at that softmax temperature instead,
+    # which is the other thing the trained network does; docs/08_results.md#readout-divergence shows the two
+    # readouts of the same weights can rank the arms differently.
+    eval_temperature: float = float(os.getenv("EVAL_TEMPERATURE", "0"))
     rl_device: str = os.getenv("RL_DEVICE", "cpu")
     rl_checkpoint_dir: Path = DATA_DIR / "checkpoints"
 

@@ -55,3 +55,7 @@ mlruns/
 /results/cross_arena_blocks/
 /results/cross_arena_v2_blocks/
 /results/cross_arena_campaign/
+# Per-arm intermediates of the readout campaign: one CSV per experiment per temperature, merged into
+# results/readout/T<temperature>/per_seed_metrics.csv, which is the artefact report_study.py reads.
+/results/readout/parts/
+/ctde_arena/results/readout/parts/

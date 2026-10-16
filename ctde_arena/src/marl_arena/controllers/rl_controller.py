@@ -153,6 +153,19 @@ class RLTeamController(BaseTeamController):
     def _greedy_action(self, logits: torch.Tensor) -> int:
         return int(torch.argmax(logits, dim=-1).item())
 
+    def _eval_action(self, logits: torch.Tensor) -> int:
+        """The held-out readout: argmax at `EVAL_TEMPERATURE=0`, otherwise a fixed-temperature sample.
+
+        The default is the readout every published number was measured with, and at that value this is the
+        same `torch.argmax` call. With a positive temperature the draw comes from torch's global generator —
+        the one `config.seed_all` seeds at process start — so a replay is reproducible for a given
+        (seed, temperature) pair, and the arms' comparison is paired on the match streams.
+        """
+        temperature = CONFIG.eval_temperature
+        if temperature <= 0.0:
+            return self._greedy_action(logits)
+        return int(torch.multinomial(torch.softmax(logits / temperature, dim=-1), num_samples=1).item())
+
     def _register_agent_slots(self, all_agents: Iterable[AgentSnapshot]) -> None:
         allies = sorted(
             [agent for agent in all_agents if agent.team_name == self.team_name],
@@ -215,7 +228,7 @@ class RLTeamController(BaseTeamController):
                     value_estimate = float(self.critic(global_tensor).item())
                 else:
                     logits, _ = self.actor(local_tensor)
-                    action_index = self._greedy_action(logits)
+                    action_index = self._eval_action(logits)
                     log_prob_value = 0.0
                     value_estimate = float(self.critic(global_tensor).item())
             self._record_step(
@@ -242,7 +255,7 @@ class RLTeamController(BaseTeamController):
                     value_estimate = float(self.critic(global_tensor).item())
                 else:
                     logits, _ = self.actor(local_tensor)
-                    action_index = self._greedy_action(logits)
+                    action_index = self._eval_action(logits)
                     log_prob_value = 0.0
                     value_estimate = float(self.critic(global_tensor).item())
             self._record_step(
@@ -284,7 +297,7 @@ class RLTeamController(BaseTeamController):
                     value_estimate = float(self.critic(global_tensor).item())
                 else:
                     logits = self.actor(team_tensor, slot_tensor)
-                    action_index = self._greedy_action(logits)
+                    action_index = self._eval_action(logits)
                     log_prob_value = 0.0
                     value_estimate = float(self.critic(global_tensor).item())
             self._record_step(
@@ -309,7 +322,7 @@ class RLTeamController(BaseTeamController):
                 value_estimate = float(value.item())
             else:
                 logits, value = self.actor(obs_tensor)
-                action_index = self._greedy_action(logits)
+                action_index = self._eval_action(logits)
                 log_prob_value = 0.0
                 value_estimate = float(value.item())
         self._record_step(agent.agent_id, action_index, log_prob_value, value_estimate, local_obs)
