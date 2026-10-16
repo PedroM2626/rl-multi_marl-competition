@@ -1160,9 +1160,9 @@ domain randomisation on".
    128 and domain randomisation on" ([§ 8.13](#ablations)).
 
 **What it cannot claim:** that any architecture is best, or that the six admit a strict ordering — CTDE-Comm
-and DTE cannot be told apart, and neither can CTDE-CAC, CTDE-VD and CTE; that the ordering is settled by
-three checkpoints per architecture, since replacing one block of three reversed two positions in the pooled
-table; that within-experiment differences exist at all, since every corrected significance is
+and DTE cannot be told apart, and neither can CTDE, CTDE-CAC and CTDE-VD; that the ordering is settled by six
+checkpoints per architecture, since the count of separated pairs has moved at every replication step
+(2 → 8 → 5) and two of the three-block table's headline separations disappeared at six; that within-experiment differences exist at all, since every corrected significance is
 *cross*-experiment; that win rate here measures fighting skill rather than, in a third of matches,
 survival to the clock; that the ablated configurations generalise, since the three arms were measured only
 inside their own co-adapted runs and never through the common-opponent or random pools; or that any of it

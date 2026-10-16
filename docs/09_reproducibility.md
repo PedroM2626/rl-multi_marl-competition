@@ -326,10 +326,10 @@ outputs are pure functions of other committed files, and each was re-derived and
 
 | Artefact | Re-derived from | Command | Result |
 |---|---|---|---|
-| `results/cross_arena/blocks.csv` | the 15 run-directory CSVs (git-ignored scratch) | `scripts/combine_cross_arena.py results/cross_arena_blocks/*` | identical SHA-256 |
-| `results/cross_arena/blocks.json` | `blocks.csv` | `scripts/report_cross_arena.py --in results/cross_arena/blocks.csv` | deterministic, no RNG |
+| `results/cross_arena/blocks6.csv` | the 30 run-directory CSVs (git-ignored scratch) | `scripts/combine_cross_arena.py results/cross_arena_blocks/*` | identical SHA-256 (`06b23f4d1419…`) |
+| `results/cross_arena/blocks6.json` | `blocks6.csv` | `scripts/report_cross_arena.py --in results/cross_arena/blocks6.csv` | deterministic, no RNG |
 | `results/study/learning_curves.png` | `data/runs/*/evaluation/run_summary.json` | `scripts/plot_study.py --runs-dir data/runs` | identical SHA-256 (`1915d48d…`) |
-| `results/absolute/summary.json` | `results/absolute/matches.csv` | `scripts/run_absolute_eval.py --report-only --out results/absolute` | no matches replayed |
+| `results/absolute_six/summary.json` | `results/absolute_six/matches.csv` | `scripts/run_absolute_eval.py --report-only --out results/absolute_six` | no matches replayed |
 
 The last row is the point of `--report-only`: the headline aggregation of chapter 8's absolute-strength
 section can be re-derived from the raw per-match record in seconds, on a machine with no GPU and no

@@ -226,8 +226,9 @@ that run's initialisation and geometry stream, so they are not independent draws
    selects the replicate with the least L1 distance to the per-arm study means, so the versioned `data/`
    cannot be the one that happens to confirm the hypothesis. The rule and its result are recorded in
    `data/PROVENANCE.json`. What the rule does *not* buy is an ordering: the promoted replicate is one of the
-   three checkpoint sets in [§ 8.10](08_results.md#cross-arena), and it is the set that placed plain CTDE
-   last — a position it loses as soon as the other two are pooled in.
+   six checkpoint sets in [§ 8.10](08_results.md#cross-arena), it is the set that placed plain CTDE last
+   where the six-set pool places it fourth, and it is the set whose two-scale agreement with [§
+   8.11](08_results.md#absolute-strength) is the weakest of the three counts measured.
 10. **A fourth design measures strength against opponents that did not train at all.**
     [§ 8.11](08_results.md#absolute-strength) puts one trained team against two teams whose controllers draw
     uniformly from the action space, rotating the trained slot. Two rules make that number mean something:

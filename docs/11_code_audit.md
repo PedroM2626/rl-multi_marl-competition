@@ -853,9 +853,10 @@ Items 1–3 were the original list and are done; 6 is done; 4 is partly done; 7 
     including the then-headline, Comm over CTDE — did not survive. The report prints a leave-one-block-out
     column, which is what identified them. Remaining at this item: the separations still move with n, so
     n = 6 is not convergence either ([docs/10 item 12](10_threats_to_validity.md)).
-12. **New, cheap:** the round-robin's checkpoint pool is *the study's own* policies, so the eight
-    separations in [§ 8.10](08_results.md#cross-arena) are conditional on three training seeds per design.
-    `data/runs/` already holds the other 42 replicate checkpoints (14 of the study's 20 runs); extending the
-    block set to six costs evaluation time
-    only and would put the between-block SD (0.003–0.061) on the same footing as the between-seed SD
-    (0.12–0.22) that every other caveat in this document quotes.
+12. **Done:** extend the round-robin's checkpoint pool past three sets. It is the study's own policies, so
+    every separation is conditional on how many training seeds represent each design; `data/runs/` held the
+    rest, and the pool was played over six blocks (18,000 matches) with all 36 checkpoints versioned. The
+    between-block SD (0.018–0.063) is now estimated on six draws and is quoted against the between-seed SD
+    (0.12–0.22) that every other caveat in this document uses. Remaining: the separations moved again at six
+    sets, so more blocks are still worth running — and neither pool has been re-measured under the ablated
+    configurations of item 8.
