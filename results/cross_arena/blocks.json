@@ -211,7 +211,7 @@
         601,
         526
       ],
-      "p": 0.027459353705,
+      "p": 0.0274594,
       "verdict": "nominal only"
     },
     "CTDE vs CTDE-Comm": {
@@ -222,7 +222,7 @@
         549,
         664
       ],
-      "p": 0.001055103372,
+      "p": 0.0010551,
       "verdict": "**significant**"
     },
     "CTDE vs CTDE-VD": {
@@ -233,7 +233,7 @@
         598,
         538
       ],
-      "p": 0.079985853452,
+      "p": 0.0799859,
       "verdict": "not significant"
     },
     "CTDE vs CTE": {
@@ -244,7 +244,7 @@
         616,
         478
       ],
-      "p": 3.3664858e-05,
+      "p": 3.36649e-05,
       "verdict": "**significant**"
     },
     "CTDE vs DTE": {
@@ -255,7 +255,7 @@
         600,
         633
       ],
-      "p": 0.362135047607,
+      "p": 0.362135,
       "verdict": "not significant"
     },
     "CTDE-CAC vs CTDE-Comm": {
@@ -266,7 +266,7 @@
         503,
         688
       ],
-      "p": 9.194e-08,
+      "p": 9.19395e-08,
       "verdict": "**significant**"
     },
     "CTDE-CAC vs CTDE-VD": {
@@ -277,7 +277,7 @@
         510,
         541
       ],
-      "p": 0.354774044625,
+      "p": 0.354774,
       "verdict": "not significant"
     },
     "CTDE-CAC vs CTE": {
@@ -288,7 +288,7 @@
         531,
         514
       ],
-      "p": 0.620656081188,
+      "p": 0.620656,
       "verdict": "not significant"
     },
     "CTDE-CAC vs DTE": {
@@ -310,7 +310,7 @@
         677,
         525
       ],
-      "p": 1.295738e-05,
+      "p": 1.29574e-05,
       "verdict": "**significant**"
     },
     "CTDE-Comm vs CTE": {
@@ -321,7 +321,7 @@
         694,
         447
       ],
-      "p": 0.0,
+      "p": 2.65455e-13,
       "verdict": "**significant**"
     },
     "CTDE-Comm vs DTE": {
@@ -332,7 +332,7 @@
         637,
         628
       ],
-      "p": 0.822045759145,
+      "p": 0.822046,
       "verdict": "not significant"
     },
     "CTDE-VD vs CTE": {
@@ -343,7 +343,7 @@
         580,
         518
       ],
-      "p": 0.065588225552,
+      "p": 0.0655882,
       "verdict": "not significant"
     },
     "CTDE-VD vs DTE": {
@@ -365,7 +365,7 @@
         441,
         713
       ],
-      "p": 0.0,
+      "p": 1.10752e-15,
       "verdict": "**significant**"
     }
   },
@@ -376,11 +376,11 @@
   ],
   "block_sensitivity": {
     "CTDE vs CTDE-Comm": {
-      "pooled_p": 0.001055103372,
+      "pooled_p": 0.0010551,
       "without_block_p": {
-        "exp1_seed1+exp2_seed7": 0.000100747247,
-        "exp1_seed10+exp2_seed5": 0.001243979392,
-        "exp1_seed9+exp2_seed2": 0.352128338502
+        "exp1_seed1+exp2_seed7": 0.000100747,
+        "exp1_seed10+exp2_seed5": 0.00124398,
+        "exp1_seed9+exp2_seed2": 0.352128
       },
       "per_block": {
         "exp1_seed1+exp2_seed7": {
@@ -388,31 +388,31 @@
             210,
             215
           ],
-          "solo_p": 0.846182334438
+          "solo_p": 0.846182
         },
         "exp1_seed10+exp2_seed5": {
           "discordant": [
             197,
             220
           ],
-          "solo_p": 0.28131116078
+          "solo_p": 0.281311
         },
         "exp1_seed9+exp2_seed2": {
           "discordant": [
             142,
             229
           ],
-          "solo_p": 7.316511e-06
+          "solo_p": 7.31651e-06
         }
       },
       "robust_to_block": false
     },
     "CTDE vs CTE": {
-      "pooled_p": 3.3664858e-05,
+      "pooled_p": 3.36649e-05,
       "without_block_p": {
-        "exp1_seed1+exp2_seed7": 0.07893500766,
-        "exp1_seed10+exp2_seed5": 0.134311370691,
-        "exp1_seed9+exp2_seed2": 4e-12
+        "exp1_seed1+exp2_seed7": 0.078935,
+        "exp1_seed10+exp2_seed5": 0.134311,
+        "exp1_seed9+exp2_seed2": 4.42912e-12
       },
       "per_block": {
         "exp1_seed1+exp2_seed7": {
@@ -420,7 +420,7 @@
             234,
             144
           ],
-          "solo_p": 4.261171e-06
+          "solo_p": 4.26117e-06
         },
         "exp1_seed10+exp2_seed5": {
           "discordant": [
@@ -434,17 +434,17 @@
             162,
             210
           ],
-          "solo_p": 0.014705702461
+          "solo_p": 0.0147057
         }
       },
       "robust_to_block": false
     },
     "CTDE-CAC vs CTDE-Comm": {
-      "pooled_p": 9.194e-08,
+      "pooled_p": 9.19395e-08,
       "without_block_p": {
-        "exp1_seed1+exp2_seed7": 0.176070223098,
-        "exp1_seed10+exp2_seed5": 9e-12,
-        "exp1_seed9+exp2_seed2": 1.052718e-06
+        "exp1_seed1+exp2_seed7": 0.17607,
+        "exp1_seed10+exp2_seed5": 8.57691e-12,
+        "exp1_seed9+exp2_seed2": 1.05272e-06
       },
       "per_block": {
         "exp1_seed1+exp2_seed7": {
@@ -452,21 +452,21 @@
             128,
             274
           ],
-          "solo_p": 0.0
+          "solo_p": 2.61792e-13
         },
         "exp1_seed10+exp2_seed5": {
           "discordant": [
             204,
             197
           ],
-          "solo_p": 0.764506084638
+          "solo_p": 0.764506
         },
         "exp1_seed9+exp2_seed2": {
           "discordant": [
             171,
             217
           ],
-          "solo_p": 0.022218709906
+          "solo_p": 0.0222187
         }
       },
       "robust_to_block": false
@@ -474,9 +474,9 @@
     "CTDE-CAC vs DTE": {
       "pooled_p": 1.9058e-08,
       "without_block_p": {
-        "exp1_seed1+exp2_seed7": 0.003270640834,
-        "exp1_seed10+exp2_seed5": 7.9e-11,
-        "exp1_seed9+exp2_seed2": 1.2085516e-05
+        "exp1_seed1+exp2_seed7": 0.00327064,
+        "exp1_seed10+exp2_seed5": 7.93375e-11,
+        "exp1_seed9+exp2_seed2": 1.20855e-05
       },
       "per_block": {
         "exp1_seed1+exp2_seed7": {
@@ -484,31 +484,31 @@
             118,
             225
           ],
-          "solo_p": 7.964e-09
+          "solo_p": 7.96373e-09
         },
         "exp1_seed10+exp2_seed5": {
           "discordant": [
             199,
             213
           ],
-          "solo_p": 0.521920924457
+          "solo_p": 0.521921
         },
         "exp1_seed9+exp2_seed2": {
           "discordant": [
             167,
             238
           ],
-          "solo_p": 0.000489645452
+          "solo_p": 0.000489645
         }
       },
       "robust_to_block": true
     },
     "CTDE-Comm vs CTDE-VD": {
-      "pooled_p": 1.295738e-05,
+      "pooled_p": 1.29574e-05,
       "without_block_p": {
-        "exp1_seed1+exp2_seed7": 0.010421302021,
-        "exp1_seed10+exp2_seed5": 0.000137655411,
-        "exp1_seed9+exp2_seed2": 2.0436417e-05
+        "exp1_seed1+exp2_seed7": 0.0104213,
+        "exp1_seed10+exp2_seed5": 0.000137655,
+        "exp1_seed9+exp2_seed2": 2.04364e-05
       },
       "per_block": {
         "exp1_seed1+exp2_seed7": {
@@ -516,31 +516,31 @@
             245,
             166
           ],
-          "solo_p": 0.000114147479
+          "solo_p": 0.000114147
         },
         "exp1_seed10+exp2_seed5": {
           "discordant": [
             228,
             184
           ],
-          "solo_p": 0.034009636294
+          "solo_p": 0.0340096
         },
         "exp1_seed9+exp2_seed2": {
           "discordant": [
             204,
             175
           ],
-          "solo_p": 0.150263599679
+          "solo_p": 0.150264
         }
       },
       "robust_to_block": false
     },
     "CTDE-Comm vs CTE": {
-      "pooled_p": 0.0,
+      "pooled_p": 2.65455e-13,
       "without_block_p": {
-        "exp1_seed1+exp2_seed7": 8.6446e-08,
-        "exp1_seed10+exp2_seed5": 1.9628695e-05,
-        "exp1_seed9+exp2_seed2": 0.0
+        "exp1_seed1+exp2_seed7": 8.64464e-08,
+        "exp1_seed10+exp2_seed5": 1.96287e-05,
+        "exp1_seed9+exp2_seed2": 5.35737e-17
       },
       "per_block": {
         "exp1_seed1+exp2_seed7": {
@@ -555,14 +555,14 @@
             237,
             111
           ],
-          "solo_p": 1.2e-11
+          "solo_p": 1.24703e-11
         },
         "exp1_seed9+exp2_seed2": {
           "discordant": [
             222,
             199
           ],
-          "solo_p": 0.283609762025
+          "solo_p": 0.28361
         }
       },
       "robust_to_block": true
@@ -570,9 +570,9 @@
     "CTDE-VD vs DTE": {
       "pooled_p": 5.96912e-07,
       "without_block_p": {
-        "exp1_seed1+exp2_seed7": 0.000230207168,
-        "exp1_seed10+exp2_seed5": 2.1185526e-05,
-        "exp1_seed9+exp2_seed2": 2.1185526e-05
+        "exp1_seed1+exp2_seed7": 0.000230207,
+        "exp1_seed10+exp2_seed5": 2.11855e-05,
+        "exp1_seed9+exp2_seed2": 2.11855e-05
       },
       "per_block": {
         "exp1_seed1+exp2_seed7": {
@@ -580,31 +580,31 @@
             164,
             232
           ],
-          "solo_p": 0.000740101184
+          "solo_p": 0.000740101
         },
         "exp1_seed10+exp2_seed5": {
           "discordant": [
             163,
             214
           ],
-          "solo_p": 0.009927169525
+          "solo_p": 0.00992717
         },
         "exp1_seed9+exp2_seed2": {
           "discordant": [
             163,
             214
           ],
-          "solo_p": 0.009927169525
+          "solo_p": 0.00992717
         }
       },
       "robust_to_block": true
     },
     "CTE vs DTE": {
-      "pooled_p": 0.0,
+      "pooled_p": 1.10752e-15,
       "without_block_p": {
-        "exp1_seed1+exp2_seed7": 1.26e-10,
-        "exp1_seed10+exp2_seed5": 1.0512368e-05,
-        "exp1_seed9+exp2_seed2": 0.0
+        "exp1_seed1+exp2_seed7": 1.25824e-10,
+        "exp1_seed10+exp2_seed5": 1.05124e-05,
+        "exp1_seed9+exp2_seed2": 9.0424e-19
       },
       "per_block": {
         "exp1_seed1+exp2_seed7": {
@@ -612,21 +612,21 @@
             148,
             242
           ],
-          "solo_p": 2.234186e-06
+          "solo_p": 2.23419e-06
         },
         "exp1_seed10+exp2_seed5": {
           "discordant": [
             106,
             253
           ],
-          "solo_p": 0.0
+          "solo_p": 5.41796e-15
         },
         "exp1_seed9+exp2_seed2": {
           "discordant": [
             187,
             218
           ],
-          "solo_p": 0.135938722192
+          "solo_p": 0.135939
         }
       },
       "robust_to_block": true

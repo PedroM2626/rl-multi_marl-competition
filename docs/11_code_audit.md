@@ -52,6 +52,7 @@ Every finding below was open at some point; the status column is the current sta
 | [A-38](#the-published-integrity-hashes-were-windows-checkout-hashes) | MED · FIXED | The artefact table hashed the file on disk, so every text row was a CRLF hash no other platform could reproduce |
 | [A-39](#the-pooled-round-robin-analysis-dropped-a-replication-column-from-its-match-key) | MED · FIXED | The pooled round-robin keyed matches without `harness_seed`, so pairs met 600 times while the report claimed 3,000 |
 | [A-40](#a-script-was-committed-without-the-helper-it-calls) | MED · FIXED | A script was committed in one commit and the helper it calls in the next, leaving a documented command that raises for any reader |
+| [A-41](#a-stored-p-value-of-zero-where-the-real-one-was-1e-37) | LOW · FIXED | p-values below 1e-12 were stored as 0.0 by rounding to twelve decimal places; verdicts and tables were computed from the unrounded value |
 
 ---
 
@@ -198,7 +199,7 @@ Measured with `coverage run --source=src/marl_arena -m pytest`, before and after
 | `controllers/base.py` | 91 % | 89 % | 91 % | 89 % |
 | **total** | **73 %** | **93 %** | **14 %** | **87–88 %** |
 
-Test count went from 9 to 106 (59 and 47) at the time of that measurement, and to **196 (122 and 74)** with
+Test count went from 9 to 106 (59 and 47) at the time of that measurement, and to **197 (123 and 74)** with
 the suites added since — the collision, config, dashboard, render, round-robin-statistics, campaign-manifest,
 collection and readout-protocol tests. The
 totals have moved with them: experiment 1 is now **94 %** (1,548 statements, 91 missing) and experiment 2 **89 %**
@@ -994,6 +995,33 @@ repository that is not runnable by anyone else.
 **Same class, wider:** the suite is full of checks that read committed artefacts rather than generated ones
 ([A-38](#the-published-integrity-hashes-were-windows-checkout-hashes), § 9.6's re-derivation gates), and CI
 runs them on a second operating system. A cross-script import is the case a compile check cannot see.
+
+
+## A stored p-value of zero, where the real one was 1e-37
+
+**A-41 · LOW · FIXED**
+
+`report_cross_arena.py` computed McNemar tails correctly and then wrote `"p": round(p, 12)` into its JSON.
+Twelve *decimal places* is 1e-12 as a floor, so any p below that was stored as `0.0` — four pairs in
+`results/cross_arena/no_dr_blocks.json` did exactly that, including CTDE above DTE at a true 1.11e-37. The
+verdict column was right (it is decided from the unrounded value) and the printed table was right (it formats
+the unrounded value too), so the only wrong artefact was the number a reader or another script would lift out
+of the JSON, and a table of zeros is not a statistical report.
+
+**Reproduction:**
+
+```bash
+python -c "import json; d=json.load(open('results/cross_arena/no_dr_blocks.json'));\
+print(d['pairwise_mcnemar']['CTDE vs DTE']['p'], d['pairwise_mcnemar']['CTDE vs DTE']['discordant'])"
+```
+
+Before the fix that printed `0.0 [754, 335]`; the same discordant counts through `mcnemar_exact` give
+1.1126038e-37, matching `scipy.stats.binomtest`.
+
+**Fixed** by storing six significant digits (`sig6`), which keeps the JSON as precise as the tables that come
+from it without pretending to more. `tests/test_cross_arena_report.py::test_a_published_p_value_is_never_zero`
+walks every committed pooled report and fails on a stored zero, because the failure mode hides in the most
+significant results — the ones nobody suspects.
 
 
 ## Open work: suggested measurements

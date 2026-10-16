@@ -211,7 +211,7 @@
         1114,
         1174
       ],
-      "p": 0.217396595811,
+      "p": 0.217397,
       "verdict": "not significant"
     },
     "CTDE vs CTDE-Comm": {
@@ -233,7 +233,7 @@
         1148,
         1117
       ],
-      "p": 0.528469647069,
+      "p": 0.52847,
       "verdict": "not significant"
     },
     "CTDE vs CTE": {
@@ -244,7 +244,7 @@
         1153,
         1077
       ],
-      "p": 0.112217686831,
+      "p": 0.112218,
       "verdict": "not significant"
     },
     "CTDE vs DTE": {
@@ -255,7 +255,7 @@
         1159,
         1237
       ],
-      "p": 0.115684544984,
+      "p": 0.115685,
       "verdict": "not significant"
     },
     "CTDE-CAC vs CTDE-Comm": {
@@ -266,7 +266,7 @@
         1162,
         1278
       ],
-      "p": 0.019887762272,
+      "p": 0.0198878,
       "verdict": "nominal only"
     },
     "CTDE-CAC vs CTDE-VD": {
@@ -277,7 +277,7 @@
         1143,
         1102
       ],
-      "p": 0.398555668074,
+      "p": 0.398556,
       "verdict": "not significant"
     },
     "CTDE-CAC vs CTE": {
@@ -288,7 +288,7 @@
         1197,
         1057
       ],
-      "p": 0.003404959053,
+      "p": 0.00340496,
       "verdict": "nominal only"
     },
     "CTDE-CAC vs DTE": {
@@ -299,7 +299,7 @@
         1100,
         1234
       ],
-      "p": 0.005894093085,
+      "p": 0.00589409,
       "verdict": "nominal only"
     },
     "CTDE-Comm vs CTDE-VD": {
@@ -310,7 +310,7 @@
         1269,
         1088
       ],
-      "p": 0.000207855218,
+      "p": 0.000207855,
       "verdict": "**significant**"
     },
     "CTDE-Comm vs CTE": {
@@ -321,7 +321,7 @@
         1295,
         1000
       ],
-      "p": 7.99e-10,
+      "p": 7.98544e-10,
       "verdict": "**significant**"
     },
     "CTDE-Comm vs DTE": {
@@ -332,7 +332,7 @@
         1254,
         1222
       ],
-      "p": 0.533294538043,
+      "p": 0.533295,
       "verdict": "not significant"
     },
     "CTDE-VD vs CTE": {
@@ -343,7 +343,7 @@
         1169,
         1107
       ],
-      "p": 0.201018142993,
+      "p": 0.201018,
       "verdict": "not significant"
     },
     "CTDE-VD vs DTE": {
@@ -354,7 +354,7 @@
         1058,
         1268
       ],
-      "p": 1.4490464e-05,
+      "p": 1.44905e-05,
       "verdict": "**significant**"
     },
     "CTE vs DTE": {
@@ -365,7 +365,7 @@
         979,
         1319
       ],
-      "p": 1e-12,
+      "p": 1.39666e-12,
       "verdict": "**significant**"
     }
   },
@@ -381,12 +381,12 @@
     "CTDE vs CTDE-Comm": {
       "pooled_p": 9.31958e-06,
       "without_block_p": {
-        "exp1_seed1+exp2_seed7": 1.723328e-06,
-        "exp1_seed10+exp2_seed5": 1.2791211e-05,
+        "exp1_seed1+exp2_seed7": 1.72333e-06,
+        "exp1_seed10+exp2_seed5": 1.27912e-05,
         "exp1_seed2+exp2_seed1": 7.60374e-07,
-        "exp1_seed3+exp2_seed3": 7.811962e-06,
-        "exp1_seed4+exp2_seed4": 0.004587907375,
-        "exp1_seed9+exp2_seed2": 0.004055180934
+        "exp1_seed3+exp2_seed3": 7.81196e-06,
+        "exp1_seed4+exp2_seed4": 0.00458791,
+        "exp1_seed9+exp2_seed2": 0.00405518
       },
       "per_block": {
         "exp1_seed1+exp2_seed7": {
@@ -394,55 +394,55 @@
             210,
             215
           ],
-          "solo_p": 0.846182334438
+          "solo_p": 0.846182
         },
         "exp1_seed10+exp2_seed5": {
           "discordant": [
             197,
             220
           ],
-          "solo_p": 0.28131116078
+          "solo_p": 0.281311
         },
         "exp1_seed2+exp2_seed1": {
           "discordant": [
             189,
             184
           ],
-          "solo_p": 0.83595699905
+          "solo_p": 0.835957
         },
         "exp1_seed3+exp2_seed3": {
           "discordant": [
             187,
             204
           ],
-          "solo_p": 0.418460729328
+          "solo_p": 0.418461
         },
         "exp1_seed4+exp2_seed4": {
           "discordant": [
             145,
             234
           ],
-          "solo_p": 5.626561e-06
+          "solo_p": 5.62656e-06
         },
         "exp1_seed9+exp2_seed2": {
           "discordant": [
             142,
             229
           ],
-          "solo_p": 7.316511e-06
+          "solo_p": 7.31651e-06
         }
       },
       "robust_to_block": false
     },
     "CTDE-Comm vs CTDE-VD": {
-      "pooled_p": 0.000207855218,
+      "pooled_p": 0.000207855,
       "without_block_p": {
-        "exp1_seed1+exp2_seed7": 0.02202332573,
-        "exp1_seed10+exp2_seed5": 0.00203637132,
-        "exp1_seed2+exp2_seed1": 5.4478074e-05,
-        "exp1_seed3+exp2_seed3": 3.6268414e-05,
-        "exp1_seed4+exp2_seed4": 0.000808208417,
-        "exp1_seed9+exp2_seed2": 0.000682044955
+        "exp1_seed1+exp2_seed7": 0.0220233,
+        "exp1_seed10+exp2_seed5": 0.00203637,
+        "exp1_seed2+exp2_seed1": 5.44781e-05,
+        "exp1_seed3+exp2_seed3": 3.62684e-05,
+        "exp1_seed4+exp2_seed4": 0.000808208,
+        "exp1_seed9+exp2_seed2": 0.000682045
       },
       "per_block": {
         "exp1_seed1+exp2_seed7": {
@@ -450,14 +450,14 @@
             245,
             166
           ],
-          "solo_p": 0.000114147479
+          "solo_p": 0.000114147
         },
         "exp1_seed10+exp2_seed5": {
           "discordant": [
             228,
             184
           ],
-          "solo_p": 0.034009636294
+          "solo_p": 0.0340096
         },
         "exp1_seed2+exp2_seed1": {
           "discordant": [
@@ -471,34 +471,34 @@
             194,
             197
           ],
-          "solo_p": 0.919452873734
+          "solo_p": 0.919453
         },
         "exp1_seed4+exp2_seed4": {
           "discordant": [
             204,
             173
           ],
-          "solo_p": 0.122212692022
+          "solo_p": 0.122213
         },
         "exp1_seed9+exp2_seed2": {
           "discordant": [
             204,
             175
           ],
-          "solo_p": 0.150263599679
+          "solo_p": 0.150264
         }
       },
       "robust_to_block": false
     },
     "CTDE-Comm vs CTE": {
-      "pooled_p": 7.99e-10,
+      "pooled_p": 7.98544e-10,
       "without_block_p": {
-        "exp1_seed1+exp2_seed7": 7.703364e-06,
-        "exp1_seed10+exp2_seed5": 0.000139199704,
-        "exp1_seed2+exp2_seed1": 2.541e-09,
-        "exp1_seed3+exp2_seed3": 2.9724e-08,
-        "exp1_seed4+exp2_seed4": 0.0,
-        "exp1_seed9+exp2_seed2": 3.59e-10
+        "exp1_seed1+exp2_seed7": 7.70336e-06,
+        "exp1_seed10+exp2_seed5": 0.0001392,
+        "exp1_seed2+exp2_seed1": 2.54108e-09,
+        "exp1_seed3+exp2_seed3": 2.97235e-08,
+        "exp1_seed4+exp2_seed4": 2.37955e-14,
+        "exp1_seed9+exp2_seed2": 3.59063e-10
       },
       "per_block": {
         "exp1_seed1+exp2_seed7": {
@@ -513,48 +513,48 @@
             237,
             111
           ],
-          "solo_p": 1.2e-11
+          "solo_p": 1.24703e-11
         },
         "exp1_seed2+exp2_seed1": {
           "discordant": [
             194,
             162
           ],
-          "solo_p": 0.100248331337
+          "solo_p": 0.100248
         },
         "exp1_seed3+exp2_seed3": {
           "discordant": [
             218,
             166
           ],
-          "solo_p": 0.009164295024
+          "solo_p": 0.0091643
         },
         "exp1_seed4+exp2_seed4": {
           "discordant": [
             189,
             225
           ],
-          "solo_p": 0.08528071741
+          "solo_p": 0.0852807
         },
         "exp1_seed9+exp2_seed2": {
           "discordant": [
             222,
             199
           ],
-          "solo_p": 0.283609762025
+          "solo_p": 0.28361
         }
       },
       "robust_to_block": true
     },
     "CTDE-VD vs DTE": {
-      "pooled_p": 1.4490464e-05,
+      "pooled_p": 1.44905e-05,
       "without_block_p": {
-        "exp1_seed1+exp2_seed7": 0.001323595061,
-        "exp1_seed10+exp2_seed5": 0.0003426428,
-        "exp1_seed2+exp2_seed1": 5.386559e-06,
+        "exp1_seed1+exp2_seed7": 0.0013236,
+        "exp1_seed10+exp2_seed5": 0.000342643,
+        "exp1_seed2+exp2_seed1": 5.38656e-06,
         "exp1_seed3+exp2_seed3": 4.64042e-07,
-        "exp1_seed4+exp2_seed4": 0.00016343015,
-        "exp1_seed9+exp2_seed2": 0.0003426428
+        "exp1_seed4+exp2_seed4": 0.00016343,
+        "exp1_seed9+exp2_seed2": 0.000342643
       },
       "per_block": {
         "exp1_seed1+exp2_seed7": {
@@ -562,55 +562,55 @@
             164,
             232
           ],
-          "solo_p": 0.000740101184
+          "solo_p": 0.000740101
         },
         "exp1_seed10+exp2_seed5": {
           "discordant": [
             163,
             214
           ],
-          "solo_p": 0.009927169525
+          "solo_p": 0.00992717
         },
         "exp1_seed2+exp2_seed1": {
           "discordant": [
             172,
             179
           ],
-          "solo_p": 0.748826002039
+          "solo_p": 0.748826
         },
         "exp1_seed3+exp2_seed3": {
           "discordant": [
             214,
             203
           ],
-          "solo_p": 0.624397604873
+          "solo_p": 0.624398
         },
         "exp1_seed4+exp2_seed4": {
           "discordant": [
             182,
             226
           ],
-          "solo_p": 0.033142058857
+          "solo_p": 0.0331421
         },
         "exp1_seed9+exp2_seed2": {
           "discordant": [
             163,
             214
           ],
-          "solo_p": 0.009927169525
+          "solo_p": 0.00992717
         }
       },
       "robust_to_block": true
     },
     "CTE vs DTE": {
-      "pooled_p": 1e-12,
+      "pooled_p": 1.39666e-12,
       "without_block_p": {
-        "exp1_seed1+exp2_seed7": 1.9498e-08,
-        "exp1_seed10+exp2_seed5": 1.2791211e-05,
-        "exp1_seed2+exp2_seed1": 0.0,
-        "exp1_seed3+exp2_seed3": 4.759e-09,
-        "exp1_seed4+exp2_seed4": 0.0,
-        "exp1_seed9+exp2_seed2": 1e-12
+        "exp1_seed1+exp2_seed7": 1.94981e-08,
+        "exp1_seed10+exp2_seed5": 1.27912e-05,
+        "exp1_seed2+exp2_seed1": 2.81443e-14,
+        "exp1_seed3+exp2_seed3": 4.75932e-09,
+        "exp1_seed4+exp2_seed4": 1.25114e-16,
+        "exp1_seed9+exp2_seed2": 1.2981e-12
       },
       "per_block": {
         "exp1_seed1+exp2_seed7": {
@@ -618,42 +618,42 @@
             148,
             242
           ],
-          "solo_p": 2.234186e-06
+          "solo_p": 2.23419e-06
         },
         "exp1_seed10+exp2_seed5": {
           "discordant": [
             106,
             253
           ],
-          "solo_p": 0.0
+          "solo_p": 5.41796e-15
         },
         "exp1_seed2+exp2_seed1": {
           "discordant": [
             183,
             189
           ],
-          "solo_p": 0.795493638935
+          "solo_p": 0.795494
         },
         "exp1_seed3+exp2_seed3": {
           "discordant": [
             142,
             224
           ],
-          "solo_p": 2.1324542e-05
+          "solo_p": 2.13245e-05
         },
         "exp1_seed4+exp2_seed4": {
           "discordant": [
             213,
             193
           ],
-          "solo_p": 0.345715649341
+          "solo_p": 0.345716
         },
         "exp1_seed9+exp2_seed2": {
           "discordant": [
             187,
             218
           ],
-          "solo_p": 0.135938722192
+          "solo_p": 0.135939
         }
       },
       "robust_to_block": true

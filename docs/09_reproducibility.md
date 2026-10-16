@@ -34,7 +34,7 @@ reassuring-sounding claim, it was measured, in a second environment holding ever
 
 | Check | NumPy 1.26.4 vs 2.2.6 | Result |
 |---|---|---|
-| Experiment 1 test suite (59 tests then, 122 now) | both versions | **pass** |
+| Experiment 1 test suite (59 tests then, 123 now) | both versions | **pass** |
 | Experiment 2 test suite (47 tests then, 74 now) | both versions | **pass** |
 | Collision geometry (14 hand-computed entry parameters and hit positions) | both versions | **identical to 1e-12** |
 | Domain-randomisation stream (`arena_size`, speeds, cooldowns of match 41) | both versions | **identical, all digits** |
@@ -111,7 +111,7 @@ of them in the same place.
 | `python scripts/train_rl.py --seed S` | 1 | Headless PPO training; bit-for-bit reproducible for a given seed |
 | `python main.py` | 1 | Ursina 3D window, greedy policies loaded from `data/checkpoints/` |
 | `python scripts/plot_metrics.py` | 1 | Reads `data/metrics/summary.json` → `exports/metrics/` |
-| `python -m pytest tests/ -q` | 1 | 122 tests |
+| `python -m pytest tests/ -q` | 1 | 123 tests |
 | `cd ctde_arena && python scripts/train_rl.py` | 2 | Same, plus MLflow logging |
 | `cd ctde_arena && mlflow ui --backend-store-uri file:./mlruns` | 2 | Tracking UI |
 | `cd ctde_arena && python main.py` | 2 | 3D window for the CTDE variants |
@@ -211,7 +211,7 @@ ImportError: cannot import name 'ValueDecompositionCriticNetwork' from 'marl_are
 
 ```
 $ python -m pytest tests/ -q            # experiment 1
-121 passed, 1 skipped
+122 passed, 1 skipped
 $ cd ctde_arena && python -m pytest tests/ -q
 73 passed, 1 skipped
 ```
@@ -245,7 +245,7 @@ statements: `simulation.py` (33), `controllers/rl_controller.py` (15), `config.p
 `controllers/rl_controller.py` (+17) and `rl/actions.py` (+2). `ui/dashboard.py`, which was the single
 largest uncovered file for most of this repository's life, is at 100 % in both trees.
 
-What the 196 tests do **not** cover is catalogued in
+What the 197 tests do **not** cover is catalogued in
 [§ Coverage](11_code_audit.md#coverage). The collision solver is now geometrically verified against
 hand-computed values, but no test checks a *metric* against an independent reference — see the note at the
 end of that section on coverage not being correctness.
@@ -626,11 +626,11 @@ Every versioned experiment artefact (196 files), with SHA-256 for integrity chec
 | Path | Bytes | SHA-256 |
 |---|---:|---|
 | `results/absolute/matches.csv` | 106,691 | `9267675ed8f90a0da3efbb2f9d93dc89e9ec2ccdc03938efefc1f8fee7a9b0dd` |
-| `results/absolute/summary.json` | 13,963 | `992e134834d879b25144a7001a79d684de545e61de5e28691cfaeb3852563eb7` |
+| `results/absolute/summary.json` | 14,146 | `ee0466f94cfc76e8b34937a9600bf864755e98f1a167b5067bf4811a765b51af` |
 | `results/absolute_blocks/matches.csv` | 141,452 | `ce745d9df991588cce5f8d7b34db4e963f813ccbe43d2b5eba9e49c9654946ac` |
-| `results/absolute_blocks/summary.json` | 23,529 | `dd92af5bd6ec576fc3c6e58bba25ce22bf1b22f94f2f41bc4381346de85a2a16` |
+| `results/absolute_blocks/summary.json` | 23,712 | `dafcc86b5e77cb2ea133cac393f2fcf596673824d5b916cc3a11fab9835559db` |
 | `results/absolute_six/matches.csv` | 140,415 | `33a771cc57f2562ca7821040442e28723541be57d5c04a7bf64f5e3dff311c11` |
-| `results/absolute_six/summary.json` | 32,340 | `fdf6a5cc89efd3f465333251bc5b3d135e7b35f1e7fe7aa4ab6a02132db65d3a` |
+| `results/absolute_six/summary.json` | 32,524 | `751ba119c9639c39b8d00907877af952f4fcfdacc220afe8a3430af52251da85` |
 
 **Gameplay clips.** Rendered by `render_trailer.py` from the promoted replicate's trained policies; the JSON beside each clip records the seed, rotation, paradigm per slot and the per-frame alive and shot counts the caption asserts.
 

@@ -147,8 +147,10 @@ def test_block_sensitivity_names_a_pair_whose_signal_is_one_block(tmp_path: Path
     # CTE-vs-DTE is carried entirely by blocks 11 and 12; without either, the remaining pair of blocks is
     # 18/6, which is p = 0.023 and fails the corrected threshold.
     assert sensitivity["CTE vs DTE"]["robust_to_block"] is False
-    assert abs(sensitivity["CTE vs DTE"]["without_block_p"]["exp1_seed11+exp2_seed1"]
-               - report.mcnemar_exact(18, 6)) < 1e-9
+    # Stored at six significant digits (sig6), not twelve decimal places, so a tiny p survives the JSON.
+    # Six digits is a relative error up to 5e-6, which is what the tolerance below allows.
+    assert sensitivity["CTE vs DTE"]["without_block_p"]["exp1_seed11+exp2_seed1"] \
+        == pytest.approx(report.mcnemar_exact(18, 6), rel=1e-5)
     sensitivity_section = stdout.split("Leave-one-training-block-out")[1].split("Slot control")[0]
     line = next(row for row in sensitivity_section.splitlines() if row.startswith("| CTE vs DTE |"))
     assert line.rstrip().endswith("| no |"), line
@@ -364,6 +366,29 @@ def test_matched_null_requires_the_uniform_baseline(tmp_path: Path) -> None:
     assert pooled["CTE"]["excess_vs_matched_null"] == pytest.approx(0.4167, abs=1e-4)
     # The Team 3 excess is smaller than the Team 1 one because Team 3 is a better corner to begin with.
     assert pooled["CTE"]["excess_by_trained_team"]["Team 3"] < pooled["CTE"]["excess_by_trained_team"]["Team 1"]
+
+
+def test_a_published_p_value_is_never_zero() -> None:
+    """`round(p, 12)` turned 1.1e-37 into 0.0; a table of zeros is not a statistical report.
+
+    Checked over every pooled report that is committed, because the pools with the most decisive pairs are
+    exactly the ones that produce the smallest p -- the failure hides in the strongest results.
+    """
+    assert report.sig6(1.1126038e-37) == 1.1126e-37
+    assert report.sig6(0.217396595811) == 0.217397
+    pooled = sorted((PROJECT_ROOT / "results" / "cross_arena").glob("*.json"))
+    assert pooled, "no pooled reports to check"
+    for path in pooled:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        for name, entry in (payload.get("pairwise_mcnemar") or {}).items():
+            b, c = entry["discordant"]
+            if b + c:
+                assert entry["p"] > 0.0, f"{path.name}: {name} stores p=0 for {b}/{c}"
+        for name, sens in (payload.get("block_sensitivity") or {}).items():
+            for key, value in sens["without_block_p"].items():
+                assert value > 0.0, f"{path.name}: {name} without {key} stores p=0"
+            for block, detail in sens["per_block"].items():
+                assert detail["solo_p"] > 0.0, f"{path.name}: {name} in {block} stores p=0"
 
 
 def test_the_versioning_scripts_share_one_copy_and_verify_rule() -> None:

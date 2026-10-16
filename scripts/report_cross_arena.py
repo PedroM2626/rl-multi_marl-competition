@@ -90,6 +90,17 @@ def fmt_p(p: float) -> str:
     return f"{p:.2e}" if p < 1e-4 else f"{p:.5f}"
 
 
+def sig6(p: float) -> float:
+    """Six significant digits, for JSON.
+
+    Rounding a p-value to twelve *decimal places* publishes 0.0 for anything smaller than 1e-12, which is
+    what four pairs in the no_dr pool really did — their true exact tails are about 1e-37, computed correctly
+    and stored as zero. The verdict column was never affected because it is decided from the unrounded value;
+    the number a reader would quote was.
+    """
+    return float(f"{p:.6g}")
+
+
 def main() -> None:
     args = parse_args()
     if hasattr(sys.stdout, "reconfigure"):
@@ -197,7 +208,7 @@ def main() -> None:
         verdict = "**significant**" if p < bonferroni else ("nominal only" if p < args.alpha else "not significant")
         pairwise[f"{a} vs {b}"] = {
             "met": len(common), "a_wins": a_won, "b_wins": b_won,
-            "discordant": [b_disc, c_disc], "p": round(p, 12), "verdict": verdict,
+            "discordant": [b_disc, c_disc], "p": sig6(p), "verdict": verdict,
         }
         print(f"| {a} vs {b} | {len(common)} | {a_won} | {b_won} | {b_disc}/{c_disc} | {fmt_p(p)} "
               f"| {verdict} |")
@@ -238,9 +249,9 @@ def main() -> None:
             # threshold with any one set of checkpoints removed.
             robust = all(value < bonferroni for value in dropped.values())
             sensitivity[name] = {
-                "pooled_p": round(pooled_p, 12),
-                "without_block_p": {k: round(v, 12) for k, v in dropped.items()},
-                "per_block": {k: {"discordant": v["discordant"], "solo_p": round(v["solo_p"], 12)}
+                "pooled_p": sig6(pooled_p),
+                "without_block_p": {k: sig6(v) for k, v in dropped.items()},
+                "per_block": {k: {"discordant": v["discordant"], "solo_p": sig6(v["solo_p"])}
                               for k, v in per_block.items()},
                 "robust_to_block": robust,
             }
