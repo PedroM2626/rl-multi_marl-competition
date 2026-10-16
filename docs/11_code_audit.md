@@ -1080,5 +1080,7 @@ Items 1–3 were the original list and are done; 6 is done; 4 is partly done; 7 
     rest, and the pool was played over six blocks (18,000 matches) with all 36 checkpoints versioned. The
     between-block SD (0.018–0.063) is now estimated on six draws and is quoted against the between-seed SD
     (0.12–0.22) that every other caveat in this document uses. Remaining: the separations moved again at six
-    sets, so more blocks are still worth running — and neither pool has been re-measured under the ablated
-    configurations of item 8.
+    sets, so more blocks are still worth running — and the common pool has now been replayed for `no_dr`
+    ([docs/08 section 8.13](08_results.md#no-dr-pool)) and under the arena-v2 rule on the same networks
+    ([docs/08 section 8.12](08_results.md#arena-v2-pool)), while the capacity arms and the random-pool
+    instrument have not.

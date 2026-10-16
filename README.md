@@ -43,6 +43,8 @@ Honest summary of what is finished and what is not:
 | MLflow tracking | n/a | wired, but only **1 logged point** for the 100k run |
 | Cross-experiment round-robin | 18,000 matches, all six arms on common opponents, 6 checkpoint sets x 5 harness seeds (shared, run from `ctde_arena/`) | same |
 | Absolute strength vs random opponents | 2,700 matches over 6 checkpoint sets, slot-matched null 0.330 ([§ 8.11](docs/08_results.md#absolute-strength)) | same |
+| Round-robin re-measured under arena v2 | the same 36 networks under the v2 rule, 18,000 matches: endpoints hold, 8 pairs separate instead of 5 ([§ 8.12](docs/08_results.md#arena-v2-pool)) | same |
+| Round-robin re-measured on `no_dr` checkpoints | 3 blocks × 5 seeds, 9,000 matches: Comm falls 1st → 5th, between-block SD up to 0.223 ([§ 8.13](docs/08_results.md#no-dr-pool)) | same |
 | Arena-v2 re-measurement | 10 seeds × 500k steps under a decayed alive bonus and draw-on-cap ([§ 8.12](docs/08_results.md#arena-v2)) | same |
 | Configuration ablations | `no_dr`, `narrow_64`, `wide_256` at 3 seeds × both experiments ([§ 8.13](docs/08_results.md#ablations)) | same |
 | Dependency audit | 33 of the 34 pins in the measured lock have no known OSV vulnerability; `torch` does, and its one CRITICAL is the `weights_only=True` path — accepted risk, quantified in [§ 9.10](docs/09_reproducibility.md#dependency-audit) | same |

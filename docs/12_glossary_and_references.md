@@ -74,6 +74,7 @@
 | `scripts/run_cross_arena.py` | The round-robin: six architectures over all 20 triples with slot rotation; `--exp1-replicate/--exp2-replicate` select a training block, `--campaign <arm>` an ablation set behind the capacity guard | § 8.10, § 8.13 |
 | `scripts/version_campaign_checkpoints.py` | Copies the ablation arms into `data/campaign_replicates/` and writes the manifest that reads each set's hidden width out of its own weights; `--check` re-verifies hashes and bytes | § 8.13, § 9.7 |
 | `scripts/version_training_replicates.py` | Versions further study blocks into `data/training_replicates/`, resolving each replicate from the git-ignored scratch in whichever tree holds it | § 8.10, § 9.7 |
+| `scripts/run_pool_v2_campaign.sh` | Replays the round-robin twice over: the committed checkpoints under the arena-v2 rule, then the `no_dr` arm's checkpoints under the committed rule | § 8.12, § 8.13, § 9.5 |
 | `scripts/run_ten_block_campaign.sh` | Queues the four unplayed blocks behind the pool campaign and re-pools all fifty run directories, refusing to merge an incomplete set | § 8.10, § 9.3 |
 | `scripts/eval_readout.py` | Re-plays a replicate's checkpoints under the sampled readout at a fixed temperature, or under the published argmax at `--temperature 0`, in the study's own held-out protocol; emits the `per_seed_metrics.csv` schema | § 8.1, § 7.6, § 9.3 |
 | `scripts/run_readout_campaign.sh` | Queues the three readout arms over both experiments and merges them for `report_study.py --compare-to` | § 8.1, § 9.3 |

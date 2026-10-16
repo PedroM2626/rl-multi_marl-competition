@@ -134,6 +134,7 @@ of them in the same place.
 | `python scripts/run_cross_arena.py --campaign no_dr --exp1-replicate S --exp2-replicate M --seed H --out results/cross_arena_campaign/no_dr__e1sS_e2sM_hH` | run from `ctde_arena/` | One block of the round-robin over an **ablation** checkpoint set from `data/campaign_replicates/`; the capacity guard runs first, so `RL_HIDDEN_DIM` must equal the arm's width |
 | `python scripts/version_campaign_checkpoints.py` (or `--check`) | root | Copy the three ablation sets into `data/campaign_replicates/` and write the manifest that records each set's override, hidden width and hashes; `--check` verifies the versioned bytes without writing |
 | `python scripts/version_training_replicates.py --pairs 5:6,6:8,7:9,8:10` | root | Version further study blocks into `data/training_replicates/`, resolving each replicate from the git-ignored scratch in whichever tree it was written; `--check --pairs …` verifies the bytes and writes nothing |
+| `bash scripts/run_pool_v2_campaign.sh` | both | Queue the two pool re-measurements: the same 36 checkpoints replayed under the arena-v2 termination and reward rule (30 runs), then the `no_dr` arm's checkpoints played against the committed pool (15 runs), each pooled and reported |
 | `bash scripts/run_ten_block_campaign.sh` | both | Queue the four extra blocks (20 runs, 12,000 matches) behind the pool campaign, then re-pool all fifty run directories into `results/cross_arena/blocks10.csv` and its report — the merge refuses to run unless every new directory wrote a `matches.csv` |
 | `python scripts/eval_readout.py --temperature 1 --seeds 1,…,10 --matches 150` | either tree, on its own replicates | Re-evaluate existing checkpoints under the sampled readout (`--temperature 0` replays the published argmax as the control), writing `per_seed_metrics.csv` in the study schema so `report_study.py --results-dir … --compare-to results/study` pairs it against the published numbers |
 | `bash scripts/run_readout_campaign.sh` | both | Queue all three readout arms (T = 0, 0.5, 1) over both experiments' ten seeds each, merge the per-tree parts, and report each arm against `results/study/`; chained behind the pool campaigns so no cost figure in § 9.5 is measured under two campaigns at once |
@@ -301,6 +302,8 @@ implication for a JAX/vectorised-env port are in
 | 500 k × 10 seeds × 2 experiments | **117.5 min total** | 20 processes at once on 32 cores; 31.5 CPU-h training + 4.7 h evaluation |
 | same again as arena v2 | **104.3 min total** | `scripts/run_arena_v2_campaign.sh`; 20 runs, same budget, three arena keys changed ([§ 8.12](08_results.md#arena-v2)) |
 | 500 k × 3 seeds × 2 experiments, one arm | **69–81 min per arm** | `scripts/run_ablation_campaign.sh`; 6 concurrent, so 24–34 min of training per replicate at 243–350 steps/s (against 85–92 steps/s under 20-way load) plus the held-out evaluation. Three arms in series: 3.9 h |
+| Round-robin replay, 6 blocks × 5 seeds, arena-v2 rule | **89 min** | `scripts/run_pool_v2_campaign.sh` phase 1: 18,000 matches, five concurrent runs per block, 17–20 min per wave of 3,000 matches. Evaluation only — the 36 checkpoints already existed |
+| Round-robin replay, 3 `no_dr` blocks × 5 seeds | **≈ 85 min** | same script, phase 2: 9,000 matches, 25–30 min per wave. The slower per-match rate is the finding, not the machine: policies trained without domain randomisation end only 41.1 % of their matches by wipeout against 58.8 % for the randomised ones, so more matches run to the 90 s cap |
 
 The measured per-replicate throughput under full 20-way load is 82.6–92.9 steps/s against 368 steps/s for an
 isolated process, so 20 concurrent replicates cost 36.2 CPU-hours and take about as long as four sequential
@@ -380,6 +383,7 @@ outputs are pure functions of other committed files, and each was re-derived and
 |---|---|---|---|
 | `results/cross_arena/blocks6.csv` | the 30 run-directory CSVs (git-ignored scratch) | `scripts/combine_cross_arena.py results/cross_arena_blocks/*` | identical SHA-256 (`06b23f4d1419…`) |
 | `results/cross_arena/blocks6.json` | `blocks6.csv` | `scripts/report_cross_arena.py --in results/cross_arena/blocks6.csv` | deterministic, no RNG |
+| `results/cross_arena/v2_blocks.json`, `no_dr_blocks.json` | their own pooled CSVs | the same report over `results/cross_arena_v2_blocks/*` and `results/cross_arena_campaign/*` | deterministic; CI re-derives every pooled JSON in `results/cross_arena/` in a loop, so a new campaign is covered without editing the workflow |
 | `results/study/learning_curves.png` | `data/runs/*/evaluation/run_summary.json` | `scripts/plot_study.py --runs-dir data/runs` | identical SHA-256 (`1915d48d…`) |
 | `results/absolute_six/summary.json` | `results/absolute_six/matches.csv` | `scripts/run_absolute_eval.py --report-only --out results/absolute_six` | no matches replayed |
 
@@ -394,7 +398,7 @@ inclination to replay 2,700 matches.
 
 ## 9.7 Artefact inventory
 
-Every versioned experiment artefact (196 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed, and each hash is of the blob Git stores rather than of the file on disk — a text artefact checked out with CRLF on Windows hashes differently from the same committed bytes on Linux, and a reader on any platform should be able to reproduce this column.
+Every versioned experiment artefact (200 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed, and each hash is of the blob Git stores rather than of the file on disk — a text artefact checked out with CRLF on Windows hashes differently from the same committed bytes on Linux, and a reader on any platform should be able to reproduce this column.
 
 **Promoted replicate.** The artefacts that match the current code. Chosen by `promote_run.py --seed median`, which is the replicate with the least L1 distance to the per-arm study means; `PROVENANCE.json` records the choice and the full run summary behind it.
 
@@ -424,9 +428,13 @@ Every versioned experiment artefact (196 files), with SHA-256 for integrity chec
 | Path | Bytes | SHA-256 |
 |---|---:|---|
 | `results/cross_arena/blocks.csv` | 2,389,102 | `8891db57a270a5b32c187e3d086171736ce113c0cf772172f401ec34e5e04ca7` |
-| `results/cross_arena/blocks.json` | 16,962 | `2e8de9065de10772718ac28560d05e3c393bce5d0249ef2f3e6a830ef1db52c2` |
+| `results/cross_arena/blocks.json` | 16,864 | `e624dbe87eb505c038685ffe915167fa4d8702b9c506a1ad51b298c13777525c` |
 | `results/cross_arena/blocks6.csv` | 4,772,724 | `fec107ccfba9b8ad3f681659f1161659523878804c39be399987883891e2c89f` |
-| `results/cross_arena/blocks6.json` | 18,755 | `03844029813cb1cb73ea9173c5e607d48a1dae429386f01e6c8283c1dd691108` |
+| `results/cross_arena/blocks6.json` | 18,588 | `4b4b5e32d1919089d7567355dc27715ba2715d6a2f266344e9ecaf4abf244537` |
+| `results/cross_arena/no_dr_blocks.csv` | 2,533,758 | `e9689e27298e9b50d84b76bd7efc0760f7983aa00980702ae7771f6c005d0e48` |
+| `results/cross_arena/no_dr_blocks.json` | 18,021 | `357982487cd87184e0e834ba52f86d3f79460ddb85b308c081de2a5f2903145a` |
+| `results/cross_arena/v2_blocks.csv` | 4,900,368 | `f2c2e38839105f48b2aed57d5f1a34dc5b8d0ed5acc9a6f9ddd883bf0940f178` |
+| `results/cross_arena/v2_blocks.json` | 22,587 | `e6c75a5a4cd217d9b6e9e3e40055018f24d6cc60cd9c8e66a2a0776306439895` |
 | `results/study/analysis.json` | 4,226 | `0761e5fa08f9be1cbee21f515b28eb17ad48e65b7207868bc161ce933f87527b` |
 | `results/study/learning_curves.png` | 137,532 | `1915d48d117e8a96730b3659e0259e5ad6446c0fb7103d0642a6a5e7bd601cbe` |
 | `results/study/per_seed_metrics.csv` | 5,226 | `a69098a4e88eef37c1291f73b1cb2526f0d31a98c0c2c6f0da27af0263b30d17` |

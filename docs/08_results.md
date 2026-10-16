@@ -846,14 +846,20 @@ produced that number.
 * **n = 6 is still not convergence.** Every doubling has moved the table: 2 separations at one block, 8 at
   three, 5 at six, with the robust core going 2 → 4 → 3. What has *stopped* moving is the top band and the
   bottom arm. The between-block SD (0.018–0.063) is now estimated on six draws, and the remaining caveat is
-  that it is still an estimate of a spread, not a settled ordering of the middle four.
+  that it is still an estimate of a spread, not a settled ordering of the middle four. The four remaining
+  study blocks are versioned and `scripts/run_ten_block_campaign.sh` plays them, which would put the estimate
+  on ten draws and every trained replicate of both experiments in the pool at once.
 * **Block pairings are not balanced across experiments.** A block is one experiment-1 seed times one
   experiment-2 seed, and the six pairings used are six different (S, M) combinations but not a full or
   orthogonal design. A cross-experiment comparison still cannot fully separate "this exp-1 replicate was
   strong" from "this exp-1 × exp-2 pairing interacted".
-* **It is still the same arena, and one configuration.** Every number here inherits the spawn bias above, the
-  90 s clock, hidden width 128 and domain randomisation on — and [§ 8.13](#ablations) shows that changing
-  either of the last two reorders both experiments.
+* **It is one configuration — but two of its axes have now been varied.** The numbers above inherit the spawn
+  bias, the 90 s clock, hidden width 128 and domain randomisation on. The first two have been re-measured on
+  these same networks: under the arena-v2 termination and reward rule the endpoints of the ordering hold and
+  the pairs change ([§ 8.12](#arena-v2-pool)), and checkpoints trained without domain randomisation reorder
+  the table outright, with CTDE-Comm falling from first to fifth ([§ 8.13](#no-dr-pool)). What has *not* been
+  varied on this instrument is network capacity, which is the confound the ablation arms exist to measure
+  under their own protocol instead.
 
 ### What this adds to the conclusions
 
@@ -1075,6 +1081,52 @@ Three expectations from the diagnosis, and what the data says:
   swaps relative to the committed arena while VD stays first, so the v2 ranking is not a cleaned-up version
   of the v1 ranking in either experiment.
 
+### The same 36 networks, played under the v2 rule <a name="arena-v2-pool"></a>
+
+Retraining the study under v2 changes the rule *and* what converges under it, so its null result cannot be
+attributed to either. The rule alone is separable now, because A-34 made it configuration and the round-robin
+checkpoints are versioned: `bash scripts/run_pool_v2_campaign.sh` exports
+`REWARD_ALIVE_BONUS=0.0015 REWARD_ALIVE_DECAY_HALF_LIFE_S=30 TERMINATION_CAP_AWARDS_WIN=false` and replays
+the same six blocks over the same five harness seeds. 18,000 matches, `results/cross_arena/v2_blocks.csv`.
+
+The control is exact, and it is worth stating because it validates the whole instrument: **10,578 matches ended
+in a wipeout in both pools, and every arm's wipeout-only win rate is identical to four decimals** — 0.3942 for
+CTDE-Comm, 0.3554 DTE, 0.3319 CTDE, 0.3141 CAC, 0.3144 VD, 0.2897 CTE. Same networks, same streams, same
+fights. The only thing that moved is what the other 6,840 matches are called: `timeout` 6,840 → 0 and
+`draw` 582 → 7,422.
+
+| Architecture | Committed pool | v2-rule pool | change |
+|---|---:|---:|---:|
+| CTDE-Comm | 0.355 | 0.234 | −0.121 |
+| DTE | 0.349 | 0.206 | −0.143 |
+| CTDE-CAC | 0.321 | 0.185 | −0.136 |
+| CTDE | 0.314 | 0.199 | −0.115 |
+| CTDE-VD | 0.307 | 0.179 | −0.129 |
+| CTE | 0.290 | 0.172 | −0.118 |
+
+Four things follow.
+
+1. **The endpoints of the ordering do not depend on the buzzer rule.** Comm is first and CTE last under both
+   rules; the single change in between is CTDE and CTDE-CAC exchanging third and fourth, which are
+   indistinguishable in either pool (*p* = 0.217 committed, 0.573 under v2).
+2. **Levels fall by almost exactly the draw share** (every arm −0.115 to −0.143), so the pooled win rate is not
+   comparable across the two instruments — which is why nothing below quotes a cross-pool difference as an
+   effect size.
+3. **More pairs separate under v2, not fewer: 8 of 15 against 5**, and all five of the committed ones survive.
+   The three that appear are CTDE-Comm above CTDE-CAC, DTE above CTDE-CAC, and CTDE-Comm above DTE — CTDE-CAC
+   is in two of the three, and it is the arm whose head-to-head record against both of those opponents the
+   committed pool had left unseparated. Nothing here explains *why* the extra separations appear; the pools
+   differ in one rule and nothing else, so the honest statement is that the number of separations is a
+   property of the rule as much as of the architectures.
+4. **The leave-one-block-out core barely moves**: three pairs are robust under each rule, two of them the same
+   (Comm > CTE, CTE > DTE), with CTDE-VD > DTE robust only under the committed rule and CTDE-Comm > CTDE-VD
+   robust only under v2. Between-block SD is 0.033–0.046 against 0.018–0.063.
+
+So the accounting of [§ 8.12's standing](#standing-of-this-section) sharpens rather than changes: about four
+matches in ten of the headline readout were decided by the clock, and the *ranking* was not one of the things
+the clock decided. What the v2 retraining did change — everything falling into noise — is therefore attributable
+to the policies a de-weighted survival bonus converges to, not to the draw rule applied to the same policies.
+
 ### Standing of this section
 
 Arena v2 is **not** the committed configuration: every other number in this document, including
@@ -1192,9 +1244,55 @@ A campaign run's block label carries the arm (`no_dr:exp1_seed1+exp2_seed1`) bec
 study block trained from the same two seeds are different policies, and pooling them under one label would
 read as six match streams over three checkpoints rather than two over two.
 
-**What this does not do:** it does not re-measure the pools. Nothing in this section has yet been replayed
-with the arm checkpoints against the common pool or the random pool; the instruments exist and the numbers
-have not been run.
+### The no_dr checkpoints against the common pool <a name="no-dr-pool"></a>
+
+The other half of the question, now that the arm's weights are versioned: play networks that were trained
+without domain randomisation against the same six-way opponent pool, under the committed rule.
+`bash scripts/run_pool_v2_campaign.sh` does it for the three no_dr blocks (`no_dr:exp1_seed1+exp2_seed1`,
+`no_dr:exp1_seed2+exp2_seed2`, `no_dr:exp1_seed3+exp2_seed3`) over the five harness seeds — 9,000 matches,
+`results/cross_arena/no_dr_blocks.csv`.
+
+| Architecture | Committed pool (6 blocks) | no_dr pool (3 blocks) | positions |
+|---|---:|---:|---|
+| CTDE | 0.314 | **0.386** | 4th → 1st |
+| CTE | 0.290 | 0.316 | 6th → 2nd |
+| CTDE-VD | 0.307 | 0.300 | 5th → 3rd |
+| CTDE-CAC | 0.321 | 0.300 | 3rd → 4th |
+| CTDE-Comm | 0.355 | 0.243 | **1st → 5th** |
+| DTE | 0.349 | 0.203 | **2nd → 6th** |
+
+Nine of fifteen pairs clear the Bonferroni bar in this pool against five in the committed one, and only two are
+robust to leaving a block out (CTDE > DTE at *p* = 1.7e-05 pooled, CTDE-CAC > DTE). What makes the pool
+interesting is not the count of separations but what happens to the spread behind them:
+
+| Architecture | Between-block SD, committed pool | Between-block SD, no_dr pool | the three blocks |
+|---|---:|---:|---|
+| CTDE-VD | 0.018 | 0.141 | 0.160 / 0.248 / 0.493 |
+| CTDE-Comm | 0.025 | 0.112 | 0.182 / 0.399 / 0.147 |
+| DTE | 0.027 | 0.018 | 0.211 / 0.178 / 0.220 |
+| CTDE | 0.043 | 0.112 | 0.229 / 0.462 / 0.469 |
+| CTE | 0.059 | 0.134 | 0.127 / 0.404 / 0.417 |
+| CTDE-CAC | 0.063 | **0.223** | 0.615 / 0.129 / 0.155 |
+
+**Domain randomisation is doing something that looks like stability, not just level.** Four of the six arms
+carry a between-block SD two to eight times what the same instrument measures on the randomised checkpoints,
+and CTDE-CAC swings from winning 61.5 % of its pool matches to winning 12.9 % on nothing but a different seed.
+An architecture comparison made of one training run per arm is therefore a much weaker statement when the arena
+was fixed during training than when it was varied — which is the mechanism § 8.13 previously could only report
+as a difference in win rates.
+
+Three caveats are load-bearing. The no_dr pool has three blocks against six, so its SD is itself estimated on
+three draws and is not a precise quantity; the two pools are different networks, so this is a comparison of
+training environments and not a paired test of anything; and the block labels do not overlap with the
+committed pool's, so no individual network appears in both tables. A useful signature of the difference is
+visible in the match outcomes: 41.1 % of the no_dr pool's matches ended in a wipeout against 58.8 % of the
+committed pool's, with 12.6 % drawn against 3.2 % — networks trained in a fixed arena finish fewer fights
+against this opponent mix, whatever their win rate.
+
+**What this does not do:** it does not re-measure the *absolute-strength* instrument under either variation,
+and the two arms whose capacity was ablated (`narrow_64`, `wide_256`) are not played on the common pool at all
+— they need `RL_HIDDEN_DIM` 64 and 256, and playing them would confound the arena configuration with the
+network size, which is the confound [§ 8.13's own tables](#ablations) already exist to measure separately.
 
 ### Status of this section
 
@@ -1209,12 +1307,13 @@ from the run summaries already on disk, with no re-training. And on this mostly-
 replicates run at 243–350 steps/s in 24–34 minutes, against the 85–92 steps/s and 90–101 minutes the
 committed study measured under its 20-way load ([§ 9.5](09_reproducibility.md#95-cost-of-a-run)).
 
-**What this does not do:** it does not re-run the common-opponent pool or the random-pool instrument under
-these configurations, so it cannot say whether the [§ 8.10](#cross-arena) band structure or the
-[§ 8.11](#absolute-strength) agreement survives a different `RL_HIDDEN_DIM` or no domain randomisation —
-each arm still measures teams that co-adapted inside their own run. The instruments to ask that question
-exist since the checkpoint set above was versioned ([`--campaign`](#ablations)); the measurement has not
-been run. It also does not close the power gap:
+**What this does not do:** it does not re-run the *random-pool* instrument under these configurations, and the
+two capacity arms are not played on the common pool at all, so it cannot say whether the
+[§ 8.11](#absolute-strength) agreement survives a different `RL_HIDDEN_DIM` or no domain randomisation. The
+common-opponent pool has now been re-run for `no_dr` ([above](#no-dr-pool)), which is the arm whose key the
+study's own analysis singled out; each arm still measures teams that co-adapted inside their own run, so the
+pool result is about the trained networks, not about the ablation's within-run comparison. It also does not
+close the power gap:
 three seeds is the sample the study's own forward-power table puts an order of magnitude short of what
 would resolve the differences it reports.
 
@@ -1267,18 +1366,27 @@ domain randomisation on".
    that **44 % and 39 % of held-out matches have no winner at all**, that no arm separates (paired *p* ≥
    0.439), and that experiment 1's top place moves from DTE to CTDE inside noise. The study's inability to
    rank the paradigms is not an artefact of the buzzer rule, and removing that route is not a path to a
-   resolution ([§ 8.12](#arena-v2)).
+   resolution ([§ 8.12](#arena-v2)). Played a second way — the **same** 36 round-robin networks under the v2
+   rule, so the rule varies and nothing else does — the endpoints of the ordering survive (Comm first, CTE
+   last), the only swap is between two arms already indistinguishable, and **more** pairs separate (8 of 15
+   against 5), so the retrained v2 study's null is a result about the policies the new objective converges
+   to, not about the rule ([§ 8.12](#arena-v2-pool)).
 7. The comparison is **conditional on one configuration**, and that configuration is not a neutral
    backdrop: changing one key — domain randomisation off — moves a paradigm's held-out win rate by up to
    **0.253** and inverts the ranking of both experiments, while the whole between-paradigm spread of the
    ten-seed study is 0.085–0.129. Every "X beats Y" statement here should be read as "under hidden width
-   128 and domain randomisation on" ([§ 8.13](#ablations)).
+   128 and domain randomisation on" ([§ 8.13](#ablations)). On the common-opponent pool the same key moves
+   more than the ordering: CTDE-Comm falls from first to fifth and DTE from second to last, and the
+   between-block SD of four of the six arms becomes 2–8× what the randomised checkpoints show (CTDE-CAC
+   0.223 against 0.063, swinging 0.615 → 0.129 → 0.155 across three seeds), which is the mechanism the
+   earlier tables could only report as a difference in levels ([§ 8.13](#no-dr-pool)).
 
 **What it cannot claim:** that any architecture is best, or that the six admit a strict ordering — CTDE-Comm
 and DTE cannot be told apart, and neither can CTDE, CTDE-CAC and CTDE-VD; that the ordering is settled by six
 checkpoints per architecture, since the count of separated pairs has moved at every replication step
 (2 → 8 → 5) and two of the three-block table's headline separations disappeared at six; that within-experiment differences exist at all, since every corrected significance is
 *cross*-experiment; that win rate here measures fighting skill rather than, in a third of matches,
-survival to the clock; that the ablated configurations generalise, since the three arms were measured only
-inside their own co-adapted runs and never through the common-opponent or random pools; or that any of it
-holds under a different setting of the keys [§ 8.13](#ablations) shows to matter.
+survival to the clock; that the ablated configurations generalise — the three arms are measured inside their
+own co-adapted runs, only `no_dr` has been through the common-opponent pool
+([§ 8.13](#no-dr-pool)), neither capacity arm has, and no arm has been through the random-pool instrument; or
+that any of it holds under a different setting of the keys [§ 8.13](#ablations) shows to matter.
