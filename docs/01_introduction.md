@@ -97,18 +97,18 @@ not be relied on are set out in [§ Threats to validity](10_threats_to_validity.
    The ordering reverses, no seed-level comparison reaches significance, and one replicate out of thirty
    paradigm-slots is enough to flip which architecture is reported as the winner
    ([§ 8.1](08_results.md#replicated-study)).
-4. **A cross-experiment round-robin placing all six architectures on one common opponent pool** — 9,000
-   slot-balanced matches over three independently trained checkpoint sets and five harness seeds, each policy
+4. **A cross-experiment round-robin placing all six architectures on one common opponent pool** — 18,000
+   slot-balanced matches over six independently trained checkpoint sets and five harness seeds, each policy
    driven by the code of the tree that trained it. It yields the repository's only differences that survive
-   multiplicity correction (eight pairs, four of them still significant with any one checkpoint set left
+   multiplicity correction (five pairs, three of them still significant with any one checkpoint set left
    out), and its first 600-match single-checkpoint run reached the opposite verdict on both the ranking and
    the separations — which is the case for replicating an *evaluation*, in both dimensions, not only a
    training run ([§ 8.10](08_results.md#cross-arena)).
 5. **Evidence that the headline readout is not the trained policy.** Greedy held-out win rate has 2.5× the
    spread of the sampled policy it summarises (SD 0.177 vs 0.072) and preserves its within-replicate ranking
    in only 35.6 % of comparable pairs ([§ Readout](08_results.md#readout-divergence)).
-6. Measurement of the test bed's own bias: one of the three spawn positions wins 47 % of matches against
-   22 % and 28 % for the other two, for every architecture
+6. Measurement of the test bed's own bias: one of the three spawn positions wins 49 % of matches against
+   22 % and 26 % for the other two, for every architecture
    ([A-32](11_code_audit.md#the-arena-spawn-geometry-is-not-symmetric)).
 7. Versioned training artefacts for **both** experiments — promoted policies, per-match metric CSVs,
    aggregate summaries, dashboards, `PROVENANCE.json` recording how each replicate was chosen, the study and
@@ -118,7 +118,7 @@ not be relied on are set out in [§ Threats to validity](10_threats_to_validity.
    the measurement showing that a NumPy major-version change destroys it for training outcomes
    ([A-31](11_code_audit.md#the-pinned-environment-does-not-reproduce-the-recorded-runs)).
 9. A written account of what the implementation *actually computes*, as opposed to what the architecture
-   names conventionally imply — 35 audited findings, several of which are the reason the results changed on
+   names conventionally imply — 37 audited findings, several of which are the reason the results changed on
    re-measurement ([§ Optimisation procedure](06_optimisation_procedure.md#65-what-the-implementation-does-not-do)
    and [§ Code audit](11_code_audit.md)). This is the part that constrains how the results may be read.
 

@@ -602,7 +602,8 @@ it had one checkpoint per architecture, to four decimals, on all six arms.
 
 `scripts/combine_cross_arena.py` stamps every row with its `training_block` and `harness_seed`;
 `scripts/report_cross_arena.py` does the analysis. **Both columns have to be part of the match key.** The
-first pooled analysis omitted `harness_seed`, which merged five match streams onto the same thirty keys: it
+first pooled analysis omitted `harness_seed`, which merged the five match streams of a block onto the same 600
+keys (20 triples x 30 matches): it
 ran its paired tests on one fifth of the evidence and still printed a complete-looking table with plausible
 p-values. Adding the training block one level up reproduced the same trap, and
 `tests/test_cross_arena_report.py` now pins the seam — three runs of two matches must count six, and a key
@@ -764,9 +765,11 @@ every number here and of every number in [§ 8.1](#replicated-study), and is a p
 versioned, and a reader can rebuild `results/cross_arena/blocks6.csv` from them with the thirty-run loop of
 [§ 9.3](09_reproducibility.md#93-commands) run over six blocks. Re-merging the thirty run directories
 reproduces the versioned CSV, so the pooled table is derived data and not a transcription. The three-block
-file `results/cross_arena/blocks.csv` is kept because [§ 8.11](#absolute-strength)'s agreement statistic is
-computed against it, at the same replication count as its input — the lesson of the −0.04 that section
-reports.
+file `results/cross_arena/blocks.csv` is kept because two of the three agreement statistics of
+[§ 8.11](#absolute-strength) — the one-set and the three-set figures — are computed against its `blocks.json`,
+and the three-set one at the same replication count as its input; the headline six-set figure is computed
+against `blocks6.json`. The lesson of the −0.04 is that a mismatch between the two counts, not either pool,
+produced that number.
 
 **Still open, in order of what it costs:**
 
@@ -819,7 +822,9 @@ Three design points before the numbers.
 * **Six checkpoint sets, 450 matches per architecture.** `results/absolute_six/` plays each arm's six
   independently trained replicates (the same blocks as [§ 8.10](#cross-arena)) over three harness seeds at 25
   matches per architecture per block per seed. The rotation is not exactly balanced, because 25 is not a
-  multiple of 3: the pooled slot counts are 162 / 144 / 144 per arm, worth at most 0.0041 on a pooled rate.
+  multiple of 3: the pooled slot counts are 162 / 144 / 144 per arm. Re-computing each arm's pooled rate with
+  the three slots weighted equally moves it by at most 0.0042 (DTE, 0.6867 to 0.6908) — the imbalance is
+  therefore worth less than a fortieth of the between-architecture spread it could distort.
   Two earlier artefacts are kept — `results/absolute_blocks/` (three blocks, 50 per block per seed) and
   `results/absolute/` (the promoted set alone, 150 per seed) — because their history is the lesson of this
   section.
@@ -883,8 +888,10 @@ number was wrong in a specific, instructive way — it compared one checkpoint s
 three sets' pooled peer ranks. A scope mismatch, not a property of the arena: the same promoted set,
 compared against the peer results for that same set, gives +0.41.
 
-It was also the atypical block. On the promoted checkpoints plain CTDE reads 0.493 against random play and
-CTE 0.773 — the two arms exactly reversed relative to the six-set picture — and those are the same two
+It was also the atypical block. On `exp1_seed9+exp2_seed2` — the block whose checkpoints are byte-identical to
+the promoted set — plain CTDE reads 0.493 against random play and CTE 0.773, the two arms exactly reversed
+relative to the six-set picture; the promoted-set artefact itself gives 0.476 and 0.747 for the same networks
+at 450 matches per arm instead of 75, which is the same lesson one level down. Those are the same two
 architectures whose *peer* positions moved when blocks were added
 ([§ 8.10](#cross-arena-limits)).
 
@@ -1174,7 +1181,7 @@ domain randomisation on".
 3. A measurement finding that is probably the most consequential thing here: the greedy readout used as the
    headline response variable has 2.5× the spread of the sampled policy it summarises, and agrees with its
    rankings only 35.6 % of the time ([§ Readout](#readout-divergence)).
-4. The arena itself is biased: one of the three spawn positions wins 47 % of matches against 22 % and 28 %
+4. The arena itself is biased: one of the three spawn positions wins 49 % of matches against 22 % and 26 %
    for the other two, for every architecture
    ([A-32](11_code_audit.md#the-arena-spawn-geometry-is-not-symmetric)).
 5. Every architecture — all six trained replicates of each — beats uniform-random play by an interval

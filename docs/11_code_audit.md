@@ -696,20 +696,20 @@ That is three positions related by no symmetry of the obstacle field, which is i
 `_default_obstacle_specs` without three-fold structure. The third position is therefore not equivalent to
 the first two, and the cross-experiment round-robin
 ([§ 8.10](08_results.md#cross-arena)) measured how much that matters. Pooling all six architectures over
-**9,000 team-matches per slot**, every architecture spending exactly one third of its matches in each:
+**18,000 team-matches per slot**, every architecture spending exactly one third of its matches in each:
 
 | Slot | Pooled win rate |
 |---|---:|
-| Team 1 | 0.216 |
-| Team 2 | 0.276 |
-| **Team 3** | **0.467** |
+| Team 1 | 0.217 |
+| Team 2 | 0.259 |
+| **Team 3** | **0.492** |
 
 All six architectures do best in Team 3 regardless of their information-flow design, and within an
-architecture the gap between its best and worst slot is 0.17–0.33 -- larger than every architecture
-difference the repository has ever measured. Two earlier versions of this table carried smaller pools of the
-same quantity (600 team-matches per slot: 0.242 / 0.223 / 0.490; 3,000: 0.239 / 0.228 / 0.495), which is the
-caution against quoting a slot estimate from one run: the direction never changed, the magnitude moved by
-about 0.03, and the current figure is the one with the sample behind it.
+architecture the gap between its best and worst slot is 0.23–0.32 -- larger than every architecture
+difference the repository has ever measured. Three earlier versions of this table carried smaller pools of the
+same quantity (600 team-matches per slot: 0.242 / 0.223 / 0.490; 3,000: 0.239 / 0.228 / 0.495; 9,000: 0.216 /
+0.276 / 0.467), which is the caution against quoting a slot estimate from one run: the direction never
+changed, the magnitude moved by about 0.03, and the current figure is the one with the sample behind it.
 
 **Consequences.** First, the arena is not a fair three-way test bed, so any single-replicate win rate
 carries a slot term of this size. Second, `paradigm_rotation` (A-27) balances the term in expectation but
@@ -723,9 +723,11 @@ means either a three-fold-symmetric obstacle layout or a different spawn arrange
 arena every committed number was measured in. That is a design decision for the next measurement campaign,
 not a patch to apply on top of the current evidence.
 
-**Reproduction:** the thirty-run loop of [§ 9.3](09_reproducibility.md#93-commands) writes
-`results/cross_arena/blocks.csv`; `python scripts/report_cross_arena.py --in
-results/cross_arena/blocks.csv` prints the per-slot table over all 9,000 team-matches per slot.
+**Reproduction:** the thirty-run loop of [§ 9.3](09_reproducibility.md#93-commands) writes the six block
+directories that `scripts/combine_cross_arena.py` pools into `results/cross_arena/blocks6.csv`;
+`python scripts/report_cross_arena.py --in results/cross_arena/blocks6.csv` prints the per-slot table over all
+18,000 team-matches per slot. (`blocks.csv` is the same loop over the first three blocks, and is what the
+600-, 3,000- and 9,000-per-slot rows above came from.)
 
 
 ## The study runner overrode the domain-randomisation knob
@@ -923,11 +925,13 @@ Items 1–3 were the original list and are done; 6 is done; 4 is partly done; 7 
     sampled policy it summarises (SD 0.177 vs 0.072) and agrees with its within-replicate ranking only
     35.6 % of the time. Report both readouts, or evaluate the stochastic policy at a fixed temperature.
 11. ~~The round-robin measures one checkpoint per architecture, so it compares networks rather than
-    designs.~~ **Done** — three training blocks per architecture are versioned under
+    designs.~~ **Done** — six training blocks per architecture are versioned under
     `data/training_replicates/` and the pool replayed over them, first three blocks (9,000 matches) and then
     six (18,000). It changed the answer at every step: plain CTDE went from last to third to fourth, the
     corrected-significant count went 8 then 5, and four of the eight pairs reported at three blocks —
-    including the then-headline, Comm over CTDE — did not survive. The report prints a leave-one-block-out
+    including the then-headline, Comm over CTDE — lost their threshold when a block was removed from that
+    pool; three of the eight are not significant at all once the sixth block is added. The report prints a
+    leave-one-block-out
     column, which is what identified them. Remaining at this item: the separations still move with n, so
     n = 6 is not convergence either ([docs/10 item 12](10_threats_to_validity.md)).
 12. **Done:** extend the round-robin's checkpoint pool past three sets. It is the study's own policies, so

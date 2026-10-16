@@ -135,6 +135,7 @@ of them in the same place.
 | `python scripts/version_campaign_checkpoints.py` (or `--check`) | root | Copy the three ablation sets into `data/campaign_replicates/` and write the manifest that records each set's override, hidden width and hashes; `--check` verifies the versioned bytes without writing |
 | `python scripts/run_absolute_eval.py --matches 150 --seeds 1,2,3` | run from `ctde_arena/` | Absolute strength on the promoted checkpoints: each trained policy against two uniform-random controllers, trained slot rotated |
 | `python scripts/run_absolute_eval.py --blocks 1:7,10:5,9:2 --matches 50 --seeds 1,2,3 --out results/absolute_blocks --null-json results/baseline/random_baseline_uniform.json --compare-pool results/cross_arena/blocks.json` | run from `ctde_arena/` | The same over three training blocks, with the slot-matched null and the agreement with the peer pool; `--campaign <arm>` takes the ablation sets instead, behind the same capacity guard |
+| `python scripts/run_absolute_eval.py --blocks 1:7,10:5,2:1,3:3,4:4,9:2 --matches 25 --seeds 1,2,3 --out results/absolute_six --null-json results/baseline/random_baseline_uniform.json --compare-pool results/cross_arena/blocks6.json` | run from `ctde_arena/` | The headline [§ 8.11](08_results.md#absolute-strength) artefact: six blocks, and the peer pool at the *same* replication count, which is what the −0.04 story says the comparison requires |
 | `python scripts/run_absolute_eval.py --report-only --out results/absolute_blocks …` | run from `ctde_arena/` | Re-derive a summary from its recorded `matches.csv`, playing nothing |
 | `bash scripts/run_arena_v2_campaign.sh` | both | Queue the arena-v2 study: 10 seeds x 2 experiments at 500 k steps under the decayed alive bonus and draw-on-cap, waiting for whatever is already on the machine |
 | `bash scripts/run_ablation_campaign.sh` | both | Queue the three configuration ablations (`no_dr`, `narrow_64`, `wide_256`), each one key different from the committed study, after the v2 campaign |
@@ -173,8 +174,9 @@ every one of the thirty run directories must contain a `matches.csv` before anyt
 merge must report six blocks. Both were written after that script silently produced nothing -- a
 repository-root-relative interpreter path inside a `cd ctde_arena` subshell -- and then re-merged the
 fifteen existing directories as if they were the new thirty. The three-block `blocks.csv` is still in the
-repository because the agreement between the two opponent pools, reported in
-[§ 8.11](08_results.md#absolute-strength) at one, three and six sets, is quoted from them. Those counts have
+repository because two of the three agreements between the two opponent pools, reported in
+[§ 8.11](08_results.md#absolute-strength) at one, three and six sets, are quoted from it and from its
+`blocks.json`; the six-set figure is quoted from `blocks6.json`, at its own replication count. Those counts have
 to be matched: the −0.04 that section reports as its own past error was produced by comparing a one-set
 measurement against a three-set peer table.
 

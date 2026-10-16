@@ -206,13 +206,13 @@ applied to the original single-seed evidence, and left three that no amount of r
     remains.** The single-checkpoint version represented each arm by its promoted replicate, so its two
     corrected-significant results were statements about particular trained networks — and that is exactly how
     it turned out: the replication over six independently trained checkpoint sets per arm (18,000 matches)
-    moved plain CTDE from last to third, moved CTE from third to last, and made four of the eight
+    moved plain CTDE from last to third, moved CTE from third to last, and made two of the five
     corrected-significant pairs lose their threshold as soon as one checkpoint set is excluded
-    ([§ 8.10](08_results.md#cross-arena-limits)). What remains: **n = 3 is enough to reverse a ranking and not
-    enough to settle one**, the between-block spread (0.003–0.061) is a third of what the study measures
-    between training seeds (0.12–0.22) because a block is one seed of each experiment, and the three
-    experiment-1 seeds and three experiment-2 seeds are paired identically in every block, so an exp-1 x
-    exp-2 pairing effect cannot be separated from an architecture effect at this n.
+    ([§ 8.10](08_results.md#cross-arena-limits)). What remains: **n = 6 is enough to reverse a ranking and not
+    enough to settle one**, the between-block spread (0.018–0.063) is between a seventh and a half of what the
+    study measures between training seeds (0.12–0.22) because a block is one seed of each experiment, and each
+    block pairs one experiment-1 seed with exactly one experiment-2 seed without any pairing being crossed, so
+    an exp-1 x exp-2 pairing effect cannot be separated from a block effect at this n.
 13. **~~No fixed-opponent evaluation, and no absolute reference point.~~ Partly closed.** Two instruments now
     exist. The cross-experiment round-robin ([§ 8.10](08_results.md#cross-arena)) puts all six arms on a common
     pool of *trained* opponents, which removes the co-adaptation confound for evaluation. And
@@ -231,8 +231,9 @@ applied to the original single-seed evidence, and left three that no amount of r
 
 *Next concrete steps:* the objective-side remedies (items 9 and 10) have now been measured
 ([§ 8.12](08_results.md#arena-v2)) and did not resolve the ranking, so the remaining levers are the
-measurement and the sample: fix or dual-report the readout (item 11), take the round-robin past three
-training blocks per architecture (item 12), which is evaluation time on checkpoints that already exist, and
+measurement and the sample: fix or dual-report the readout (item 11), take the round-robin past the six
+training blocks it now has per architecture (item 12), which is evaluation time on checkpoints that already
+exist, and
 give the arms opponents that are not other trained policies at all. Four of the remedies a previous version
 of this list proposed have now been carried out — rotating the slot, evaluating on a common opponent pool,
 replicating that evaluation over several sets of checkpoints, and changing the objective (items 9 and 10) —

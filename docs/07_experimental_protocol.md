@@ -213,7 +213,7 @@ that run's initialisation and geometry stream, so they are not independent draws
    implementation was checked against `scipy.stats.binomtest` over 200 random discordant tables and agrees
    to 4.9e-14.
 8. **Replicate the evaluation in both dimensions, and key every row by both.** The round-robin is played
-   over five harness seeds (independent match streams) *and* three training blocks (independently trained
+   over five harness seeds (independent match streams) *and* six training blocks (independently trained
    networks per architecture), because it has now reversed its own conclusions twice: the first 600-match,
    single-checkpoint run said no pair separates, and the 3,000-match replication of it said two did; at
    18,000 matches over six checkpoint sets, five separate and the ranking keeps moving — the count of
