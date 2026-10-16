@@ -30,7 +30,12 @@ for T in 0 0.5 1; do
   tag=$(printf "%g" "$T")
   for spec in "exp1 ." "exp2 ctde_arena"; do
     set -- $spec
+    # --runs-dir is absolute and always the root's data/runs: this study trained both experiments into it,
+    # even though the child processes ran with experiment 2's tree as cwd. Left to the default, the ctde
+    # copy would look in ctde_arena/data/runs -- which is where the *ablation* campaign wrote, not this one
+    # -- and every replicate would be skipped as absent.
     ( cd "$ROOT/$2" && "$PY" "$ROOT/$2/scripts/eval_readout.py" --temperature "$T" --experiments "$1" \
+        --runs-dir "$ROOT/data/runs" \
         --seeds 1,2,3,4,5,6,7,8,9,10 --matches 150 --out "results/readout/parts/${1}_T${tag}" \
         > "$TMP/readout_${1}_T${tag}.log" 2>&1 ) &
   done
