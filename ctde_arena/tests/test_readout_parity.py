@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import dataclasses
 import importlib.util
+import subprocess
 import sys
 from pathlib import Path
 
@@ -25,6 +26,17 @@ if str(SRC_DIR) not in sys.path:
 
 def _source(name: str) -> str:
     return (PROJECT_ROOT / "scripts" / name).read_text(encoding="utf-8")
+
+
+def _load(name: str):
+    import importlib.util
+
+    path = PROJECT_ROOT / "scripts" / f"{name}.py"
+    spec = importlib.util.spec_from_file_location(f"_rp_{name}", path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 # Every one of these appears in run_experiment.py's held-out evaluation and must appear verbatim in the
@@ -102,6 +114,42 @@ def test_the_default_temperature_is_the_published_readout() -> None:
     assert CONFIG.eval_temperature == 0.0
     config_source = (PROJECT_ROOT / "src" / "marl_arena" / "config.py").read_text(encoding="utf-8")
     assert 'os.getenv("EVAL_TEMPERATURE", "0")' in config_source
+
+
+def test_paradigms_come_from_the_checkpoint_names_when_there_is_no_run_summary() -> None:
+    """The versioned sets carry no `run_summary.json`, so the file name is the only slot record.
+
+    Checked against real committed checkpoints rather than a fixture, because the whole point is that the
+    names on disk are what a clone has: seed 1 of experiment 1 rotates to `paradigm_rotation = 1`, which puts
+    DTE in Team 1, and experiment 2's seed 1 rotates to 1 as well, where Team 1 is CTDE-CAC.
+    """
+    module = _load("eval_readout")
+    root = PROJECT_ROOT.parent if PROJECT_ROOT.name == "ctde_arena" else PROJECT_ROOT
+    replicates = root / "data" / "training_replicates"
+    if not (replicates / "exp1_seed1").is_dir():
+        pytest.skip("the versioned replicates are not in this checkout")
+    for label, expected in (
+            ("exp1_seed1", {"Team 1": "DTE", "Team 2": "CTDE", "Team 3": "CTE"}),
+            ("exp1_seed9", {"Team 1": "CTE", "Team 2": "DTE", "Team 3": "CTDE"}),
+            ("exp2_seed1", {"Team 1": "CTDE-CAC", "Team 2": "CTDE-Comm", "Team 3": "CTDE-VD"})):
+        got = module.paradigms_from_files(label.split("_")[0], sorted((replicates / label).glob("*.pt")))
+        assert got == expected, (label, got)
+    assert module.paradigms_from_files("exp1", []) == {}
+    with pytest.raises(SystemExit):
+        module.paradigms_from_files("exp1", [Path("team_1_bogus.pt")])
+    with pytest.raises(SystemExit):
+        module.paradigms_from_files("exp1", [Path("policy_cte.pt")])
+
+
+def test_a_replicate_is_evaluated_by_the_tree_that_trained_it(tmp_path: Path) -> None:
+    """Loading experiment 2's weights through experiment 1's controller can succeed and be wrong."""
+    other = "exp2" if PROJECT_ROOT.name != "ctde_arena" else "exp1"
+    result = subprocess.run(
+        [sys.executable, str(PROJECT_ROOT / "scripts" / "eval_readout.py"), "--temperature", "1",
+         "--experiments", other, "--seeds", "1", "--matches", "1", "--out", str(tmp_path / "x")],
+        capture_output=True, text=True, cwd=PROJECT_ROOT)
+    assert result.returncode != 0, result.stdout[-400:]
+    assert "must be evaluated from" in result.stdout + result.stderr, result.stdout + result.stderr
 
 
 def test_the_readout_files_are_identical_in_both_trees() -> None:

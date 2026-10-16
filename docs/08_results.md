@@ -197,7 +197,11 @@ weights — the protocol is copied from the study's own held-out evaluation and 
 `tests/test_readout_parity.py`, with the same run directory, the same `seed + 9000` stream, the same fixed
 variant and the same 150 matches, so the two arms differ only in the action rule. `--temperature 0` is the
 control: its difference from `results/study/` is what re-measurement noise alone amounts to, which is the
-yardstick every temperature row should be read against. `scripts/run_readout_campaign.sh` plays all twenty
+yardstick every temperature row should be read against. `--checkpoint-set versioned` reads the versioned
+blocks instead of this machine's scratch, which is what makes the re-measurement runnable from a clone — and
+each experiment must be evaluated by the tree that trained it, a boundary the harness enforces because a
+same-shaped state dict loads into the wrong architecture without complaint.
+`scripts/run_readout_campaign.sh` plays all twenty
 replicates at T = 0, 0.5 and 1; until that pool exists, nothing here quotes a sampled win rate, and the 2.5×
 spread and 35.6 % agreement above — measured from the artefacts the training runs wrote — remain the evidence.
 

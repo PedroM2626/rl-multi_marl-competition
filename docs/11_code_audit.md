@@ -199,7 +199,7 @@ Measured with `coverage run --source=src/marl_arena -m pytest`, before and after
 | `controllers/base.py` | 91 % | 89 % | 91 % | 89 % |
 | **total** | **73 %** | **93 %** | **14 %** | **87–88 %** |
 
-Test count went from 9 to 106 (59 and 47) at the time of that measurement, and to **197 (123 and 74)** with
+Test count went from 9 to 106 (59 and 47) at the time of that measurement, and to **201 (125 and 76)** with
 the suites added since — the collision, config, dashboard, render, round-robin-statistics, campaign-manifest,
 collection and readout-protocol tests. The
 totals have moved with them: experiment 1 is now **94 %** (1,548 statements, 91 missing) and experiment 2 **89 %**

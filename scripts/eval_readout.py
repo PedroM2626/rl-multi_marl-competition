@@ -48,7 +48,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seeds", default="1,2,3,4,5,6,7,8,9,10",
                         help="training seeds of the replicates to re-evaluate")
     parser.add_argument("--runs-dir", type=Path, default=Path("data/runs"),
-                        help="the study scratch holding <experiment>_seedN/checkpoints")
+                        help="the study scratch holding <experiment>_seedN/checkpoints (ignored with "
+                             "--checkpoint-set versioned)")
+    parser.add_argument("--checkpoint-set", choices=("scratch", "versioned"), default="scratch",
+                        help="'scratch' is this machine's data/runs, which also supplies the published "
+                             "greedy number for each replicate; 'versioned' reads "
+                             "data/training_replicates/<experiment>_seedN, so the re-measurement is "
+                             "runnable from a clone -- at the cost of no run_summary.json beside those "
+                             "checkpoints, so the training-time and published-readout columns stay empty")
     parser.add_argument("--experiments", default="exp1", help="comma-separated: exp1, exp2")
     parser.add_argument("--matches", type=int, default=150, help="held-out matches per replicate")
     parser.add_argument("--seed-offset", type=int, default=9000,
@@ -110,6 +117,32 @@ def evaluate(matches: int, seed: int) -> dict:
     return {"per_team": summary, "median_duration_seconds": sorted(durations)[len(durations) // 2]}
 
 
+# The canonical arm labels of each experiment, in the spelling every table in docs/ uses. A checkpoint
+# filename lowercases them, and `CTDE-Comm` is the one label that is not all-upper or all-lower, so the
+# names have to be restored rather than upper-cased -- otherwise the re-measurement reports an arm that no
+# other artefact in the repository names.
+PARADIGMS = {"exp1": ("CTE", "DTE", "CTDE"), "exp2": ("CTDE-VD", "CTDE-CAC", "CTDE-Comm")}
+
+
+def paradigms_from_files(experiment: str, files: list[Path]) -> dict[str, str]:
+    """`team_2_ctde-vd.pt` -> {"Team 2": "CTDE-VD"}: the versioned sets carry no run summary.
+
+    The checkpoint name is the slot's own record of which paradigm trained it, which is why the round-robin
+    can resolve a block from a directory name alone. Deriving it here keeps the two instruments agreeing on
+    which arm is which without a third copy of the rotation rule.
+    """
+    known = {label.lower(): label for label in PARADIGMS[experiment]}
+    out: dict[str, str] = {}
+    for path in files:
+        parts = path.stem.split("_", 2)  # team_2_ctde-vd -> ["team", "2", "ctde-vd"]
+        if len(parts) != 3 or parts[0] != "team":
+            raise SystemExit(f"{path.name}: not a team checkpoint name (team_<slot>_<paradigm>.pt)")
+        if parts[2] not in known:
+            raise SystemExit(f"{path.name}: paradigm {parts[2]!r} is not one of {sorted(known)}")
+        out[f"Team {parts[1]}"] = known[parts[2]]
+    return out
+
+
 def main() -> None:
     args = parse_args()
     if hasattr(sys.stdout, "reconfigure"):
@@ -129,14 +162,27 @@ def main() -> None:
     skipped: list[str] = []
     started = time.time()
     for experiment in args.experiments.split(","):
+        if (experiment == "exp2") != (ROOT.name == "ctde_arena"):
+            # Each tree's controller is the code that trained its own arms: experiment 2's package holds the
+            # VD/CAC/Comm classes, and experiment 1's actuator path lives in the root tree. Evaluating across
+            # the boundary can load a same-shaped state dict into the wrong architecture and report a number
+            # that looks fine -- which is why the round-robin loads the other tree's controller by alias.
+            raise SystemExit(f"{experiment} checkpoints must be evaluated from "
+                             f"{'ctde_arena/' if experiment == 'exp2' else 'the repository root'}, "
+                             f"not from {ROOT.name}/")
         for seed in (int(s) for s in args.seeds.split(",")):
-            directory = runs_dir / f"{experiment}_seed{seed}"
-            checkpoints = directory / "checkpoints"
-            if not checkpoints.is_dir() or not list(checkpoints.glob("*.pt")):
+            if args.checkpoint_set == "versioned":
+                directory = ROOT / "data" / "training_replicates" / f"{experiment}_seed{seed}"
+                checkpoints = directory
+            else:
+                directory = runs_dir / f"{experiment}_seed{seed}"
+                checkpoints = directory / "checkpoints"
+            files = sorted(checkpoints.glob("*.pt"))
+            if not checkpoints.is_dir() or not files:
                 if args.require_checkpoints:
                     raise SystemExit(f"{experiment}_seed{seed}: no checkpoints under {checkpoints}")
                 skipped.append(f"{experiment}_seed{seed}")
-                print(f"  {experiment}_seed{seed}: no scratch checkpoints, skipped", flush=True)
+                print(f"  {experiment}_seed{seed}: no {args.checkpoint_set} checkpoints, skipped", flush=True)
                 continue
             # The readout and the checkpoint directory are both swapped per replicate, in the module the
             # controller resolves them from -- CONFIG is frozen and read at call time inside the loop.
@@ -145,14 +191,19 @@ def main() -> None:
             seed_all(seed)
             elapsed = time.time()
             result = evaluate(args.matches, seed + args.seed_offset)
-            payload = json.loads((directory / "evaluation" / "run_summary.json").read_text(encoding="utf-8")) \
-                if (directory / "evaluation" / "run_summary.json").is_file() else {}
+            summary_path = directory / "evaluation" / "run_summary.json"
+            payload = json.loads(summary_path.read_text(encoding="utf-8")) if summary_path.is_file() else {}
+            teams = paradigms_from_files(experiment, files) if args.checkpoint_set == "versioned" \
+                else payload.get("paradigms", {})
+            if set(result["per_team"]) != set(teams):
+                raise SystemExit(f"{experiment}_seed{seed}: the simulation seated {sorted(result['per_team'])} "
+                                 f"but the checkpoint names say {sorted(teams)}")
             for team, stats in result["per_team"].items():
                 records.append({
                     "experiment": experiment,
                     "seed": seed,
                     "team": team,
-                    "paradigm": payload.get("paradigms", {}).get(team, ""),
+                    "paradigm": teams.get(team, ""),
                     "eval_win_rate": round(stats["win_rate"], 4),
                     "eval_eliminations_per_match": round(stats["eliminations_per_match"], 4),
                     "eval_mean_survival": round(stats["mean_survival_time"], 4),
@@ -186,6 +237,7 @@ def main() -> None:
         "generated_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "readout": "argmax" if args.temperature == 0 else f"sampled at temperature {args.temperature}",
         "eval_temperature": args.temperature,
+        "checkpoint_set": args.checkpoint_set,
         "protocol": {"matches_per_replicate": args.matches, "seed_offset": args.seed_offset,
                      "domain_randomization": False, "training_mode": False,
                      "hidden_dim": CONFIG.rl_hidden_dim,
