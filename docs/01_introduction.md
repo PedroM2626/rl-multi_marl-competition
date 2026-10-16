@@ -103,10 +103,17 @@ not be relied on are set out in [§ Threats to validity](10_threats_to_validity.
    multiplicity correction (five pairs, three of them still significant with any one checkpoint set left
    out), and its first 600-match single-checkpoint run reached the opposite verdict on both the ranking and
    the separations — which is the case for replicating an *evaluation*, in both dimensions, not only a
-   training run ([§ 8.10](08_results.md#cross-arena)).
+   training run ([§ 8.10](08_results.md#cross-arena)). The same 36 checkpoints have since been replayed under
+   the arena-v2 termination rule, where the endpoints of the ordering hold and *more* pairs separate, and the
+   no_dr arm's networks have been played against the same pool, where the ordering does break — the two
+   variations the table's own caveats asked for ([§ 8.12](08_results.md#arena-v2-pool),
+   [§ 8.13](08_results.md#no-dr-pool)).
 5. **Evidence that the headline readout is not the trained policy.** Greedy held-out win rate has 2.5× the
    spread of the sampled policy it summarises (SD 0.177 vs 0.072) and preserves its within-replicate ranking
-   in only 35.6 % of comparable pairs ([§ Readout](08_results.md#readout-divergence)).
+   in only 35.6 % of comparable pairs ([§ Readout](08_results.md#readout-divergence)). The readout is now
+   configuration rather than an assumption — `EVAL_TEMPERATURE`, with a harness that re-plays a frozen
+   checkpoint under either rule on the same match streams — so the gap is measurable directly rather than
+   inferred from training-time traces.
 6. Measurement of the test bed's own bias: one of the three spawn positions wins 49 % of matches against
    22 % and 26 % for the other two, for every architecture
    ([A-32](11_code_audit.md#the-arena-spawn-geometry-is-not-symmetric)).
@@ -118,7 +125,7 @@ not be relied on are set out in [§ Threats to validity](10_threats_to_validity.
    the measurement showing that a NumPy major-version change destroys it for training outcomes
    ([A-31](11_code_audit.md#the-pinned-environment-does-not-reproduce-the-recorded-runs)).
 9. A written account of what the implementation *actually computes*, as opposed to what the architecture
-   names conventionally imply — 37 audited findings, several of which are the reason the results changed on
+   names conventionally imply — 41 audited findings, several of which are the reason the results changed on
    re-measurement ([§ Optimisation procedure](06_optimisation_procedure.md#65-what-the-implementation-does-not-do)
    and [§ Code audit](11_code_audit.md)). This is the part that constrains how the results may be read.
 
