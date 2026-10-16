@@ -33,8 +33,17 @@ GROUPS = [
         "re-measurement campaign writes.",
         ("results/study/", "results/cross_arena/blocks.csv", "results/cross_arena/blocks.json",
          "results/cross_arena/blocks6.csv", "results/cross_arena/blocks6.json",
+         "results/cross_arena/blocks10.csv", "results/cross_arena/blocks10.json",
          "results/cross_arena/v2_blocks.csv", "results/cross_arena/v2_blocks.json",
          "results/cross_arena/no_dr_blocks.csv", "results/cross_arena/no_dr_blocks.json"),
+    ),
+    (
+        "Readout re-measurement",
+        "The same replicates played twice, under argmax and under a fixed-temperature sample of the policy's "
+        "own logits: `results/readout/T0` is the published readout replayed as a control, and `T0.5` / `T1` "
+        "are the sampled arms. The schema is `run_study.py`'s, which is what lets "
+        "`report_study.py --compare-to results/study` pair them against the study without a new instrument.",
+        ("results/readout/",),
     ),
     (
         "Superseded round-robin pools",
@@ -166,8 +175,14 @@ def main() -> None:
     tracked = tracked_artefacts()
     claimed: set[str] = set()
     blocks: list[str] = []
+    skipped: list[str] = []
     for title, blurb, prefixes in GROUPS:
         members = [p for p in tracked if p.startswith(prefixes)]
+        if not members:
+            # A group can legitimately have no tracked files yet -- the campaign whose artefacts it describes
+            # has not landed. Report that on stdout rather than publishing a table with a header and no rows.
+            skipped.append(title)
+            continue
         claimed.update(members)
         blocks.append("\n".join([f"**{title}.** {blurb}", ""] + rows_for(members)))
     ungrouped = sorted(set(tracked) - claimed)
@@ -192,7 +207,8 @@ def main() -> None:
     text = DOC.read_text(encoding="utf-8")
     replacement = "\n".join(header) + "\n\n" + body + "\n\n"
     DOC.write_text(text[: start.start()] + replacement + text[start.end() :], encoding="utf-8")
-    print(f"wrote {len(tracked)} artefact rows into docs/09_reproducibility.md")
+    print(f"wrote {len(tracked)} artefact rows into docs/09_reproducibility.md"
+          + (f"; groups with nothing tracked yet: {skipped}" if skipped else ""))
 
 
 if __name__ == "__main__":
