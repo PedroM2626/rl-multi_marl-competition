@@ -248,17 +248,14 @@ def add_matched_null(pooled: dict, null: dict[str, float]) -> float:
     return round(balanced, 4)
 
 
-def arena_snapshot(args, recorded: Path) -> dict | None:
+def arena_snapshot(args, previous: dict) -> dict | None:
     """The A-34 knobs these matches were played under, so a re-measurement cannot be mistaken for the study.
 
     `--report-only` carries the snapshot the run itself recorded rather than reading the environment: the
     shell that re-derives a summary is not evidence of the arena that produced the matches inside it.
     """
     if args.report_only:
-        if not recorded.is_file():
-            return None
-        payload = json.loads(recorded.read_text(encoding="utf-8"))
-        return payload.get("arena")
+        return previous.get("arena")
     from marl_arena.config import CONFIG
 
     return {
@@ -286,7 +283,17 @@ def main() -> None:
 
     harness = load_harness()
     out_dir = PROJECT_ROOT / args.out if not args.out.is_absolute() else args.out
-    arena_settings = arena_snapshot(args, out_dir / "summary.json")
+    previous: dict = {}
+    if (out_dir / "summary.json").is_file():
+        previous = json.loads((out_dir / "summary.json").read_text(encoding="utf-8"))
+    arena_settings = arena_snapshot(args, previous)
+    if args.report_only and (args.null_json is None or args.compare_pool is None):
+        # Re-deriving must reproduce the committed summary, so inherit the inputs it was made with rather
+        # than quietly emitting a summary with the null and agreement blocks missing.
+        inherited = previous.get("inputs") or {}
+        args.null_json = args.null_json or (Path(inherited["null_json"]) if inherited.get("null_json") else None)
+        args.compare_pool = (args.compare_pool
+                             or (Path(inherited["compare_pool"]) if inherited.get("compare_pool") else None))
     rows: list[dict[str, object]] = []
 
     if args.report_only:
@@ -407,7 +414,16 @@ def main() -> None:
         "seeds": seeds,
         "campaign": args.campaign or "study",
         "arena": arena_settings,
-        "matches_per_architecture_per_block_per_seed": args.matches if not args.report_only else None,
+        # Provenance of the two derived blocks below: which file supplied the slot-matched null, and which
+        # peer pool the agreement statistic was computed against. Section 8.11's scope-mismatch lesson is the
+        # reason this is recorded rather than left to the command line of whoever ran it.
+        "inputs": {"null_json": str(args.null_json) if args.null_json else None,
+                   "compare_pool": str(args.compare_pool) if args.compare_pool else None},
+        # In --report-only the cell size is a property of the record being re-derived, not of this
+        # invocation: inherit what the run wrote instead of blanking a published figure.
+        "matches_per_architecture_per_block_per_seed": (
+            args.matches if not args.report_only
+            else previous.get("matches_per_architecture_per_block_per_seed", args.matches)),
         "chance_level": round(1 / 3, 4),
         "matched_null_by_slot": null_by_slot,
         "matched_null_balanced": balanced_null,

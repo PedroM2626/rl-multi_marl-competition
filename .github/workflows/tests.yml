@@ -88,16 +88,30 @@ jobs:
             echo "::error::docs/09 section 9.7 is stale; run scripts/report_inventory.py and commit it."
             exit 1; }
 
-      - name: The pooled round-robin reports recompute from their own CSVs
+      - name: Derived tables recompute from the committed raw records
         run: |
-          python scripts/report_cross_arena.py --in results/cross_arena/blocks6.csv \
-            --json-out results/cross_arena/blocks6.json
-          python scripts/report_cross_arena.py --in results/cross_arena/blocks.csv \
-            --json-out results/cross_arena/blocks.json
-          git diff --exit-code results/cross_arena/blocks6.json results/cross_arena/blocks.json || {
-            echo "::error::the committed round-robin reports are not what report_cross_arena.py produces" \
-                 "from the committed CSVs."
-            exit 1; }
+          set -e
+          changed=0
+          # Every pooled round-robin CSV and every absolute-strength directory, rather than a list that has
+          # to be edited each time a campaign lands. A pool that exists with its report is re-derived; if the
+          # two disagree, the committed report was not produced by the committed code over the committed rows.
+          for csv in results/cross_arena/*_blocks.csv results/cross_arena/blocks*.csv; do
+            [ -f "$csv" ] || continue
+            json="${csv%.csv}.json"
+            [ -f "$json" ] || continue
+            python scripts/report_cross_arena.py --in "$csv" --json-out "$json" > /dev/null
+          done
+          for dir in results/absolute results/absolute_blocks results/absolute_six; do
+            [ -f "$dir/matches.csv" ] || continue
+            python scripts/run_absolute_eval.py --report-only --out "$dir" > /dev/null
+          done
+          git diff --exit-code results/ || changed=1
+          if [ "$changed" = 1 ]; then
+            echo "::error::a committed aggregate is not what its own raw record re-derives; re-run" \
+                 "report_cross_arena.py / run_absolute_eval.py --report-only and commit the result."
+            git diff --stat results/
+            exit 1
+          fi
 
       - name: Campaign scripts at least parse
         run: |

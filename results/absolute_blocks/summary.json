@@ -10,6 +10,12 @@
     2,
     3
   ],
+  "campaign": "study",
+  "arena": null,
+  "inputs": {
+    "null_json": "results\\baseline\\random_baseline_uniform.json",
+    "compare_pool": "results\\cross_arena\\blocks.json"
+  },
   "matches_per_architecture_per_block_per_seed": null,
   "chance_level": 0.3333,
   "matched_null_by_slot": {
