@@ -6,7 +6,7 @@ against each other inside one engine, so the competitive outcome is itself the m
 
 > **Full technical documentation lives in [`docs/`](docs/README.md)** — system model, MDP
 > formalisation, architectures, optimisation, protocol, results with confidence intervals and power
-> analysis, reproducibility, limitations, and a 36-item code audit. This file is the quick start.
+> analysis, reproducibility, limitations, and a 37-item code audit. This file is the quick start.
 
 ## Documentation
 
@@ -45,8 +45,9 @@ Honest summary of what is finished and what is not:
 | Absolute strength vs random opponents | 2,700 matches over 6 checkpoint sets, slot-matched null 0.330 ([§ 8.11](docs/08_results.md#absolute-strength)) | same |
 | Arena-v2 re-measurement | 10 seeds × 500k steps under a decayed alive bonus and draw-on-cap ([§ 8.12](docs/08_results.md#arena-v2)) | same |
 | Configuration ablations | `no_dr`, `narrow_64`, `wide_256` at 3 seeds × both experiments ([§ 8.13](docs/08_results.md#ablations)) | same |
+| Dependency audit | 33 of the 34 pins in the measured lock have no known OSV vulnerability; `torch` does, and its one CRITICAL is the `weights_only=True` path — accepted risk, quantified in [§ 9.10](docs/09_reproducibility.md#dependency-audit) | same |
 | Gameplay clips of the trained policies | yes (`docs/assets/`) | yes |
-| Tests | 105 (104 passed, 1 skipped), **94 %** statement coverage | 69 (68 passed, 1 skipped), **89 %** coverage |
+| Tests | 109 (108 passed, 1 skipped), **94 %** statement coverage | 69 (68 passed, 1 skipped), **89 %** coverage |
 | Docker | n/a | **never built or run** |
 
 Six defects documented in the audit were **fixed** during this work, and each changed what the results
@@ -312,7 +313,7 @@ rule were the two likeliest drivers of the ranking
 │   ├── rl/                     # actions, buffer + GAE, networks, ppo
 │   ├── systems/                # match_variant, simulation, metrics, plotting
 │   └── ui/dashboard.py         # in-game overlay text
-├── tests/                      # 105 tests, incl. tree-parity, collision geometry and the round-robin statistics
+├── tests/                      # 109 tests, incl. tree-parity, collision geometry and the round-robin statistics
 ├── data/                       # experiment 1: promoted replicate + historical_100k/ + PROVENANCE.json
 ├── results/
 │   ├── study/                  # per_seed_metrics.csv, analysis.json, learning_curves.png

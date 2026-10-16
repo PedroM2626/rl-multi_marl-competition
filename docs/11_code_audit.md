@@ -48,6 +48,7 @@ Every finding below was open at some point; the status column is the current sta
 | [A-34](#the-termination-and-reward-knobs-are-configurable) | INFO · IMPLEMENTED | Reward constants and the clock-awards-win rule are now `CONFIG` fields, defaults unchanged and hash-verified |
 | [A-35](#the-study-collector-read-only-one-of-the-two-trees) | MED · FIXED | The study collector globbed one tree, so a two-experiment campaign aggregated as half a campaign |
 | [A-36](#a-round-robin-run-summary-named-the-wrong-checkpoints) | MED · FIXED | Every round-robin run summary named the promoted checkpoints rather than the replicate set it played |
+| [A-37](#the-measured-environment-carries-a-critical-advisory-that-cannot-be-patched-without-invalidating-it) | INFO · ACCEPTED RISK | OSV: 33 of 34 measured-environment pins are clean, torch is not, and its one CRITICAL is the `weights_only=True` path A-25 relies on |
 
 ---
 
@@ -194,7 +195,7 @@ Measured with `coverage run --source=src/marl_arena -m pytest`, before and after
 | `controllers/base.py` | 91 % | 89 % | 91 % | 89 % |
 | **total** | **73 %** | **93 %** | **14 %** | **87–88 %** |
 
-Test count went from 9 to 106 (59 and 47) at the time of that measurement, and to **174 (105 and 69)** with
+Test count went from 9 to 106 (59 and 47) at the time of that measurement, and to **178 (109 and 69)** with
 the suites added since — the collision, config, dashboard, render and round-robin-statistics tests. The
 totals have moved with them: experiment 1 is now **94 %** (1,542 statements, 89–91 missing) and experiment 2 **89 %**
 (1,654, 185–187 missing). Both totals move by a few statements between identical invocations, which is why
@@ -498,6 +499,14 @@ weights_only=True OK -> keys=['paradigm', 'actor', 'critic'] types=['OrderedDict
 
 Applied to both trees.
 
+**Qualification added 2026-10-16.** The mitigation is itself version-dependent: the measured environment pins
+`torch==2.5.1+cu121`, and `GHSA-53q9-r3pm-6pq6` / `CVE-2025-32434` (CRITICAL, fixed in 2.6.0) is
+"`torch.load` with `weights_only=True` leads to remote code execution". The flag is still the right change and
+every load site in both trees uses it; on this torch it is a mitigation with a known hole, which is why the
+repository also publishes SHA-256 for every checkpoint it loads. See
+[§ 9.10](09_reproducibility.md#dependency-audit) for the audit, the accepted-risk reasoning and what would
+change it.
+
 ## GPU and thread scaling
 
 **A-26 · INFO · measured, so that nobody re-derives it**
@@ -661,7 +670,7 @@ independent corroboration of the central negative result, reached from outside t
 It also means anyone re-running the study from `requirements.txt` is generating new replicates, not
 reproducing these.
 
-**Partly fixed.** `requirements-measured.lock.txt` now pins the 37 packages the measurements actually ran
+**Partly fixed.** `requirements-measured.lock.txt` now pins the 34 packages the measurements actually ran
 on, in an isolated environment verified to reproduce the seeded training hashes bit-for-bit. Two things it
 cannot do. It gives versions, not digests — and the torch entry is a local-version wheel from PyTorch's own
 index, so `--require-hashes` is out of reach from this file alone. And pinning the environment makes the
@@ -848,6 +857,31 @@ rather than from the shell doing the re-derivation.
 **Not repaired, and why:** the 30 run directories under `results/cross_arena_blocks/` are git-ignored scratch,
 so nothing versioned carries the wrong `policies` field; the aggregates were always right. Re-running them
 to fix a cosmetic field would cost the whole round-robin again.
+
+## The measured environment carries a CRITICAL advisory that cannot be patched without invalidating it
+
+**A-37 · INFO · ACCEPTED RISK**
+
+`scripts/audit_dependencies.py` queries OSV about each pin of `requirements-measured.lock.txt` — the
+environment that produced every number in this document — and records the answer in
+`results/dependency_audit.json`. Result on 2026-10-16: 33 of 34 pins carry no known vulnerability; `torch`
+does, with 22 records (19 distinct CVEs, 1 CRITICAL among them).
+
+**Reproduction:**
+
+```bash
+python scripts/audit_dependencies.py --print-only
+```
+
+The CRITICAL one, `GHSA-53q9-r3pm-6pq6` / `CVE-2025-32434`, is fixed in 2.6.0 and is precisely the
+`weights_only=True` path [A-25](#unsafe-checkpoint-load) relies on. It is not patched here because
+[§ 9.1](09_reproducibility.md#verification-environment-actually-used) measures the price: upgrading torch
+changes the first PPO update at 1e-6 and every checkpoint after 4,000 steps, so the fix would orphan the 90
+versioned replicate and ablation checkpoints and every table in chapter 8. The exploitation condition — a checkpoint supplied by
+someone else — has no code path in this repository: no service, no upload, no runtime model download, and a
+published hash for every file it loads. `requirements.txt` pins 2.6.0 for readers who want a working arena
+rather than these numbers. The full reasoning is in
+[§ 9.10](09_reproducibility.md#dependency-audit).
 
 
 ## Open work: suggested measurements

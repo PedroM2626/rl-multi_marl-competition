@@ -1,0 +1,461 @@
+{
+  "generated_utc": "2026-10-16T18:04:41+00:00",
+  "source": "requirements-measured.lock.txt",
+  "database": "OSV (api.osv.dev), queried per exact pin",
+  "pins_queried": 34,
+  "pins_with_no_known_vulnerability": 33,
+  "vulnerable_pins": 1,
+  "advisories": [
+    "torch==2.5.1+cu121: GHSA-3749-ghw9-m3mg (LOW)",
+    "torch==2.5.1+cu121: GHSA-53q9-r3pm-6pq6 (CRITICAL)",
+    "torch==2.5.1+cu121: GHSA-887c-mr87-cxwp (MODERATE)",
+    "torch==2.5.1+cu121: GHSA-c678-jfcj-6jmf (LOW)",
+    "torch==2.5.1+cu121: GHSA-f4hp-rmr7-r7v8 (MODERATE)",
+    "torch==2.5.1+cu121: GHSA-qfhq-4f3w-5fph (LOW)",
+    "torch==2.5.1+cu121: GHSA-rrmf-rvhw-rf47 (LOW)",
+    "torch==2.5.1+cu121: GHSA-vgrw-7cvw-pwgx (MODERATE)",
+    "torch==2.5.1+cu121: GHSA-x3gm-94wq-g975 (LOW)",
+    "torch==2.5.1+cu121: PYSEC-2025-191 (UNSPECIFIED)",
+    "torch==2.5.1+cu121: PYSEC-2025-198 (UNSPECIFIED)",
+    "torch==2.5.1+cu121: PYSEC-2025-203 (UNSPECIFIED)",
+    "torch==2.5.1+cu121: PYSEC-2025-204 (UNSPECIFIED)",
+    "torch==2.5.1+cu121: PYSEC-2025-205 (UNSPECIFIED)",
+    "torch==2.5.1+cu121: PYSEC-2025-206 (UNSPECIFIED)",
+    "torch==2.5.1+cu121: PYSEC-2025-207 (UNSPECIFIED)",
+    "torch==2.5.1+cu121: PYSEC-2025-208 (UNSPECIFIED)",
+    "torch==2.5.1+cu121: PYSEC-2025-209 (UNSPECIFIED)",
+    "torch==2.5.1+cu121: PYSEC-2025-41 (UNSPECIFIED)",
+    "torch==2.5.1+cu121: PYSEC-2026-139 (UNSPECIFIED)",
+    "torch==2.5.1+cu121: PYSEC-2026-1970 (UNSPECIFIED)",
+    "torch==2.5.1+cu121: PYSEC-2026-2286 (UNSPECIFIED)"
+  ],
+  "packages": [
+    {
+      "package": "colorama",
+      "version": "0.4.6",
+      "vulnerabilities": []
+    },
+    {
+      "package": "contourpy",
+      "version": "1.3.2",
+      "vulnerabilities": []
+    },
+    {
+      "package": "coverage",
+      "version": "7.16.2",
+      "vulnerabilities": []
+    },
+    {
+      "package": "cycler",
+      "version": "0.12.1",
+      "vulnerabilities": []
+    },
+    {
+      "package": "exceptiongroup",
+      "version": "1.3.1",
+      "vulnerabilities": []
+    },
+    {
+      "package": "filelock",
+      "version": "4.1.0",
+      "vulnerabilities": []
+    },
+    {
+      "package": "fonttools",
+      "version": "4.65.0",
+      "vulnerabilities": []
+    },
+    {
+      "package": "fsspec",
+      "version": "2026.9.0",
+      "vulnerabilities": []
+    },
+    {
+      "package": "imageio",
+      "version": "2.37.4",
+      "vulnerabilities": []
+    },
+    {
+      "package": "iniconfig",
+      "version": "2.3.1",
+      "vulnerabilities": []
+    },
+    {
+      "package": "jinja2",
+      "version": "3.1.6",
+      "vulnerabilities": []
+    },
+    {
+      "package": "kiwisolver",
+      "version": "1.5.1",
+      "vulnerabilities": []
+    },
+    {
+      "package": "markupsafe",
+      "version": "3.0.4",
+      "vulnerabilities": []
+    },
+    {
+      "package": "matplotlib",
+      "version": "3.10.9",
+      "vulnerabilities": []
+    },
+    {
+      "package": "mpmath",
+      "version": "1.3.0",
+      "vulnerabilities": []
+    },
+    {
+      "package": "networkx",
+      "version": "3.4.2",
+      "vulnerabilities": []
+    },
+    {
+      "package": "numpy",
+      "version": "1.26.4",
+      "vulnerabilities": []
+    },
+    {
+      "package": "packaging",
+      "version": "26.3",
+      "vulnerabilities": []
+    },
+    {
+      "package": "pandas",
+      "version": "2.3.3",
+      "vulnerabilities": []
+    },
+    {
+      "package": "pillow",
+      "version": "12.3.0",
+      "vulnerabilities": []
+    },
+    {
+      "package": "pluggy",
+      "version": "1.7.0",
+      "vulnerabilities": []
+    },
+    {
+      "package": "pygments",
+      "version": "2.21.0",
+      "vulnerabilities": []
+    },
+    {
+      "package": "pyparsing",
+      "version": "3.3.3",
+      "vulnerabilities": []
+    },
+    {
+      "package": "pytest",
+      "version": "9.1.1",
+      "vulnerabilities": []
+    },
+    {
+      "package": "python-dateutil",
+      "version": "2.9.0.post0",
+      "vulnerabilities": []
+    },
+    {
+      "package": "python-dotenv",
+      "version": "1.2.3",
+      "vulnerabilities": []
+    },
+    {
+      "package": "pytz",
+      "version": "2026.5",
+      "vulnerabilities": []
+    },
+    {
+      "package": "scipy",
+      "version": "1.15.3",
+      "vulnerabilities": []
+    },
+    {
+      "package": "six",
+      "version": "1.17.0",
+      "vulnerabilities": []
+    },
+    {
+      "package": "sympy",
+      "version": "1.13.1",
+      "vulnerabilities": []
+    },
+    {
+      "package": "tomli",
+      "version": "2.5.0",
+      "vulnerabilities": []
+    },
+    {
+      "package": "torch",
+      "version": "2.5.1+cu121",
+      "vulnerabilities": [
+        "GHSA-3749-ghw9-m3mg",
+        "GHSA-53q9-r3pm-6pq6",
+        "GHSA-887c-mr87-cxwp",
+        "GHSA-c678-jfcj-6jmf",
+        "GHSA-f4hp-rmr7-r7v8",
+        "GHSA-qfhq-4f3w-5fph",
+        "GHSA-rrmf-rvhw-rf47",
+        "GHSA-vgrw-7cvw-pwgx",
+        "GHSA-x3gm-94wq-g975",
+        "PYSEC-2025-191",
+        "PYSEC-2025-198",
+        "PYSEC-2025-203",
+        "PYSEC-2025-204",
+        "PYSEC-2025-205",
+        "PYSEC-2025-206",
+        "PYSEC-2025-207",
+        "PYSEC-2025-208",
+        "PYSEC-2025-209",
+        "PYSEC-2025-41",
+        "PYSEC-2026-139",
+        "PYSEC-2026-1970",
+        "PYSEC-2026-2286"
+      ],
+      "details": [
+        {
+          "id": "GHSA-3749-ghw9-m3mg",
+          "aliases": [
+            "CVE-2025-2953"
+          ],
+          "summary": "PyTorch susceptible to local Denial of Service",
+          "severity": "LOW",
+          "fixed_in": [
+            "2.7.1-rc1"
+          ]
+        },
+        {
+          "id": "GHSA-53q9-r3pm-6pq6",
+          "aliases": [
+            "CVE-2025-32434"
+          ],
+          "summary": "PyTorch: `torch.load` with `weights_only=True` leads to remote code execution",
+          "severity": "CRITICAL",
+          "fixed_in": [
+            "2.6.0"
+          ]
+        },
+        {
+          "id": "GHSA-887c-mr87-cxwp",
+          "aliases": [
+            "CVE-2025-3730"
+          ],
+          "summary": "PyTorch Improper Resource Shutdown or Release vulnerability",
+          "severity": "MODERATE",
+          "fixed_in": [
+            "2.8.0"
+          ]
+        },
+        {
+          "id": "GHSA-c678-jfcj-6jmf",
+          "aliases": [
+            "CVE-2025-2148"
+          ],
+          "summary": "PyTorch Tuple Handler is Vulnerable to Memory Corruption through Manipulation of None Argument",
+          "severity": "LOW",
+          "fixed_in": []
+        },
+        {
+          "id": "GHSA-f4hp-rmr7-r7v8",
+          "aliases": [
+            "CVE-2025-2998"
+          ],
+          "summary": "PyTorch is Vulnerable to Memory Consumption through pad_packed_sequence Function",
+          "severity": "MODERATE",
+          "fixed_in": []
+        },
+        {
+          "id": "GHSA-qfhq-4f3w-5fph",
+          "aliases": [
+            "CVE-2025-3001"
+          ],
+          "summary": "PyTorch is vulnerable to memory corruption through its torch.lstm_cell function",
+          "severity": "LOW",
+          "fixed_in": [
+            "2.10.0"
+          ]
+        },
+        {
+          "id": "GHSA-rrmf-rvhw-rf47",
+          "aliases": [
+            "CVE-2025-3000"
+          ],
+          "summary": "PyTorch is vulnerable to memory corruption through its torch.jit.script function",
+          "severity": "LOW",
+          "fixed_in": [
+            "2.13.0"
+          ]
+        },
+        {
+          "id": "GHSA-vgrw-7cvw-pwgx",
+          "aliases": [
+            "CVE-2025-2999"
+          ],
+          "summary": "PyTorch is vulnerable to memory corruption through its unpack_sequence function",
+          "severity": "MODERATE",
+          "fixed_in": [
+            "2.9.1"
+          ]
+        },
+        {
+          "id": "GHSA-x3gm-94wq-g975",
+          "aliases": [
+            "CVE-2025-2149"
+          ],
+          "summary": "PyTorch: Manipulation of the argument scale/zero_point leads to improper initialization via Quantized Sigmoid Module",
+          "severity": "LOW",
+          "fixed_in": []
+        },
+        {
+          "id": "PYSEC-2025-191",
+          "aliases": [
+            "CVE-2025-2953"
+          ],
+          "summary": "",
+          "severity": "UNSPECIFIED",
+          "fixed_in": []
+        },
+        {
+          "id": "PYSEC-2025-198",
+          "aliases": [
+            "CVE-2025-46148"
+          ],
+          "summary": "",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "2.7.0"
+          ]
+        },
+        {
+          "id": "PYSEC-2025-203",
+          "aliases": [
+            "CVE-2025-55551"
+          ],
+          "summary": "",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "2.9.0"
+          ]
+        },
+        {
+          "id": "PYSEC-2025-204",
+          "aliases": [
+            "CVE-2025-55552"
+          ],
+          "summary": "",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "2.9.0"
+          ]
+        },
+        {
+          "id": "PYSEC-2025-205",
+          "aliases": [
+            "CVE-2025-55553"
+          ],
+          "summary": "",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "2.7.1"
+          ]
+        },
+        {
+          "id": "PYSEC-2025-206",
+          "aliases": [
+            "CVE-2025-55554"
+          ],
+          "summary": "",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "2.9.0"
+          ]
+        },
+        {
+          "id": "PYSEC-2025-207",
+          "aliases": [
+            "CVE-2025-55557"
+          ],
+          "summary": "",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "2.7.1"
+          ]
+        },
+        {
+          "id": "PYSEC-2025-208",
+          "aliases": [
+            "CVE-2025-55558"
+          ],
+          "summary": "",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "2.7.1"
+          ]
+        },
+        {
+          "id": "PYSEC-2025-209",
+          "aliases": [
+            "CVE-2025-55560"
+          ],
+          "summary": "",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "2.7.1"
+          ]
+        },
+        {
+          "id": "PYSEC-2025-41",
+          "aliases": [
+            "CVE-2025-32434"
+          ],
+          "summary": "",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "2.6.0"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-139",
+          "aliases": [
+            "CVE-2026-4538"
+          ],
+          "summary": "",
+          "severity": "UNSPECIFIED",
+          "fixed_in": []
+        },
+        {
+          "id": "PYSEC-2026-1970",
+          "aliases": [
+            "CVE-2025-3730"
+          ],
+          "summary": "PyTorch Improper Resource Shutdown or Release vulnerability",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "2.8.0"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-2286",
+          "aliases": [
+            "CVE-2026-24747"
+          ],
+          "summary": "",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "2.10.0"
+          ]
+        }
+      ]
+    },
+    {
+      "package": "typing_extensions",
+      "version": "4.16.0",
+      "vulnerabilities": []
+    },
+    {
+      "package": "tzdata",
+      "version": "2026.5",
+      "vulnerabilities": []
+    }
+  ]
+}

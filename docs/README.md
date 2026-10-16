@@ -80,6 +80,7 @@ Experiment 1's artefacts were themselves only committed on 2026-09-27 — before
 | [§ 8.10](08_results.md#cross-arena) cross-experiment round-robin | the thirty-run loop of [§ 9.3](09_reproducibility.md#93-commands): `run_cross_arena.py` from `ctde_arena/` for each of the six blocks x five seeds, then `combine_cross_arena.py` and `report_cross_arena.py` from the repository root |
 | [§ 8.13](08_results.md#ablations) configuration ablations | `bash scripts/run_ablation_campaign.sh`, then `python scripts/report_study.py --results-dir results/ablation_no_dr --compare-to results/study` (same for the other two arms); `python scripts/version_campaign_checkpoints.py` copies the arms' checkpoints into `data/campaign_replicates/` and writes the manifest that records each one's capacity |
 | [§ 8.11](08_results.md#absolute-strength) absolute strength vs random opponents | `python scripts/run_absolute_eval.py --matches 150 --seeds 1,2,3 --compare-pool results/cross_arena/blocks.json`, run from `ctde_arena/` |
+| [§ 9.10](09_reproducibility.md#dependency-audit) dependency audit | `python scripts/audit_dependencies.py` — one batched OSV query over the exact pins of `requirements-measured.lock.txt`; exits non-zero and writes nothing if the database is unreachable |
 
 ## License
 

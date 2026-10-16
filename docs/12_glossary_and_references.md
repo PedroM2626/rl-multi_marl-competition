@@ -71,6 +71,7 @@
 | `scripts/report_study.py` | Study tables, paired *t*, Fisher tests, forward power; `--results-dir` and `--compare-to` for re-measurements and ablation arms | § 8.1, § 8.12, § 8.13 |
 | `scripts/run_cross_arena.py` | The round-robin: six architectures over all 20 triples with slot rotation; `--exp1-replicate/--exp2-replicate` select a training block, `--campaign <arm>` an ablation set behind the capacity guard | § 8.10, § 8.13 |
 | `scripts/version_campaign_checkpoints.py` | Copies the ablation arms into `data/campaign_replicates/` and writes the manifest that reads each set's hidden width out of its own weights; `--check` re-verifies hashes and bytes | § 8.13, § 9.7 |
+| `scripts/audit_dependencies.py` | Asks OSV about each exact pin of the measured lock and writes `results/dependency_audit.json`; refuses to write a verdict it could not fetch | § 9.10, [A-37](11_code_audit.md#the-measured-environment-carries-a-critical-advisory-that-cannot-be-patched-without-invalidating-it) |
 | `scripts/combine_cross_arena.py` | Merges round-robin run directories, stamping each row with its block and harness seed and refusing mismatched schemas | § 8.10 |
 | `scripts/report_cross_arena.py` | McNemar exact tests, leave-one-block-out, slot and regime controls, both stability tables | § 8.10 |
 | `scripts/run_absolute_eval.py` | Absolute strength against a uniform-random pool, with the matched null and the two-scale agreement; `--report-only` re-derives a summary from its own CSV, `--campaign <arm>` plays an ablation set | § 8.11, § 8.13 |
