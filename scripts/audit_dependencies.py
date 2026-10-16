@@ -14,6 +14,9 @@ Nothing is installed, upgraded or removed here; the script is a read-only query 
     python scripts/audit_dependencies.py                       # audit the measured lock
     python scripts/audit_dependencies.py --requirements requirements.txt --out results/other.json
     python scripts/audit_dependencies.py --print-only          # query, do not write the artefact
+    python scripts/audit_dependencies.py --verify-record results/dependency_audit.json  # no network; the
+                                                             # CI gate for "the lock changed and nobody
+                                                             # re-ran the audit"
 
 Requires network access to api.osv.dev. If the query fails the script exits non-zero and writes nothing: an
 unverified audit is not a clean audit.
@@ -114,12 +117,37 @@ def main() -> None:
     parser.add_argument("--out", type=Path, default=ROOT / "results" / "dependency_audit.json",
                         help="where the audit record goes")
     parser.add_argument("--print-only", action="store_true", help="query without writing the artefact")
+    parser.add_argument("--verify-record", type=Path, default=None, metavar="JSON",
+                        help="check that a recorded audit covers exactly the pins of --requirements, without "
+                             "network access; the CI gate for 'the lock changed and nobody re-ran the audit'")
     args = parser.parse_args()
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
     path = args.requirements if args.requirements.is_absolute() else ROOT / args.requirements
     pins = parse_pins(path)
+
+    if args.verify_record is not None:
+        recorded_path = (args.verify_record if args.verify_record.is_absolute()
+                         else ROOT / args.verify_record)
+        recorded = json.loads(recorded_path.read_text(encoding="utf-8"))
+        audited = {(entry["package"], entry["version"]) for entry in recorded["packages"]}
+        current = set(pins)
+        problems = []
+        if current - audited:
+            problems.append(f"pins with no audit record: {sorted(current - audited)}")
+        if audited - current:
+            problems.append(f"records for pins the lock no longer has: {sorted(audited - current)}")
+        if recorded.get("source") != path.name:
+            problems.append(f"the record is about {recorded.get('source')!r}, not {path.name!r}")
+        if problems:
+            for problem in problems:
+                print(f"[error] {problem}")
+            print("re-run `python scripts/audit_dependencies.py` and commit the record.")
+            raise SystemExit(1)
+        print(f"{len(current)} pins covered by {recorded_path.name}, generated "
+              f"{recorded['generated_utc']}; {recorded['vulnerable_pins']} with a known advisory")
+        return
     print(f"asking OSV about {len(pins)} pins from {path.name}", flush=True)
     try:
         results = query_osv(pins)

@@ -1,0 +1,107 @@
+name: tests
+
+# Both experiment trees, the documentation gates, and the recomputable artefacts.
+#
+# WHAT THIS IS NOT: a reproduction of the measured environment. The numbers in docs/ were produced on
+# Python 3.10.11 / NumPy 1.26.4 / Torch 2.5.1+cu121 (`requirements-measured.lock.txt`), and § 9.1 of the
+# documentation measures what the difference costs: the arena geometry and randomisation streams stay
+# bit-identical, but the first PPO update differs at 1e-6 and every checkpoint differs after 4,000 steps.
+# CI installs `requirements.txt` (NumPy 2.2.6 / Torch 2.6.0 -- and 2.6.0 is the version whose `torch.load`
+# is not covered by CVE-2025-32434, A-37) because the question here is "does the code do what its tests
+# say", which is environment-independent for everything except the training hashes. § 9.1's own
+# conclusion is that a *measurement* run must use the lock, and CI is not one.
+#
+# `ursina` is excluded from the install, exactly as in the host verification environment docs/09 § 9.4
+# describes. The render test then skips for missing Ursina rather than failing on a runner whose Panda3D
+# has no libGL; the pure-Python half of that file -- clip provenance and caption band content, which is
+# where a mislabelled artefact would be caught -- still runs everywhere.
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  MPLBACKEND: Agg
+
+jobs:
+  suites:
+    name: suite (${{ matrix.tree }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - tree: experiment 1, the root tree
+            workdir: .
+          - tree: experiment 2, ctde_arena
+            workdir: ctde_arena
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install (CPU torch wheel; both committed .env files set RL_DEVICE=cpu)
+        run: |
+          python -m pip install --upgrade pip
+          grep -v '^ursina' "${{ matrix.workdir }}/requirements.txt" > ci-requirements.txt
+          pip install -r ci-requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
+          pip install coverage==7.16.2   # the measured environment's version, not a dependency of anything
+
+      - name: Suite
+        working-directory: ${{ matrix.workdir }}
+        run: python -m pytest tests/ -q
+
+      - name: Statement coverage of the engine
+        working-directory: ${{ matrix.workdir }}
+        run: |
+          python -m coverage run --source=src/marl_arena -m pytest tests/ -q
+          python -m coverage report | tail -1
+
+  artefacts:
+    name: documentation and derived-artefact gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          grep -v '^ursina' requirements.txt > ci-requirements.txt
+          pip install -r ci-requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
+
+      - name: Cross-tree parity and documentation cross-references
+        run: python -m pytest tests/test_tree_parity.py tests/test_docs_links.py -q
+
+      - name: The artefact inventory is what git tracks, hashed as git stores it
+        run: |
+          python scripts/report_inventory.py
+          git diff --exit-code docs/09_reproducibility.md || {
+            echo "::error::docs/09 section 9.7 is stale; run scripts/report_inventory.py and commit it."
+            exit 1; }
+
+      - name: The pooled round-robin reports recompute from their own CSVs
+        run: |
+          python scripts/report_cross_arena.py --in results/cross_arena/blocks6.csv \
+            --json-out results/cross_arena/blocks6.json
+          python scripts/report_cross_arena.py --in results/cross_arena/blocks.csv \
+            --json-out results/cross_arena/blocks.json
+          git diff --exit-code results/cross_arena/blocks6.json results/cross_arena/blocks.json || {
+            echo "::error::the committed round-robin reports are not what report_cross_arena.py produces" \
+                 "from the committed CSVs."
+            exit 1; }
+
+      - name: Campaign scripts at least parse
+        run: |
+          for script in scripts/*.sh; do bash -n "$script" || exit 1; done
+
+      - name: Every pin of the measured lock is covered by the recorded audit
+        run: python scripts/audit_dependencies.py --verify-record results/dependency_audit.json

@@ -34,7 +34,7 @@ reassuring-sounding claim, it was measured, in a second environment holding ever
 
 | Check | NumPy 1.26.4 vs 2.2.6 | Result |
 |---|---|---|
-| Experiment 1 test suite (59 tests then, 109 now) | both versions | **pass** |
+| Experiment 1 test suite (59 tests then, 113 now) | both versions | **pass** |
 | Experiment 2 test suite (47 tests then, 69 now) | both versions | **pass** |
 | Collision geometry (14 hand-computed entry parameters and hit positions) | both versions | **identical to 1e-12** |
 | Domain-randomisation stream (`arena_size`, speeds, cooldowns of match 41) | both versions | **identical, all digits** |
@@ -111,7 +111,7 @@ of them in the same place.
 | `python scripts/train_rl.py --seed S` | 1 | Headless PPO training; bit-for-bit reproducible for a given seed |
 | `python main.py` | 1 | Ursina 3D window, greedy policies loaded from `data/checkpoints/` |
 | `python scripts/plot_metrics.py` | 1 | Reads `data/metrics/summary.json` → `exports/metrics/` |
-| `python -m pytest tests/ -q` | 1 | 109 tests |
+| `python -m pytest tests/ -q` | 1 | 113 tests |
 | `cd ctde_arena && python scripts/train_rl.py` | 2 | Same, plus MLflow logging |
 | `cd ctde_arena && mlflow ui --backend-store-uri file:./mlruns` | 2 | Tracking UI |
 | `cd ctde_arena && python main.py` | 2 | 3D window for the CTDE variants |
@@ -207,7 +207,7 @@ ImportError: cannot import name 'ValueDecompositionCriticNetwork' from 'marl_are
 
 ```
 $ python -m pytest tests/ -q            # experiment 1
-108 passed, 1 skipped
+112 passed, 1 skipped
 $ cd ctde_arena && python -m pytest tests/ -q
 68 passed, 1 skipped
 ```
@@ -241,10 +241,35 @@ statements: `simulation.py` (33), `controllers/rl_controller.py` (15), `config.p
 `controllers/rl_controller.py` (+17) and `rl/actions.py` (+2). `ui/dashboard.py`, which was the single
 largest uncovered file for most of this repository's life, is at 100 % in both trees.
 
-What the 178 tests do **not** cover is catalogued in
+What the 182 tests do **not** cover is catalogued in
 [§ Coverage](11_code_audit.md#coverage). The collision solver is now geometrically verified against
 hand-computed values, but no test checks a *metric* against an independent reference — see the note at the
 end of that section on coverage not being correctness.
+
+### Continuous integration <a name="continuous-integration"></a>
+
+`.github/workflows/tests.yml` runs three things on every push and pull request:
+
+| Job | Gate |
+|---|---|
+| `suite (experiment 1, the root tree)` | `pytest tests/ -q`, then statement coverage of `src/marl_arena` |
+| `suite (experiment 2, ctde_arena)` | the same in the other tree — they must be run separately, see above |
+| `documentation and derived-artefact gates` | tree parity; documentation cross-references; regenerate `docs/09` § 9.7 and fail on a diff; re-derive **both** round-robin reports from their committed CSVs and fail on a diff; `bash -n` every campaign script; and check that `results/dependency_audit.json` covers exactly the pins of `requirements-measured.lock.txt` |
+
+The two artefact gates are the interesting ones, because they turn claims this chapter makes in prose into
+something a machine checks: § 9.6 says `blocks6.json` is derived data reproducible from `blocks6.csv`, and CI
+now re-derives it on a different operating system than the one that produced it. `bash -n` on the campaign
+scripts exists after two of them "completed" while launching nothing (see [§ 9.3](#93-commands) and the
+six-block campaign's post-mortem); a syntax check does not catch that, but it does catch the family of
+quoting and variable-name errors in the same scripts.
+
+**What CI does not do, and why that is deliberate.** It installs `requirements.txt` (NumPy 2.2.6, Torch
+2.6.0), not `requirements-measured.lock.txt` — the question it answers is whether the code does what its
+tests say, and [A-31](11_code_audit.md#the-pinned-environment-does-not-reproduce-the-recorded-runs) measured
+that the environment that would reproduce *the numbers* is not reachable from a CI container without also
+re-running the study. It excludes `ursina`, so `test_render.py`'s capture case skips for the same reason it
+skips on the host (a runner has no libGL, and a half-installed Panda3D would fail rather than skip). And it
+never trains: the fastest training test in either suite is a 4,000-step update, not a run.
 
 ## 9.5 Cost of a run
 
@@ -354,65 +379,70 @@ outputs are pure functions of other committed files, and each was re-derived and
 | `results/study/learning_curves.png` | `data/runs/*/evaluation/run_summary.json` | `scripts/plot_study.py --runs-dir data/runs` | identical SHA-256 (`1915d48d…`) |
 | `results/absolute_six/summary.json` | `results/absolute_six/matches.csv` | `scripts/run_absolute_eval.py --report-only --out results/absolute_six` | no matches replayed |
 
+Two of these four are re-derived on every push by CI, on Linux, from the committed inputs — the round-robin
+reports against their CSVs, and the artefact inventory against `git ls-files`
+([§ 9.4](#continuous-integration)). That is the difference between having checked once and being unable to
+drift.
+
 The last row is the point of `--report-only`: the headline aggregation of chapter 8's absolute-strength
 section can be re-derived from the raw per-match record in seconds, on a machine with no GPU and no
 inclination to replay 2,700 matches.
 
 ## 9.7 Artefact inventory
 
-Every versioned experiment artefact (169 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed.
+Every versioned experiment artefact (172 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed, and each hash is of the blob Git stores rather than of the file on disk — a text artefact checked out with CRLF on Windows hashes differently from the same committed bytes on Linux, and a reader on any platform should be able to reproduce this column.
 
 **Promoted replicate.** The artefacts that match the current code. Chosen by `promote_run.py --seed median`, which is the replicate with the least L1 distance to the per-arm study means; `PROVENANCE.json` records the choice and the full run summary behind it.
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
-| `ctde_arena/data/PROVENANCE.json` | 6,565 | `528a55f7bdf549eae03d170cc698a45acd87192935bcf09925ee2dcff2fa041b` |
+| `ctde_arena/data/PROVENANCE.json` | 6,372 | `dd239c8294b1cbdbb42d130026627e4b1f2d5e85b1e8c9c55c6a875b05592bfb` |
 | `ctde_arena/data/checkpoints/team_1_ctde-comm.pt` | 313,778 | `cb3fee053d68a7a3cc6e4cadbd3fdfc05a356e5a9542babad143a1aa2eb85ff1` |
 | `ctde_arena/data/checkpoints/team_2_ctde-vd.pt` | 217,330 | `bf261e17c010ee0bb8f69b9d7e9ca1c4214cc9cfe0d8775038379dd71547d5f5` |
 | `ctde_arena/data/checkpoints/team_3_ctde-cac.pt` | 304,400 | `451b14b4c8aae906c3e7b135f9e814426b268354e8eb222d420b42dcb981cccb` |
 | `ctde_arena/data/exports/comparative_dashboard.png` | 269,089 | `474621e93c7817c93abedc1404cd4461b70d7258609706051e746e867438886e` |
-| `ctde_arena/data/metrics/agent_match_metrics.csv` | 18,806 | `4e86f11187d317bf9ccee379b995e63485e22dc9d81d33a52d7526407ee4e405` |
-| `ctde_arena/data/metrics/summary.json` | 975 | `d7403380fd69055c9087842818197fe8ae8875b9c4b3c2d79c14e1c66313915f` |
-| `ctde_arena/data/metrics/team_match_metrics.csv` | 11,118 | `6fbebf4f161d9196d25bf93d976ec91bc3da6888651e4023582bda0ac6a945a3` |
-| `ctde_arena/data/metrics/trajectory_metrics.csv` | 1,200,527 | `b975706a5eba42abb99b9db6ccff4567940cb011ea7d839d35638bdc9b9db6f8` |
-| `data/PROVENANCE.json` | 6,491 | `95c9f868895b977641b28f00543e106064a851af0affacca3e1dda1352fba186` |
+| `ctde_arena/data/metrics/agent_match_metrics.csv` | 18,418 | `81df004cae74a1217278898ee5dceb8eaa320d4a40508c4e103b5a6814be4281` |
+| `ctde_arena/data/metrics/summary.json` | 942 | `7b87782481a08ea4c142d97b44714de18cb32d9aae8ade88f519e8e7a11c18e0` |
+| `ctde_arena/data/metrics/team_match_metrics.csv` | 10,988 | `13d568cbd67b0a5a926f56e743b00426e764dc8a9f721d13b4b4c1c4cfdf449a` |
+| `ctde_arena/data/metrics/trajectory_metrics.csv` | 1,184,497 | `8549a5746b2d34cb21e013416d420260d88a1074d0bd5e2ddd2280d38181275d` |
+| `data/PROVENANCE.json` | 6,298 | `5174eaa34a3949d669145c0088f2bdd9106158f93e292d68d626bc8fe50f2727` |
 | `data/checkpoints/team_1_cte.pt` | 323,170 | `c978273409e60e45b9555d763d65c9ff13ba7774ffaf332ac4eccd11ffe59111` |
 | `data/checkpoints/team_2_dte.pt` | 145,762 | `93fc387fbfbd1cb935a271672954675230e1326565ae2680333a4ded4e4e3897` |
 | `data/checkpoints/team_3_ctde.pt` | 304,248 | `5a5273f3c73942e8fb0964bbb6a848734c58fee9cf0b52b4986f84cf8f2a4fae` |
 | `data/exports/comparative_dashboard.png` | 272,710 | `d3daf6ac475005675a5411e39173c8ff53d5349ac39fb6c1655e9193753ab783` |
-| `data/metrics/agent_match_metrics.csv` | 17,383 | `c408d9c3996f93c30e19cd602e70352fe285a5348ea30346ebdf21bdcf7bae05` |
-| `data/metrics/summary.json` | 959 | `092c598f0136ea2adc3ce3bcbc8042bbafc13a4cbb62f8bd0859c7a0dad77e94` |
-| `data/metrics/team_match_metrics.csv` | 10,945 | `2c03ab03f0cf2363ad2f039ab9a31b57e7070ccc6ca7ab8aacad4303f886afe7` |
-| `data/metrics/trajectory_metrics.csv` | 1,363,141 | `94182ae194f1df7bbdf30475b621cb93671d9ca21aec78c25a05b4a64d90f498` |
+| `data/metrics/agent_match_metrics.csv` | 16,977 | `3495d7a1da60106cdeb60e3e8f7d50cc76911dc4f9e3bbd4289cc47e0a8aa2ba` |
+| `data/metrics/summary.json` | 926 | `938fc507ce241286086fefce9f1628b3c05cd9438cffd5994607e08abb334c99` |
+| `data/metrics/team_match_metrics.csv` | 10,809 | `25a31953f7198bd676752f18d4aa7dca6b305307eed05866fcfdfc99d2649b2f` |
+| `data/metrics/trajectory_metrics.csv` | 1,343,793 | `e3539dd0a2667159b63559869c9ca391d670406850e2af69c7e5102a3f6db59f` |
 
 **Study aggregates.** Recomputed by `report_study.py`, `plot_study.py` and `report_cross_arena.py` from the per-replicate and per-match summaries.
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
-| `results/cross_arena/blocks.csv` | 2,416,103 | `e2068397bf969077ed4fe32ca56cc7625900382a373a6e17edb57f3707b871bc` |
-| `results/cross_arena/blocks.json` | 17,546 | `a122215a5be61e10b9d92be7774906067727cf2f0871f43becca0ac570cbb33b` |
-| `results/cross_arena/blocks6.csv` | 4,826,725 | `06b23f4d1419ab56e42660bf5a8eac1fbf759d8ca4a414748287aa83b7c5c40a` |
-| `results/cross_arena/blocks6.json` | 19,405 | `1d7f1f5fd0af88b369f457dc019d529226ceae7b05269a198c72b1b42f7db7f3` |
-| `results/cross_arena/pairwise_first_run_600.json` | 5,848 | `b40bd54cd3390234815875c7b26dfae18d56ca77f38173199de2ebacd40ef53f` |
-| `results/cross_arena/replicates.csv` | 603,745 | `dbc8688efd011d5414d63db69857eff20d9d4d24514afeccf472a64722aa35eb` |
-| `results/cross_arena/replicates.json` | 7,559 | `e2e91652379bd3bc7e0d76821b3961a564b6981370a6d8a27c6c74262e0eb93e` |
-| `results/cross_arena/seeds/summary_seed1.json` | 2,935 | `9943959a95997955cf41c61a3d967ca8e828f1c6121306b441503111bd2240e0` |
-| `results/cross_arena/seeds/summary_seed2.json` | 2,936 | `b61fcf66b9396ebff9e3b610df0abf94e39e56505912b5672f1e478937fc6b59` |
-| `results/cross_arena/seeds/summary_seed3.json` | 2,924 | `9ec08be2e8acdcd8467f1f63a3091ae2c11f66cad88189d69d347b4826b50092` |
-| `results/cross_arena/seeds/summary_seed4.json` | 2,933 | `d95922889d9db58c10fe3b1fac4c37ab7b3f0131ae0c5ef4cf92e093476fe668` |
-| `results/cross_arena/seeds/summary_seed5.json` | 2,933 | `65d30c061e575c25e09e0412f3748475a8ed8944cce95bc457108243926d27c9` |
-| `results/study/analysis.json` | 4,437 | `69a1756130e3a04663eef8b1ad131b088dd43df7435f1218acac9ad994fe302b` |
+| `results/cross_arena/blocks.csv` | 2,389,102 | `8891db57a270a5b32c187e3d086171736ce113c0cf772172f401ec34e5e04ca7` |
+| `results/cross_arena/blocks.json` | 16,722 | `633114425dc7e70add2bb457ff513ecd98b9087e5231f38e6a3ac7cf09a9c0e1` |
+| `results/cross_arena/blocks6.csv` | 4,772,724 | `fec107ccfba9b8ad3f681659f1161659523878804c39be399987883891e2c89f` |
+| `results/cross_arena/blocks6.json` | 18,518 | `fda14625dda348dbd7739b098a6c75c6a2999c01b60301d3cce276145e1d1307` |
+| `results/cross_arena/pairwise_first_run_600.json` | 5,563 | `99bb2ca332c212669a899b0c8d31f89a6e35fab71791df91f22d91efbd2f80ce` |
+| `results/cross_arena/replicates.csv` | 594,744 | `df1b3bd556f700a49ffa24015f62a37594523cbdb2b1f58898fe7e5f02393f09` |
+| `results/cross_arena/replicates.json` | 7,164 | `2b31001ac1ab1f1a5965b4aa48061fa2289cb34d88bc2391c332695dd1279104` |
+| `results/cross_arena/seeds/summary_seed1.json` | 2,822 | `4cd52a7b62fb38eaccebb6b9fa90b4393a6e7d9d1bfcb1eb7558ef2b612e74dd` |
+| `results/cross_arena/seeds/summary_seed2.json` | 2,823 | `8ea817f19aa93baa6d96bd82ef9efb6fec2a6abf99c6cee06529fc0806c76b81` |
+| `results/cross_arena/seeds/summary_seed3.json` | 2,811 | `e5e847f5d525f94f4d7ad19f1365c9879eaec64d0c5fabb77463bd0fa1d1dd90` |
+| `results/cross_arena/seeds/summary_seed4.json` | 2,820 | `272adeb3a59349573431fe8fd3e71bb8b4fb77c906f1d13ffe8325fa73b232ee` |
+| `results/cross_arena/seeds/summary_seed5.json` | 2,820 | `fc0028d8d7811f32d5483da563ec57cc6b294ad3006d267a4d2e01c11700a63c` |
+| `results/study/analysis.json` | 4,226 | `0761e5fa08f9be1cbee21f515b28eb17ad48e65b7207868bc161ce933f87527b` |
 | `results/study/learning_curves.png` | 137,532 | `1915d48d117e8a96730b3659e0259e5ad6446c0fb7103d0642a6a5e7bd601cbe` |
-| `results/study/per_seed_metrics.csv` | 5,287 | `a23d366199cbb78e805b52ac7b8569f4b3b72c4d3c05dd3e6977efadbcdac52f` |
+| `results/study/per_seed_metrics.csv` | 5,226 | `a69098a4e88eef37c1291f73b1cb2526f0d31a98c0c2c6f0da27af0263b30d17` |
 
 **Untrained baselines.** `random_baseline.py` output, 300 fixed-variant headless matches per mode. The uniform files are byte-identical between the trees because that mode never queries a network.
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
-| `ctde_arena/results/baseline/random_baseline_greedy.json` | 1,205 | `eccf400bf08621ea0ac8f5063742cfc3ae5bca93d78808942327508b14e6586e` |
-| `ctde_arena/results/baseline/random_baseline_uniform.json` | 1,196 | `37d0c21947c0a56016df17f6862d61b98f81395fd5f7c76e03f5b73b4fd6106c` |
-| `results/baseline/random_baseline_greedy.json` | 1,144 | `d453dddac636879222f7f727afd3fe0b762cd61d4eb50a6521da4db479d33c8c` |
-| `results/baseline/random_baseline_uniform.json` | 1,182 | `8ce5317480f79bfc787b5176b35883473c2155192ab50db323c5ba7e3969dcc9` |
+| `ctde_arena/results/baseline/random_baseline_greedy.json` | 1,163 | `5836778e11b5c4809f51670a3edf859db660c114282cb92cf63fe4ba31a12f63` |
+| `ctde_arena/results/baseline/random_baseline_uniform.json` | 1,153 | `55c5dfda0f8f5108b4bb382d1847d821fcfc64a6902c13be43c7901c6d3b3fa5` |
+| `results/baseline/random_baseline_greedy.json` | 1,102 | `d86ef73ae93808b28c9a950c7fc70dabefee7d5295dd6011658c6a86bdff59a4` |
+| `results/baseline/random_baseline_uniform.json` | 1,139 | `908e2f4e379d30c0d8333d4e164f0711cadb02a66d0588c6219f7716480cb5d9` |
 
 **Historical single-seed runs.** Superseded by the study but retained because [§ 8.2](08_results.md#historical-single-seed-runs) quotes them and their checkpoints no longer load into the current observation encoding.
 
@@ -421,18 +451,18 @@ Every versioned experiment artefact (169 files), with SHA-256 for integrity chec
 | `ctde_arena/data/historical_100k/checkpoints/team_1_ctde-vd.pt` | 216,346 | `c0ab135db4674649e16db19e4ab901e4895196e298d891e62487cb1353f4bb24` |
 | `ctde_arena/data/historical_100k/checkpoints/team_2_ctde-cac.pt` | 299,324 | `6352a1f04d74165fcfc08e632d5b52ecc69f3346eaa250b35fab4fae3dee29ed` |
 | `ctde_arena/data/historical_100k/checkpoints/team_3_ctde-comm.pt` | 308,194 | `a80855ba555d8579623deb07591983c1fe3cd8c9eef1b5fd346106ae89b461a4` |
-| `ctde_arena/data/historical_100k/checkpoints/training_log.json` | 1,646 | `5d85eedbfda798b58099ad5841529a7161398075675c7036c55cf9c7f84ba228` |
+| `ctde_arena/data/historical_100k/checkpoints/training_log.json` | 1,594 | `7b15f63a1136277c561769a779e1f39bf4f6d369e5cd148c0d07ebdc1a3842f7` |
 | `ctde_arena/data/historical_100k/exports/comparative_dashboard.png` | 272,740 | `3d0248bf4c843540393bd36b0c476a0165522419ca08732c6bb88c3f00c4c7c7` |
-| `ctde_arena/data/historical_100k/metrics/agent_match_metrics.csv` | 20,297 | `d1870d75d6a26024d651f90ad6bca1842297fb34df975011c489e77386964cc5` |
-| `ctde_arena/data/historical_100k/metrics/summary.json` | 951 | `fc33dfb9fce1c361a915c28fdc80452b7d85e720c6fd93e2d4895a6c3733aa4f` |
-| `ctde_arena/data/historical_100k/metrics/team_match_metrics.csv` | 11,722 | `01869e471d91411c7e13fc8b9c4944db2b8f0cd04daeb089f9e865597c34d230` |
-| `ctde_arena/data/historical_100k/metrics/trajectory_metrics.csv` | 2,111,002 | `94a41c8c67861ba1a7d8c3578bae8f18f57adf58e58c4b211353f835678fbdb3` |
-| `data/historical_100k/checkpoints/training_log.json` | 1,629 | `38820ca4ee22bad1000aed3250370c716fde16e59fd8c949ea6f180facb4fd6a` |
+| `ctde_arena/data/historical_100k/metrics/agent_match_metrics.csv` | 19,882 | `4137008304294274e7b022ed7cda573a0bfc1f9a13206555b5de524bde673105` |
+| `ctde_arena/data/historical_100k/metrics/summary.json` | 918 | `922f9ed5d1ece6a6a0007f89d1be78d95920231d92c302ff56c8fb1f072598d2` |
+| `ctde_arena/data/historical_100k/metrics/team_match_metrics.csv` | 11,583 | `da37159c5de0f935c44f1f17d17f674fd9fbe778fc41a7e0c7473e557792101c` |
+| `ctde_arena/data/historical_100k/metrics/trajectory_metrics.csv` | 2,081,943 | `b3b4685d1b69c6e4fcd96c1e71f0b1efb61c572ac8b82146d20e5a9c0dbdb252` |
+| `data/historical_100k/checkpoints/training_log.json` | 1,577 | `f0a95b42ce1302ba97a18d76dff395c32aa356d5cc476e5a01570ca7ab4d813e` |
 | `data/historical_100k/exports/comparative_dashboard.png` | 285,844 | `0815af67bff72de2db06f0b7a42974c4e5bd1a5c2632ca766eb10e1ee4a0c321` |
-| `data/historical_100k/metrics/agent_match_metrics.csv` | 181,660 | `4e8b527c751a079324a86663c5004ea66c6505b4f421e4a823cd80266ab85a79` |
-| `data/historical_100k/metrics/summary.json` | 953 | `462070731a16d56162983ff7b3d08a6ed32e59025343c9be3d9fc827f3382a73` |
-| `data/historical_100k/metrics/team_match_metrics.csv` | 11,075 | `338ffa7442e0386227611996a0592a8643b6223fed658775a7083dc4d2890eda` |
-| `data/historical_100k/metrics/trajectory_metrics.csv` | 1,619,886 | `644342fc2f850c4a89fa35d0eb74b37d736339c2c9d51f3892f73d45f9edf406` |
+| `data/historical_100k/metrics/agent_match_metrics.csv` | 177,672 | `30930d6c39aeeb3d6e3db02e0213aa1570845e4079e1b5060c4e20dad1078e25` |
+| `data/historical_100k/metrics/summary.json` | 920 | `acabf37218a246c2336d77766463c8ad415a56b4c69541c05ccb204d66a0c55a` |
+| `data/historical_100k/metrics/team_match_metrics.csv` | 10,936 | `491117a1b37256e621bd0130b36a976cc55d748afd3845617e0be387aaea1a07` |
+| `data/historical_100k/metrics/trajectory_metrics.csv` | 1,595,699 | `c7142281233095d790647f25059cfd2ac3d62e2d8a10a05384eb2ff0925a7bee` |
 
 **Training replicates behind the round-robin.** The checkpoint sets the round-robin is played over: one experiment-1 replicate and one experiment-2 replicate per block, six blocks in `blocks6.csv` and the first three in `blocks.csv`. Versioned because the round-robin's claims rest on them while `**/data/runs*/` is git-ignored. `exp1_seed9+exp2_seed2` is byte-identical to the promoted checkpoints above, which is what makes that block a parity control.
 
@@ -479,7 +509,7 @@ Every versioned experiment artefact (169 files), with SHA-256 for integrity chec
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
-| `data/campaign_replicates/MANIFEST.json` | 26,245 | `df6e43676025ac83a824d71eab34b4529be6997959e526beb4993f4388e20f38` |
+| `data/campaign_replicates/MANIFEST.json` | 25,514 | `876872f7b702ec46327a2df7a2c4a18cfab7499d524ec38f0d8d39731471d7f2` |
 | `data/campaign_replicates/narrow_64/exp1_seed1/team_1_dte.pt` | 42,082 | `7ad507f6be709f8d6e1b68b5fc3fe08d24fe152d0b88f14f4365b30e1716d92e` |
 | `data/campaign_replicates/narrow_64/exp1_seed1/team_2_ctde.pt` | 89,720 | `ec9e1b3f931f6bbeecbf7400944b9a4da3bbd855a93facb33c516f9a5959f3b5` |
 | `data/campaign_replicates/narrow_64/exp1_seed1/team_3_cte.pt` | 98,914 | `02f49b03fcd359ec64b1b0fe8e02edc0723fae487bb421705f41c7c8dbe08970` |
@@ -535,56 +565,59 @@ Every versioned experiment artefact (169 files), with SHA-256 for integrity chec
 | `data/campaign_replicates/wide_256/exp2_seed3/team_2_ctde-cac.pt` | 1,126,672 | `334ae23dbe0196d78181e149be08d1bfaf927108764d4cee1d52176df6819e9c` |
 | `data/campaign_replicates/wide_256/exp2_seed3/team_3_ctde-comm.pt` | 1,144,818 | `ea8e5a78869772c416737d1983a51ab8e584553bf3b51183a07eaba57c751dc7` |
 
-**Environment provenance and governance.** The environment every measurement was taken in and the record of what is known about it: the `pip freeze` lock of [§ 9.1](#verification-environment-actually-used), OSV's per-pin answer from [§ 9.10](#dependency-audit), and the MIT grant over the whole repository.
+**Environment provenance and governance.** The environment every measurement was taken in and the record of what is known about it: the two identical `pip freeze` locks of [§ 9.1](#verification-environment-actually-used), OSV's per-pin answer from [§ 9.10](#dependency-audit), and the MIT grant over the whole repository.
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
-| `results/dependency_audit.json` | 11,748 | `4064abbee8b3a8a2594a07b3598658ddc1f59651fa9e8793c958b1a7e03d94fa` |
+| `LICENSE` | 1,075 | `fd4599d12f7345289a2684a68d852eac9e0e7a68f0ed17298ebfe502c11f95f6` |
+| `ctde_arena/requirements-measured.lock.txt` | 2,448 | `13a9ead65d70af5c9c42671c50477a8b736b864b790b25e38d61bee78a1f55bd` |
+| `requirements-measured.lock.txt` | 2,448 | `13a9ead65d70af5c9c42671c50477a8b736b864b790b25e38d61bee78a1f55bd` |
+| `results/dependency_audit.json` | 11,288 | `5de3f482896f88e80460bda28378eca0a48b0f9661d270e6f92b0c8e705ec3dd` |
 
 **Ablation and arena-v2 campaigns.** `run_arena_v2_campaign.sh` and `run_ablation_campaign.sh` output, each aggregated by `run_study.py` from 500 k-step replicates on seeds 1-3 (v2: 10 seeds). Every arm differs from `results/study/` by exactly one configuration key.
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
-| `results/ablation_narrow_64/analysis.json` | 3,647 | `32a5ca8ea05fb2a1bce956e2b3394b6459c2e95d544854defa67ce0c2d7c51c3` |
-| `results/ablation_narrow_64/per_seed_metrics.csv` | 1,750 | `80f457a8fdd848f0548a491342bb5ca5e133e65e1733307ae60406408c8b2682` |
-| `results/ablation_no_dr/analysis.json` | 3,629 | `f9595dfa7b717a2e2c8d816b7374d0e5cf1684b9825f6996bd67a8bce13a2d70` |
-| `results/ablation_no_dr/per_seed_metrics.csv` | 1,725 | `be43ad74cdb32817f040bbf89c16a3252035c96cf991161d5a402a97c1f4ec9a` |
-| `results/ablation_wide_256/analysis.json` | 3,645 | `0aa12f68a1ed4b72d6651ce2d19716119cdd68eef0da12c697449a11143f11cf` |
-| `results/ablation_wide_256/per_seed_metrics.csv` | 1,742 | `a9acc767b534ec1ad0e7984796e1aac9fe6348c09900945d8b2f6be450448ec4` |
-| `results/study_v2/analysis.json` | 4,433 | `c69e59585dec640871b66ef5241fd137c0576cf847045dc4ba005779089a0ce0` |
+| `results/ablation_narrow_64/analysis.json` | 3,478 | `c419dde1780a142055687fcedd15cf36a611179038c857db7f3c69d4bda8ed61` |
+| `results/ablation_narrow_64/per_seed_metrics.csv` | 1,731 | `1c141c4c9911a0b51bdb4a59c8bc0d524e6b5347127d62dc19a44e717833f2bc` |
+| `results/ablation_no_dr/analysis.json` | 3,460 | `220ea9542aaf6c23405d22e5bf4b4858e82c8d67aabbdebb16f44396b91b81f4` |
+| `results/ablation_no_dr/per_seed_metrics.csv` | 1,706 | `75aae63a4457992acd5c179fb3072c509513b19f60f80f680701269f8e63cdb0` |
+| `results/ablation_wide_256/analysis.json` | 3,476 | `a760c1e3b92c53ac0a09158fafd4a27527f76e7e9a5bf1e9f94c71bff66028c0` |
+| `results/ablation_wide_256/per_seed_metrics.csv` | 1,723 | `26c751cf5cd3a70aec4fe0e79ad6eb369a1de3ad18465ef4f16c7d18f9429e80` |
+| `results/study_v2/analysis.json` | 4,222 | `44242faee5785f288be1c4eb754ddd38eca0d41d4a00822a966638772425dec8` |
 | `results/study_v2/learning_curves.png` | 70,161 | `a2f19be70612de222a47c329f44730d4de78bb29b909db5e531ea3b3219274a0` |
-| `results/study_v2/per_seed_metrics.csv` | 5,339 | `9d8fb44357d5b6ca39e93107d74a2e44e542ee72b8d1b4af268d1da54b4e21e4` |
+| `results/study_v2/per_seed_metrics.csv` | 5,278 | `76e50a118474572b85fcaaab1d39751cdec7ff7c4aec39bad6e32754490618b3` |
 
 **Absolute-strength evaluation.** `run_absolute_eval.py` output: one trained policy against two uniform-random controllers, trained slot rotated. `absolute/` is the promoted checkpoint set, `absolute_blocks/` three sets and `absolute_six/` six, each at 450 matches per architecture; each `summary.json` re-derives from its `matches.csv` with `--report-only`.
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
-| `results/absolute/matches.csv` | 109,392 | `5ac29454838dac9ecde586431a42eb0a51a37dc0c14b5e1f550c8a761d95ac0b` |
-| `results/absolute/summary.json` | 14,584 | `d784fd6581d19a961c51f2cc8b097c789531122a890b0741b9223a2b35f355cc` |
-| `results/absolute_blocks/matches.csv` | 144,153 | `f0be8d9004dce9e5c134bfbc189acb8f524f607345b3963db5fd3f3b0a947f19` |
-| `results/absolute_blocks/summary.json` | 24,550 | `dc543bddf5c8e3ee8922dc6c099858ea19de7d7e7b290c66484bf69e9caa679d` |
-| `results/absolute_six/matches.csv` | 143,116 | `91b4e8a3e6e38bf15c9118ae246bfe747dba155abfac024e18602d1131fce043` |
-| `results/absolute_six/summary.json` | 33,730 | `0d4ecc300bf6a33dbe3d026694bff07f3f2ec90059015abb22ac404239985995` |
+| `results/absolute/matches.csv` | 106,691 | `9267675ed8f90a0da3efbb2f9d93dc89e9ec2ccdc03938efefc1f8fee7a9b0dd` |
+| `results/absolute/summary.json` | 13,963 | `992e134834d879b25144a7001a79d684de545e61de5e28691cfaeb3852563eb7` |
+| `results/absolute_blocks/matches.csv` | 141,452 | `ce745d9df991588cce5f8d7b34db4e963f813ccbe43d2b5eba9e49c9654946ac` |
+| `results/absolute_blocks/summary.json` | 23,529 | `dd92af5bd6ec576fc3c6e58bba25ce22bf1b22f94f2f41bc4381346de85a2a16` |
+| `results/absolute_six/matches.csv` | 140,415 | `33a771cc57f2562ca7821040442e28723541be57d5c04a7bf64f5e3dff311c11` |
+| `results/absolute_six/summary.json` | 32,340 | `fdf6a5cc89efd3f465333251bc5b3d135e7b35f1e7fe7aa4ab6a02132db65d3a` |
 
 **Gameplay clips.** Rendered by `render_trailer.py` from the promoted replicate's trained policies; the JSON beside each clip records the seed, rotation, paradigm per slot and the per-frame alive and shot counts the caption asserts.
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
 | `docs/assets/gameplay_exp1.gif` | 698,135 | `585a470d26a2d818637bd60de802a145074bae31dc9a4d1cd6932ed1f6f7aa31` |
-| `docs/assets/gameplay_exp1.json` | 48,320 | `f090712cf990319369fe610a084110bd5f02378017d5436ed78b4981c4b523a3` |
+| `docs/assets/gameplay_exp1.json` | 45,654 | `7d76f7371263588483203fde3cf736304f3f88df904f2e1a27e34a48560e70fe` |
 | `docs/assets/gameplay_exp2.gif` | 530,170 | `424e5c2c1952d23fb0c693dd3a8e14fd828f5d0c1045012ab15e9398f8d9c32e` |
-| `docs/assets/gameplay_exp2.json` | 48,490 | `b1660c289b2c65362b9128ee77cf0db117a427b2e49f5380e78212d90f246d51` |
+| `docs/assets/gameplay_exp2.json` | 45,824 | `c32af9c524ee71b37839e54e4d33705df5cc62352829a7551d0673bdf9cc55a7` |
 
 **MLflow export and derived charts.** The 48 points that reached MLflow, plus the `plot_metrics.py` output for each tree.
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
-| `ctde_arena/data/mlflow_export/mlflow_logged_metrics.csv` | 4,494 | `a94164d2c0c44d84241c29e77c3eaf1102edd3f146c9fa7797172e141db1f471` |
-| `ctde_arena/data/mlflow_export/mlflow_runs.json` | 2,017 | `c2e815aba57167c1aba1ac67bf1b0b28661944a54bb2f5fecccebbf3d38a4d12` |
+| `ctde_arena/data/mlflow_export/mlflow_logged_metrics.csv` | 4,445 | `1cd7ce114f2473b6e5e1452da0436c5c6b583070d3337e3866f8048945e16c10` |
+| `ctde_arena/data/mlflow_export/mlflow_runs.json` | 1,954 | `722f194366bc2ac1710023aa2e1dfa37ff8fb0278d54886415874ce5fe62d7d3` |
 | `ctde_arena/exports/metrics/metrics_comparison.png` | 21,200 | `b5ae4c3368f3e4b665fc5f9f76982a69feebfee824da037ddfd36e43d30065a5` |
-| `ctde_arena/exports/metrics/metrics_summary.csv` | 425 | `4536c72f92f2557c14a50f7728e253b44af39423877de21884c71e9ce27d04ad` |
+| `ctde_arena/exports/metrics/metrics_summary.csv` | 421 | `f36e70d0368778c5d74d12662be84cfdb8fb247bc7e8da7c749962b515e88dcc` |
 | `exports/metrics/metrics_comparison.png` | 21,707 | `7e3a2eab959e1452b141c5563949f7064df3610b3afb47cd571ad04ff2c1368e` |
-| `exports/metrics/metrics_summary.csv` | 409 | `d0bf34cc4dd622566ce468f5fe1af5c8f5bcfaa4e20d53bc8a2f0a42b633bdeb` |
+| `exports/metrics/metrics_summary.csv` | 405 | `8b1a93048cccfa41630cd9daf531ec033d816526cedd63b75d944f364911570c` |
 
 ## 9.8 The versioning asymmetry <a name="the-versioning-asymmetry"></a>
 

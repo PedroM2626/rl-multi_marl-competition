@@ -1,4 +1,7 @@
-"""Regenerate the docs/09 artefact inventory table from the files Git actually tracks."""
+"""Regenerate the docs/09 artefact inventory from the files Git tracks, hashing their *committed* bytes.
+
+The hash column is `git cat-file blob HEAD:<path>`, not the file on disk: this host checks text files out
+with CRLF while the repository stores LF, so working-tree hashes are unreproducible from a Linux clone."""
 
 from __future__ import annotations
 
@@ -58,6 +61,14 @@ GROUPS = [
         ("data/campaign_replicates/",),
     ),
     (
+        "Environment provenance and governance",
+        "The environment every measurement was taken in and the record of what is known about it: the two "
+        "identical `pip freeze` locks of [§ 9.1](#verification-environment-actually-used), OSV's per-pin "
+        "answer from [§ 9.10](#dependency-audit), and the MIT grant over the whole repository.",
+        ("requirements-measured.lock.txt", "ctde_arena/requirements-measured.lock.txt",
+         "results/dependency_audit.json", "LICENSE"),
+    ),
+    (
         "Ablation and arena-v2 campaigns",
         "`run_arena_v2_campaign.sh` and `run_ablation_campaign.sh` output, each aggregated by "
         "`run_study.py` from 500 k-step replicates on seeds 1-3 (v2: 10 seeds). Every arm differs from "
@@ -95,15 +106,30 @@ def tracked_artefacts() -> list[str]:
         for p in listing.splitlines()
         if p.startswith(
             ("data/", "ctde_arena/data/", "exports/", "ctde_arena/exports/",
-             "results/", "ctde_arena/results/", "docs/assets/")
+             "results/", "ctde_arena/results/", "docs/assets/",
+             "requirements-measured.lock.txt", "ctde_arena/requirements-measured.lock.txt", "LICENSE")
         )
     ]
+
+
+def committed_blob(path: str) -> bytes:
+    """The bytes as Git stores them, not the bytes on this disk.
+
+    The repository is committed with LF line endings and this host checks text files out with CRLF
+    (`core.autocrlf=true`), so hashing the working tree published hashes that no Linux or macOS clone can
+    reproduce -- for the text artefacts the two differ, and the table cannot be an integrity check while it
+    describes one checkout configuration. A clone's `git verify-file` and a reader's own hash then agree
+    with this table on every platform. Binary files are unaffected: Git does not convert them.
+    """
+    result = subprocess.run(["git", "cat-file", "blob", f"HEAD:{path}"], cwd=ROOT,
+                            capture_output=True, check=True).stdout
+    return result
 
 
 def rows_for(paths: list[str]) -> list[str]:
     table = ["| Path | Bytes | SHA-256 |", "|---|---:|---|"]
     for path in sorted(paths):
-        blob = (ROOT / path).read_bytes()
+        blob = committed_blob(path)
         table.append(f"| `{path}` | {len(blob):,} | `{hashlib.sha256(blob).hexdigest()}` |")
     return table
 
@@ -125,7 +151,10 @@ def main() -> None:
         "",
         f"Every versioned experiment artefact ({len(tracked)} files), with SHA-256 for integrity checking. "
         "Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, "
-        "so it cannot drift from what is actually committed.",
+        "so it cannot drift from what is actually committed, and each hash is of the blob Git stores rather "
+        "than of the file on disk — a text artefact checked out with CRLF on Windows hashes differently from "
+        "the same committed bytes on Linux, and a reader on any platform should be able to reproduce this "
+        "column.",
     ]
     body = "\n\n".join(blocks)
     start = re.search(r"^## 9\.7 Artefact inventory.*?(?=^## 9\.8)", DOC.read_text(encoding="utf-8"),
