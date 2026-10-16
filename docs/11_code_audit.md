@@ -51,6 +51,7 @@ Every finding below was open at some point; the status column is the current sta
 | [A-37](#the-measured-environment-carries-a-critical-advisory-that-cannot-be-patched-without-invalidating-it) | INFO · ACCEPTED RISK | OSV: 33 of 34 measured-environment pins are clean, torch is not, and its one CRITICAL is the `weights_only=True` path A-25 relies on |
 | [A-38](#the-published-integrity-hashes-were-windows-checkout-hashes) | MED · FIXED | The artefact table hashed the file on disk, so every text row was a CRLF hash no other platform could reproduce |
 | [A-39](#the-pooled-round-robin-analysis-dropped-a-replication-column-from-its-match-key) | MED · FIXED | The pooled round-robin keyed matches without `harness_seed`, so pairs met 600 times while the report claimed 3,000 |
+| [A-40](#a-script-was-committed-without-the-helper-it-calls) | MED · FIXED | A script was committed in one commit and the helper it calls in the next, leaving a documented command that raises for any reader |
 
 ---
 
@@ -197,7 +198,7 @@ Measured with `coverage run --source=src/marl_arena -m pytest`, before and after
 | `controllers/base.py` | 91 % | 89 % | 91 % | 89 % |
 | **total** | **73 %** | **93 %** | **14 %** | **87–88 %** |
 
-Test count went from 9 to 106 (59 and 47) at the time of that measurement, and to **195 (121 and 74)** with
+Test count went from 9 to 106 (59 and 47) at the time of that measurement, and to **196 (122 and 74)** with
 the suites added since — the collision, config, dashboard, render, round-robin-statistics, campaign-manifest,
 collection and readout-protocol tests. The
 totals have moved with them: experiment 1 is now **94 %** (1,548 statements, 91 missing) and experiment 2 **89 %**
@@ -964,6 +965,35 @@ own `training_block`/`harness_seed` columns, which is what stops a re-merged fil
 [§ 8.10](08_results.md#cross-arena) was computed on a fifth of the matches it claimed to use. The 3,000-match
 pool in `results/cross_arena/replicates.csv` (§ 9.7) is that artefact, kept because its two published
 verdicts are the history the section recounts.
+
+
+## A script was committed without the helper it calls
+
+**A-40 · MED · FIXED**
+
+`scripts/version_training_replicates.py` borrows its copy-and-verify rule from
+`scripts/version_campaign_checkpoints.py` (`copy_verified`) so that one rule governs how a checkpoint becomes
+versioned evidence. The caller went into one commit and the helper into the next, which left the published
+history containing a script that raises `AttributeError` when a reader runs the command the documentation
+gives. Nothing in the suite noticed, because on the machine that wrote it both files were always present.
+
+**Reproduction** (against the commit, not the working tree — this is the shape of the failure):
+
+```bash
+git show HEAD~1:scripts/version_campaign_checkpoints.py | grep -c "def copy_verified"   # 0
+git show HEAD~1:scripts/version_training_replicates.py  | grep -c "copy_verified"       # 2
+```
+
+**Fixed** by landing the helper, and gated by
+`tests/test_cross_arena_report.py::test_the_versioning_scripts_share_one_copy_and_verify_rule`, which reads
+`git show HEAD:` for both files, collects every call the committed caller makes on the shared module, and
+fails if the committed helper does not define one. Reading `HEAD` rather than the disk is the whole design:
+the working tree of the machine that made the mistake always looks correct, and it is the only copy of this
+repository that is not runnable by anyone else.
+
+**Same class, wider:** the suite is full of checks that read committed artefacts rather than generated ones
+([A-38](#the-published-integrity-hashes-were-windows-checkout-hashes), § 9.6's re-derivation gates), and CI
+runs them on a second operating system. A cross-script import is the case a compile check cannot see.
 
 
 ## Open work: suggested measurements

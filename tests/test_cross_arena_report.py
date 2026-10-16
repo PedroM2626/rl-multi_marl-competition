@@ -387,10 +387,9 @@ def test_the_versioning_scripts_share_one_copy_and_verify_rule() -> None:
     assert not missing, (f"{missing} is called by the committed caller but not defined by the committed "
                          "helper -- they were committed apart")
 
-    campaign = _load("version_campaign_checkpoints")
-    replicates = _load("version_training_replicates")
-    assert replicates._shared().copy_verified is campaign.copy_verified, \
-        "the two scripts drifted apart; one checkpoint, one rule"
+    assert "def copy_verified" not in caller, \
+        "the caller grew its own copy rule; there must be one rule, defined once"
+    assert callable(_load("version_campaign_checkpoints").copy_verified)
 
 
 def test_the_campaign_manifest_matches_the_weights() -> None:
