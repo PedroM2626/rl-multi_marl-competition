@@ -49,6 +49,21 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def copy_verified(source: Path, target: Path) -> str:
+    """Copy one checkpoint and refuse to overwrite a versioned file whose bytes differ from the source.
+
+    Shared with `version_training_replicates.py`: the point of versioning a checkpoint set is that a reader
+    gets *these* weights, so a silent mismatch between the copy and the scratch it came from is the one
+    failure mode neither script may have.
+    """
+    if target.is_file() and sha256(target) != sha256(source):
+        raise SystemExit(f"refusing to overwrite {target}: its bytes differ from {source}")
+    if not target.is_file():
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source, target)
+    return sha256(target)
+
+
 def actor_shape(path: Path) -> tuple[int | None, int]:
     """(hidden width, parameter count) of the actor stored in this checkpoint.
 

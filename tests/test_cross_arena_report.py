@@ -15,6 +15,7 @@ import hashlib
 import importlib.util
 import json
 import math
+import re
 import subprocess
 import sys
 import tempfile
@@ -363,6 +364,33 @@ def test_matched_null_requires_the_uniform_baseline(tmp_path: Path) -> None:
     assert pooled["CTE"]["excess_vs_matched_null"] == pytest.approx(0.4167, abs=1e-4)
     # The Team 3 excess is smaller than the Team 1 one because Team 3 is a better corner to begin with.
     assert pooled["CTE"]["excess_by_trained_team"]["Team 3"] < pooled["CTE"]["excess_by_trained_team"]["Team 1"]
+
+
+def test_the_versioning_scripts_share_one_copy_and_verify_rule() -> None:
+    """`version_training_replicates` borrows `copy_verified` from the campaign script -- in the *commit*.
+
+    A caller committed without the helper it imports runs on the machine that wrote it and nowhere else; this
+    repository made that mistake once, and it is invisible until someone else runs the documented command. So
+    the check reads `git show HEAD:`, not the working tree: both sides have to be committed together.
+    """
+    committed = {}
+    for name in ("version_campaign_checkpoints.py", "version_training_replicates.py"):
+        committed[name] = subprocess.run(["git", "show", f"HEAD:scripts/{name}"], cwd=PROJECT_ROOT,
+                                         capture_output=True, text=True, check=True).stdout
+    caller = committed["version_training_replicates.py"]
+    helpers = re.findall(r"^def ([a-z_]+)\(", committed["version_campaign_checkpoints.py"], re.M)
+    borrowed: set[str] = set()
+    for variable in re.findall(r"(\w+) = _shared\(\)", caller):
+        borrowed |= set(re.findall(rf"\b{variable}\.([a-z_]+)\(", caller))
+    assert borrowed == {"copy_verified"}, f"unexpected cross-script calls: {sorted(borrowed)}"
+    missing = sorted(borrowed - set(helpers))
+    assert not missing, (f"{missing} is called by the committed caller but not defined by the committed "
+                         "helper -- they were committed apart")
+
+    campaign = _load("version_campaign_checkpoints")
+    replicates = _load("version_training_replicates")
+    assert replicates._shared().copy_verified is campaign.copy_verified, \
+        "the two scripts drifted apart; one checkpoint, one rule"
 
 
 def test_the_campaign_manifest_matches_the_weights() -> None:
