@@ -713,7 +713,7 @@ means either a three-fold-symmetric obstacle layout or a different spawn arrange
 arena every committed number was measured in. That is a design decision for the next measurement campaign,
 not a patch to apply on top of the current evidence.
 
-**Reproduction:** the fifteen-run loop of [§ 9.3](09_reproducibility.md#93-commands) writes
+**Reproduction:** the thirty-run loop of [§ 9.3](09_reproducibility.md#93-commands) writes
 `results/cross_arena/blocks.csv`; `python scripts/report_cross_arena.py --in
 results/cross_arena/blocks.csv` prints the per-slot table over all 9,000 team-matches per slot.
 

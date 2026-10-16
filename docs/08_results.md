@@ -761,7 +761,7 @@ every number here and of every number in [§ 8.1](#replicated-study), and is a p
 ### The hardest limit of this comparison <a name="cross-arena-limits"></a>
 
 **Closed:** each architecture is represented by six independently trained networks, the checkpoints are
-versioned, and a reader can rebuild `results/cross_arena/blocks6.csv` from them with the fifteen-run loop of
+versioned, and a reader can rebuild `results/cross_arena/blocks6.csv` from them with the thirty-run loop of
 [§ 9.3](09_reproducibility.md#93-commands) run over six blocks. Re-merging the thirty run directories
 reproduces the versioned CSV, so the pooled table is derived data and not a transcription. The three-block
 file `results/cross_arena/blocks.csv` is kept because [§ 8.11](#absolute-strength)'s agreement statistic is
