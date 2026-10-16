@@ -16,6 +16,15 @@
 | **Global observation** | The 36-float concatenation of per-agent \([p_x, p_z, \theta/180, \mathbb{1}_{\text{alive}}]\) for all nine agents. |
 | **Local observation** | The 8-float per-agent vector of [§ 4.1](04_mdp_formalisation.md#41-local-observation-o_i). |
 | **Wipeout** | A match ending because at most one team has living agents. |
+| **Timeout match** | One that reaches the 90 s clock with more than one team alive. Under the committed rule the most-alive team is awarded the win; under arena v2 it is a draw ([§ 8.12](08_results.md#arena-v2)). |
+| **Training block** | One experiment-1 replicate paired with one experiment-2 replicate, giving one checkpoint per architecture. The round-robin is played over six; spread across blocks is training variance, spread across harness seeds is evaluation variance. |
+| **Harness seed** | The seed of a round-robin *match stream*, not of any policy. Five independent streams are played over the same checkpoints. |
+| **Discordant counts (McNemar)** | The two kinds of meeting where one arm won and the other did not. McNemar's exact test compares their counts, which is paired by construction and so survives the negative coupling between the three rows of one match. |
+| **Leave-one-block-out** | Re-running a corrected-significant comparison on the subset excluding each training block in turn. A pair that loses its threshold in any one subset is *fragile*: one set of checkpoints carried it. |
+| **Matched null** | The chance level for an evaluation, taken from the instrument's own geometry rather than from symmetry: three mutually random teams split 0.257 / 0.270 / 0.463 by spawn slot, so a slot-rotated arm's null is 0.3300, not 1/3. |
+| **Scope mismatch** | Comparing statistics computed over different replication counts — one checkpoint set's absolute ranks against three sets' pooled peer ranks, for instance. It produced this repository's most wrong published number ([§ 8.11](08_results.md#absolute-strength)). |
+| **Arena v2** | The re-measurement configuration: `REWARD_ALIVE_BONUS=0.0015` with a 30 s decay half-life and `TERMINATION_CAP_AWARDS_WIN=false`. Not the committed arena — the defaults are still the v1 constants. |
+| **Ablation arm** | One re-training of a study campaign differing by exactly one configuration key: `no_dr`, `narrow_64`, `wide_256` ([§ 8.13](08_results.md#ablations)). |
 
 ## 12.2 Symbols
 
@@ -57,6 +66,19 @@
 | `src/marl_arena/rl/ppo.py` | `PPOTrainer` and the four update paths | [§ 6.4](06_optimisation_procedure.md#64-the-three-update-paths) |
 | `src/marl_arena/rl/actions.py` | Action parsing, decision materialisation, checkpoint I/O | [A-25](11_code_audit.md#unsafe-checkpoint-load) |
 | `src/marl_arena/ui/dashboard.py` | Builds the in-game overlay string | — |
+| `scripts/run_study.py` | Fans replicates out across both trees, collects every `run_summary.json`, writes a campaign aggregate; `--collect-only` rebuilds an aggregate without retraining | [A-35](11_code_audit.md#the-study-collector-read-only-one-of-the-two-trees) |
+| `scripts/report_study.py` | Study tables, paired *t*, Fisher tests, forward power; `--results-dir` and `--compare-to` for re-measurements and ablation arms | § 8.1, § 8.12, § 8.13 |
+| `scripts/run_cross_arena.py` | The round-robin: six architectures over all 20 triples with slot rotation; `--exp1-replicate/--exp2-replicate` select a training block | § 8.10 |
+| `scripts/combine_cross_arena.py` | Merges round-robin run directories, stamping each row with its block and harness seed and refusing mismatched schemas | § 8.10 |
+| `scripts/report_cross_arena.py` | McNemar exact tests, leave-one-block-out, slot and regime controls, both stability tables | § 8.10 |
+| `scripts/run_absolute_eval.py` | Absolute strength against a uniform-random pool, with the matched null and the two-scale agreement; `--report-only` re-derives a summary from its own CSV | § 8.11 |
+| `scripts/random_baseline.py` | Untrained reference points in greedy and uniform modes; the uniform run supplies the slot-matched null | § 8.9, § 8.11 |
+| `scripts/promote_run.py` | Mechanically chooses and copies the shipped replicate (`--seed median`) | § 9.7 |
+| `scripts/report_inventory.py` | Regenerates the § 9.7 artefact table from `git ls-files` and live SHA-256 | § 9.7 |
+| `scripts/render_trailer.py` | Offscreen Ursina capture of a trained match, with the per-frame evidence JSON beside each clip | § 9.7 |
+| `scripts/run_arena_v2_campaign.sh` | Queues the v2 re-measurement behind whatever is already running | § 8.12 |
+| `scripts/run_ablation_campaign.sh` | Queues the three one-key ablations behind the v2 campaign | § 8.13 |
+| `scripts/run_six_block_campaign.sh` | Replays the round-robin over six blocks, with the two guards that abort a silent no-op | § 9.3 |
 
 ## References
 
