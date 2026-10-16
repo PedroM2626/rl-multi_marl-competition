@@ -97,16 +97,18 @@ not be relied on are set out in [§ Threats to validity](10_threats_to_validity.
    The ordering reverses, no seed-level comparison reaches significance, and one replicate out of thirty
    paradigm-slots is enough to flip which architecture is reported as the winner
    ([§ 8.1](08_results.md#replicated-study)).
-4. **A cross-experiment round-robin placing all six architectures on one common opponent pool** — 18,000
-   slot-balanced matches over six independently trained checkpoint sets and five harness seeds, each policy
+4. **A cross-experiment round-robin placing all six architectures on one common opponent pool** — 30,000
+   slot-balanced matches over ten independently trained checkpoint sets (every replicate either experiment
+   produced) and five harness seeds, each policy
    driven by the code of the tree that trained it. It yields the repository's only differences that survive
-   multiplicity correction (five pairs, three of them still significant with any one checkpoint set left
+   multiplicity correction (four pairs, all four putting learned communication above another arm, three of
+   them still significant with any one checkpoint set left
    out), and its first 600-match single-checkpoint run reached the opposite verdict on both the ranking and
    the separations — which is the case for replicating an *evaluation*, in both dimensions, not only a
-   training run ([§ 8.10](08_results.md#cross-arena)). The same 36 checkpoints have since been replayed under
+   training run ([§ 8.10](08_results.md#cross-arena)). 36 of those 60 checkpoints have since been replayed under
    the arena-v2 termination rule, where the endpoints of the ordering hold and *more* pairs separate, and the
-   no_dr arm's networks have been played against the same pool, where the ordering does break — the two
-   variations the table's own caveats asked for ([§ 8.12](08_results.md#arena-v2-pool),
+   no_dr arm's 18 networks have been played against the same pool, where the ordering does break — the two
+   variations the table's own caveats asked for, at their own replication counts ([§ 8.12](08_results.md#arena-v2-pool),
    [§ 8.13](08_results.md#no-dr-pool)).
 5. **Evidence that the headline readout is not the trained policy.** Greedy held-out win rate has 2.5× the
    spread of the sampled policy it summarises (SD 0.177 vs 0.072) and preserves its within-replicate ranking

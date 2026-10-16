@@ -26,11 +26,14 @@ GROUPS = [
     (
         "Study aggregates",
         "Recomputed by `report_study.py`, `plot_study.py` and `report_cross_arena.py` from the per-replicate "
-        "and per-match summaries. The round-robin rows are the pooled tables chapter 8 quotes: `blocks6.csv` "
-        "and `blocks6.json` (six checkpoint sets x five match streams, the current result), `blocks.csv` "
+        "and per-match summaries. The round-robin rows are the pooled tables chapter 8 quotes: `blocks10.csv` "
+        "and `blocks10.json` (ten checkpoint sets x five match streams, the current result -- every replicate "
+        "either experiment trained), `blocks6.csv` "
+        "(six sets, the peer pool of the arena-v2 control and of the headline two-scale agreement, kept at the "
+        "count those comparisons are matched at), `blocks.csv` "
         "(the first three sets, kept because two of the three agreement statistics in [§ 8.11]"
-        "(08_results.md#absolute-strength) are computed against it), and the v2 and ablation pools the "
-        "re-measurement campaign writes.",
+        "(08_results.md#absolute-strength) are computed against its `blocks.json`), and the v2 and ablation "
+        "pools the re-measurement campaign writes.",
         ("results/study/", "results/cross_arena/blocks.csv", "results/cross_arena/blocks.json",
          "results/cross_arena/blocks6.csv", "results/cross_arena/blocks6.json",
          "results/cross_arena/blocks10.csv", "results/cross_arena/blocks10.json",
@@ -54,8 +57,8 @@ GROUPS = [
         "missing `harness_seed` key left every pair meeting 600 times -- [A-39](11_code_audit.md#the-pooled-"
         "round-robin-analysis-dropped-a-replication-column-from-its-match-key)); `replicates.json` is "
         "that 3,000-match report. None of them is evidence about the current ranking, and the chain 600 -> "
-        "3,000 -> 9,000 -> 18,000 is the reason every separation in [§ 8.10](08_results.md#cross-arena) is "
-        "quoted with its replication count.",
+        "3,000 -> 9,000 -> 18,000 -> 30,000 is the reason every separation in "
+        "[§ 8.10](08_results.md#cross-arena) is quoted with its replication count.",
         ("results/cross_arena/pairwise_first_run_600.json", "results/cross_arena/replicates.csv",
          "results/cross_arena/replicates.json", "results/cross_arena/seeds/"),
     ),
@@ -74,12 +77,12 @@ GROUPS = [
     (
         "Training replicates behind the round-robin",
         "The checkpoint sets the round-robin is played over: one experiment-1 replicate and one "
-        "experiment-2 replicate per block, six blocks in `blocks6.csv` and the first three in `blocks.csv`. "
+        "experiment-2 replicate per block, ten blocks in `blocks10.csv`, the first six in `blocks6.csv` and "
+        "the first three in `blocks.csv`. "
         "Versioned because the round-robin's claims rest on them while `**/data/runs*/` is git-ignored. "
         "`exp1_seed9+exp2_seed2` is byte-identical to the promoted checkpoints above, which is what makes "
-        "that block a parity control. Ten blocks are now versioned -- all twenty study replicates -- and the "
-        "four beyond `blocks6.csv` are waiting for `scripts/run_ten_block_campaign.sh`, so they are listed "
-        "here as available checkpoints, not as a pooled result.",
+        "that block a parity control. All ten are played: they are the twenty study replicates, each used "
+        "exactly once, so no further block exists to add to this pool.",
         ("data/training_replicates/",),
     ),
     (

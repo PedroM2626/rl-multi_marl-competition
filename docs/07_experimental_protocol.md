@@ -213,12 +213,13 @@ that run's initialisation and geometry stream, so they are not independent draws
    implementation was checked against `scipy.stats.binomtest` over 200 random discordant tables and agrees
    to 4.9e-14.
 8. **Replicate the evaluation in both dimensions, and key every row by both.** The round-robin is played
-   over five harness seeds (independent match streams) *and* six training blocks (independently trained
-   networks per architecture), because it has now reversed its own conclusions twice: the first 600-match,
-   single-checkpoint run said no pair separates, and the 3,000-match replication of it said two did; at
-   18,000 matches over six checkpoint sets, five separate and the ranking keeps moving — the count of
-   separated pairs went 2, then 8, then 5 as blocks went 1, 3, 6, so separations appear and dissolve with
-   replication in both directions. Both replication columns therefore have to be part of the match key, and
+   over five harness seeds (independent match streams) *and* ten training blocks (independently trained
+   networks per architecture — every replicate either experiment produced), because it has now reversed its
+   own conclusions three times: the first 600-match, single-checkpoint run said no pair separates, the
+   3,000-match replication of it said two did, and at 18,000 matches over six checkpoint sets five separated
+   — a count that went 2, then 8, then 5, then 4 as blocks went 1, 3, 6, 10, so separations appear and
+   dissolve with replication in both directions and the last step removed the top band it had created. Both
+   replication columns therefore have to be part of the match key, and
    `tests/test_cross_arena_report.py` pins that: a key missing either one silently merges runs and reports a
    quarter to a sixth of the evidence while printing a complete-looking table. Pooling is reported as part
    of the method, and per-level stability is shown alongside the pooled estimate.
@@ -226,8 +227,9 @@ that run's initialisation and geometry stream, so they are not independent draws
    selects the replicate with the least L1 distance to the per-arm study means, so the versioned `data/`
    cannot be the one that happens to confirm the hypothesis. The rule and its result are recorded in
    `data/PROVENANCE.json`. What the rule does *not* buy is an ordering: the promoted replicate is one of the
-   six checkpoint sets in [§ 8.10](08_results.md#cross-arena), it is the set that placed plain CTDE last
-   where the six-set pool places it fourth, and it is the set whose two-scale agreement with [§
+   ten checkpoint sets in [§ 8.10](08_results.md#cross-arena), it is the set that placed plain CTDE last
+   where the six-set pool placed it fourth and the ten-set pool places it third, and it is the set whose
+   two-scale agreement with [§
    8.11](08_results.md#absolute-strength) is the weakest of the three counts measured.
 10. **A fourth design measures strength against opponents that did not train at all.**
     [§ 8.11](08_results.md#absolute-strength) puts one trained team against two teams whose controllers draw

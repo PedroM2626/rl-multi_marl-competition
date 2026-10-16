@@ -202,19 +202,23 @@ applied to the original single-seed evidence, and left three that no amount of r
    introduced by the remedy for the previous version of this threat, and it is the strongest argument
    in the repository for reporting both readouts rather than one
    ([§ Readout](08_results.md#readout-divergence)).
-12. **~~The round-robin tests six checkpoints, not six architectures.~~ Partly closed; a smaller version
-    remains.** The single-checkpoint version represented each arm by its promoted replicate, so its two
-    corrected-significant results were statements about particular trained networks — and that is exactly how
-    it turned out: the replication over six independently trained checkpoint sets per arm (18,000 matches)
-    moved plain CTDE from last to third, moved CTE from third to last, and made two of the five
-    corrected-significant pairs lose their threshold as soon as one checkpoint set is excluded
-    ([§ 8.10](08_results.md#cross-arena-limits)). What remains: **n = 6 is enough to reverse a ranking and not
-    enough to settle one**, the between-block spread (0.018–0.063) is between a seventh and a half of what the
-    study measures between training seeds (0.12–0.22) because a block is one seed of each experiment, and each
-    block pairs one experiment-1 seed with exactly one experiment-2 seed without any pairing being crossed, so
-    an exp-1 x exp-2 pairing effect cannot be separated from a block effect at this n. Four more blocks are
-    versioned and queued for play (`scripts/run_ten_block_campaign.sh`), which would take the estimate to ten
-    draws using every study replicate once; until that pool exists, nothing here is quoted from it.
+12. **~~The round-robin tests six checkpoints, not six architectures.~~ Closed at ten; the threat moved from
+    the sample to the finding.** The single-checkpoint version represented each arm by its promoted replicate,
+    so its two corrected-significant results were statements about particular trained networks — and that is
+    exactly how it turned out: replication moved plain CTDE from last to third and back, moved CTE from third
+    to last, and made pairs lose their threshold as soon as one checkpoint set was excluded. The pool now
+    covers **all ten training blocks the study can produce** (30,000 matches, every replicate of both
+    experiments exactly once), and it did not stabilise the table: separations went 2 → 8 → 5 → 4 across the
+    one-, three-, six- and ten-block pools, DTE fell from second to fifth, CTDE-VD from fifth to second, and
+    three of the five pairs the six-block pool separated lost correction. What is left after ten blocks is a
+    single claim about a single arm — CTDE-Comm above four of the other five, robust to deleting any block —
+    and the honest reading of the middle of the table is that **these ten networks do not order the five
+    non-communication architectures**, with between-block SD 0.026–0.086 against 0.009–0.013 across match
+    streams. There is no eleventh block: the sample of trained replicates is exhausted, so a further move on
+    this axis costs matches per block, seeds per training run, or a different configuration
+    ([§ 8.10's limits](08_results.md#cross-arena-limits)). The pairing caveat also survives at ten: each block
+    pairs one experiment-1 seed with exactly one experiment-2 seed, no pairing is crossed, so an exp-1 × exp-2
+    pairing effect cannot be separated from a block effect at this n.
 13. **~~No fixed-opponent evaluation, and no absolute reference point.~~ Partly closed.** Two instruments now
     exist. The cross-experiment round-robin ([§ 8.10](08_results.md#cross-arena)) puts all six arms on a common
     pool of *trained* opponents, which removes the co-adaptation confound for evaluation. And
@@ -225,17 +229,23 @@ applied to the original single-seed evidence, and left three that no amount of r
     scales rank the six architectures the same way (Spearman +0.77, same arm first and same arm last), which
     is corroboration the peer-relative ranking previously had none of; the statistic is +0.41 and +0.94 at
     one and three sets, and −0.04 only when a one-set measurement is compared against a three-set peer table,
-    which is why the corroboration is always stated with its replication count. What
+    which is why the corroboration is always stated with its replication count. Recomputed against the
+    ten-block pool — mismatched counts on the two sides, so a stress test rather than the headline figure —
+    the same six-set absolute measurement gives Spearman **+0.657** with the same arm first and the same arm
+    last: the direction survives a peer pool that reordered the middle, its magnitude is not the one the
+    committed artefact records. What
     remains open: the random pool is the only non-self-referential opponent set here — there are no scripted
     or human policies, no other game, and no published baseline, so no number in this repository is
     comparable to the literature in absolute terms; and **training** itself is still three arms co-adapting
     inside one run, so the confound is removed at measurement time only.
 
 *Next concrete steps:* the objective-side remedies (items 9 and 10) have now been measured
-([§ 8.12](08_results.md#arena-v2)) and did not resolve the ranking, so the remaining levers are the
-measurement and the sample: fix or dual-report the readout (item 11), take the round-robin past the six
-training blocks it now has per architecture (item 12), which is evaluation time on checkpoints that already
-exist, and
+([§ 8.12](08_results.md#arena-v2)) and did not resolve the ranking, and the sample-side one has been taken to
+its end — the round-robin now plays **all ten training blocks the study can produce** (item 12), which was
+evaluation time on checkpoints that already existed. What is left is the measurement: dual-report the readout
+at a fixed temperature (item 11, [§ Readout](08_results.md#readout-divergence)), whose re-measurement is
+running; replay the configurations that have not been played on the common pool at the headline replication
+count (item 13 of [the audit's open work](11_code_audit.md#open-work-suggested-measurements)); and
 give the arms opponents that are not other trained policies at all. Four of the remedies a previous version
 of this list proposed have now been carried out — rotating the slot, evaluating on a common opponent pool,
 replicating that evaluation over several sets of checkpoints, and changing the objective (items 9 and 10) —

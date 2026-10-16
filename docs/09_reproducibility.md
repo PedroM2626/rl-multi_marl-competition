@@ -154,7 +154,7 @@ what carry the labels, so the loop is:
 ```bash
 # The round-robin runs inside ctde_arena/; the pooling and the report run at the repository root.
 cd ctde_arena
-for pair in "1 7" "10 5" "2 1" "3 3" "4 4" "9 2"; do
+for pair in "1 7" "10 5" "2 1" "3 3" "4 4" "5 6" "6 8" "7 9" "8 10" "9 2"; do
   set -- $pair; S=$1; M=$2
   for H in 1 2 3 4 5; do
     python ../scripts/run_cross_arena.py --exp1-replicate $S --exp2-replicate $M --seed $H \
@@ -162,26 +162,29 @@ for pair in "1 7" "10 5" "2 1" "3 3" "4 4" "9 2"; do
   done
 done
 cd ..
-python scripts/combine_cross_arena.py results/cross_arena_blocks/* --out results/cross_arena/blocks6.csv
-python scripts/report_cross_arena.py --in results/cross_arena/blocks6.csv \
-  --json-out results/cross_arena/blocks6.json
+python scripts/combine_cross_arena.py results/cross_arena_blocks/* --out results/cross_arena/blocks10.csv
+python scripts/report_cross_arena.py --in results/cross_arena/blocks10.csv \
+  --json-out results/cross_arena/blocks10.json
 ```
 
 `--out` and `--in` resolve against the **repository root**, not the working directory, because these scripts
 drive both trees; that is why the loop above runs from `ctde_arena/` and still writes to `results/`.
 `--exp1-replicate/--exp2-replicate` read `data/training_replicates/{experiment}_seedN/` first and fall back
-to the git-ignored `data/runs/`. The six pairings above are the versioned blocks; `run_cross_arena.py`
-without those flags plays the promoted `data/checkpoints/` instead, which is the same networks as
-`exp1_seed9+exp2_seed2`.
+to the git-ignored `data/runs/`. The ten pairings above are the versioned blocks, and no seed of either
+experiment appears twice; `run_cross_arena.py` without those flags plays the promoted `data/checkpoints/`
+instead, which is the same networks as `exp1_seed9+exp2_seed2`.
 
-`bash scripts/run_six_block_campaign.sh` runs the loop with two guards that the first version of it lacked:
-every one of the thirty run directories must contain a `matches.csv` before anything is merged, and the
-merge must report six blocks. Both were written after that script silently produced nothing -- a
+`bash scripts/run_six_block_campaign.sh` and `bash scripts/run_ten_block_campaign.sh` run that loop with the
+guards the first version of it lacked: every one of the run directories must contain a `matches.csv` before
+anything is merged, and the merge must report the block count the script was written for. Both were written
+after that script silently produced nothing -- a
 repository-root-relative interpreter path inside a `cd ctde_arena` subshell -- and then re-merged the
-fifteen existing directories as if they were the new thirty. The three-block `blocks.csv` is still in the
+fifteen existing directories as if they were the new thirty. The three-block `blocks.csv` and the six-block
+`blocks6.csv` are still in the
 repository because two of the three agreements between the two opponent pools, reported in
-[§ 8.11](08_results.md#absolute-strength) at one, three and six sets, are quoted from it and from its
-`blocks.json`; the six-set figure is quoted from `blocks6.json`, at its own replication count. Those counts have
+[§ 8.11](08_results.md#absolute-strength) at one, three and six sets, are quoted from them and from their
+`blocks.json`; the six-set figure is quoted from `blocks6.json`, at its own replication count, and
+`blocks6.csv` is also the peer pool of [§ 8.12](08_results.md#arena-v2-pool)'s six-vs-six control. Those counts have
 to be matched: the −0.04 that section reports as its own past error was produced by comparing a one-set
 measurement against a three-set peer table.
 
@@ -212,7 +215,7 @@ ImportError: cannot import name 'ValueDecompositionCriticNetwork' from 'marl_are
 
 ```
 $ python -m pytest tests/ -q            # experiment 1
-124 passed, 1 skipped
+128 passed, 1 skipped
 $ cd ctde_arena && python -m pytest tests/ -q
 75 passed, 1 skipped
 ```
@@ -259,7 +262,7 @@ end of that section on coverage not being correctness.
 |---|---|
 | `suite (experiment 1, the root tree)` | `pytest tests/ -q`, then statement coverage of `src/marl_arena` |
 | `suite (experiment 2, ctde_arena)` | the same in the other tree — they must be run separately, see above |
-| `documentation and derived-artefact gates` | tree parity; documentation cross-references; regenerate `docs/09` § 9.7 and fail on a diff; re-derive **both** round-robin reports from their committed CSVs and fail on a diff; `bash -n` every campaign script; and check that `results/dependency_audit.json` covers exactly the pins of `requirements-measured.lock.txt` |
+| `documentation and derived-artefact gates` | tree parity; documentation cross-references; regenerate `docs/09` § 9.7 and fail on a diff; re-derive **every** pooled round-robin report from its committed CSV and every absolute-strength summary from its own `matches.csv`, and fail on a diff; `bash -n` every campaign script; and check that `results/dependency_audit.json` covers exactly the pins of `requirements-measured.lock.txt` |
 
 The two artefact gates are the interesting ones, because they turn claims this chapter makes in prose into
 something a machine checks: § 9.6 says `blocks6.json` is derived data reproducible from `blocks6.csv`, and CI
@@ -276,9 +279,9 @@ inheritance that makes a re-derivation faithful is what reads back a path spelle
 so runs #11 to #15 were red. This is the chapter's own promise — a published table re-derives from a clone —
 being checked on a machine that is not this one.
 [A-42](11_code_audit.md#a-committed-artefact-recorded-windows-paths) is the post-mortem, and
-`tests/test_artefact_path_portability.py` is the gate that keeps it from coming back; the writers now emit
-POSIX paths and the affected records were regenerated, which the next push to the runner is what actually
-tests.
+`tests/test_artefact_path_portability.py` is the gate that keeps it from coming back. The writers now emit
+POSIX paths, the affected records were regenerated, and run #16 is green on all three jobs — the re-derivation
+that failed on the runner is the one that has since passed on it.
 
 **What CI does not do, and why that is deliberate.** It installs `requirements.txt` (NumPy 2.2.6, Torch
 2.6.0), not `requirements-measured.lock.txt` — the question it answers is whether the code does what its
@@ -316,6 +319,7 @@ implication for a JAX/vectorised-env port are in
 | 500 k × 3 seeds × 2 experiments, one arm | **69–81 min per arm** | `scripts/run_ablation_campaign.sh`; 6 concurrent, so 24–34 min of training per replicate at 243–350 steps/s (against 85–92 steps/s under 20-way load) plus the held-out evaluation. Three arms in series: 3.9 h |
 | Round-robin replay, 6 blocks × 5 seeds, arena-v2 rule | **89 min** | `scripts/run_pool_v2_campaign.sh` phase 1: 18,000 matches, five concurrent runs per block, 17–20 min per wave of 3,000 matches. Evaluation only — the 36 checkpoints already existed |
 | Round-robin replay, 3 `no_dr` blocks × 5 seeds | **≈ 85 min** | same script, phase 2: 9,000 matches, 25–30 min per wave. The slower per-match rate is the finding, not the machine: policies trained without domain randomisation end only 41.1 % of their matches by wipeout against 58.8 % for the randomised ones, so more matches run to the 90 s cap |
+| Round-robin extension, 4 blocks × 5 seeds, then re-pool | **79 min** | `scripts/run_ten_block_campaign.sh`: 20 new runs and 12,000 matches at 16–27 min per wave of 3,000, then the fifty-directory merge and its report. Evaluation only — all sixty checkpoints were versioned before it started. Chained behind the two rows above, so each campaign's wall clock is its own |
 
 The measured per-replicate throughput under full 20-way load is 82.6–92.9 steps/s against 368 steps/s for an
 isolated process, so 20 concurrent replicates cost 36.2 CPU-hours and take about as long as four sequential
@@ -393,7 +397,9 @@ outputs are pure functions of other committed files, and each was re-derived and
 
 | Artefact | Re-derived from | Command | Result |
 |---|---|---|---|
-| `results/cross_arena/blocks6.csv` | the 30 run-directory CSVs (git-ignored scratch) | `scripts/combine_cross_arena.py results/cross_arena_blocks/*` | identical SHA-256 (`06b23f4d1419…`) |
+| `results/cross_arena/blocks10.csv` | the 50 run-directory CSVs (git-ignored scratch) | `scripts/combine_cross_arena.py results/cross_arena_blocks/*` | identical SHA-256 (`7fa3029f8410…`) over all 90,000 team-match rows |
+| `results/cross_arena/blocks10.json` | `blocks10.csv` | `scripts/report_cross_arena.py --in results/cross_arena/blocks10.csv` | deterministic, no RNG |
+| `results/cross_arena/blocks6.csv` | the first 30 of those run-directory CSVs | `scripts/combine_cross_arena.py` over the six-block subset | identical SHA-256 (`06b23f4d1419…`) |
 | `results/cross_arena/blocks6.json` | `blocks6.csv` | `scripts/report_cross_arena.py --in results/cross_arena/blocks6.csv` | deterministic, no RNG |
 | `results/cross_arena/v2_blocks.json`, `no_dr_blocks.json` | their own pooled CSVs | the same report over `results/cross_arena_v2_blocks/*` and `results/cross_arena_campaign/*` | deterministic; CI re-derives every pooled JSON in `results/cross_arena/` in a loop, so a new campaign is covered without editing the workflow |
 | `results/study/learning_curves.png` | `data/runs/*/evaluation/run_summary.json` | `scripts/plot_study.py --runs-dir data/runs` | identical SHA-256 (`1915d48d…`) |
@@ -410,7 +416,7 @@ inclination to replay 2,700 matches.
 
 ## 9.7 Artefact inventory
 
-Every versioned experiment artefact (200 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed, and each hash is of the blob Git stores rather than of the file on disk — a text artefact checked out with CRLF on Windows hashes differently from the same committed bytes on Linux, and a reader on any platform should be able to reproduce this column.
+Every versioned experiment artefact (202 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed, and each hash is of the blob Git stores rather than of the file on disk — a text artefact checked out with CRLF on Windows hashes differently from the same committed bytes on Linux, and a reader on any platform should be able to reproduce this column.
 
 **Promoted replicate.** The artefacts that match the current code. Chosen by `promote_run.py --seed median`, which is the replicate with the least L1 distance to the per-arm study means; `PROVENANCE.json` records the choice and the full run summary behind it.
 
@@ -435,12 +441,14 @@ Every versioned experiment artefact (200 files), with SHA-256 for integrity chec
 | `data/metrics/team_match_metrics.csv` | 10,809 | `25a31953f7198bd676752f18d4aa7dca6b305307eed05866fcfdfc99d2649b2f` |
 | `data/metrics/trajectory_metrics.csv` | 1,343,793 | `e3539dd0a2667159b63559869c9ca391d670406850e2af69c7e5102a3f6db59f` |
 
-**Study aggregates.** Recomputed by `report_study.py`, `plot_study.py` and `report_cross_arena.py` from the per-replicate and per-match summaries. The round-robin rows are the pooled tables chapter 8 quotes: `blocks6.csv` and `blocks6.json` (six checkpoint sets x five match streams, the current result), `blocks.csv` (the first three sets, kept because two of the three agreement statistics in [§ 8.11](08_results.md#absolute-strength) are computed against it), and the v2 and ablation pools the re-measurement campaign writes.
+**Study aggregates.** Recomputed by `report_study.py`, `plot_study.py` and `report_cross_arena.py` from the per-replicate and per-match summaries. The round-robin rows are the pooled tables chapter 8 quotes: `blocks10.csv` and `blocks10.json` (ten checkpoint sets x five match streams, the current result -- every replicate either experiment trained), `blocks6.csv` (six sets, the peer pool of the arena-v2 control and of the headline two-scale agreement, kept at the count those comparisons are matched at), `blocks.csv` (the first three sets, kept because two of the three agreement statistics in [§ 8.11](08_results.md#absolute-strength) are computed against its `blocks.json`), and the v2 and ablation pools the re-measurement campaign writes.
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
 | `results/cross_arena/blocks.csv` | 2,389,102 | `8891db57a270a5b32c187e3d086171736ce113c0cf772172f401ec34e5e04ca7` |
 | `results/cross_arena/blocks.json` | 16,864 | `e624dbe87eb505c038685ffe915167fa4d8702b9c506a1ad51b298c13777525c` |
+| `results/cross_arena/blocks10.csv` | 7,960,390 | `a98278cf226a0c9f239c574f1970a5aea5571ab97d007d444f575fef158fd747` |
+| `results/cross_arena/blocks10.json` | 21,745 | `1a86501c13ea5f38d76d2e77e3006e2f6ff8219acd0345689a756076991a0bd6` |
 | `results/cross_arena/blocks6.csv` | 4,772,724 | `fec107ccfba9b8ad3f681659f1161659523878804c39be399987883891e2c89f` |
 | `results/cross_arena/blocks6.json` | 18,588 | `4b4b5e32d1919089d7567355dc27715ba2715d6a2f266344e9ecaf4abf244537` |
 | `results/cross_arena/no_dr_blocks.csv` | 2,533,758 | `e9689e27298e9b50d84b76bd7efc0760f7983aa00980702ae7771f6c005d0e48` |
@@ -451,7 +459,7 @@ Every versioned experiment artefact (200 files), with SHA-256 for integrity chec
 | `results/study/learning_curves.png` | 137,532 | `1915d48d117e8a96730b3659e0259e5ad6446c0fb7103d0642a6a5e7bd601cbe` |
 | `results/study/per_seed_metrics.csv` | 5,226 | `a69098a4e88eef37c1291f73b1cb2526f0d31a98c0c2c6f0da27af0263b30d17` |
 
-**Superseded round-robin pools.** The earlier replication counts of the same instrument, kept because chapter 8's history is quoted from them and not from the current table: `pairwise_first_run_600.json` is the first single-checkpoint run (600 matches) whose verdict was 'no pair separates'; `seeds/` holds the five 600-match runs that made up `replicates.csv` (3,000 matches, one checkpoint set, and the pooled analysis whose missing `harness_seed` key left every pair meeting 600 times -- [A-39](11_code_audit.md#the-pooled-round-robin-analysis-dropped-a-replication-column-from-its-match-key)); `replicates.json` is that 3,000-match report. None of them is evidence about the current ranking, and the chain 600 -> 3,000 -> 9,000 -> 18,000 is the reason every separation in [§ 8.10](08_results.md#cross-arena) is quoted with its replication count.
+**Superseded round-robin pools.** The earlier replication counts of the same instrument, kept because chapter 8's history is quoted from them and not from the current table: `pairwise_first_run_600.json` is the first single-checkpoint run (600 matches) whose verdict was 'no pair separates'; `seeds/` holds the five 600-match runs that made up `replicates.csv` (3,000 matches, one checkpoint set, and the pooled analysis whose missing `harness_seed` key left every pair meeting 600 times -- [A-39](11_code_audit.md#the-pooled-round-robin-analysis-dropped-a-replication-column-from-its-match-key)); `replicates.json` is that 3,000-match report. None of them is evidence about the current ranking, and the chain 600 -> 3,000 -> 9,000 -> 18,000 -> 30,000 is the reason every separation in [§ 8.10](08_results.md#cross-arena) is quoted with its replication count.
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
@@ -493,7 +501,7 @@ Every versioned experiment artefact (200 files), with SHA-256 for integrity chec
 | `data/historical_100k/metrics/team_match_metrics.csv` | 10,936 | `491117a1b37256e621bd0130b36a976cc55d748afd3845617e0be387aaea1a07` |
 | `data/historical_100k/metrics/trajectory_metrics.csv` | 1,595,699 | `c7142281233095d790647f25059cfd2ac3d62e2d8a10a05384eb2ff0925a7bee` |
 
-**Training replicates behind the round-robin.** The checkpoint sets the round-robin is played over: one experiment-1 replicate and one experiment-2 replicate per block, six blocks in `blocks6.csv` and the first three in `blocks.csv`. Versioned because the round-robin's claims rest on them while `**/data/runs*/` is git-ignored. `exp1_seed9+exp2_seed2` is byte-identical to the promoted checkpoints above, which is what makes that block a parity control. Ten blocks are now versioned -- all twenty study replicates -- and the four beyond `blocks6.csv` are waiting for `scripts/run_ten_block_campaign.sh`, so they are listed here as available checkpoints, not as a pooled result.
+**Training replicates behind the round-robin.** The checkpoint sets the round-robin is played over: one experiment-1 replicate and one experiment-2 replicate per block, ten blocks in `blocks10.csv`, the first six in `blocks6.csv` and the first three in `blocks.csv`. Versioned because the round-robin's claims rest on them while `**/data/runs*/` is git-ignored. `exp1_seed9+exp2_seed2` is byte-identical to the promoted checkpoints above, which is what makes that block a parity control. All ten are played: they are the twenty study replicates, each used exactly once, so no further block exists to add to this pool.
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|

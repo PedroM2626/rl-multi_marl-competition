@@ -708,19 +708,20 @@ That is three positions related by no symmetry of the obstacle field, which is i
 `_default_obstacle_specs` without three-fold structure. The third position is therefore not equivalent to
 the first two, and the cross-experiment round-robin
 ([§ 8.10](08_results.md#cross-arena)) measured how much that matters. Pooling all six architectures over
-**18,000 team-matches per slot**, every architecture spending exactly one third of its matches in each:
+**90,000 team-matches per slot**, every architecture spending exactly one third of its matches in each:
 
 | Slot | Pooled win rate |
 |---|---:|
-| Team 1 | 0.217 |
-| Team 2 | 0.259 |
-| **Team 3** | **0.492** |
+| Team 1 | 0.224 |
+| Team 2 | 0.257 |
+| **Team 3** | **0.488** |
 
 All six architectures do best in Team 3 regardless of their information-flow design, and within an
-architecture the gap between its best and worst slot is 0.23–0.32 -- larger than every architecture
-difference the repository has ever measured. Three earlier versions of this table carried smaller pools of the
+architecture the gap between its best and worst slot is 0.20–0.30 -- larger than every architecture
+difference the repository has ever measured. Four earlier versions of this table carried smaller pools of the
 same quantity (600 team-matches per slot: 0.242 / 0.223 / 0.490; 3,000: 0.239 / 0.228 / 0.495; 9,000: 0.216 /
-0.276 / 0.467), which is the caution against quoting a slot estimate from one run: the direction never
+0.276 / 0.467; 18,000: 0.217 / 0.259 / 0.492), which is the caution against quoting a slot estimate from one
+run: the direction never
 changed, the magnitude moved by about 0.03, and the current figure is the one with the sample behind it.
 
 **Consequences.** First, the arena is not a fair three-way test bed, so any single-replicate win rate
@@ -735,11 +736,11 @@ means either a three-fold-symmetric obstacle layout or a different spawn arrange
 arena every committed number was measured in. That is a design decision for the next measurement campaign,
 not a patch to apply on top of the current evidence.
 
-**Reproduction:** the thirty-run loop of [§ 9.3](09_reproducibility.md#93-commands) writes the six block
-directories that `scripts/combine_cross_arena.py` pools into `results/cross_arena/blocks6.csv`;
-`python scripts/report_cross_arena.py --in results/cross_arena/blocks6.csv` prints the per-slot table over all
-18,000 team-matches per slot. (`blocks.csv` is the same loop over the first three blocks, and is what the
-600-, 3,000- and 9,000-per-slot rows above came from.)
+**Reproduction:** the fifty-run loop of [§ 9.3](09_reproducibility.md#93-commands) writes the ten block
+directories that `scripts/combine_cross_arena.py` pools into `results/cross_arena/blocks10.csv`;
+`python scripts/report_cross_arena.py --in results/cross_arena/blocks10.csv` prints the per-slot table over all
+90,000 team-matches per slot. (`blocks.csv` and `blocks6.csv` are the same loop over the first three and six
+blocks, and are where the 600-, 3,000-, 9,000- and 18,000-per-slot rows above came from.)
 
 
 ## The study runner overrode the domain-randomisation knob
@@ -1054,7 +1055,8 @@ resolved), by regenerating the three absolute summaries, `data/campaign_replicat
 clip sidecars, and by `tests/test_artefact_path_portability.py`, which walks every tracked JSON and fails on
 a host separator outside the five archived per-seed summaries of A-39 — those are evidence of what a
 superseded run recorded, and rewriting them would falsify an artefact to satisfy a lint. Verified by
-mutation: restoring one backslash into `results/absolute/summary.json` turns the gate red.
+mutation: restoring one backslash into `results/absolute/summary.json` turns the gate red. CI run #16 is green
+on the re-derivation that had failed for five runs.
 
 The same sweep found a second, quieter half: the command the README gives for regenerating a clip passed
 `--out` but not `--sidecar`, so it rewrote the GIF and left the JSON that is supposed to make the caption
@@ -1067,7 +1069,7 @@ back identical, which is what lets the fix be a path-spelling change rather than
 ## Open work: suggested measurements
 
 Items 1–3 were the original list and are done; 6 is done; 4 is partly done; 7 was deliberately not done;
-11 is done and 12 is the cheap extension of it.
+11 and 12 are done at ten blocks, and 13 is what is left open on this instrument.
 
 1. ~~Fix A-1, then re-run both experiments.~~ **Done** — see
    [§ Replicated study](08_results.md#replicated-study).
@@ -1106,21 +1108,30 @@ Items 1–3 were the original list and are done; 6 is done; 4 is partly done; 7 
     sampled policy it summarises (SD 0.177 vs 0.072) and agrees with its within-replicate ranking only
     35.6 % of the time. Report both readouts, or evaluate the stochastic policy at a fixed temperature.
 11. ~~The round-robin measures one checkpoint per architecture, so it compares networks rather than
-    designs.~~ **Done** — six training blocks per architecture are versioned under
-    `data/training_replicates/` and the pool replayed over them, first three blocks (9,000 matches) and then
-    six (18,000). It changed the answer at every step: plain CTDE went from last to third to fourth, the
-    corrected-significant count went 8 then 5, and four of the eight pairs reported at three blocks —
-    including the then-headline, Comm over CTDE — lost their threshold when a block was removed from that
-    pool; three of the eight are not significant at all once the sixth block is added. The report prints a
-    leave-one-block-out
-    column, which is what identified them. Remaining at this item: the separations still move with n, so
-    n = 6 is not convergence either ([docs/10 item 12](10_threats_to_validity.md)).
+    designs.~~ **Done** — the study's replicates are versioned under `data/training_replicates/` and the pool
+    replayed over them: three blocks (9,000 matches), then six (18,000), then all ten (30,000). It changed the
+    answer at every step: plain CTDE went from last to third to fourth to third, the corrected-significant
+    count went 2 → 8 → 5 → 4, and pairs that had been printed as separated lost their threshold as blocks were
+    *added* — four of the eight reported at three blocks, including the then-headline Comm over CTDE, and then
+    three of the five reported at six blocks. The report prints a leave-one-block-out column, which is what
+    identified them. What this item no longer has: a remaining n. Ten blocks is every replicate either
+    experiment trained, so the separations cannot be moved again by replication on this instrument — only by
+    more matches per block, a second training seed per cell, or a different configuration
+    ([docs/10 item 12](10_threats_to_validity.md)).
 12. **Done:** extend the round-robin's checkpoint pool past three sets. It is the study's own policies, so
-    every separation is conditional on how many training seeds represent each design; `data/runs/` held the
-    rest, and the pool was played over six blocks (18,000 matches) with all 36 checkpoints versioned. The
-    between-block SD (0.018–0.063) is now estimated on six draws and is quoted against the between-seed SD
-    (0.12–0.22) that every other caveat in this document uses. Remaining: the separations moved again at six
-    sets, so more blocks are still worth running — and the common pool has now been replayed for `no_dr`
-    ([docs/08 section 8.13](08_results.md#no-dr-pool)) and under the arena-v2 rule on the same networks
-    ([docs/08 section 8.12](08_results.md#arena-v2-pool)), while the capacity arms and the random-pool
-    instrument have not.
+    every separation is conditional on how many training seeds represent each design. All ten blocks are now
+    played (`scripts/run_ten_block_campaign.sh`, 50 run directories, 90,000 team-matches), the between-block
+    SD is estimated on ten draws — 0.026–0.086, against 0.009–0.013 across match streams — and it is quoted
+    against the between-seed SD (0.12–0.22) that every other caveat in this document uses. The result is in
+    [§ 8.10](08_results.md#cross-arena): one arm separates, five do not, and the two arms that had looked like
+    a top band at six blocks are now first and fifth.
+13. **Open, and cheap:** the re-measurement arms are at lower replication than the headline pool. The
+    arena-v2 replay covers six of the ten blocks (its comparison against the committed rule is therefore
+    six-vs-six) and the `no_dr` replay three, because that arm trained three seeds per experiment — it cannot
+    reach ten without training. Playing the four remaining blocks under the v2 rule is 20 evaluation runs of
+    checkpoints that already exist, about 80 min on this machine at the rate § 9.5 records, and would put the
+    only two-axis comparison this repository has on the same footing as its headline table. The capacity arms
+    (`narrow_64`, `wide_256`) have versioned checkpoints and have never been played on the common pool at all;
+    that is four more blocks x five streams each per arm, and it is the confound
+    [docs/10 § 10.1](10_threats_to_validity.md#unmatched-model-capacity) says the study cannot currently rule
+    out.

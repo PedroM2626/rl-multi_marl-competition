@@ -639,34 +639,37 @@ each other, so placing a number from one table next to a number from the other h
 rather than a measurement.
 
 `scripts/run_cross_arena.py` drops it. The trained, already-versioned policies are loaded — six
-architectures, six independently trained checkpoints each — each driven by the controller class of the tree
+architectures, ten independently trained checkpoints each — each driven by the controller class of the tree
 that produced it, because re-implementing an actuator would silently invalidate the comparison — and every
 three-architecture combination is played to completion: C(6,3) = 20 triples × 30 matches, with the slot
 permutation cycled inside every triple and no training of any kind.
 
-### Design: six sets of checkpoints x five match streams <a name="cross-arena-design"></a>
+### Design: ten sets of checkpoints x five match streams <a name="cross-arena-design"></a>
 
 The first version of this section used one checkpoint per architecture over five harness seeds (3,000
 matches). The caveat it recorded — see [below](#cross-arena-limits) — was that a single checkpoint makes any
 statement a claim about *two particular networks that were measured many times*, not about two
-architectures. That caveat has now been closed twice over: the study's replicates have been versioned under
-`data/training_replicates/` (60 checkpoints, every seed either experiment trained) and the whole round-robin replayed over
+architectures. That caveat has now been closed three times over: the study's replicates have been versioned
+under `data/training_replicates/` (60 checkpoints, every seed either experiment trained) and the whole
+round-robin replayed over
 
-* **six training blocks** — each block pairs one experiment-1 replicate with one experiment-2 replicate, so
-  every architecture is represented by six independently trained networks:
-  `exp1_seed1+exp2_seed7`, `exp1_seed10+exp2_seed5`, `exp1_seed2+exp2_seed1`, `exp1_seed3+exp2_seed3`,
-  `exp1_seed4+exp2_seed4`, `exp1_seed9+exp2_seed2`;
+* **ten training blocks** — each block pairs one experiment-1 replicate with one experiment-2 replicate, so
+  every architecture is represented by ten independently trained networks, which is every replicate the
+  study produced: `exp1_seed1+exp2_seed7`, `exp1_seed10+exp2_seed5`, `exp1_seed2+exp2_seed1`,
+  `exp1_seed3+exp2_seed3`, `exp1_seed4+exp2_seed4`, `exp1_seed5+exp2_seed6`, `exp1_seed6+exp2_seed8`,
+  `exp1_seed7+exp2_seed9`, `exp1_seed8+exp2_seed10`, `exp1_seed9+exp2_seed2`;
 * **five harness seeds** — five independent match streams over the same checkpoints.
 
-**18,000 matches / 54,000 team-matches, 9,000 per architecture, 3,600 head-to-head meetings per pair.**
+**30,000 matches / 90,000 team-matches, 15,000 per architecture, 6,000 head-to-head meetings per pair.**
 
-Four further blocks are versioned and unplayed — `exp1_seed5+exp2_seed6`, `exp1_seed6+exp2_seed8`,
-`exp1_seed7+exp2_seed9`, `exp1_seed8+exp2_seed10`, which together with the six above use all twenty study
-replicates with no seed repeated. `scripts/run_ten_block_campaign.sh` plays them and re-pools all fifty run
-directories; nothing in this section is quoted from that pool until it exists, and the ladder 1 → 3 → 6 blocks
-below is the evidence that a fourth step can move the answer again.
+No seed of either experiment appears twice, so the ten blocks use all twenty replicates and no pairing is
+ever crossed — which is the sense in which a pairing effect remains distinguishable from a block effect, and
+[§ 8.10's limits](#cross-arena-limits) keeps that caveat rather than resolving it. The six-block pool that
+preceded this one is `results/cross_arena/blocks6.csv` and stays committed, because
+[§ 8.11](#absolute-strength)'s agreement statistics and the arena-v2 and no-dr re-measurements of
+[§ 8.12](#arena-v2-pool) and [§ 8.13](#no-dr-pool) are computed against it at their own replication counts.
 
-The sixth block, `exp1_seed9+exp2_seed2`, is the promoted checkpoint set: its six `.pt` files are
+The tenth block, `exp1_seed9+exp2_seed2`, is the promoted checkpoint set: its six `.pt` files are
 byte-identical (SHA-256) to `data/checkpoints/` and `ctde_arena/data/checkpoints/`, which makes the re-run a
 parity control rather than a fresh instrument — that block reproduces the table this section published when
 it had one checkpoint per architecture, to four decimals, on all six arms.
@@ -683,75 +686,84 @@ meetings for every pair; that file and its five per-seed summaries are kept, lab
 `tests/test_cross_arena_report.py` now pins the seam — three runs of two matches must count six, and a key
 that drops either column reports four or two. The McNemar implementation was checked against
 `scipy.stats.binomtest` over 200 random discordant tables and agrees to 4.9e-14. Its tail is summed in log
-space, which is what lets it report the 1.40e-12 below rather than underflowing to zero.
+space, which is what lets it report the 2.92e-30 in the per-block column below rather than underflowing to
+zero.
 
 ### Pooled result
 
 | Rank | Architecture | Win rate | 95 % CI | vs 1/3 | Elim./match | Survival | Shots | Shots per alive-second | Accuracy |
 |---|---|---:|---|---:|---:|---:|---:|---:|---:|
-| 1 | **CTDE-Comm** | **0.355** | [0.345, 0.364] | +0.021 | 2.34 | 20.0 s | 115.8 | 1.93 | 2.02 % |
-| 2 | **DTE** | **0.349** | [0.339, 0.359] | +0.016 | 1.92 | 22.8 s | 97.1 | 1.42 | 1.98 % |
-| 3 | CTDE-CAC | 0.321 | [0.311, 0.331] | −0.012 | 1.95 | 21.7 s | 93.6 | 1.44 | 2.08 % |
-| 4 | CTDE | 0.314 | [0.304, 0.323] | −0.020 | 2.14 | 18.9 s | 98.1 | 1.73 | 2.18 % |
-| 5 | CTDE-VD | 0.307 | [0.298, 0.317] | −0.026 | 1.89 | 22.0 s | 97.6 | 1.48 | 1.93 % |
-| 6 | **CTE** | **0.290** | [0.281, 0.299] | −0.043 | 2.13 | 19.3 s | 96.0 | 1.66 | 2.22 % |
+| 1 | **CTDE-Comm** | **0.359** | [0.352, 0.367] | +0.026 | 2.34 | 20.3 s | 118.0 | 1.93 | 1.99 % |
+| 2 | CTDE-VD | 0.331 | [0.323, 0.338] | −0.003 | 2.05 | 21.7 s | 102.5 | 1.58 | 2.00 % |
+| 3 | CTDE | 0.317 | [0.310, 0.325] | −0.016 | 2.08 | 19.2 s | 99.0 | 1.71 | 2.10 % |
+| 4 | CTDE-CAC | 0.315 | [0.308, 0.323] | −0.018 | 1.97 | 20.6 s | 98.1 | 1.59 | 2.00 % |
+| 5 | **DTE** | **0.310** | [0.303, 0.318] | −0.023 | 1.73 | 22.5 s | 91.3 | 1.35 | 1.89 % |
+| 6 | **CTE** | **0.304** | [0.297, 0.312] | −0.029 | 2.18 | 19.6 s | 102.9 | 1.75 | 2.12 % |
 
-Decided by wipeout 58.8 %, with the clock still running 38.0 %, drawn 3.2 %. The three rows of a match are
+Decided by wipeout 58.7 %, with the clock still running 38.2 %, drawn 3.1 %. The three rows of a match are
 negatively coupled by construction, so overlapping intervals are the wrong test; the pairwise comparison is
 McNemar's exact test on the discordant outcomes of the matches where the two architectures actually met —
-**3,600 such matches per pair** — with Bonferroni correction over 15 pairs at alpha = 0.00333.
+**6,000 such matches per pair** — with Bonferroni correction over 15 pairs at alpha = 0.00333.
 
-### Five of the fifteen pairs separate — three fewer than the last replication said
+### Four of the fifteen pairs separate, and all four are CTDE-Comm
 
 | Pair | Meetings | A won | B won | Discordant b/c | *p* | Verdict |
 |---|---:|---:|---:|---|---:|---|
-| CTE vs DTE | 3600 | 979 | 1319 | 979/1319 | 1.40e-12 | **DTE** |
-| CTDE-Comm vs CTE | 3600 | 1295 | 1000 | 1295/1000 | 7.99e-10 | **Comm** |
-| CTDE vs CTDE-Comm | 3600 | 1070 | 1286 | 1070/1286 | 9.32e-06 | **Comm** |
-| CTDE-VD vs DTE | 3600 | 1058 | 1268 | 1058/1268 | 1.45e-05 | **DTE** |
-| CTDE-Comm vs CTDE-VD | 3600 | 1269 | 1088 | 1269/1088 | 0.00021 | **Comm** |
-| CTDE-CAC vs DTE | 3600 | 1100 | 1234 | 1100/1234 | 0.00589 | nominal only |
-| CTDE-CAC vs CTDE-Comm | 3600 | 1162 | 1278 | 1162/1278 | 0.01989 | nominal only |
-| CTDE-CAC vs CTE | 3600 | 1197 | 1057 | 1197/1057 | 0.00340 | nominal only |
-| CTDE vs DTE | 3600 | 1159 | 1237 | 1159/1237 | 0.11568 | not significant |
-| CTDE vs CTE | 3600 | 1153 | 1077 | 1153/1077 | 0.11222 | not significant |
-| CTDE-VD vs CTE | 3600 | 1169 | 1107 | 1169/1107 | 0.20102 | not significant |
-| CTDE vs CTDE-CAC | 3600 | 1114 | 1174 | 1114/1174 | 0.21740 | not significant |
-| CTDE vs CTDE-VD | 3600 | 1148 | 1117 | 1148/1117 | 0.52847 | not significant |
-| CTDE-Comm vs DTE | 3600 | 1254 | 1222 | 1254/1222 | 0.53329 | not significant |
-| CTDE-CAC vs CTDE-VD | 3600 | 1143 | 1102 | 1143/1102 | 0.39856 | not significant |
+| CTDE vs CTDE-Comm | 6000 | 1780 | 2184 | 1780/2184 | 1.49e-10 | **Comm** |
+| CTDE-Comm vs CTE | 6000 | 2150 | 1751 | 2150/1751 | 1.80e-10 | **Comm** |
+| CTDE-Comm vs DTE | 6000 | 2177 | 1826 | 2177/1826 | 3.11e-08 | **Comm** |
+| CTDE-CAC vs CTDE-Comm | 6000 | 1868 | 2199 | 1868/2199 | 2.25e-07 | **Comm** |
+| CTDE-VD vs CTE | 6000 | 2060 | 1878 | 2060/1878 | 0.00392 | nominal only |
+| CTE vs DTE | 6000 | 1781 | 1939 | 1781/1939 | 0.01004 | nominal only |
+| CTDE-CAC vs CTDE-VD | 6000 | 1862 | 1993 | 1862/1993 | 0.03627 | nominal only |
+| CTDE vs DTE | 6000 | 2007 | 1877 | 2007/1877 | 0.03845 | nominal only |
+| CTDE-Comm vs CTDE-VD | 6000 | 2076 | 1951 | 2076/1951 | 0.05068 | not significant |
+| CTDE-VD vs DTE | 6000 | 1978 | 1859 | 1978/1859 | 0.05677 | not significant |
+| CTDE-CAC vs CTE | 6000 | 1959 | 1867 | 1959/1867 | 0.14123 | not significant |
+| CTDE vs CTE | 6000 | 1907 | 1859 | 1907/1859 | 0.44376 | not significant |
+| CTDE-CAC vs DTE | 6000 | 1841 | 1813 | 1841/1813 | 0.65512 | not significant |
+| CTDE vs CTDE-CAC | 6000 | 1906 | 1932 | 1906/1932 | 0.68656 | not significant |
+| CTDE vs CTDE-VD | 6000 | 1910 | 1936 | 1910/1936 | 0.68686 | not significant |
 
-The separations have gone **2 → 8 → 5** as the checkpoint sets went 1 → 3 → 6 (and the robust core 4 → 3), and the two that the previous,
-three-block version of this table called its strongest cross-experiment results are both gone: DTE over CAC
-(0.00589, nominal) and CTDE over CTE (0.11222, nothing). The second of those was flagged fragile when it was
-new — its leave-one-block-out column had two subsets above the threshold — and doubling the blocks deleted
-it, which is the practical case for printing that column next to every pooled p.
+The separations have gone **2 → 8 → 5 → 4** as the checkpoint sets went 1 → 3 → 6 → 10 (and the robust core
+2 → 4 → 3 → 3), and the fourth step did its usual work in both directions at once. Two of the five pairs the
+six-block table called separated survive it — `CTDE vs CTDE-Comm` and `CTDE-Comm vs CTE` — and three did
+not: `CTE vs DTE` went from 1.40e-12 to 0.01004, `CTDE-VD vs DTE` from 1.45e-05 to 0.05677, and
+`CTDE-Comm vs CTDE-VD` from 0.00021 to 0.05068. Two new pairs entered, both of them CTDE-Comm above an arm
+it had not been separated from: DTE (3.11e-08) and CTDE-CAC (2.25e-07).
 
-What is left is narrow and consistent: **CTDE-Comm and DTE are above chance and CTE is below it**, and the
-three middle arms — CTDE, CTDE-CAC and CTDE-VD — are one indistinguishable cluster (every pair among them
-has *p* ≥ 0.217). All five significant edges put CTDE-Comm or DTE above one of CTDE, CTDE-VD or CTE; CTE is
-separated from the two top arms but not from the middle three, CTDE-CAC appears in no significant pair at
-all, and the top two cannot be told apart from each other (*p* = 0.533), which is also true of the two
-scales in [§ 8.11](#absolute-strength).
+What is left is narrower than anything this section has claimed, and it is one statement about one
+architecture: **CTDE-Comm is above four of the other five arms, and no other pair separates after
+correction.** The exception inside that claim is CTDE-VD, which Comm beats by 0.028 in the pooled table but
+not at a distance Bonferroni will license (0.05068, where six blocks had put it at 0.00021).
+The other ten pairs — the entire middle, and CTE against everything except Comm — are one cluster: every one
+has *p* ≥ 0.00392 and only four reach an uncorrected 0.05. CTE is last on the mean but no longer separated
+from the middle, and DTE, which at six blocks was in the top band with Comm, is now fifth and separated
+*from* rather than *above*.
 
-### Three of the five survive leaving a block out
+### Three of the four survive leaving a block out
 
 | Pair | Pooled *p* | Worst leave-one-block-out *p* | Verdict |
 |---|---:|---:|---:|
-| CTDE-Comm vs CTE | 7.99e-10 | 0.00014 | **robust** |
-| CTDE-VD vs DTE | 1.45e-05 | 0.00132 | **robust** |
-| CTE vs DTE | 1.40e-12 | 1.28e-05 | **robust** |
-| CTDE vs CTDE-Comm | 9.32e-06 | 0.00459 | fragile |
-| CTDE-Comm vs CTDE-VD | 0.00021 | 0.02202 | fragile |
+| CTDE vs CTDE-Comm | 1.49e-10 | 0.00112 | **robust** |
+| CTDE-Comm vs CTE | 1.80e-10 | 4.99e-06 | **robust** |
+| CTDE-CAC vs CTDE-Comm | 2.25e-07 | 0.00260 | **robust** |
+| CTDE-Comm vs DTE | 3.11e-08 | 0.00559 | fragile |
 
 Re-tested with each block removed in turn — the same discipline applied to the study's own replicates in
-[§ 8.1](#leave-one-out). The three robust edges are the same ones that were robust at three blocks; the two
-fragile ones are new entrants that replaced fragile pairs which did not survive.
+[§ 8.1](#leave-one-out). Three of the four edges hold with any one of the ten checkpoint sets deleted; the
+fourth, Comm over DTE, is carried by the block where DTE collapsed hardest — `exp1_seed7+exp2_seed9`, where
+DTE scored 0.141 and the pair's discordant count is 276/93 — because removing that one block leaves the pair
+at 0.00559, above alpha.
 
-`CTDE vs CTDE-Comm` is the instructive one. Its per-block discordant counts, in block order, are 210/215,
-197/220, 189/184, 187/204, **145/234**, **142/229**: the first four blocks say nothing and the last two say a
-lot. That is not noise in the comparison — it is two checkpoints of plain CTDE that happen to be bad and two
-that are not, which is the thing this section exists to measure.
+`CTDE vs CTDE-Comm` is the instructive one, and it survived for the wrong reason until it was printed in
+full. Its per-block discordant counts, in block order, are 210/215, 197/220, 189/184, 187/204, 145/234,
+197/224, **70/277**, **262/189**, 181/208, 142/229: six of the ten blocks say nothing on their own, three
+say Comm is better, and one — `exp1_seed7+exp2_seed9` — says the opposite at *p* = 0.00068. The pooled
+1.49e-10 is what happens when the eight blocks that agree outvote the two that do not, and the
+leave-one-out column shows the verdict does not depend on deleting either of them. That is not noise in the
+comparison: it is ten checkpoints of plain CTDE that differ from each other more than the architecture
+average does, which is the thing this section exists to measure.
 
 ### Replication across match streams, and across checkpoints
 
@@ -761,67 +773,77 @@ Harness seeds (the same networks, five independent match streams):
 
 | Architecture | 1 | 2 | 3 | 4 | 5 | Mean | SD | Ranks seen |
 |---|---:|---:|---:|---:|---:|---:|---:|---|
-| CTDE-Comm | 0.365 | 0.333 | 0.345 | 0.361 | 0.369 | 0.355 | 0.014 | 1, 1, 1, 1, 2 |
-| DTE | 0.363 | 0.359 | 0.336 | 0.355 | 0.331 | 0.349 | 0.013 | 1, 2, 2, 2, 3 |
-| CTDE-CAC | 0.313 | 0.323 | 0.340 | 0.298 | 0.331 | 0.321 | 0.015 | 2, 3, 3, 3, 5 |
-| CTDE | 0.292 | 0.309 | 0.324 | 0.323 | 0.319 | 0.314 | 0.012 | 3, 4, 4, 5, 5 |
-| CTDE-VD | 0.304 | 0.310 | 0.316 | 0.302 | 0.305 | 0.307 | 0.005 | 4, 4, 4, 5, 5 |
-| CTE | 0.291 | 0.301 | 0.278 | 0.298 | 0.282 | 0.290 | 0.009 | 5, 6, 6, 6, 6 |
+| CTDE-Comm | 0.370 | 0.338 | 0.351 | 0.367 | 0.370 | 0.360 | 0.013 | 1, 1, 1, 1, 1 |
+| CTDE-VD | 0.331 | 0.336 | 0.344 | 0.310 | 0.332 | 0.331 | 0.011 | 2, 2, 2, 2, 5 |
+| CTDE | 0.295 | 0.320 | 0.324 | 0.330 | 0.316 | 0.317 | 0.012 | 2, 4, 4, 4, 6 |
+| CTDE-CAC | 0.314 | 0.309 | 0.335 | 0.301 | 0.318 | 0.315 | 0.011 | 3, 3, 4, 6, 6 |
+| DTE | 0.325 | 0.321 | 0.298 | 0.312 | 0.297 | 0.310 | 0.011 | 3, 3, 4, 5, 6 |
+| CTE | 0.297 | 0.311 | 0.293 | 0.316 | 0.305 | 0.305 | 0.009 | 3, 5, 5, 5, 6 |
 
-Training blocks (six independently trained networks per architecture, all five streams pooled inside each):
+Training blocks (ten independently trained networks per architecture, all five streams pooled inside each):
 
-| Architecture | 1+7 | 10+5 | 2+1 | 3+3 | 4+4 | 9+2 (promoted) | Mean | SD | Ranks seen |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| CTDE-Comm | 0.399 | 0.359 | 0.317 | 0.343 | 0.348 | 0.362 | 0.355 | 0.025 | 1, 2, 2, 2, 2, 4 |
-| DTE | 0.364 | 0.369 | 0.293 | 0.353 | 0.344 | 0.370 | 0.349 | 0.026 | 1, 1, 1, 3, 3, 5 |
-| CTDE-CAC | 0.204 | 0.351 | 0.411 | 0.334 | 0.329 | 0.296 | 0.321 | 0.063 | 1, 3, 4, 4, 4, 6 |
-| CTDE | 0.370 | 0.351 | 0.322 | 0.321 | 0.250 | 0.267 | 0.314 | 0.043 | 2, 3, 3, 5, 6, 6 |
-| CTDE-VD | 0.296 | 0.307 | 0.323 | 0.339 | 0.291 | 0.289 | 0.307 | 0.018 | 2, 3, 4, 5, 5, 5 |
-| CTE | 0.264 | 0.196 | 0.280 | 0.276 | 0.385 | 0.339 | 0.290 | 0.059 | 1, 3, 5, 6, 6, 6 |
+| Architecture | 1+7 | 10+5 | 2+1 | 3+3 | 4+4 | 5+6 | 6+8 | 7+9 | 8+10 | 9+2 (promoted) | Mean | SD | Ranks seen |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| CTDE-Comm | 0.399 | 0.359 | 0.317 | 0.343 | 0.348 | 0.391 | 0.371 | 0.381 | 0.325 | 0.362 | 0.360 | 0.026 | 1, 1, 2, 2, 2, 2, 3, 3, 3, 4 |
+| CTDE-VD | 0.296 | 0.307 | 0.323 | 0.339 | 0.291 | 0.379 | 0.355 | 0.409 | 0.319 | 0.289 | 0.331 | 0.038 | 2, 2, 3, 3, 4, 4, 4, 5, 5, 5 |
+| CTDE | 0.370 | 0.351 | 0.322 | 0.321 | 0.250 | 0.365 | 0.126 | 0.471 | 0.326 | 0.267 | 0.317 | 0.086 | 1, 2, 2, 3, 3, 4, 5, 6, 6, 6 |
+| CTDE-CAC | 0.204 | 0.351 | 0.411 | 0.334 | 0.329 | 0.243 | 0.379 | 0.200 | 0.407 | 0.296 | 0.315 | 0.074 | 1, 1, 2, 3, 4, 4, 4, 5, 5, 6 |
+| DTE | 0.364 | 0.369 | 0.293 | 0.353 | 0.344 | 0.215 | 0.425 | 0.141 | 0.229 | 0.370 | 0.310 | 0.084 | 1, 1, 1, 1, 3, 3, 5, 6, 6, 6 |
+| CTE | 0.264 | 0.196 | 0.280 | 0.276 | 0.385 | 0.383 | 0.296 | 0.337 | 0.289 | 0.339 | 0.305 | 0.055 | 1, 2, 3, 4, 5, 5, 5, 6, 6, 6 |
 
 Block labels are abbreviated: `10+5` is `exp1_seed10+exp2_seed5`, and so on.
 
-The pattern is the one the study's variance analysis predicted, now with twice the data: **the evaluation is
-reproducible and the training is not.** Across match streams the SD is 0.005–0.015 and no architecture changes
-band; across checkpoint sets it is 0.018–0.063 — three to four times larger on average — and CTDE-CAC swings from first to sixth
-(0.204 to 0.411) while CTE swings 0.196 to 0.385. Between-block variance is the dominant term in every
-estimate in this section, and it is the term a single promoted checkpoint cannot see.
+The pattern is the one the study's variance analysis predicted, now with ten draws instead of six: **the
+evaluation is reproducible and the training is not.** Across match streams the SD is 0.009–0.013 and only
+CTDE-Comm keeps a single rank in every stream. Across checkpoint sets it is 0.026–0.086 — up to nine times
+larger — and the ordering inside the top five is a property of the networks more than of the architectures:
+plain CTDE swings from 0.126 to 0.471, DTE from 0.141 to 0.425, CTDE-CAC from 0.200 to 0.411. Between-block
+variance is the dominant term in every estimate in this section, and it is the term a single promoted
+checkpoint cannot see.
+
+One arm does not swing: CTDE-Comm's block SD is 0.026, its range 0.317–0.399, and it is first or second in
+six of the ten blocks. The four new blocks doubled plain CTDE's between-block SD (0.043 → 0.086) and more
+than tripled DTE's (0.026 → 0.084) while leaving Comm where the six-block pool had it (0.025 → 0.026), which
+is the strongest thing this section can say about any architecture and is still not a separation from
+CTDE-VD.
 
 ### The pooled order is the fight order, not the buzzer order
 
-38.0 % of these matches ran to the 90 s clock, so a pooled win rate mixes "won the fight" with "was most
-alive at the buzzer" — the concern item 8 of the audit's open-work list raises. Splitting the same 18,000
+38.2 % of these matches ran to the 90 s clock, so a pooled win rate mixes "won the fight" with "was most
+alive at the buzzer" — the concern item 8 of the audit's open-work list raises. Splitting the same 30,000
 matches by how they ended (a column `scripts/report_cross_arena.py` prints):
 
 | Architecture | Wipeout | Timeout | Drawn | Pooled | Wipeout − timeout |
 |---|---:|---:|---:|---:|---:|
-| CTDE-Comm | 0.394 (5,337) | 0.320 (3,396) | 0.000 (267) | 0.355 | **+0.074** |
-| DTE | 0.355 (5,225) | 0.370 (3,465) | 0.000 (310) | 0.349 | −0.015 |
-| CTDE-CAC | 0.314 (5,310) | 0.363 (3,363) | 0.000 (327) | 0.321 | −0.049 |
-| CTDE | 0.332 (5,400) | 0.311 (3,313) | 0.000 (287) | 0.314 | +0.021 |
-| CTDE-VD | 0.314 (5,111) | 0.323 (3,591) | 0.000 (298) | 0.307 | −0.009 |
-| CTE | 0.290 (5,351) | 0.312 (3,392) | 0.000 (257) | 0.290 | −0.023 |
+| CTDE-Comm | 0.394 (8,840) | 0.334 (5,729) | 0.000 (431) | 0.359 | **+0.060** |
+| CTDE-VD | 0.344 (8,614) | 0.336 (5,930) | 0.000 (456) | 0.331 | +0.008 |
+| CTDE | 0.338 (8,839) | 0.310 (5,704) | 0.000 (457) | 0.317 | +0.029 |
+| CTDE-CAC | 0.318 (8,944) | 0.339 (5,565) | 0.000 (491) | 0.315 | −0.020 |
+| DTE | 0.300 (8,671) | 0.356 (5,770) | 0.000 (559) | 0.310 | **−0.055** |
+| CTE | 0.305 (8,934) | 0.326 (5,649) | 0.000 (417) | 0.304 | −0.020 |
 
 The wipeout column reproduces the pooled ranking to within one swap (CTDE above CTDE-CAC among decided
 fights), so the result is not an artefact of survival: the arm that finishes fights best also wins the most.
-What the split does show is a second axis — CTDE-Comm's advantage is 0.074 larger among fights than among
-clock-outs, while CAC, VD and CTE win a *higher* share of timeout matches than of wipeouts, which is what a
-survive-and-wait strategy looks like. It is descriptive: every corrected significance in this section is
-computed on all matches together.
+What the split does show is a second axis, and at ten blocks it is sharper than at six — CTDE-Comm's advantage
+is 0.060 larger among fights than among clock-outs, while DTE wins a 0.055 *higher* share of timeout matches
+than of wipeouts, which is what a survive-and-wait strategy looks like. It also localises the fall DTE took
+between the two pools: its rate among finished fights went 0.355 → 0.300 while its rate among clock-outs went
+0.370 → 0.356, so the four new blocks did not find a DTE that survives less, they found one that finishes
+less. It is descriptive: every corrected significance in this section is computed on all matches together.
 
 ### The slot effect, measured at scale
 
-Pooled over 18,000 team-matches per slot, with every architecture spending exactly one third of its matches
+Pooled over 90,000 team-matches per slot, with every architecture spending exactly one third of its matches
 in each:
 
 | Slot | Pooled win rate |
 |---|---:|
-| Team 1 | 0.217 |
-| Team 2 | 0.259 |
-| **Team 3** | **0.492** |
+| Team 1 | 0.224 |
+| Team 2 | 0.257 |
+| **Team 3** | **0.488** |
 
 All six architectures do best in Team 3 regardless of what they are; within an architecture the gap between
-its best and worst slot is 0.23–0.32. The arena's three spawn centres are two far corners and the middle of
+its best and worst slot is 0.20–0.30. The arena's three spawn centres are two far corners and the middle of
 the near edge, and the obstacle layout is not three-fold symmetric, so the third position is objectively
 worth about twice a corner. Documented as [A-32](11_code_audit.md#the-arena-spawn-geometry-is-not-symmetric).
 
@@ -835,49 +857,57 @@ every number here and of every number in [§ 8.1](#replicated-study), and is a p
 
 ### The hardest limit of this comparison <a name="cross-arena-limits"></a>
 
-**Closed:** each architecture is represented by six independently trained networks, the checkpoints are
-versioned, and a reader can rebuild `results/cross_arena/blocks6.csv` from them with the thirty-run loop of
-[§ 9.3](09_reproducibility.md#93-commands) run over six blocks. Re-merging the thirty run directories
-reproduces the versioned CSV, so the pooled table is derived data and not a transcription. The three-block
-file `results/cross_arena/blocks.csv` is kept because two of the three agreement statistics of
-[§ 8.11](#absolute-strength) — the one-set and the three-set figures — are computed against its `blocks.json`,
-and the three-set one at the same replication count as its input; the headline six-set figure is computed
-against `blocks6.json`. The lesson of the −0.04 is that a mismatch between the two counts, not either pool,
-produced that number.
+**Closed:** each architecture is represented by ten independently trained networks — every replicate either
+experiment produced — the checkpoints are versioned, and a reader can rebuild
+`results/cross_arena/blocks10.csv` from them with the fifty-run loop of
+[§ 9.3](09_reproducibility.md#93-commands) run over ten blocks. Re-merging the fifty run directories
+reproduces the versioned CSV, so the pooled table is derived data and not a transcription. The earlier pools
+stay committed because they are the inputs of other statistics: `results/cross_arena/blocks.csv` and
+`blocks6.csv` feed the one-set, three-set and six-set agreement figures of
+[§ 8.11](#absolute-strength), and `blocks6.csv` is the peer pool the arena-v2 re-measurement of
+[§ 8.12](#arena-v2-pool) is compared against. The lesson of the −0.04 in § 8.11 is that a mismatch between
+the two replication counts, not either pool, produced that number — which is why every comparison below names
+the count on both sides.
 
 **Still open, in order of what it costs:**
 
-* **n = 6 is still not convergence.** Every doubling has moved the table: 2 separations at one block, 8 at
-  three, 5 at six, with the robust core going 2 → 4 → 3. What has *stopped* moving is the top band and the
-  bottom arm. The between-block SD (0.018–0.063) is now estimated on six draws, and the remaining caveat is
-  that it is still an estimate of a spread, not a settled ordering of the middle four. The four remaining
-  study blocks are versioned and `scripts/run_ten_block_campaign.sh` plays them, which would put the estimate
-  on ten draws and every trained replicate of both experiments in the pool at once.
+* **n = 10 is the whole trained population and still not convergence.** Every doubling has moved the table:
+  2 separations at one block, 8 at three, 5 at six, 4 at ten, with the robust core going 2 → 4 → 3 → 3. What
+  has stopped moving is the top arm (CTDE-Comm first in every one of the five match streams and first or
+  second in six of the ten blocks) and the fact that the bottom of the table is not separated from the
+  middle. What has not stopped moving is everything between: DTE went from the top band to fifth, CTDE-VD
+  from fifth to second, and the between-block SD is now 0.026–0.086 on ten draws. There is no eleventh block
+  to play — the study trained ten seeds per experiment and all of them are in this pool — so the next move on
+  this axis has to come from more matches per block, more seeds per training run, or a different
+  configuration, which is what [§ 8.12](#arena-v2-pool) and [§ 8.13](#no-dr-pool) provide at their own counts.
 * **Block pairings are not balanced across experiments.** A block is one experiment-1 seed times one
-  experiment-2 seed, and the six pairings used are six different (S, M) combinations but not a full or
+  experiment-2 seed, and the ten pairings used are ten different (S, M) combinations but not a full or
   orthogonal design. A cross-experiment comparison still cannot fully separate "this exp-1 replicate was
-  strong" from "this exp-1 × exp-2 pairing interacted".
-* **It is one configuration — but two of its axes have now been varied.** The numbers above inherit the spawn
-  bias, the 90 s clock, hidden width 128 and domain randomisation on. The first two have been re-measured on
-  these same networks: under the arena-v2 termination and reward rule the endpoints of the ordering hold and
-  the pairs change ([§ 8.12](#arena-v2-pool)), and checkpoints trained without domain randomisation reorder
-  the table outright, with CTDE-Comm falling from first to fifth ([§ 8.13](#no-dr-pool)). What has *not* been
-  varied on this instrument is network capacity, which is the confound the ablation arms exist to measure
-  under their own protocol instead.
+  strong" from "this exp-1 × exp-2 pairing interacted"; with ten of the hundred possible pairings, it cannot
+  average the interaction away either.
+* **It is one configuration — but two of its axes have now been varied, at lower replication.** The numbers
+  above inherit the spawn bias, the 90 s clock, hidden width 128 and domain randomisation on. Under the
+  arena-v2 termination and reward rule the same instrument was run over six blocks, not ten, so § 8.12's
+  comparison against this table is six-vs-six rather than ten-vs-ten; checkpoints trained without domain
+  randomisation exist for three blocks only, because that arm trained three seeds per experiment, and they
+  reorder the table outright, with CTDE-Comm falling from first to fifth
+  ([§ 8.13](#no-dr-pool)). What has *not* been varied on this instrument is network capacity, which is the
+  confound the ablation arms exist to measure under their own protocol instead.
 
 ### What this adds to the conclusions
 
 The cross-experiment design removes the co-adaptation confound, balances slots, uses a deterministic
-instrument and a paired test that respects the dependence between arms. Over 18,000 matches and six
-independently trained networks per architecture: **CTDE-Comm and DTE are above chance, CTE is below it, and
-the three middle arms are one indistinguishable cluster.** Five of fifteen pairs clear Bonferroni-corrected
-McNemar and three clear it with any one checkpoint set removed.
+instrument and a paired test that respects the dependence between arms. Over 30,000 matches and ten
+independently trained networks per architecture — every replicate the study produced: **CTDE-Comm is above
+four of the other five arms, and no other pair separates after Bonferroni correction.** Four of fifteen pairs
+clear the corrected threshold and three of those four survive removing any one checkpoint set.
 
-That is a narrower claim than the three-block version of this section made, and deliberately so: two of the
-pairs it reported as separated were the ones that could not survive doubling the replication, and they are
-gone from the table. The repository's defensible cross-experiment statement is now two bands and a bottom
-arm, with the leave-one-block-out column printed beside every pooled p so the next replication can be
-compared against this one line by line.
+That is a narrower claim than the six-block version of this section made, and it came at a price the section
+now documents rather than hides: three of the five pairs that table reported as separated were not separated
+once four more trained networks were added, and the two-band picture ("Comm and DTE above, CTE below")
+collapsed into one band with a top arm in it. The defensible cross-experiment statement is therefore about
+learned communication and not about a ranking of the other five, with the leave-one-block-out column printed
+beside every pooled p so the next configuration can be compared against this one line by line.
 
 ---
 
@@ -959,6 +989,13 @@ Agreement is high at every **matched** replication count and does not increase m
 | 1 (promoted set only) | +0.41 |
 | 3 | +0.94 |
 | 6 | **+0.77** |
+
+The mismatched case is the one this table deliberately excludes, and it is now available rather than
+hypothetical: recomputing the six-set absolute rates against the **ten-block** peer pool of
+[§ 8.10](#cross-arena) — six sets against ten, so the two sides no longer measure the same populations —
+gives Spearman **+0.66**, Pearson +0.74, with CTDE-Comm still first and CTE still last. The corroboration
+survives a peer pool that reordered four of the six middle ranks; its magnitude is not the committed figure,
+and the committed figure is the matched one.
 
 ### The correction that produced this result
 
@@ -1092,6 +1129,10 @@ attributed to either. The rule alone is separable now, because A-34 made it conf
 checkpoints are versioned: `bash scripts/run_pool_v2_campaign.sh` exports
 `REWARD_ALIVE_BONUS=0.0015 REWARD_ALIVE_DECAY_HALF_LIFE_S=30 TERMINATION_CAP_AWARDS_WIN=false` and replays
 the same six blocks over the same five harness seeds. 18,000 matches, `results/cross_arena/v2_blocks.csv`.
+**This arm is six blocks while [§ 8.10](#cross-arena) is now ten**, so every comparison below is six-against-
+six at matched replication rather than against the headline table; playing the four remaining blocks under the
+v2 rule is the queued follow-up ([§ 9.5](09_reproducibility.md#95-cost-of-a-run),
+[open work item 13](11_code_audit.md#open-work-suggested-measurements)).
 
 The control is exact, and it is worth stating because it validates the whole instrument: **10,578 matches ended
 in a wipeout in both pools, and every arm's wipeout-only win rate is identical to four decimals** — 0.3942 for
@@ -1099,7 +1140,7 @@ CTDE-Comm, 0.3554 DTE, 0.3319 CTDE, 0.3141 CAC, 0.3144 VD, 0.2897 CTE. Same netw
 fights. The only thing that moved is what the other 6,840 matches are called: `timeout` 6,840 → 0 and
 `draw` 582 → 7,422.
 
-| Architecture | Committed pool | v2-rule pool | change |
+| Architecture | Same six blocks, committed rule | v2-rule pool | change |
 |---|---:|---:|---:|
 | CTDE-Comm | 0.355 | 0.234 | −0.121 |
 | DTE | 0.349 | 0.206 | −0.143 |
@@ -1256,7 +1297,7 @@ without domain randomisation against the same six-way opponent pool, under the c
 `no_dr:exp1_seed2+exp2_seed2`, `no_dr:exp1_seed3+exp2_seed3`) over the five harness seeds — 9,000 matches,
 `results/cross_arena/no_dr_blocks.csv`.
 
-| Architecture | Committed pool (6 blocks) | no_dr pool (3 blocks) | positions |
+| Architecture | Committed pool, six blocks | no_dr pool (3 blocks) | positions |
 |---|---:|---:|---|
 | CTDE | 0.314 | **0.386** | 4th → 1st |
 | CTE | 0.290 | 0.316 | 6th → 2nd |
@@ -1265,11 +1306,16 @@ without domain randomisation against the same six-way opponent pool, under the c
 | CTDE-Comm | 0.355 | 0.243 | **1st → 5th** |
 | DTE | 0.349 | 0.203 | **2nd → 6th** |
 
-Nine of fifteen pairs clear the Bonferroni bar in this pool against five in the committed one, and only two are
+The reference column is the six-block pool, not [§ 8.10](#cross-arena)'s ten-block headline, and that is a
+substantive choice rather than a stale one: the ten-block table puts DTE fifth and CTDE-VD second, so a
+no_dr-versus-ten-block contrast would move the replication count and the training environment together. The
+positions column is a statement about the pool this arm was measured against.
+
+Nine of fifteen pairs clear the Bonferroni bar in this pool against five in the six-block committed one, and only two are
 robust to leaving a block out (CTDE > DTE at *p* = 1.7e-05 pooled, CTDE-CAC > DTE). What makes the pool
 interesting is not the count of separations but what happens to the spread behind them:
 
-| Architecture | Between-block SD, committed pool | Between-block SD, no_dr pool | the three blocks |
+| Architecture | Between-block SD, committed six-block pool | Between-block SD, no_dr pool | the three blocks |
 |---|---:|---:|---|
 | CTDE-VD | 0.018 | 0.141 | 0.160 / 0.248 / 0.493 |
 | CTDE-Comm | 0.025 | 0.112 | 0.182 / 0.399 / 0.147 |
@@ -1336,32 +1382,36 @@ domain randomisation on".
 | **RQ1** — does CTDE beat CTE and DTE? | **No, and the ordering is not ours to report.** CTDE finishes **second** at 0.326 behind DTE at 0.381 and ahead of CTE at 0.252. The paired per-seed differences are +0.074 vs CTE (*p* = 0.348) and −0.055 vs DTE (*p* = 0.640); detecting them would need ~110 and ~450 replicates. Removing the single degenerate replicate (seed 6) puts CTDE first at 0.362 and flips the sign of the CTDE–DTE difference — so the honest answer is that **this study measures no exp-1 ordering at all.** |
 | **RQ2** — which CTDE variant wins? | **No detectable difference.** VD 0.367, Comm 0.331, CAC 0.282; every paired per-seed comparison has *p* ≥ 0.363, and the smallest gap costs ~117 replicates to confirm. The historical claim that Comm loses decisively **does not reproduce**, and the historical winner CAC is now last of three. |
 | **RQ3** — is it stable? | **No — and that is the headline result.** Between-seed SD is 0.122–0.218 against a 1/3 chance baseline; single replicates range from **0.000 to 0.767** within one architecture; 1 of 30 paradigm-slots reads out as a never-fires policy under greedy action selection while the same network led its own match on kills during training ([§ Readout](#readout-divergence)); 5 of 20 replicates play a different game entirely, matches decided by the 90 s clock rather than by kills. The dominant finding is variance, not ranking, and most of that variance is introduced by the readout rather than by training. |
-| **RQ4** — do the two experiments' numbers belong on one scale? | **Yes, as a two-band partial order, and only after replicating the checkpoints six times.** The cross-experiment round-robin ([§ 8.10](#cross-arena)) puts all six arms on common opponents over **18,000 matches and six independently trained networks per architecture**: Comm 0.355, DTE 0.349, CAC 0.321, CTDE 0.314, VD 0.307, CTE 0.290. Five of fifteen pairs clear Bonferroni-corrected McNemar and three clear it with any one checkpoint set removed; all five put Comm or DTE above one of CTDE, VD or CTE, and the three middle arms are one indistinguishable cluster. The count of separations went 2 → 8 → 5 as the checkpoint sets went 1 → 3 → 6, so this answer is a product of replication in both directions: adding blocks created pairs that a further doubling then dissolved. |
+| **RQ4** — do the two experiments' numbers belong on one scale? | **Yes — and on that one scale the finding is one arm wide, not a ranking.** The cross-experiment round-robin ([§ 8.10](#cross-arena)) puts all six arms on common opponents over **30,000 matches and ten independently trained networks per architecture, which is every replicate the study produced**: Comm 0.359, VD 0.331, CTDE 0.317, CAC 0.315, DTE 0.310, CTE 0.304. Four of fifteen pairs clear Bonferroni-corrected McNemar, all four put CTDE-Comm above another arm, and three of the four survive deleting any one checkpoint set. The count of separations went 2 → 8 → 5 → 4 as the checkpoint sets went 1 → 3 → 6 → 10, and three of the five pairs the six-block pool separated lost correction when four more trained networks were added — DTE fell from the top band to fifth. What the ten-block pool does *not* support is any ordering among the five architectures without learned communication. |
 
 **What this repository can defensibly claim.**
 
 1. Six MARL information-flow architectures have been run against each other in one engine with matched
    hyperparameters, replicated ten times each with slot rotation, and measured held out — and the ranking a
    single seed produced turned out to be wrong in *both* experiments.
-2. On a common opponent pool, over 18,000 matches and six trained networks per architecture,
-   **five cross-experiment differences clear multiplicity correction and three of them survive leaving any
-   one set of checkpoints out**: Comm over CTE, DTE over CTE and DTE over VD. Comm over CTDE and Comm over VD
-   are significant pooled but lose the corrected threshold when particular blocks are removed
-   ([§ 8.10](#cross-arena)). The result is a partial order with a top band, an indistinguishable middle and
-   one arm below chance — not a ranking. It is also the only family of claims in the repository that clears a
-   corrected significance threshold, and the count of separations has moved at every replication step
-   (2 → 8 → 5), which is stated rather than smoothed over.
+2. On a common opponent pool, over 30,000 matches and ten trained networks per architecture — every replicate
+   the study produced — **four cross-experiment differences clear multiplicity correction and all four are
+   CTDE-Comm above another arm**: over CTDE (1.49e-10), over CTE (1.80e-10), over DTE (3.11e-08) and over
+   CTDE-CAC (2.25e-07). Three of the four survive leaving any one set of checkpoints out; Comm over DTE does
+   not, because one block carries it ([§ 8.10](#cross-arena)). Comm over CTDE-VD is the one arm the top
+   architecture does *not* separate from (0.051). The result is a partial order with one arm lifted out of an
+   otherwise unordered field — not a ranking of the paradigms. It is also the only family of claims in the
+   repository that clears a corrected significance threshold, and the count of separations has moved at every
+   replication step (2 → 8 → 5 → 4), which is stated rather than smoothed over.
 3. A measurement finding that is probably the most consequential thing here: the greedy readout used as the
    headline response variable has 2.5× the spread of the sampled policy it summarises, and agrees with its
    rankings only 35.6 % of the time ([§ Readout](#readout-divergence)).
 4. The arena itself is biased: one of the three spawn positions wins 49 % of matches against 22 % and 26 %
-   for the other two, for every architecture
+   for the other two, for every architecture, measured over 90,000 team-matches
    ([A-32](11_code_audit.md#the-arena-spawn-geometry-is-not-symmetric)).
-5. Every architecture — all six trained replicates of each — beats uniform-random play by an interval
+5. Every architecture — all ten trained replicates of each on the common pool, six sets on the random pool —
+   beats uniform-random play by an interval
    that excludes the slot-matched null (+0.303 to +0.439), and the two opponent pools rank the six
    architectures **the same way**: Spearman +0.77 and Pearson +0.72 between "beats trained peers" and "beats
    random play", over six checkpoint sets on both scales, with the same arm first and the same arm last
-   ([§ 8.11](#absolute-strength)). The same comparison on a single checkpoint set that was compared against a
+   ([§ 8.11](#absolute-strength)). Recomputed against the ten-block pool, where the two sides no longer have
+   the same replication count, the statistic is +0.66 with the same arm first and the same arm last. The same
+   comparison on a single checkpoint set that was compared against a
    three-set peer table gave −0.04 — a scope error, and the sharpest available demonstration that in this
    arena a single replicate destroys the relationship between two independent measurements of the same six
    networks.
