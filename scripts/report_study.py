@@ -160,6 +160,17 @@ def replicates_for_power(mean_diff: float, diff_sd: float, alpha: float, power: 
     return min(int(math.ceil(n)), 10**9)
 
 
+def shots_per_alive_second(shots_per_match: float, mean_survival_seconds: float) -> float:
+    """Firing volume per second in which the team actually had agents alive.
+
+    `mean_survival_seconds` is a per-agent mean — `simulation.py` accrues `agent.survival_time` only while the
+    agent is alive and reports the mean over its three — so a team's alive life in one match is three times it.
+    The unnormalised shot column cannot separate "this arm fires less" from "this arm is dead earlier", and a
+    dead agent does not fire: the ratio is what makes the two statements different claims.
+    """
+    return shots_per_match / (3 * mean_survival_seconds) if mean_survival_seconds > 0 else 0.0
+
+
 def read_metrics(results_dir: Path) -> list[dict]:
     rows = list(csv.DictReader((results_dir / "per_seed_metrics.csv").open(newline="", encoding="utf-8")))
     for row in rows:
@@ -189,8 +200,8 @@ def compare_arms(control: list[dict], arm: list[dict], arm_name: str) -> None:
 
     print(f"\n### {arm_name} vs control, paired on seed ({len(shared) // len(groups)} shared seeds per arm)\n")
     print("| experiment | paradigm | control | arm | paired diff | t | p | seeds below control | "
-          "survival (control -> arm) | elim./match | shots/match |")
-    print("|---|---|---:|---:|---:|---:|---:|---|---|---:|---:|")
+          "survival (control -> arm) | elim./match | shots/match | shots per alive-second |")
+    print("|---|---|---:|---:|---:|---:|---:|---|---|---:|---:|---:|")
     for (experiment, paradigm), seeds in sorted(groups.items()):
         c = [left[(experiment, paradigm, s)] for s in seeds]
         a = [right[(experiment, paradigm, s)] for s in seeds]
@@ -198,15 +209,19 @@ def compare_arms(control: list[dict], arm: list[dict], arm_name: str) -> None:
         mean = sum(differences) / len(differences)
         t_stat, p = paired_t(differences)
         below = sum(1 for d in differences if d < 0)
+        surv_c = statistics.fmean([r["eval_mean_survival"] for r in c])
+        surv_a = statistics.fmean([r["eval_mean_survival"] for r in a])
+        shots_c = statistics.fmean([r["eval_shots_per_match"] for r in c])
+        shots_a = statistics.fmean([r["eval_shots_per_match"] for r in a])
         print(f"| {experiment} | {paradigm} | {statistics.fmean([r['eval_win_rate'] for r in c]):.3f} "
               f"| {statistics.fmean([r['eval_win_rate'] for r in a]):.3f} | {mean:+.3f} "
               f"| {t_stat:+.2f} | {p:.3f} | {below}/{len(seeds)} "
-              f"| {statistics.fmean([r['eval_mean_survival'] for r in c]):.1f} -> "
-              f"{statistics.fmean([r['eval_mean_survival'] for r in a]):.1f}s "
+              f"| {surv_c:.1f} -> {surv_a:.1f}s "
               f"| {statistics.fmean([r['eval_eliminations_per_match'] for r in c]):.2f} -> "
               f"{statistics.fmean([r['eval_eliminations_per_match'] for r in a]):.2f} "
-              f"| {statistics.fmean([r['eval_shots_per_match'] for r in c]):.0f} -> "
-              f"{statistics.fmean([r['eval_shots_per_match'] for r in a]):.0f} |")
+              f"| {shots_c:.0f} -> {shots_a:.0f} "
+              f"| {shots_per_alive_second(shots_c, surv_c):.2f} -> "
+              f"{shots_per_alive_second(shots_a, surv_a):.2f} |")
 
 
 def main() -> None:
@@ -233,8 +248,8 @@ def main() -> None:
         paradigms = sorted({r["paradigm"] for r in exp_rows})
         seeds = sorted({int(r["seed"]) for r in exp_rows})
         print(f"\n### {experiment} — {len(seeds)} seeds x {int(exp_rows[0]['eval_matches'])} held-out greedy matches\n")
-        print("| Paradigm | Win rate (mean over seeds) | Between-seed SD | Pooled wins | Pooled 95 % CI | Elim./match | Survival (s) | Shots/match | Accuracy |")
-        print("|---|---:|---:|---:|---|---:|---:|---:|---:|")
+        print("| Paradigm | Win rate (mean over seeds) | Between-seed SD | Pooled wins | Pooled 95 % CI | Elim./match | Survival (s) | Shots/match | Shots per alive-second | Accuracy |")
+        print("|---|---:|---:|---:|---|---:|---:|---:|---:|---:|")
         counts: dict[str, tuple[int, int]] = {}
         for paradigm in paradigms:
             sub = [r for r in exp_rows if r["paradigm"] == paradigm]
@@ -243,12 +258,15 @@ def main() -> None:
             trials = int(sum(r["eval_matches"] for r in sub))
             counts[paradigm] = (wins, trials)
             lo, hi = wilson(wins, trials)
+            survival = sum(r["eval_mean_survival"] for r in sub) / len(sub)
+            shots = sum(r["eval_shots_per_match"] for r in sub) / len(sub)
             print(
                 f"| {paradigm} | **{sum(rates)/len(rates):.3f}** | {sd(rates):.3f} | {wins}/{trials} "
                 f"| [{lo:.3f}, {hi:.3f}] "
                 f"| {sum(r['eval_eliminations_per_match'] for r in sub)/len(sub):.2f} "
-                f"| {sum(r['eval_mean_survival'] for r in sub)/len(sub):.2f} "
-                f"| {sum(r['eval_shots_per_match'] for r in sub)/len(sub):.2f} "
+                f"| {survival:.2f} "
+                f"| {shots:.2f} "
+                f"| {shots_per_alive_second(shots, survival):.3f} "
                 f"| {sum(r['eval_shot_accuracy'] for r in sub)/len(sub):.4f} |"
             )
 

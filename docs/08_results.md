@@ -55,11 +55,11 @@ Held-out win rate is the response variable throughout. The training-time running
 
 ### Experiment 1 — CTE vs DTE vs CTDE
 
-| Paradigm | Mean win rate over seeds | Between-seed SD | Pooled wins | Pooled 95 % CI | Elim./match | Survival (s) | Shots/match | Accuracy |
-|---|---:|---:|---:|---|---:|---:|---:|---:|
-| **DTE** | **0.381** | 0.191 | 571/1500 | [0.356, 0.406] | 1.95 | 24.98 | 105.2 | 2.71 % |
-| CTDE | 0.326 | 0.187 | 489/1500 | [0.303, 0.350] | 1.97 | 18.37 | 101.2 | 2.65 % |
-| CTE | 0.252 | 0.122 | 378/1500 | [0.231, 0.275] | 2.22 | 22.69 | 121.7 | 3.59 % |
+| Paradigm | Mean win rate over seeds | Between-seed SD | Pooled wins | Pooled 95 % CI | Elim./match | Survival (s) | Shots/match | Shots per alive-second | Accuracy |
+|---|---:|---:|---:|---|---:|---:|---:|---:|---:|
+| **DTE** | **0.381** | 0.191 | 571/1500 | [0.356, 0.406] | 1.95 | 24.98 | 105.2 | 1.404 | 2.71 % |
+| CTDE | 0.326 | 0.187 | 489/1500 | [0.303, 0.350] | 1.97 | 18.37 | 101.2 | 1.835 | 2.65 % |
+| CTE | 0.252 | 0.122 | 378/1500 | [0.231, 0.275] | 2.22 | 22.69 | 121.7 | 1.788 | 3.59 % |
 
 Per-seed held-out win rate — each column is one independent replicate:
 
@@ -95,11 +95,11 @@ Match-level Fisher exact tests on the pooled 1,500 held-out matches per paradigm
 
 ### Experiment 2 — CTDE-VD vs CTDE-CAC vs CTDE-Comm
 
-| Paradigm | Mean win rate over seeds | Between-seed SD | Pooled wins | Pooled 95 % CI | Elim./match | Survival (s) | Shots/match | Accuracy |
-|---|---:|---:|---:|---|---:|---:|---:|---:|
-| **CTDE-VD** | **0.367** | 0.171 | 551/1500 | [0.343, 0.392] | 1.97 | 23.08 | 92.8 | 3.01 % |
-| CTDE-Comm | 0.331 | 0.218 | 496/1500 | [0.307, 0.355] | 2.18 | 19.23 | 111.6 | 2.40 % |
-| CTDE-CAC | 0.282 | 0.182 | 423/1500 | [0.260, 0.305] | 1.98 | 21.47 | 112.3 | 2.35 % |
+| Paradigm | Mean win rate over seeds | Between-seed SD | Pooled wins | Pooled 95 % CI | Elim./match | Survival (s) | Shots/match | Shots per alive-second | Accuracy |
+|---|---:|---:|---:|---|---:|---:|---:|---:|---:|
+| **CTDE-VD** | **0.367** | 0.171 | 551/1500 | [0.343, 0.392] | 1.97 | 23.08 | 92.8 | 1.340 | 3.01 % |
+| CTDE-Comm | 0.331 | 0.218 | 496/1500 | [0.307, 0.355] | 2.18 | 19.23 | 111.6 | 1.935 | 2.40 % |
+| CTDE-CAC | 0.282 | 0.182 | 423/1500 | [0.260, 0.305] | 1.98 | 21.47 | 112.3 | 1.744 | 2.35 % |
 
 Per-seed held-out win rate:
 
@@ -289,6 +289,56 @@ numbers are labelled as such rather than compared directly.
 The identity of [§ 8.4](#metric-rank-deficiency) — eliminations = shots × accuracy — still holds, but only
 **within** a replicate. It does not hold for the *mean* of per-seed ratios, which is what the tables above
 report, because per-seed shot counts vary by more than 80× (3.8 to 372.4 shots per match).
+
+### Firing volume per unit of alive life <a name="firing-rate"></a>
+
+Every table above reports shots per match, and a shot needs an agent that is standing: an arm eliminated in
+the first seconds cannot accumulate volume, so the raw column answers "who shoots less" and "who dies sooner"
+with the same number. The experiment-2 open-work list asked for the ratio that separates them; the ratio is
+`shots per match / (3 x mean survival)`, where the factor 3 is the team's three agents and `survival` is
+accrued only while an agent is alive (`simulation.py` adds `dt` to `agent.survival_time` inside the alive
+branch, and reports the mean over the team). No new measurement was needed — both columns are already in
+`results/study/per_seed_metrics.csv` — so this is arithmetic over the committed study, added to
+`report_study.py`, `report_cross_arena.py` and `run_cross_arena.py`.
+
+| Architecture | Shots / match | Mean survival (s) | Shots per alive-second |
+|---|---:|---:|---:|
+| exp1 CTDE | 101.2 | 18.37 | **1.835** |
+| exp1 CTE | 121.7 | 22.69 | 1.788 |
+| exp1 DTE | 105.2 | 24.98 | 1.404 |
+| exp2 CTDE-Comm | 111.6 | 19.23 | **1.935** |
+| exp2 CTDE-CAC | 112.3 | 21.47 | 1.744 |
+| exp2 CTDE-VD | 92.8 | 23.08 | 1.340 |
+| round-robin Comm | 115.8 | 20.0 | 1.93 |
+| round-robin CTDE | 98.1 | 18.9 | 1.73 |
+| round-robin CTE | 96.0 | 19.3 | 1.66 |
+| round-robin VD | 97.6 | 22.0 | 1.48 |
+| round-robin CAC | 93.6 | 21.7 | 1.44 |
+| round-robin DTE | 97.1 | 22.8 | 1.42 |
+
+Three things the unnormalised column could not say:
+
+1. **CTDE-Comm's restraint is not a survival artefact — the opposite.** In the study, Comm and CAC fire
+   statistically the same volume (111.6 against 112.3 shots) while Comm lives 2.2 s less per agent, so per unit
+   of alive life Comm fires 11 % more. Comm is the most aggressive arm on this scale in both instruments
+   (1.935 in the study, 1.93 on the common pool) and it is also the pooled round-robin's winner — the two
+   readings agree on which arm shoots most *given the time it had*.
+2. **The study's experiment-1 winner is the least trigger-happy arm, and the difference the raw column hides
+   is a factor of 1.3.** DTE fires 105.2 shots like everyone else, but spread over the longest alive life
+   (24.98 s) it is last at 1.404, against CTDE's 1.835 in the shortest (18.37 s). Read raw, CTE looks like the
+   shooter (121.7 shots) and DTE like the patient one; normalised, most of CTE's extra volume is the extra
+   4.3 s it spends standing, and its rate (1.788) lands beside CTDE's rather than above it.
+3. **Volume and outcome are not on the same axis.** In experiment 1 the arm with the best win rate fires the
+   least per alive second (DTE, 0.381 and 1.404) and the second-best fires the most (CTDE, 0.326 and 1.835);
+   across the three arms the two orderings have Spearman −0.5. Combined with an accuracy of 2–4 %
+   ([§ 8.4](#metric-rank-deficiency)), firing rate describes engagement style here, not the axis the ranking
+   runs along — and no claim in this document depends on it.
+
+**Aggregation convention.** The instrument computes the ratio of the two *means*, not the mean of the per-seed
+ratios — the same distinction [§ 8.1](#component-metrics-moved-far-more-than-the-ranking) makes about the
+elimination identity. The ordering is invariant between the two here (checked: mean-of-ratios gives
+1.708 / 1.664 / 1.499 for experiment 1 and 1.913 / 1.801 / 1.493 for experiment 2, same ranks as the ratio of
+means), so no conclusion rests on the choice; the numbers quoted above are the instrument's own.
 
 ### Power: how many replicates this would take <a name="power-analysis"></a>
 
@@ -613,14 +663,14 @@ space, which is what lets it report the 1.40e-12 below rather than underflowing 
 
 ### Pooled result
 
-| Rank | Architecture | Win rate | 95 % CI | vs 1/3 | Elim./match | Survival | Shots | Accuracy |
-|---|---|---:|---|---:|---:|---:|---:|---:|
-| 1 | **CTDE-Comm** | **0.355** | [0.345, 0.364] | +0.021 | 2.34 | 20.0 s | 115.8 | 2.02 % |
-| 2 | **DTE** | **0.349** | [0.339, 0.359] | +0.016 | 1.92 | 22.8 s | 97.1 | 1.98 % |
-| 3 | CTDE-CAC | 0.321 | [0.311, 0.331] | −0.012 | 1.95 | 21.7 s | 93.6 | 2.08 % |
-| 4 | CTDE | 0.314 | [0.304, 0.323] | −0.020 | 2.14 | 18.9 s | 98.1 | 2.18 % |
-| 5 | CTDE-VD | 0.307 | [0.298, 0.317] | −0.026 | 1.89 | 22.0 s | 97.6 | 1.93 % |
-| 6 | **CTE** | **0.290** | [0.281, 0.299] | −0.043 | 2.13 | 19.3 s | 96.0 | 2.22 % |
+| Rank | Architecture | Win rate | 95 % CI | vs 1/3 | Elim./match | Survival | Shots | Shots per alive-second | Accuracy |
+|---|---|---:|---|---:|---:|---:|---:|---:|---:|
+| 1 | **CTDE-Comm** | **0.355** | [0.345, 0.364] | +0.021 | 2.34 | 20.0 s | 115.8 | 1.93 | 2.02 % |
+| 2 | **DTE** | **0.349** | [0.339, 0.359] | +0.016 | 1.92 | 22.8 s | 97.1 | 1.42 | 1.98 % |
+| 3 | CTDE-CAC | 0.321 | [0.311, 0.331] | −0.012 | 1.95 | 21.7 s | 93.6 | 1.44 | 2.08 % |
+| 4 | CTDE | 0.314 | [0.304, 0.323] | −0.020 | 2.14 | 18.9 s | 98.1 | 1.73 | 2.18 % |
+| 5 | CTDE-VD | 0.307 | [0.298, 0.317] | −0.026 | 1.89 | 22.0 s | 97.6 | 1.48 | 1.93 % |
+| 6 | **CTE** | **0.290** | [0.281, 0.299] | −0.043 | 2.13 | 19.3 s | 96.0 | 1.66 | 2.22 % |
 
 Decided by wipeout 58.8 %, with the clock still running 38.0 %, drawn 3.2 %. The three rows of a match are
 negatively coupled by construction, so overlapping intervals are the wrong test; the pairwise comparison is

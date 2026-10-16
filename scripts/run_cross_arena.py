@@ -335,6 +335,10 @@ def summarise(rows: list[dict[str, object]]) -> dict[str, object]:
             "eliminations_per_match": round(stats["eliminations"] / matches, 3),
             "mean_survival_seconds": round(stats["survival"] / matches, 2),
             "shots_per_match": round(stats["shots"] / matches, 2),
+            # Shots per second the team had agents alive (three agents' worth of `survival_seconds`, which is
+            # a per-agent mean): the unnormalised shot column cannot separate firing restraint from dying early.
+            "shots_per_alive_second": (round((stats["shots"] / matches) / (3 * stats["survival"] / matches), 4)
+                                        if stats["survival"] > 0 else 0.0),
             "shot_accuracy": round(stats["hits"] / max(stats["shots"], 1), 4),
         }
     return table
@@ -445,15 +449,17 @@ def main() -> None:
     (out_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
 
     print(f"\n{matches_played} matches over {len(triples)} triples\n")
-    print("| architecture | win rate | 95 % CI | vs 1/3 | draws | timeouts | elim./match | survival | shots | accuracy |")
-    print("|---|---:|---|---:|---:|---:|---:|---:|---:|---:|")
+    print("| architecture | win rate | 95 % CI | vs 1/3 | draws | timeouts | elim./match | survival | shots "
+          "| shots/alive-s | accuracy |")
+    print("|---|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|")
     for paradigm, stats in sorted(table.items(), key=lambda kv: -kv[1]["win_rate"]):
         print(
             f"| {paradigm} | **{stats['win_rate']:.3f}** | [{stats['wilson_95_ci'][0]:.3f}, "
             f"{stats['wilson_95_ci'][1]:.3f}] | {stats['win_rate'] - 1/3:+.3f} "
             f"| {stats['draw_rate']:.3f} | {stats['timeout_rate']:.3f} "
             f"| {stats['eliminations_per_match']:.2f} | {stats['mean_survival_seconds']:.1f}s "
-            f"| {stats['shots_per_match']:.1f} | {stats['shot_accuracy']:.4f} |"
+            f"| {stats['shots_per_match']:.1f} | {stats['shots_per_alive_second']:.2f} "
+            f"| {stats['shot_accuracy']:.4f} |"
         )
     print(f"\nwrote {out_dir / 'matches.csv'} and {out_dir / 'summary.json'}")
 

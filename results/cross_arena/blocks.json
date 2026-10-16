@@ -18,6 +18,7 @@
       "eliminations_per_match": 2.416,
       "mean_survival_seconds": 20.36,
       "shots_per_match": 116.31,
+      "shots_per_alive_second": 1.9044,
       "shot_accuracy": 0.0208,
       "win_rate_by_slot": {
         "Team 1": 0.2467,
@@ -36,6 +37,7 @@
       "eliminations_per_match": 1.977,
       "mean_survival_seconds": 24.04,
       "shots_per_match": 96.01,
+      "shots_per_alive_second": 1.3312,
       "shot_accuracy": 0.0206,
       "win_rate_by_slot": {
         "Team 1": 0.2553,
@@ -54,6 +56,7 @@
       "eliminations_per_match": 2.153,
       "mean_survival_seconds": 20.36,
       "shots_per_match": 93.85,
+      "shots_per_alive_second": 1.5365,
       "shot_accuracy": 0.0229,
       "win_rate_by_slot": {
         "Team 1": 0.2093,
@@ -72,6 +75,7 @@
       "eliminations_per_match": 1.771,
       "mean_survival_seconds": 23.41,
       "shots_per_match": 87.13,
+      "shots_per_alive_second": 1.2405,
       "shot_accuracy": 0.0203,
       "win_rate_by_slot": {
         "Team 1": 0.2007,
@@ -90,6 +94,7 @@
       "eliminations_per_match": 1.867,
       "mean_survival_seconds": 20.4,
       "shots_per_match": 78.67,
+      "shots_per_alive_second": 1.2856,
       "shot_accuracy": 0.0237,
       "win_rate_by_slot": {
         "Team 1": 0.182,
@@ -108,6 +113,7 @@
       "eliminations_per_match": 2.072,
       "mean_survival_seconds": 19.85,
       "shots_per_match": 94.13,
+      "shots_per_alive_second": 1.5807,
       "shot_accuracy": 0.022,
       "win_rate_by_slot": {
         "Team 1": 0.2007,

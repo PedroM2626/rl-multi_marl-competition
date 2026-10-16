@@ -238,6 +238,30 @@ def test_parse_blocks_prefixes_an_ablation_set_and_checks_its_capacity() -> None
         absolute.parse_blocks("", _StubHarness, "no_dr")
 
 
+def test_the_pool_report_carries_a_firing_rate_per_unit_of_alive_life(tmp_path: Path) -> None:
+    """shots / (3 x mean survival): an arm that is dead earlier also shoots less.
+
+    The metric is the only way to separate the two, and it is computed by two different programs here --
+    `run_cross_arena.summarise` per run and `report_cross_arena` over the pool -- so the values are checked
+    against each other and against the columns they are derived from, not just against a fixture.
+    """
+    harness = _load("run_cross_arena")
+    rows = [_row("CTE", "CTE", "CTE|CTDE|DTE", 1), _row("CTE", "DTE", "CTE|CTDE|DTE", 2)]
+    for row in rows:
+        row["survival_seconds"] = 20.0
+        row["shots"] = 60
+    stats = harness.summarise(rows)["CTE"]
+    assert stats["mean_survival_seconds"] == pytest.approx(20.0)
+    assert stats["shots_per_match"] == pytest.approx(60.0)
+    assert stats["shots_per_alive_second"] == pytest.approx(60.0 / (3 * 20.0))
+
+    pooled_dirs = _write_runs(tmp_path, {"a": ["CTE", "DTE"]})
+    _, pooled = _pool(tmp_path, pooled_dirs)
+    for paradigm, entry in pooled["per_architecture"].items():
+        expected = entry["shots_per_match"] / (3 * entry["mean_survival_seconds"])
+        assert entry["shots_per_alive_second"] == pytest.approx(expected, rel=1e-3), paradigm
+
+
 def test_rank_pearson_and_the_two_scale_join() -> None:
     """compare_scales is the instrument behind 'strength is not one quantity' (docs/08 section 8.11)."""
     absolute = _load("run_absolute_eval")

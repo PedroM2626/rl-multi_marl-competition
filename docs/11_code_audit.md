@@ -196,7 +196,7 @@ Measured with `coverage run --source=src/marl_arena -m pytest`, before and after
 | `controllers/base.py` | 91 % | 89 % | 91 % | 89 % |
 | **total** | **73 %** | **93 %** | **14 %** | **87–88 %** |
 
-Test count went from 9 to 106 (59 and 47) at the time of that measurement, and to **182 (113 and 69)** with
+Test count went from 9 to 106 (59 and 47) at the time of that measurement, and to **184 (115 and 69)** with
 the suites added since — the collision, config, dashboard, render and round-robin-statistics tests. The
 totals have moved with them: experiment 1 is now **94 %** (1,542 statements, 89–91 missing) and experiment 2 **89 %**
 (1,654, 185–187 missing). Both totals move by a few statements between identical invocations, which is why
@@ -629,7 +629,11 @@ Two consequences for how the study may be read:
    against 4.6 for CTE, an 18× spread that exists purely because the three architectures start from
    different random weight draws and argmax commits to whichever action that draw favours. Experiment 2
    shows the same effect with the sign reversed (88.2 for CAC against 397.9 for Comm, accuracy 0.1–0.2 %).
-   Any comparison of these arms' *engagement* is therefore partly a comparison of their initialisations.
+   Any comparison of these arms' *engagement* is therefore partly a comparison of their initialisations. The
+   normalisation of [§ 8.1](08_results.md#firing-rate) does not rescue it: dividing by the team's alive life
+   (the same artefact's own survival column) still gives 0.038 / 0.046 / 0.453 shots per alive-second for CTE /
+   DTE / CTDE and 1.433 / 0.462 / 1.562 for experiment 2's three arms — CAC is the 0.462, Comm the 1.562 — so
+   the spread is initialisation, not survival.
 2. **A "random baseline" win rate is not 1/3.** Untrained greedy CTDE wins 75 % of matches, against 32.6 %
    for the same arm in the trained study. Read naively that says training cost CTDE 42 points. It does not —
    the two are measured in different regimes (fixed variant vs. rotated slots, one weight draw vs. ten, and
@@ -935,9 +939,12 @@ Items 1–3 were the original list and are done; 6 is done; 4 is partly done; 7 
    arms by outcome only; nothing correlates a replicate's win rate with its KL or value loss. The seed-6
    divergence ([§ 8.1](08_results.md#readout-divergence)) is exactly the event those traces would have
    flagged — the policy was fine and the readout was not — and it went undiagnosed for two campaigns.
-5. Report shots-per-second-of-alive-life per agent, which is the only way to separate the two candidate
-   explanations for CTDE-Comm's deficit ([§ 8.3](08_results.md#decomposing-the-elimination-gap)).
-   **Still open**, and A-30 makes it more urgent: firing rate differs by 18× at initialisation.
+5. ~~Report shots-per-second-of-alive-life per agent~~ **Done** — `shots per match / (3 x mean survival)`,
+   computed by `report_study.py` and by both pool instruments and discussed with its numbers in
+   [§ Firing volume per unit of alive life](08_results.md#firing-rate). The answer for experiment 2 is the one
+   that was not visible before: CTDE-Comm fires the *most* per second it has agents standing (1.935 in the
+   study, 1.93 on the common pool), so no deficit of its elimination count can be attributed to shooting less.
+   A-30's initialisation caveat survives the normalisation, and is recorded with it.
 6. ~~Rotate architecture-to-slot assignment across seeds~~ (A-27). **Done** — `paradigm_rotation` is derived
    from the seed and recorded in every `run_summary.json`.
 7. Re-run at the 3 M-step budget the code defaults to, to test whether CTDE-Comm's late improvement

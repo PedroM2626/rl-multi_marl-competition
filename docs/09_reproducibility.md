@@ -34,7 +34,7 @@ reassuring-sounding claim, it was measured, in a second environment holding ever
 
 | Check | NumPy 1.26.4 vs 2.2.6 | Result |
 |---|---|---|
-| Experiment 1 test suite (59 tests then, 113 now) | both versions | **pass** |
+| Experiment 1 test suite (59 tests then, 115 now) | both versions | **pass** |
 | Experiment 2 test suite (47 tests then, 69 now) | both versions | **pass** |
 | Collision geometry (14 hand-computed entry parameters and hit positions) | both versions | **identical to 1e-12** |
 | Domain-randomisation stream (`arena_size`, speeds, cooldowns of match 41) | both versions | **identical, all digits** |
@@ -111,7 +111,7 @@ of them in the same place.
 | `python scripts/train_rl.py --seed S` | 1 | Headless PPO training; bit-for-bit reproducible for a given seed |
 | `python main.py` | 1 | Ursina 3D window, greedy policies loaded from `data/checkpoints/` |
 | `python scripts/plot_metrics.py` | 1 | Reads `data/metrics/summary.json` → `exports/metrics/` |
-| `python -m pytest tests/ -q` | 1 | 113 tests |
+| `python -m pytest tests/ -q` | 1 | 115 tests |
 | `cd ctde_arena && python scripts/train_rl.py` | 2 | Same, plus MLflow logging |
 | `cd ctde_arena && mlflow ui --backend-store-uri file:./mlruns` | 2 | Tracking UI |
 | `cd ctde_arena && python main.py` | 2 | 3D window for the CTDE variants |
@@ -207,7 +207,7 @@ ImportError: cannot import name 'ValueDecompositionCriticNetwork' from 'marl_are
 
 ```
 $ python -m pytest tests/ -q            # experiment 1
-112 passed, 1 skipped
+114 passed, 1 skipped
 $ cd ctde_arena && python -m pytest tests/ -q
 68 passed, 1 skipped
 ```
@@ -241,7 +241,7 @@ statements: `simulation.py` (33), `controllers/rl_controller.py` (15), `config.p
 `controllers/rl_controller.py` (+17) and `rl/actions.py` (+2). `ui/dashboard.py`, which was the single
 largest uncovered file for most of this repository's life, is at 100 % in both trees.
 
-What the 182 tests do **not** cover is catalogued in
+What the 184 tests do **not** cover is catalogued in
 [§ Coverage](11_code_audit.md#coverage). The collision solver is now geometrically verified against
 hand-computed values, but no test checks a *metric* against an independent reference — see the note at the
 end of that section on coverage not being correctness.

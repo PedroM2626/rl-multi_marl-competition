@@ -145,20 +145,25 @@ def main() -> None:
     print("(a match counted as 'timeout' was decided with the clock running out, so it measures survival, "
           "not elimination)\n")
 
-    print("| architecture | win rate | 95 % CI | vs 1/3 | elim./match | survival | shots | accuracy |")
-    print("|---|---:|---|---:|---:|---:|---:|---:|")
+    print("| architecture | win rate | 95 % CI | vs 1/3 | elim./match | survival | shots | shots/alive-s | accuracy |")
+    print("|---|---:|---|---:|---:|---:|---:|---:|---:|")
     table = {}
     for paradigm, stats in sorted(per_arch.items(), key=lambda kv: -kv[1]["wins"] / kv[1]["matches"]):
         n = int(stats["matches"])
         wins = int(stats["wins"])
         lo, hi = wilson(wins, n)
         shots = max(stats["shots"], 1)
+        survival = stats["survival"] / n
         table[paradigm] = {
             "matches": n, "wins": wins, "win_rate": round(wins / n, 4),
             "wilson_95_ci": [round(lo, 4), round(hi, 4)],
             "eliminations_per_match": round(stats["eliminations"] / n, 3),
-            "mean_survival_seconds": round(stats["survival"] / n, 2),
+            "mean_survival_seconds": round(survival, 2),
             "shots_per_match": round(stats["shots"] / n, 2),
+            # A team's alive life in a match is three agents' worth; without this ratio the shot column cannot
+            # tell "this architecture fires less" from "this architecture is dead earlier" -- see
+            # docs/08_results.md's firing-volume normalisation.
+            "shots_per_alive_second": round((stats["shots"] / n) / (3 * survival), 4) if survival > 0 else 0.0,
             "shot_accuracy": round(stats["hits"] / shots, 4),
             "win_rate_by_slot": {f"Team {i}": round(stats[f"slot_{i}"] / max(
                 sum(1 for r in rows if r["paradigm"] == paradigm and r["slot"] == f"Team {i}"), 1), 4)
@@ -168,7 +173,7 @@ def main() -> None:
         print(f"| {paradigm} | **{t['win_rate']:.3f}** | [{t['wilson_95_ci'][0]:.3f}, "
               f"{t['wilson_95_ci'][1]:.3f}] | {t['win_rate'] - 1/3:+.3f} "
               f"| {t['eliminations_per_match']:.2f} | {t['mean_survival_seconds']:.1f}s "
-              f"| {t['shots_per_match']:.1f} | {t['shot_accuracy']:.4f} |")
+              f"| {t['shots_per_match']:.1f} | {t['shots_per_alive_second']:.2f} | {t['shot_accuracy']:.4f} |")
 
     names = sorted(per_arch)
     pairs = [(a, b) for i, a in enumerate(names) for b in names[i + 1:]]

@@ -24,6 +24,7 @@
 | **Matched null** | The chance level for an evaluation, taken from the instrument's own geometry rather than from symmetry: three mutually random teams split 0.257 / 0.270 / 0.463 by spawn slot, so a slot-rotated arm's null is 0.3300, not 1/3. |
 | **Scope mismatch** | Comparing statistics computed over different replication counts — one checkpoint set's absolute ranks against three sets' pooled peer ranks, for instance. It produced this repository's most wrong published number ([§ 8.11](08_results.md#absolute-strength)). |
 | **Arena v2** | The re-measurement configuration: `REWARD_ALIVE_BONUS=0.0015` with a 30 s decay half-life and `TERMINATION_CAP_AWARDS_WIN=false`. Not the committed arena — the defaults are still the v1 constants. |
+| **Alive life** | A team's firing time in one match: three agents, each accruing `agent.survival_time` only while it is standing, so alive life is `3 x mean_survival_seconds`. Shots per alive-second is the ratio that separates "this arm fires less" from "this arm dies sooner" ([§ 8.1](08_results.md#firing-rate)). |
 | **Ablation arm** | One re-training of a study campaign differing by exactly one configuration key: `no_dr`, `narrow_64`, `wide_256` ([§ 8.13](08_results.md#ablations)). |
 | **Campaign set** | An arm's versioned checkpoints under `data/campaign_replicates/<arm>/`, with `MANIFEST.json` recording its override, hidden width read out of the weights, and a hash per file. Played by `--campaign <arm>`, which refuses a set the running `RL_HIDDEN_DIM` cannot load. |
 
@@ -68,7 +69,7 @@
 | `src/marl_arena/rl/actions.py` | Action parsing, decision materialisation, checkpoint I/O | [A-25](11_code_audit.md#unsafe-checkpoint-load) |
 | `src/marl_arena/ui/dashboard.py` | Builds the in-game overlay string | — |
 | `scripts/run_study.py` | Fans replicates out across both trees, collects every `run_summary.json`, writes a campaign aggregate; `--collect-only` rebuilds an aggregate without retraining | [A-35](11_code_audit.md#the-study-collector-read-only-one-of-the-two-trees) |
-| `scripts/report_study.py` | Study tables, paired *t*, Fisher tests, forward power; `--results-dir` and `--compare-to` for re-measurements and ablation arms | § 8.1, § 8.12, § 8.13 |
+| `scripts/report_study.py` | Study tables, paired *t*, Fisher tests, forward power, shots per alive-second; `--results-dir` and `--compare-to` for re-measurements and ablation arms | § 8.1, § 8.12, § 8.13 |
 | `scripts/run_cross_arena.py` | The round-robin: six architectures over all 20 triples with slot rotation; `--exp1-replicate/--exp2-replicate` select a training block, `--campaign <arm>` an ablation set behind the capacity guard | § 8.10, § 8.13 |
 | `scripts/version_campaign_checkpoints.py` | Copies the ablation arms into `data/campaign_replicates/` and writes the manifest that reads each set's hidden width out of its own weights; `--check` re-verifies hashes and bytes | § 8.13, § 9.7 |
 | `scripts/audit_dependencies.py` | Asks OSV about each exact pin of the measured lock and writes `results/dependency_audit.json`; refuses to write a verdict it could not fetch; `--verify-record` is the offline CI gate | § 9.10, [A-37](11_code_audit.md#the-measured-environment-carries-a-critical-advisory-that-cannot-be-patched-without-invalidating-it) |

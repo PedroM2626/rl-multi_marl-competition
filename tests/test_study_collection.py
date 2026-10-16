@@ -134,6 +134,13 @@ def test_read_metrics_types_the_seed_as_an_int(tmp_path: Path) -> None:
     assert rows[0]["experiment"] == "exp1"
 
 
+def test_shots_are_priced_per_second_of_alive_life() -> None:
+    """The normalisation behind the study's firing-volume column: three agents, each alive `mean_survival`."""
+    assert report_study.shots_per_alive_second(60.0, 20.0) == pytest.approx(1.0)
+    assert report_study.shots_per_alive_second(60.0, 0.0) == 0.0, "a team never alive cannot be normalised"
+    assert report_study.shots_per_alive_second(120.0, 40.0) == pytest.approx(1.0), "scale, not raw counts"
+
+
 def test_compare_arms_pairs_on_the_seed_and_reports_arm_minus_control(capsys) -> None:
     control = _rows("exp1", "CTE", {1: 0.40, 2: 0.30})
     arm = _rows("exp1", "CTE", {1: 0.20, 2: 0.15})

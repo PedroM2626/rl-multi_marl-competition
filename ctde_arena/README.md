@@ -338,7 +338,9 @@ because each tree prepends its own `src/`.
 4. Match critic capacity across VD and CAC before interpreting that contrast — VD's critic is 17,409
    parameters against CAC's 39,041, so the exp-2 arms differ in critic size as well as in information
    flow.
-5. Report shots per second-of-alive-life per agent — the only measurement that separates "Comm shoots less"
-   from "Comm dies sooner". [A-30](../docs/11_code_audit.md#greedy-evaluation-of-an-untrained-network-is-not-random-play)
-   makes this urgent: untrained firing volume already spans 88 to 398 shots per match.
+5. ~~Report shots per second-of-alive-life per agent~~ **Done** — `shots per match / (3 x mean survival)`,
+   reported by both instruments and discussed in
+   [§ Firing volume per unit of alive life](../docs/08_results.md#firing-rate). The answer for this tree:
+   Comm is the *most* prolific arm per second it is standing (1.935 study, 1.93 on the common pool), so its
+   raw volume was never restraint; VD is the least (1.340) while also firing the fewest shots.
 6. Build and run the Docker image, or delete the Dockerfile. It is currently unverified configuration.
