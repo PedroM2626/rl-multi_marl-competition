@@ -46,7 +46,12 @@ mlruns/
 # tracked evidence while the first one is ignored.
 **/data/runs*/
 
-# Raw per-run round-robin output: 15 directories, one per (training block, harness seed) pair.
-# results/cross_arena/blocks.csv is those same 27,000 team-matches with the two replication
-# columns joined on, so the split copies are reproducible scratch rather than evidence.
+# Round-robin run directories. One directory per (training block, harness seed); the pooled CSVs under
+# results/cross_arena/ are those same team-matches with the two replication columns joined on, so the split
+# copies are reproducible scratch rather than evidence.
+# cross_arena_blocks/ is the thirty-run six-block loop, cross_arena_v2_blocks/ the same networks played under
+# the arena-v2 termination and reward rules, and cross_arena_campaign/ the ablation checkpoint sets -- all
+# three are re-derivable with the commands in docs/09 section 9.3.
 /results/cross_arena_blocks/
+/results/cross_arena_v2_blocks/
+/results/cross_arena_campaign/

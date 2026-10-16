@@ -57,7 +57,7 @@ play_wave() {  # play one set of five harness seeds in parallel and wait for all
         --out "$outdir/$dir" > "$TMP/v2rr_${prefix}_${s}_${m}_${h}.log" 2>&1 ) &
   done
   wait
-  echo "  wave $outdir/$prefix__e1s${s}_e2s${m} done at $(date -Is)"
+  echo "  wave $outdir/${prefix}__e1s${s}_e2s${m} done at $(date -Is)"
 }
 
 echo "=== v2-rules round-robin, six blocks x five harness seeds, at $(date -Is)"
