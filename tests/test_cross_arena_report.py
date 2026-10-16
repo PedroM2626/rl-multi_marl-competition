@@ -11,6 +11,7 @@ harness and the replication columns, so their counting and level-spread logic is
 from __future__ import annotations
 
 import csv
+import hashlib
 import importlib.util
 import json
 import math
@@ -79,6 +80,10 @@ def test_labels_split_training_block_from_harness_seed() -> None:
     assert combine.labels(Path("results/cross_arena_blocks/e1s1_e2s7_h1")) == ("exp1_seed1+exp2_seed7", "1")
     # A run made from the promoted checkpoints has no training block to report, but still a seed.
     assert combine.labels(Path("results/cross_arena/seed5")) == ("promoted", "5")
+    # An ablation set of checkpoints keeps its arm in the label, or two different policies trained from the
+    # same two seeds would pool as one training block.
+    assert combine.labels(Path("no_dr__e1s1_e2s1_h3")) == ("no_dr:exp1_seed1+exp2_seed1", "3")
+    assert combine.labels(Path("wide_256__e1s2_e2s3_h1")) == ("wide_256:exp1_seed2+exp2_seed3", "1")
 
 
 def _write_runs(tmp_path: Path, blocks: dict[str, list[str]]) -> list[Path]:
@@ -204,11 +209,33 @@ def test_parse_blocks_labels_and_rejects_malformed_pairs(tmp_path: Path) -> None
     absolute = _load("run_absolute_eval")
     label, policies = absolute.parse_blocks("", _StubHarness)[0]
     assert label == "promoted" and set(policies) == {"CTE", "DTE"}
-    _StubHarness.replicate_policies = lambda s, m: {"CTE": Path("x.pt"), "DTE": Path("y.pt")}
+    seen: list[tuple[int, int, str]] = []
+    _StubHarness.replicate_policies = lambda s, m, campaign="": (
+        seen.append((s, m, campaign)) or {"CTE": Path("x.pt"), "DTE": Path("y.pt")})
     blocks = absolute.parse_blocks("1:7,10:5", _StubHarness)
     assert [label for label, _ in blocks] == ["exp1_seed1+exp2_seed7", "exp1_seed10+exp2_seed5"]
+    assert seen == [(1, 7, ""), (10, 5, "")]
     with pytest.raises(SystemExit):
         absolute.parse_blocks("1-7", _StubHarness)
+
+
+def test_parse_blocks_prefixes_an_ablation_set_and_checks_its_capacity() -> None:
+    """A campaign set must be labelled as one, and must not be playable at the wrong hidden width.
+
+    `data/campaign_replicates/<arm>` holds the checkpoints of the configuration ablations, two of which were
+    trained at a capacity the default configuration cannot load. The label carries the arm because
+    `no_dr/exp1_seed1+exp2_seed1` and the study's `exp1_seed1+exp2_seed1` are different policies that would
+    otherwise pool under one training-block key.
+    """
+    absolute = _load("run_absolute_eval")
+    calls: list[str] = []
+    _StubHarness.replicate_policies = lambda s, m, campaign="": {"CTE": Path("x.pt")}
+    _StubHarness.check_campaign_capacity = lambda arm: calls.append(arm)
+    blocks = absolute.parse_blocks("1:1", _StubHarness, "no_dr")
+    assert [label for label, _ in blocks] == ["no_dr:exp1_seed1+exp2_seed1"]
+    assert calls == ["no_dr"]
+    with pytest.raises(SystemExit):
+        absolute.parse_blocks("", _StubHarness, "no_dr")
 
 
 def test_rank_pearson_and_the_two_scale_join() -> None:
@@ -261,6 +288,50 @@ def test_matched_null_requires_the_uniform_baseline(tmp_path: Path) -> None:
     assert pooled["CTE"]["excess_vs_matched_null"] == pytest.approx(0.4167, abs=1e-4)
     # The Team 3 excess is smaller than the Team 1 one because Team 3 is a better corner to begin with.
     assert pooled["CTE"]["excess_by_trained_team"]["Team 3"] < pooled["CTE"]["excess_by_trained_team"]["Team 1"]
+
+
+def test_the_campaign_manifest_matches_the_weights() -> None:
+    """Every ablation checkpoint is versioned, hashed, and trained at the capacity the manifest claims.
+
+    docs/08_results.md#ablations says each arm differs from the study by one configuration key, two of them
+    keys that change the network's width. A `.pt` here stores only `{"paradigm", "actor"}`, so nothing in the
+    weight file records that; this reads the width back out of the first layer of each actor, compares it
+    with the arm's declared override, and re-derives the bytes and SHA-256 the manifest pinned.
+    """
+    root = PROJECT_ROOT / "data" / "campaign_replicates"
+    manifest = json.loads((root / "MANIFEST.json").read_text(encoding="utf-8"))
+    assert set(manifest["arms"]) == {"no_dr", "narrow_64", "wide_256"}
+    derive = _load("version_campaign_checkpoints").actor_shape
+    files = 0
+    for arm, payload in manifest["arms"].items():
+        declared = int(payload["overrides"].get("RL_HIDDEN_DIM", 128))
+        assert len(payload["sets"]) == 6, f"{arm}: three seeds x two experiments"
+        for name, entry in payload["sets"].items():
+            assert entry["hidden_dim"] == declared, (arm, name)
+            assert entry["completed_steps"] == entry["target_steps"] == 500000, (arm, name)
+            for file, meta in entry["files"].items():
+                path = root / arm / name / file
+                assert path.is_file(), path
+                assert path.stat().st_size == meta["bytes"], file
+                assert hashlib.sha256(path.read_bytes()).hexdigest() == meta["sha256"], file
+                if file == sorted(entry["files"])[0]:
+                    assert derive(path)[0] == meta["hidden_dim"], (arm, name, file)
+                files += 1
+    assert files == 54, files
+
+
+def test_the_capacity_guard_refuses_an_arm_the_configuration_cannot_load() -> None:
+    """Playing `wide_256` at the committed width must fail loudly, before a single match is played."""
+    harness = _load("run_cross_arena")
+    from marl_arena.config import CONFIG
+
+    assert CONFIG.rl_hidden_dim == 128, "the study's width is what the no_dr arm was trained at"
+    harness.check_campaign_capacity("no_dr")
+    for arm in ("narrow_64", "wide_256"):
+        with pytest.raises(SystemExit, match="export RL_HIDDEN_DIM="):
+            harness.check_campaign_capacity(arm)
+    with pytest.raises(SystemExit, match="no campaign"):
+        harness.check_campaign_capacity("not_an_arm")
 
 
 def test_report_only_rederives_the_summary_from_the_recorded_matches(tmp_path: Path) -> None:

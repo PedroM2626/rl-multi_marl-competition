@@ -48,6 +48,16 @@ GROUPS = [
         ("data/training_replicates/",),
     ),
     (
+        "Ablation checkpoints behind the arm tables",
+        "The three configuration-ablation sets of [§ 8.13](08_results.md#ablations), versioned for the same "
+        "reason as the round-robin blocks -- the scratch they were trained into is git-ignored -- so an arm "
+        "can be replayed without retraining it. `MANIFEST.json` beside them records each set's single "
+        "override, the hidden width read out of its own weights, and a SHA-256 per file; a `.pt` in this "
+        "repository stores no capacity metadata, which is the one thing that distinguishes `narrow_64` and "
+        "`wide_256` from the control.",
+        ("data/campaign_replicates/",),
+    ),
+    (
         "Ablation and arena-v2 campaigns",
         "`run_arena_v2_campaign.sh` and `run_ablation_campaign.sh` output, each aggregated by "
         "`run_study.py` from 500 k-step replicates on seeds 1-3 (v2: 10 seeds). Every arm differs from "

@@ -34,11 +34,17 @@ def labels(directory: Path) -> tuple[str, str]:
     `e1s10_e2s5_h3` -> ("exp1_seed10+exp2_seed5", "3"). Both are needed: the block is the training
     replicate and the harness seed is the match stream, and conflating them is what made the first
     round-robin analysis silently drop four fifths of its pairs.
+
+    A run over an ablation set of checkpoints carries that set as a prefix, `no_dr__e1s1_e2s1_h3` ->
+    ("no_dr:exp1_seed1+exp2_seed1", "3"). Without it, an ablation block and a study block trained from the
+    same two seeds would pool under one label and read as five match streams instead of two.
     """
     name = directory.name
-    match = re.fullmatch(r"e1s(\d+)_e2s(\d+)_h(\d+)", name)
+    match = re.fullmatch(r"(?:([a-z0-9_]+?)__)?e1s(\d+)_e2s(\d+)_h(\d+)", name)
     if match:
-        return f"exp1_seed{match.group(1)}+exp2_seed{match.group(2)}", match.group(3)
+        campaign, exp1, exp2, seed = match.groups()
+        block = f"exp1_seed{exp1}+exp2_seed{exp2}"
+        return (f"{campaign}:{block}" if campaign else block), seed
     return "promoted", name.rsplit("seed", 1)[-1]
 
 

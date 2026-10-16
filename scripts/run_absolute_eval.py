@@ -44,13 +44,18 @@ def load_harness():
     return module
 
 
-def parse_blocks(spec: str, harness) -> list[tuple[str, dict]]:
+def parse_blocks(spec: str, harness, campaign: str = "") -> list[tuple[str, dict]]:
     """(label, policies) per training block; an empty spec means the promoted checkpoint set.
 
     The labels are the strings the round-robin uses, so the two instruments can be joined on the checkpoint
-    set they measured rather than on the architecture name alone.
+    set they measured rather than on the architecture name alone. `campaign` switches both to an ablation
+    set under `data/campaign_replicates/`, prefixed on the label so a pooled table cannot read an ablation
+    block and a study block trained from the same two seeds as one checkpoint set.
     """
     if not spec.strip():
+        if campaign:
+            raise SystemExit("--campaign names a set of training replicates, so --blocks has to say which "
+                             "(exp1:exp2 pairs); the promoted checkpoints are not that set")
         return [("promoted", dict(harness.POLICIES))]
     blocks = []
     for pair in spec.split(","):
@@ -58,7 +63,11 @@ def parse_blocks(spec: str, harness) -> list[tuple[str, dict]]:
         if not exp2:
             raise SystemExit(f"--blocks wants exp1:exp2 pairs, got {pair!r}")
         label = f"exp1_seed{exp1}+exp2_seed{exp2}"
-        blocks.append((label, harness.replicate_policies(int(exp1), int(exp2))))
+        policies = harness.replicate_policies(int(exp1), int(exp2), campaign)
+        if campaign:
+            harness.check_campaign_capacity(campaign)
+            label = f"{campaign}:{label}"
+        blocks.append((label, policies))
     return blocks
 
 
@@ -137,6 +146,10 @@ def parse_args() -> argparse.Namespace:
                              "uses the promoted checkpoints, which is one set and cannot separate an "
                              "architecture from the seed that produced it")
     parser.add_argument("--out", type=Path, default=Path("results/absolute"))
+    parser.add_argument("--campaign", default="",
+                        help="name of an ablation set under data/campaign_replicates/ whose checkpoints "
+                             "--blocks should load; the round-robin's capacity guard runs, so the running "
+                             "RL_HIDDEN_DIM has to match the set")
     parser.add_argument("--compare-pool", type=Path, default=None,
                         help="a report_cross_arena.py JSON; joins its per-architecture win rates to these "
                              "and reports how much the two scales agree")
@@ -235,6 +248,37 @@ def add_matched_null(pooled: dict, null: dict[str, float]) -> float:
     return round(balanced, 4)
 
 
+def arena_snapshot(args, recorded: Path) -> dict | None:
+    """The A-34 knobs these matches were played under, so a re-measurement cannot be mistaken for the study.
+
+    `--report-only` carries the snapshot the run itself recorded rather than reading the environment: the
+    shell that re-derives a summary is not evidence of the arena that produced the matches inside it.
+    """
+    if args.report_only:
+        if not recorded.is_file():
+            return None
+        payload = json.loads(recorded.read_text(encoding="utf-8"))
+        return payload.get("arena")
+    from marl_arena.config import CONFIG
+
+    return {
+        # The harness supplies every match variant explicitly, so domain randomisation is off in play
+        # whatever the environment says; recorded anyway because that is what makes the no_dr arm's
+        # checkpoints comparable to the study's on this scale.
+        "domain_randomization": False,
+        "hidden_dim": CONFIG.rl_hidden_dim,
+        "match_duration_seconds": CONFIG.match_duration_seconds,
+        "reward": {
+            "alive_bonus": CONFIG.reward_alive_bonus,
+            "alive_decay_half_life_s": CONFIG.reward_alive_decay_half_life,
+            "kill": CONFIG.reward_kill,
+            "death": CONFIG.reward_death,
+            "hit": CONFIG.reward_hit,
+            "cap_awards_win": CONFIG.termination_cap_awards_win,
+        },
+    }
+
+
 def main() -> None:
     args = parse_args()
     if hasattr(sys.stdout, "reconfigure"):
@@ -242,6 +286,7 @@ def main() -> None:
 
     harness = load_harness()
     out_dir = PROJECT_ROOT / args.out if not args.out.is_absolute() else args.out
+    arena_settings = arena_snapshot(args, out_dir / "summary.json")
     rows: list[dict[str, object]] = []
 
     if args.report_only:
@@ -257,7 +302,7 @@ def main() -> None:
         import numpy as np
 
         seeds = [int(value) for value in args.seeds.split(",")]
-        parsed = parse_blocks(args.blocks, harness)
+        parsed = parse_blocks(args.blocks, harness, args.campaign)
         blocks = [label for label, _ in parsed]
         for block_label, policies in parsed:
             for seed in seeds:
@@ -360,6 +405,8 @@ def main() -> None:
         "design": "one trained policy versus two uniform-random controllers, trained slot rotated",
         "blocks": blocks,
         "seeds": seeds,
+        "campaign": args.campaign or "study",
+        "arena": arena_settings,
         "matches_per_architecture_per_block_per_seed": args.matches if not args.report_only else None,
         "chance_level": round(1 / 3, 4),
         "matched_null_by_slot": null_by_slot,

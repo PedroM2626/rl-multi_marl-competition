@@ -42,6 +42,18 @@ SRC_DIR = CTDE_ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
+CAMPAIGN_MANIFEST = ROOT_ROOT / "data" / "campaign_replicates" / "MANIFEST.json"
+
+
+def campaign_names() -> list[str]:
+    """The ablation checkpoint sets that are versioned on this machine."""
+    if not CAMPAIGN_MANIFEST.is_file():
+        return []
+    return sorted(json.loads(CAMPAIGN_MANIFEST.read_text(encoding="utf-8"))["arms"])
+
+
+CAMPAIGNS = campaign_names()
+
 # Default policies: the promoted replicate of each experiment, versioned in the two data/ trees.
 POLICIES = {
     "CTE": CTDE_ROOT.parent / "data" / "checkpoints" / "team_1_cte.pt",
@@ -67,6 +79,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--exp2-replicate", type=int, default=None,
         help="training seed of the experiment 2 policies, loaded from data/runs/exp2_seedN"
+    )
+    parser.add_argument(
+        "--campaign", default="", choices=["", *CAMPAIGNS],
+        help="play an ablation set from data/campaign_replicates instead of the study replicates; needs "
+             "both replicate flags, and requires the running RL_HIDDEN_DIM to match the set's capacity"
     )
     parser.add_argument("--out", type=Path, default=Path("results/cross_arena"))
     parser.add_argument(
@@ -101,15 +118,27 @@ def wilson(wins: int, trials: int, z: float = 1.96) -> tuple[float, float]:
     return (centre - half, centre + half)
 
 
-def replicate_policies(exp1_seed: int, exp2_seed: int) -> dict[str, Path]:
+def replicate_policies(exp1_seed: int, exp2_seed: int, campaign: str = "") -> dict[str, Path]:
     """The six policies taken from named *training* replicates instead of the promoted ones.
 
     Without this the round-robin measures two particular checkpoints per architecture and cannot say
     anything about the architectures. With it, a block is one training run per experiment, and the spread
     across blocks is the training variance the study has not been able to resolve.
+
+    `campaign` selects the ablation set of the same name (`no_dr`, `narrow_64`, `wide_256`) from
+    `data/campaign_replicates/`, so a policy trained under a different configuration can be played against
+    the committed ones. The capacity guard in `check_campaign_capacity` is what makes that safe.
     """
-    runs = ROOT_ROOT / "data" / "runs"
-    versioned = ROOT_ROOT / "data" / "training_replicates"
+    if campaign:
+        versioned = ROOT_ROOT / "data" / "campaign_replicates" / campaign
+    else:
+        versioned = ROOT_ROOT / "data" / "training_replicates"
+    scratch_name = f"runs_ablation_{campaign}" if campaign else "runs"
+    # Each experiment's scratch lives in its own tree; experiment 2's runs are not under the repository root.
+    scratch = {
+        "exp1": ROOT_ROOT / "data" / scratch_name,
+        "exp2": CTDE_ROOT / "data" / scratch_name,
+    }
     out: dict[str, Path] = {}
     for experiment, seed, paradigms in (
         ("exp1", exp1_seed, ("CTE", "DTE", "CTDE")),
@@ -119,9 +148,10 @@ def replicate_policies(exp1_seed: int, exp2_seed: int) -> dict[str, Path]:
         # git-ignored study scratch is only present on the machine that produced them.
         directory = versioned / f"{experiment}_seed{seed}"
         if not directory.is_dir():
-            directory = runs / f"{experiment}_seed{seed}" / "checkpoints"
+            directory = scratch[experiment] / f"{experiment}_seed{seed}" / "checkpoints"
         if not directory.is_dir():
-            raise SystemExit(f"no such training replicate: {experiment}_seed{seed}")
+            raise SystemExit(f"no such training replicate: {experiment}_seed{seed}"
+                             + (f" in campaign {campaign}" if campaign else ""))
         for paradigm in paradigms:
             found = sorted(directory.glob(f"*_{paradigm.lower()}.pt"))
             if len(found) != 1:
@@ -130,6 +160,29 @@ def replicate_policies(exp1_seed: int, exp2_seed: int) -> dict[str, Path]:
                 )
             out[paradigm] = found[0]
     return out
+
+
+def check_campaign_capacity(campaign: str) -> None:
+    """Refuse to play an ablation set whose capacity the running configuration cannot hold.
+
+    A `.pt` here stores `{"paradigm", "actor"}` and no shape metadata, and `RL_HIDDEN_DIM` defaults to 128,
+    so the narrow and wide arms would otherwise fail inside a `load_state_dict` shape error -- or, if a
+    reader swapped checkpoints between sets, be played at a width they were never trained at. The manifest
+    records the width read out of each set's own weights, which is the only statement about capacity this
+    repository can make without re-running the campaign script's `env` line.
+    """
+    from marl_arena.config import CONFIG
+
+    manifest = json.loads(CAMPAIGN_MANIFEST.read_text(encoding="utf-8"))
+    arm = manifest["arms"].get(campaign)
+    if arm is None:
+        raise SystemExit(f"no campaign {campaign!r} in {CAMPAIGN_MANIFEST.relative_to(ROOT_ROOT)}; "
+                         f"known arms: {sorted(manifest['arms'])}")
+    for name, entry in arm["sets"].items():
+        width = entry["hidden_dim"]
+        if width != CONFIG.rl_hidden_dim:
+            raise SystemExit(f"{campaign}/{name} was trained at RL_HIDDEN_DIM={width}, this run has "
+                             f"{CONFIG.rl_hidden_dim}; export RL_HIDDEN_DIM={width} to replay the arm")
 
 
 class CrossArena:
@@ -332,8 +385,14 @@ def main() -> None:
     if args.exp1_replicate is not None or args.exp2_replicate is not None:
         if args.exp1_replicate is None or args.exp2_replicate is None:
             raise SystemExit("--exp1-replicate and --exp2-replicate must be given together")
-        policies = replicate_policies(args.exp1_replicate, args.exp2_replicate)
+        policies = replicate_policies(args.exp1_replicate, args.exp2_replicate, args.campaign)
         block = f"exp1_seed{args.exp1_replicate}+exp2_seed{args.exp2_replicate}"
+        if args.campaign:
+            check_campaign_capacity(args.campaign)
+            block = f"{args.campaign}:{block}"
+    elif args.campaign:
+        raise SystemExit("--campaign names a set of training replicates, so it needs both "
+                         "--exp1-replicate and --exp2-replicate")
     arena = CrossArena(args.seed, policies)
 
     triples = list(itertools.combinations(sorted(POLICIES), 3))
@@ -355,17 +414,30 @@ def main() -> None:
     matches_played = len(all_rows) // 3
     summary = {
         "design": "all C(6,3) architecture triples, each played to completion with slot rotation",
-        "policies": {p: str(path.relative_to(ROOT_ROOT)) for p, path in POLICIES.items()},
+        "policies": {p: str(path.relative_to(ROOT_ROOT)) for p, path in policies.items()},
         "triples": len(triples),
         "matches_per_triple": args.matches_per_triple,
         "matches_played": matches_played,
         "team_matches": len(all_rows),
         "seed": args.seed,
         "training_block": block,
+        "campaign": args.campaign or "study",
         "arena": {
             "arena_size": arena.base_variant.arena_size,
             "match_duration_seconds": arena.base_variant.match_duration_seconds,
             "domain_randomization": False,
+            "hidden_dim": arena.config.rl_hidden_dim,
+            # Snapshot of the A-34 knobs. The round-robin can now be played under a different termination
+            # or reward rule, and a pooled table that cannot tell the two instruments apart would
+            # attribute a rule effect to an architecture.
+            "reward": {
+                "alive_bonus": arena.config.reward_alive_bonus,
+                "alive_decay_half_life_s": arena.config.reward_alive_decay_half_life,
+                "kill": arena.config.reward_kill,
+                "death": arena.config.reward_death,
+                "hit": arena.config.reward_hit,
+                "cap_awards_win": arena.config.termination_cap_awards_win,
+            },
         },
         "per_architecture": table,
         "chance_level": round(1 / 3, 4),

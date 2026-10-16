@@ -1083,6 +1083,42 @@ weight their win rates can carry:
   same nominal win rate (0.491 against the control's 0.478). Two configurations reaching the same score by
   different means is exactly what makes the pooled win rate a weak summary.
 
+### The arms' checkpoints are versioned, and their capacity is read out of the weights
+
+Until now this section's evidence was its aggregates: `results/ablation_*/per_seed_metrics.csv` is
+versioned, the policies behind it were not, so reproducing an arm meant retraining it — and replaying even
+one of its matches meant having trained it. `scripts/version_campaign_checkpoints.py` copies the 54
+checkpoints into `data/campaign_replicates/<arm>/<experiment>_seedN/` (24 MB added to Git, against roughly
+70 min of wall clock per arm if a reader would rather re-derive them) and writes `MANIFEST.json` beside them.
+
+The manifest matters more than the copies. A `.pt` in this repository stores
+`{"paradigm", "actor"}` and nothing else, so **the width a network was trained at is not in the file** — and
+two of these three arms are precisely about width. The manifest records, per set, the single override it was
+trained under, the seed, steps, train seconds, held-out match count, and the hidden width read back out of
+the first layer of each actor:
+
+| Arm | Override | Sets | Width the weights show |
+|---|---|---:|---|
+| `no_dr` | `DOMAIN_RANDOMIZATION=false` | 6 | 128 |
+| `narrow_64` | `RL_HIDDEN_DIM=64` | 6 | 64 |
+| `wide_256` | `RL_HIDDEN_DIM=256` | 6 | 256 |
+
+That is the first statement about the arms that does not depend on the campaign script's `env` line: the
+capacity claimed in the table above is what the stored tensors say about themselves, and a test
+(`tests/test_cross_arena_report.py::test_the_campaign_manifest_matches_the_weights`) re-derives it, the byte
+counts and the SHA-256 of every one of the 54 files.
+
+Both pool instruments can now play an arm — `run_cross_arena.py --campaign no_dr --exp1-replicate 1
+--exp2-replicate 1` and `run_absolute_eval.py --campaign wide_256 --blocks 1:1` — behind a guard that
+refuses a set the running `RL_HIDDEN_DIM` cannot load, naming the export instead of leaving the shape error.
+A campaign run's block label carries the arm (`no_dr:exp1_seed1+exp2_seed1`) because an ablation block and a
+study block trained from the same two seeds are different policies, and pooling them under one label would
+read as six match streams over three checkpoints rather than two over two.
+
+**What this does not do:** it does not re-measure the pools. Nothing in this section has yet been replayed
+with the arm checkpoints against the common pool or the random pool; the instruments exist and the numbers
+have not been run.
+
 ### Status of this section
 
 `scripts/run_ablation_campaign.sh` runs the three arms in series behind the arena-v2 campaign. Its header
@@ -1099,7 +1135,9 @@ committed study measured under its 20-way load ([§ 9.5](09_reproducibility.md#9
 **What this does not do:** it does not re-run the common-opponent pool or the random-pool instrument under
 these configurations, so it cannot say whether the [§ 8.10](#cross-arena) band structure or the
 [§ 8.11](#absolute-strength) agreement survives a different `RL_HIDDEN_DIM` or no domain randomisation —
-each arm still measures teams that co-adapted inside their own run. It also does not close the power gap:
+each arm still measures teams that co-adapted inside their own run. The instruments to ask that question
+exist since the checkpoint set above was versioned ([`--campaign`](#ablations)); the measurement has not
+been run. It also does not close the power gap:
 three seeds is the sample the study's own forward-power table puts an order of magnitude short of what
 would resolve the differences it reports.
 

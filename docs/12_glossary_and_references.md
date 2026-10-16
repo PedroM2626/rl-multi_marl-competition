@@ -25,6 +25,7 @@
 | **Scope mismatch** | Comparing statistics computed over different replication counts — one checkpoint set's absolute ranks against three sets' pooled peer ranks, for instance. It produced this repository's most wrong published number ([§ 8.11](08_results.md#absolute-strength)). |
 | **Arena v2** | The re-measurement configuration: `REWARD_ALIVE_BONUS=0.0015` with a 30 s decay half-life and `TERMINATION_CAP_AWARDS_WIN=false`. Not the committed arena — the defaults are still the v1 constants. |
 | **Ablation arm** | One re-training of a study campaign differing by exactly one configuration key: `no_dr`, `narrow_64`, `wide_256` ([§ 8.13](08_results.md#ablations)). |
+| **Campaign set** | An arm's versioned checkpoints under `data/campaign_replicates/<arm>/`, with `MANIFEST.json` recording its override, hidden width read out of the weights, and a hash per file. Played by `--campaign <arm>`, which refuses a set the running `RL_HIDDEN_DIM` cannot load. |
 
 ## 12.2 Symbols
 
@@ -68,10 +69,11 @@
 | `src/marl_arena/ui/dashboard.py` | Builds the in-game overlay string | — |
 | `scripts/run_study.py` | Fans replicates out across both trees, collects every `run_summary.json`, writes a campaign aggregate; `--collect-only` rebuilds an aggregate without retraining | [A-35](11_code_audit.md#the-study-collector-read-only-one-of-the-two-trees) |
 | `scripts/report_study.py` | Study tables, paired *t*, Fisher tests, forward power; `--results-dir` and `--compare-to` for re-measurements and ablation arms | § 8.1, § 8.12, § 8.13 |
-| `scripts/run_cross_arena.py` | The round-robin: six architectures over all 20 triples with slot rotation; `--exp1-replicate/--exp2-replicate` select a training block | § 8.10 |
+| `scripts/run_cross_arena.py` | The round-robin: six architectures over all 20 triples with slot rotation; `--exp1-replicate/--exp2-replicate` select a training block, `--campaign <arm>` an ablation set behind the capacity guard | § 8.10, § 8.13 |
+| `scripts/version_campaign_checkpoints.py` | Copies the ablation arms into `data/campaign_replicates/` and writes the manifest that reads each set's hidden width out of its own weights; `--check` re-verifies hashes and bytes | § 8.13, § 9.7 |
 | `scripts/combine_cross_arena.py` | Merges round-robin run directories, stamping each row with its block and harness seed and refusing mismatched schemas | § 8.10 |
 | `scripts/report_cross_arena.py` | McNemar exact tests, leave-one-block-out, slot and regime controls, both stability tables | § 8.10 |
-| `scripts/run_absolute_eval.py` | Absolute strength against a uniform-random pool, with the matched null and the two-scale agreement; `--report-only` re-derives a summary from its own CSV | § 8.11 |
+| `scripts/run_absolute_eval.py` | Absolute strength against a uniform-random pool, with the matched null and the two-scale agreement; `--report-only` re-derives a summary from its own CSV, `--campaign <arm>` plays an ablation set | § 8.11, § 8.13 |
 | `scripts/random_baseline.py` | Untrained reference points in greedy and uniform modes; the uniform run supplies the slot-matched null | § 8.9, § 8.11 |
 | `scripts/promote_run.py` | Mechanically chooses and copies the shipped replicate (`--seed median`) | § 9.7 |
 | `scripts/report_inventory.py` | Regenerates the § 9.7 artefact table from `git ls-files` and live SHA-256 | § 9.7 |

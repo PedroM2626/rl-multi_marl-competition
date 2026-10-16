@@ -34,8 +34,8 @@ reassuring-sounding claim, it was measured, in a second environment holding ever
 
 | Check | NumPy 1.26.4 vs 2.2.6 | Result |
 |---|---|---|
-| Experiment 1 test suite (59 tests then, 91 now) | both versions | **pass** |
-| Experiment 2 test suite (47 tests then, 66 now) | both versions | **pass** |
+| Experiment 1 test suite (59 tests then, 97 now) | both versions | **pass** |
+| Experiment 2 test suite (47 tests then, 69 now) | both versions | **pass** |
 | Collision geometry (14 hand-computed entry parameters and hit positions) | both versions | **identical to 1e-12** |
 | Domain-randomisation stream (`arena_size`, speeds, cooldowns of match 41) | both versions | **identical, all digits** |
 | `train_rl.py --seed 42 --steps 4000`, first PPO update | both versions | policy/value loss differ at the **1e-6 – 1e-8** level |
@@ -109,7 +109,7 @@ of them in the same place.
 | `python scripts/train_rl.py --seed S` | 1 | Headless PPO training; bit-for-bit reproducible for a given seed |
 | `python main.py` | 1 | Ursina 3D window, greedy policies loaded from `data/checkpoints/` |
 | `python scripts/plot_metrics.py` | 1 | Reads `data/metrics/summary.json` → `exports/metrics/` |
-| `python -m pytest tests/ -q` | 1 | 94 tests |
+| `python -m pytest tests/ -q` | 1 | 97 tests |
 | `cd ctde_arena && python scripts/train_rl.py` | 2 | Same, plus MLflow logging |
 | `cd ctde_arena && mlflow ui --backend-store-uri file:./mlruns` | 2 | Tracking UI |
 | `cd ctde_arena && python main.py` | 2 | 3D window for the CTDE variants |
@@ -129,8 +129,10 @@ of them in the same place.
 | `python scripts/run_cross_arena.py --exp1-replicate S --exp2-replicate M --seed H --out results/cross_arena_blocks/e1sS_e2sM_hH` | run from `ctde_arena/` | One block x one match stream of the round-robin, over replicate checkpoints instead of the promoted ones |
 | `python scripts/report_cross_arena.py --in results/cross_arena/blocks.csv --json-out results/cross_arena/blocks.json` | root | McNemar pairwise tests, the leave-one-training-block-out column, the slot control and both stability tables |
 | `python scripts/combine_cross_arena.py results/cross_arena_blocks/*` | root | Pool replicated round-robin runs, stamping each row with its training block and harness seed |
+| `python scripts/run_cross_arena.py --campaign no_dr --exp1-replicate S --exp2-replicate M --seed H --out results/cross_arena_campaign/no_dr__e1sS_e2sM_hH` | run from `ctde_arena/` | One block of the round-robin over an **ablation** checkpoint set from `data/campaign_replicates/`; the capacity guard runs first, so `RL_HIDDEN_DIM` must equal the arm's width |
+| `python scripts/version_campaign_checkpoints.py` (or `--check`) | root | Copy the three ablation sets into `data/campaign_replicates/` and write the manifest that records each set's override, hidden width and hashes; `--check` verifies the versioned bytes without writing |
 | `python scripts/run_absolute_eval.py --matches 150 --seeds 1,2,3` | run from `ctde_arena/` | Absolute strength on the promoted checkpoints: each trained policy against two uniform-random controllers, trained slot rotated |
-| `python scripts/run_absolute_eval.py --blocks 1:7,10:5,9:2 --matches 50 --seeds 1,2,3 --out results/absolute_blocks --null-json results/baseline/random_baseline_uniform.json --compare-pool results/cross_arena/blocks.json` | run from `ctde_arena/` | The same over three training blocks, with the slot-matched null and the agreement with the peer pool |
+| `python scripts/run_absolute_eval.py --blocks 1:7,10:5,9:2 --matches 50 --seeds 1,2,3 --out results/absolute_blocks --null-json results/baseline/random_baseline_uniform.json --compare-pool results/cross_arena/blocks.json` | run from `ctde_arena/` | The same over three training blocks, with the slot-matched null and the agreement with the peer pool; `--campaign <arm>` takes the ablation sets instead, behind the same capacity guard |
 | `python scripts/run_absolute_eval.py --report-only --out results/absolute_blocks …` | run from `ctde_arena/` | Re-derive a summary from its recorded `matches.csv`, playing nothing |
 | `bash scripts/run_arena_v2_campaign.sh` | both | Queue the arena-v2 study: 10 seeds x 2 experiments at 500 k steps under the decayed alive bonus and draw-on-cap, waiting for whatever is already on the machine |
 | `bash scripts/run_ablation_campaign.sh` | both | Queue the three configuration ablations (`no_dr`, `narrow_64`, `wide_256`), each one key different from the committed study, after the v2 campaign |
@@ -201,7 +203,7 @@ ImportError: cannot import name 'ValueDecompositionCriticNetwork' from 'marl_are
 
 ```
 $ python -m pytest tests/ -q            # experiment 1
-93 passed, 1 skipped
+96 passed, 1 skipped
 $ cd ctde_arena && python -m pytest tests/ -q
 68 passed, 1 skipped
 ```
@@ -235,7 +237,7 @@ statements: `simulation.py` (33), `controllers/rl_controller.py` (15), `config.p
 `controllers/rl_controller.py` (+17) and `rl/actions.py` (+2). `ui/dashboard.py`, which was the single
 largest uncovered file for most of this repository's life, is at 100 % in both trees.
 
-What the 157 tests do **not** cover is catalogued in
+What the 166 tests do **not** cover is catalogued in
 [§ Coverage](11_code_audit.md#coverage). The collision solver is now geometrically verified against
 hand-computed values, but no test checks a *metric* against an independent reference — see the note at the
 end of that section on coverage not being correctness.
@@ -354,7 +356,7 @@ inclination to replay 2,700 matches.
 
 ## 9.7 Artefact inventory
 
-Every versioned experiment artefact (113 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed.
+Every versioned experiment artefact (168 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed.
 
 **Promoted replicate.** The artefacts that match the current code. Chosen by `promote_run.py --seed median`, which is the replicate with the least L1 distance to the per-arm study means; `PROVENANCE.json` records the choice and the full run summary behind it.
 
@@ -469,6 +471,66 @@ Every versioned experiment artefact (113 files), with SHA-256 for integrity chec
 | `data/training_replicates/exp2_seed7/team_2_ctde-comm.pt` | 313,778 | `5a22ef5f10fb96b78892ffb58e351876072573fd958f2874d8e7877c1794d14b` |
 | `data/training_replicates/exp2_seed7/team_3_ctde-vd.pt` | 217,330 | `d49f1fdfdd579ea443e6e253df7d814650b736551f51cd8f32a7e980b93f31c7` |
 
+**Ablation checkpoints behind the arm tables.** The three configuration-ablation sets of [§ 8.13](08_results.md#ablations), versioned for the same reason as the round-robin blocks -- the scratch they were trained into is git-ignored -- so an arm can be replayed without retraining it. `MANIFEST.json` beside them records each set's single override, the hidden width read out of its own weights, and a SHA-256 per file; a `.pt` in this repository stores no capacity metadata, which is the one thing that distinguishes `narrow_64` and `wide_256` from the control.
+
+| Path | Bytes | SHA-256 |
+|---|---:|---|
+| `data/campaign_replicates/MANIFEST.json` | 26,245 | `df6e43676025ac83a824d71eab34b4529be6997959e526beb4993f4388e20f38` |
+| `data/campaign_replicates/narrow_64/exp1_seed1/team_1_dte.pt` | 42,082 | `7ad507f6be709f8d6e1b68b5fc3fe08d24fe152d0b88f14f4365b30e1716d92e` |
+| `data/campaign_replicates/narrow_64/exp1_seed1/team_2_ctde.pt` | 89,720 | `ec9e1b3f931f6bbeecbf7400944b9a4da3bbd855a93facb33c516f9a5959f3b5` |
+| `data/campaign_replicates/narrow_64/exp1_seed1/team_3_cte.pt` | 98,914 | `02f49b03fcd359ec64b1b0fe8e02edc0723fae487bb421705f41c7c8dbe08970` |
+| `data/campaign_replicates/narrow_64/exp1_seed2/team_1_ctde.pt` | 89,720 | `c32c300d2ba57e0bb5feada1576adb1b7eafc6ff2b2ac53d44c3f9103a287426` |
+| `data/campaign_replicates/narrow_64/exp1_seed2/team_2_cte.pt` | 98,914 | `52c43344a1da513ff1dc92ead7d56f8cba30511b60b115c4964aa5c90d009914` |
+| `data/campaign_replicates/narrow_64/exp1_seed2/team_3_dte.pt` | 42,082 | `be61390d4e5e5decf56ee9654885e7eaeca6e80aac3aaded40a595db3100fc4b` |
+| `data/campaign_replicates/narrow_64/exp1_seed3/team_1_cte.pt` | 98,914 | `770e3e7cf90eac5b5127946b531ee29a7391d2e830dc9accc313e4e2c30cbcef` |
+| `data/campaign_replicates/narrow_64/exp1_seed3/team_2_dte.pt` | 42,082 | `e59b0c10386cc9906b9b044c0f60d3d7935197cbd530ee6760e40efb357d1601` |
+| `data/campaign_replicates/narrow_64/exp1_seed3/team_3_ctde.pt` | 89,720 | `433da5b57ff30f754d515bdae47d992bd82bb2477b123a60d8b01982ffa81a30` |
+| `data/campaign_replicates/narrow_64/exp2_seed1/team_1_ctde-cac.pt` | 89,872 | `fdef47d77ecb22ff259705ecfc0ac8cf64ed35256c9bb28d5e77cfd68fe99a6b` |
+| `data/campaign_replicates/narrow_64/exp2_seed1/team_2_ctde-comm.pt` | 94,898 | `a615b5ff2f9eb1b974d970c4d3fb8d87ddc7c1096eecf90017826b5c5017ef5c` |
+| `data/campaign_replicates/narrow_64/exp2_seed1/team_3_ctde-vd.pt` | 62,450 | `418c4c9f2265299f91c7cabc7f78faae6e2131989fe3f4b19e3dd625a2f91d71` |
+| `data/campaign_replicates/narrow_64/exp2_seed2/team_1_ctde-comm.pt` | 94,898 | `5678d2b4e1c3a3dfc5e214495cc78c0eca6a93ebdd165be75131addf9bf0d84b` |
+| `data/campaign_replicates/narrow_64/exp2_seed2/team_2_ctde-vd.pt` | 62,450 | `7ac8263c8bd783e6fe6b9e31363d8eeceb61dddc796c9a71e43152e2d8a761a6` |
+| `data/campaign_replicates/narrow_64/exp2_seed2/team_3_ctde-cac.pt` | 89,872 | `1f49b23d10e4d03a6efd35f35180cc7e6742039a94be011969a7a86c1ac8336b` |
+| `data/campaign_replicates/narrow_64/exp2_seed3/team_1_ctde-vd.pt` | 62,450 | `0e3ba7e0cf75416ed4d3c2830d89b1748c01f78837d2fb4bb92045c016996adf` |
+| `data/campaign_replicates/narrow_64/exp2_seed3/team_2_ctde-cac.pt` | 89,872 | `557da54109e7f0d3969b5d2c95fd264a7d251efc4015bd1e530522ce2ac4defe` |
+| `data/campaign_replicates/narrow_64/exp2_seed3/team_3_ctde-comm.pt` | 94,898 | `2a02f732c2a8fcf03ad12666742617bcff7f45699f08bd08a925f9e014036ebf` |
+| `data/campaign_replicates/no_dr/exp1_seed1/team_1_dte.pt` | 145,762 | `34ac57fbacba389eb9d8243ed714419a18ed81f9087f2aae241879595e416861` |
+| `data/campaign_replicates/no_dr/exp1_seed1/team_2_ctde.pt` | 304,248 | `3c557870975f0d2a4b3fb8e0d3b719a4aa26034f7d436799c00f3d3efd3b726c` |
+| `data/campaign_replicates/no_dr/exp1_seed1/team_3_cte.pt` | 323,170 | `e349b6f9c20e2983a89a33115607d00cb0816b26028aa05c6b717e38d91d89e0` |
+| `data/campaign_replicates/no_dr/exp1_seed2/team_1_ctde.pt` | 304,248 | `b0cd2b2128ef62b4d2be90386ed51cad5288d9b602a3d124e3f0dbc6a1101d5b` |
+| `data/campaign_replicates/no_dr/exp1_seed2/team_2_cte.pt` | 323,170 | `5b79caffd167889ecae76a1d09e0452d5e361dd6dd531d4f89c0259db2c4eebf` |
+| `data/campaign_replicates/no_dr/exp1_seed2/team_3_dte.pt` | 145,762 | `5b6376c077aaaea762a18f6a68ad71cc262a56c03b6dad735004a4c0a362e9e0` |
+| `data/campaign_replicates/no_dr/exp1_seed3/team_1_cte.pt` | 323,170 | `9e0a636f0abf14fe6698522d294a0690c98f38e34b78dc14f32ce50106c413af` |
+| `data/campaign_replicates/no_dr/exp1_seed3/team_2_dte.pt` | 145,762 | `94d0bce0fa8e04e37274cc66ac81699d0397e67568f00f6d6f06931a38cbcec4` |
+| `data/campaign_replicates/no_dr/exp1_seed3/team_3_ctde.pt` | 304,248 | `83c0fddb58c6a02776709a992019ff8e87c95b288613793fcdfbc055c4345f59` |
+| `data/campaign_replicates/no_dr/exp2_seed1/team_1_ctde-cac.pt` | 304,400 | `df5d5cfefc509477ecb7b71191c8bb457afaa7f3c40e6c4e2e66b4a3490c165c` |
+| `data/campaign_replicates/no_dr/exp2_seed1/team_2_ctde-comm.pt` | 313,778 | `564b544c004dad03765cc03d77507bcfe85242c48dfeb6514e03ca6e433559db` |
+| `data/campaign_replicates/no_dr/exp2_seed1/team_3_ctde-vd.pt` | 217,330 | `432d2d0808e08c58e4b81ee0fb0b923f9d23870fb85bf7bda6b9ef315305af9d` |
+| `data/campaign_replicates/no_dr/exp2_seed2/team_1_ctde-comm.pt` | 313,778 | `0d5c44dd9b6444ce5936aec67d03d08dab3eb098567567065c2ab339c4308685` |
+| `data/campaign_replicates/no_dr/exp2_seed2/team_2_ctde-vd.pt` | 217,330 | `fa888e1f414b6d126bf02ad2031dd6724b712524e76408a27e41befa9b8fb8b5` |
+| `data/campaign_replicates/no_dr/exp2_seed2/team_3_ctde-cac.pt` | 304,400 | `6b7b7ec27657fd381981c6418d9293560dd5bebe63a615205a1bdf5ece77d586` |
+| `data/campaign_replicates/no_dr/exp2_seed3/team_1_ctde-vd.pt` | 217,330 | `ff1e848b2a9170991dd714da09b5025cc1260eff9fc5a2c00d74e6bb05bd3afc` |
+| `data/campaign_replicates/no_dr/exp2_seed3/team_2_ctde-cac.pt` | 304,400 | `a7636e6f9f4054fe437dbebfc6bf6b7b0880c0c2ec9edf6f66eaa989ccbd7349` |
+| `data/campaign_replicates/no_dr/exp2_seed3/team_3_ctde-comm.pt` | 313,778 | `41b245d02ca4f27ab5b631e2676003718bd7bc5613576293119112f425769627` |
+| `data/campaign_replicates/wide_256/exp1_seed1/team_1_dte.pt` | 549,730 | `4b9fd74f1cfb3b7c01cdecc34f4c568d355f49229cd51cdcfdb4b419439e0805` |
+| `data/campaign_replicates/wide_256/exp1_seed1/team_2_ctde.pt` | 1,126,584 | `fd0ba963dddc738a585a75b65f2f6908e4af0e38b1e1c70c22eb676febccfb39` |
+| `data/campaign_replicates/wide_256/exp1_seed1/team_3_cte.pt` | 1,164,898 | `c91c63842ad3037827e8371994881cf3a5f93d68ad4cab6ac1f00790baebbc3f` |
+| `data/campaign_replicates/wide_256/exp1_seed2/team_1_ctde.pt` | 1,126,584 | `36cbc432a43b59f324f3044afdcb66e1bd292a92deef5765a6c6e196517df3f9` |
+| `data/campaign_replicates/wide_256/exp1_seed2/team_2_cte.pt` | 1,164,898 | `dd43339e8215491461cc49d6c1816c1fea74fc77e5d01099f361334a623d5eda` |
+| `data/campaign_replicates/wide_256/exp1_seed2/team_3_dte.pt` | 549,730 | `48f0bc4071384954c8a887f650dc13a0ffe7272f2f0d82123128b783cb8e85b2` |
+| `data/campaign_replicates/wide_256/exp1_seed3/team_1_cte.pt` | 1,164,898 | `0d84fa6fa111a6fcc96f19f7f50dc75e7b72873ec9c143e46dee67702d6ca063` |
+| `data/campaign_replicates/wide_256/exp1_seed3/team_2_dte.pt` | 549,730 | `625af4a66871cff68616e9a884fcd9f2ec187dc5ea9ca1bd091afc724b0ff7bf` |
+| `data/campaign_replicates/wide_256/exp1_seed3/team_3_ctde.pt` | 1,126,584 | `471d85bf4ad9a643f34bcbc6ab50d1270bc3fa243a18577eb013ad192cf77527` |
+| `data/campaign_replicates/wide_256/exp2_seed1/team_1_ctde-cac.pt` | 1,126,672 | `d80fcfb116f359abfc14fc445b15c5e2223a7b0bb504989e118c55931ae9b74b` |
+| `data/campaign_replicates/wide_256/exp2_seed1/team_2_ctde-comm.pt` | 1,144,818 | `b2971445bbfeb0f7e109286e8c2b7d6b1942a72cb7b186028e508c8f3ab400bd` |
+| `data/campaign_replicates/wide_256/exp2_seed1/team_3_ctde-vd.pt` | 822,002 | `d100fcf1938f44f76ebefb9361430f59c1e28bb36995c91b7655b695dbda1d6e` |
+| `data/campaign_replicates/wide_256/exp2_seed2/team_1_ctde-comm.pt` | 1,144,818 | `57c1a70dc696cd5e9390d62a092a3fc9f11f9f0a1fe7fcf8979b8c20ed030359` |
+| `data/campaign_replicates/wide_256/exp2_seed2/team_2_ctde-vd.pt` | 822,002 | `93dcd6dee69344733c676aaa777cb4df727be6c30545a4b112803622394c22b4` |
+| `data/campaign_replicates/wide_256/exp2_seed2/team_3_ctde-cac.pt` | 1,126,672 | `b81a45c88804f0a80598e59832565e4df1a5357ebea03bdd20b5fa3c546e5cdf` |
+| `data/campaign_replicates/wide_256/exp2_seed3/team_1_ctde-vd.pt` | 822,002 | `6ed9b897bcb358daa4a225a83dee13e9b2e3a1dc123a403c0f48cf1c329a1ea4` |
+| `data/campaign_replicates/wide_256/exp2_seed3/team_2_ctde-cac.pt` | 1,126,672 | `334ae23dbe0196d78181e149be08d1bfaf927108764d4cee1d52176df6819e9c` |
+| `data/campaign_replicates/wide_256/exp2_seed3/team_3_ctde-comm.pt` | 1,144,818 | `ea8e5a78869772c416737d1983a51ab8e584553bf3b51183a07eaba57c751dc7` |
+
 **Ablation and arena-v2 campaigns.** `run_arena_v2_campaign.sh` and `run_ablation_campaign.sh` output, each aggregated by `run_study.py` from 500 k-step replicates on seeds 1-3 (v2: 10 seeds). Every arm differs from `results/study/` by exactly one configuration key.
 
 | Path | Bytes | SHA-256 |
@@ -552,7 +614,7 @@ evidence:
 |---|---|
 | `mlruns/` | binary model artefacts and duplicated checkpoints; the logged points are exported to `ctde_arena/data/mlflow_export/` instead |
 | `**/data/metrics/*.legacy*.csv` | orphaned pre-schema-rotation copies, one of them 29.9 MB |
-| `**/data/runs/` | per-replicate study scratch (checkpoints and per-step trajectory CSVs); the aggregated analysis in `results/study/` is versioned instead |
+| `**/data/runs*/` | per-replicate scratch for every campaign — `runs`, `runs_v2`, `runs_ablation_*` — holding checkpoints and per-step trajectory CSVs; the aggregated analysis in `results/` is versioned instead, and the two checkpoint sets the analysis rests on are versioned beside it: `data/training_replicates/` (the round-robin blocks) and `data/campaign_replicates/` (the ablation arms, with their manifest) |
 
 One artefact needed care: experiment 1's `data/exports/comparative_dashboard.png` was still rendered with
 the old Portuguese legends, because it was untracked and so the localisation pass never reached it. It was

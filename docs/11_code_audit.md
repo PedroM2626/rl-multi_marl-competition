@@ -47,6 +47,7 @@ Every finding below was open at some point; the status column is the current sta
 | [A-33](#the-study-runner-overrode-the-domain-randomisation-knob) | LOW · FIXED | The runner overwrote `DOMAIN_RANDOMIZATION`, and both training simulations then hard-coded it too |
 | [A-34](#the-termination-and-reward-knobs-are-configurable) | INFO · IMPLEMENTED | Reward constants and the clock-awards-win rule are now `CONFIG` fields, defaults unchanged and hash-verified |
 | [A-35](#the-study-collector-read-only-one-of-the-two-trees) | MED · FIXED | The study collector globbed one tree, so a two-experiment campaign aggregated as half a campaign |
+| [A-36](#a-round-robin-run-summary-named-the-wrong-checkpoints) | MED · FIXED | Every round-robin run summary named the promoted checkpoints rather than the replicate set it played |
 
 ---
 
@@ -193,7 +194,7 @@ Measured with `coverage run --source=src/marl_arena -m pytest`, before and after
 | `controllers/base.py` | 91 % | 89 % | 91 % | 89 % |
 | **total** | **73 %** | **93 %** | **14 %** | **87–88 %** |
 
-Test count went from 9 to 106 (59 and 47) at the time of that measurement, and to **163 (94 and 69)** with
+Test count went from 9 to 106 (59 and 47) at the time of that measurement, and to **166 (97 and 69)** with
 the suites added since — the collision, config, dashboard, render and round-robin-statistics tests. The
 totals have moved with them: experiment 1 is now **94 %** (1,542 statements, 89–91 missing) and experiment 2 **89 %**
 (1,654, 185–187 missing). Both totals move by a few statements between identical invocations, which is why
@@ -805,6 +806,44 @@ an `analysis.json` that compares equal to the versioned one, so the fix changes 
 measurement. Row *order* differs (paths sort `exp1_seed10` before `exp1_seed2`), which is cosmetic and was
 left alone rather than patched to preserve a hash — the analysis it feeds is order-independent, which is what
 the equality check shows.
+
+
+## A round-robin run summary named the wrong checkpoints
+
+**A-36 · MED · FIXED**
+
+`run_cross_arena.py` wrote `"policies": {p: POLICIES[p] …}` into every run's `summary.json` — the module-level
+default map, which is the **promoted** checkpoint set. When the same run was launched with
+`--exp1-replicate 3 --exp2-replicate 3`, the policies it actually played came from
+`data/training_replicates/exp1_seed3/`, and the summary still named `data/checkpoints/`. The neighbouring
+`training_block` field was right, which is why the pooled analysis in `results/cross_arena/blocks6.csv` is
+unaffected: it keys on the block and the harness seed, not on `policies`.
+
+**Reproduction** (the scratch directories are git-ignored, so this runs on the machine that played them):
+
+```bash
+python -c "import json;d=json.load(open('results/cross_arena_blocks/e1s3_e2s3_h2/summary.json'));\
+print(d['training_block'], d['policies']['CTE'])"
+# exp1_seed3+exp2_seed3  data\checkpoints\team_1_cte.pt   <- the block is seed 3, the path is the promoted set
+```
+
+**Consequence:** a reader who opened one of the 30 run directories to ask *which* networks produced this
+table would have been told the wrong thing, and the answer would have looked plausible because the promoted
+set really is one of the six blocks. It is the same failure shape as
+[A-35](#the-study-collector-read-only-one-of-the-two-trees): the record was complete and self-consistent, and
+only cross-checking against a second source revealed it.
+
+**Fixed:** the summary serialises the policies that were resolved for the run. A companion field, `campaign`,
+records whether the set was the study's replicates or an ablation arm, and the `arena` block now snapshots
+the [A-34](#the-termination-and-reward-knobs-are-configurable) reward and termination knobs together with
+`hidden_dim`, because the round-robin can be played under more than one instrument and a pooled table that
+cannot tell them apart would attribute a rule effect to an architecture. `run_absolute_eval.py` carries the
+same two fields, and its `--report-only` path reads the snapshot back out of the summary it is re-deriving
+rather than from the shell doing the re-derivation.
+
+**Not repaired, and why:** the 30 run directories under `results/cross_arena_blocks/` are git-ignored scratch,
+so nothing versioned carries the wrong `policies` field; the aggregates were always right. Re-running them
+to fix a cosmetic field would cost the whole round-robin again.
 
 
 ## Open work: suggested measurements
