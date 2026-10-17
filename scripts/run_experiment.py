@@ -127,11 +127,28 @@ def main() -> None:
     started = time.time()
     eval_seconds = 0.0
     curve: list[dict[str, object]] = []
+    # The optimiser's own trace, sampled on the cadence the metrics store already uses. `train_rl.py` has
+    # written this since A-15; the study runner never did, which is why none of the forty committed
+    # replicates can say whether a diverged run and a converged one looked different from the inside.
+    traces: list[dict[str, object]] = []
+
+    def record_trace() -> None:
+        traces.append({
+            "env_steps": sim.total_env_steps,
+            "matches": sim.match_index,
+            "ppo_stats": {
+                team: {"policy_loss": stats.policy_loss, "value_loss": stats.value_loss,
+                       "entropy": stats.entropy, "approx_kl": stats.approx_kl}
+                for team, stats in sim.last_ppo_stats.items()
+            },
+        })
+
     while sim.total_env_steps < args.steps:
         if sim.step(CONFIG.sim_step_dt):
             result = sim.finish_match()
             if sim.match_index % CONFIG.rl_metrics_every_matches == 0:
                 metrics.record_match(result, sim.cumulative_metrics)
+                record_trace()
             sim.reset_match()
 
             while next_curve < len(fractions) and sim.total_env_steps >= fractions[next_curve] * args.steps:
@@ -151,6 +168,18 @@ def main() -> None:
 
     save_rl_checkpoints(sim.controllers)
     train_seconds = time.time() - started - eval_seconds
+    if sim.last_ppo_stats:
+        record_trace()  # the cadence misses the end of a run whose match count is not a multiple of it
+    log_path = CONFIG.rl_checkpoint_dir / "training_log.json"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    log_path.write_text(json.dumps({
+        "seed": args.seed,
+        "target_steps": args.steps,
+        "completed_steps": sim.total_env_steps,
+        "matches_played": sim.match_index,
+        "every_matches": CONFIG.rl_metrics_every_matches,
+        "entries": traces,
+    }, indent=2), encoding="utf-8")
 
     eval_started = time.time()
     final = evaluate(args.eval_matches, args.seed + 9000)
