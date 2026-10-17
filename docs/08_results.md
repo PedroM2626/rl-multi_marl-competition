@@ -1466,7 +1466,12 @@ domain randomisation on".
    replication step (2 → 8 → 5 → 4), which is stated rather than smoothed over.
 3. A measurement finding that is probably the most consequential thing here: the greedy readout used as the
    headline response variable has 2.5× the spread of the sampled policy it summarises, and agrees with its
-   rankings only 35.6 % of the time ([§ Readout](#readout-divergence)).
+   rankings only 35.6 % of the time ([§ Readout](#readout-divergence)). Re-measuring all sixty cells under a
+   fixed-temperature sample — with a control that reproduces the published study bit-for-bit — shows what
+   that does and does not mean: experiment 2's first place is an artefact of argmax (CTDE-VD 0.367 → 0.323
+   and last at T = 0.5), the between-replicate spread is untouched by the action rule, and the one
+   never-fires replicate stays at 0.020 under every rule, so it is an evaluation anomaly rather than a
+   readout one ([§ Readout re-measured](#readout-re-measured)).
 4. The arena itself is biased: one of the three spawn positions wins 49 % of matches against 22 % and 26 %
    for the other two, for every architecture, measured over 90,000 team-matches
    ([A-32](11_code_audit.md#the-arena-spawn-geometry-is-not-symmetric)).
