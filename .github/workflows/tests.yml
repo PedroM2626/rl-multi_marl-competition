@@ -101,7 +101,8 @@ jobs:
             [ -f "$json" ] || continue
             python scripts/report_cross_arena.py --in "$csv" --json-out "$json" > /dev/null
           done
-          for dir in results/absolute results/absolute_blocks results/absolute_six; do
+          for dir in results/absolute*; do
+            [ -d "$dir" ] || continue
             [ -f "$dir/matches.csv" ] || continue
             python scripts/run_absolute_eval.py --report-only --out "$dir" > /dev/null
           done

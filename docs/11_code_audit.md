@@ -1130,15 +1130,14 @@ Items 1–3 were the original list and are done; 6 is done; 4 is partly done; 7 
     against the between-seed SD (0.12–0.22) that every other caveat in this document uses. The result is in
     [§ 8.10](08_results.md#cross-arena): one arm separates, five do not, and the two arms that had looked like
     a top band at six blocks are now first and fifth.
-13. **Open, and cheap:** the re-measurement arms are at lower replication than the headline pool. The
+13. **In progress, and cheap:** the re-measurement arms are at lower replication than the headline pool. The
     arena-v2 replay covers six of the ten blocks (its comparison against the committed rule is therefore
     six-vs-six) and the `no_dr` replay three, because that arm trained three seeds per experiment — it cannot
-    reach ten without training. Playing the four remaining blocks under the v2 rule is 20 evaluation runs of
-    checkpoints that already exist, about 80 min on this machine at the rate § 9.5 records, and would put the
-    only two-axis comparison this repository has on the same footing as its headline table;
-    `scripts/run_pool_v2_ten_block.sh` is queued to do exactly that behind the readout campaign, and § 8.12
-    stays at its six-block figures until that pool exists and is re-measured. The capacity arms
-    (`narrow_64`, `wide_256`) have versioned checkpoints and have never been played on the common pool at all;
-    that is four more blocks x five streams each per arm, and it is the confound
+    reach ten without training. `scripts/run_pool_v2_ten_block.sh` is playing the four remaining v2 blocks
+    now, and `scripts/run_capacity_pool_campaign.sh` and `scripts/run_absolute_ten_block.sh` are queued behind
+    it: the first puts the capacity arms on the common pool for the first time, which is the confound
     [docs/10 § 10.1](10_threats_to_validity.md#unmatched-model-capacity) says the study cannot currently rule
-    out.
+    out, and the second takes absolute strength to ten blocks so both scales hold the same population. Until
+    those pools land, § 8.12 and § 8.11 keep their six-block figures and name the count they are matched at.
+    A capacity-arm pool of three blocks is a *smaller* claim than the ten-block study pool, and will be stated
+    as one.
