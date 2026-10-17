@@ -105,6 +105,36 @@ def test_leave_one_block_out_table_is_the_report() -> None:
         assert (verdict == "**robust**") == recorded["robust_to_block"], pair
 
 
+V2_POOL = ROOT / "results" / "cross_arena" / "v2_blocks.json"
+
+
+def test_the_rule_control_table_is_both_reports() -> None:
+    """Section 8.12's comparison table is two JSON files and one subtraction, and all three are checkable."""
+    text = RESULTS.read_text(encoding="utf-8")
+    committed = json.loads(POOL.read_text(encoding="utf-8"))["per_architecture"]
+    v2 = json.loads(V2_POOL.read_text(encoding="utf-8"))["per_architecture"]
+    table = rows(section(text, "### The same 60 networks, played under the v2 rule"))
+    body = [r for r in table if len(r) == 4 and r[0] in committed]
+    assert len(body) == 6, f"the control table parsed {len(body)} rows, expected six"
+    for row in body:
+        architecture, versus, under_v2, change = row
+        assert nearly(float(versus), committed[architecture]["win_rate"], 3), architecture
+        assert nearly(float(under_v2), v2[architecture]["win_rate"], 3), architecture
+        # The change column is the difference of the two rates as the table prints them, not of the
+        # unrounded values -- checking the latter would fail on a cell that is correct on its face.
+        displayed = round(v2[architecture]["win_rate"], 3) - round(committed[architecture]["win_rate"], 3)
+        assert nearly(float(change.replace("−", "-")), displayed, 3), architecture
+        assert change.startswith("−"), (architecture, change)
+    # The exactness of the control is the section's warrant, so the numbers it cites are pinned too.
+    v2_outcomes = json.loads(V2_POOL.read_text(encoding="utf-8"))["match_outcomes"]
+    committed_outcomes = json.loads(POOL.read_text(encoding="utf-8"))["match_outcomes"]
+    assert v2_outcomes["wipeout"] == committed_outcomes["wipeout"] == 17_614
+    assert v2_outcomes["timeout"] == 0 and v2_outcomes["draw"] == committed_outcomes["timeout"] \
+        + committed_outcomes["draw"]
+    assert "**17,614 matches ended in a wipeout in both pools" in " ".join(text.split()), \
+        "the section must keep citing the count that makes the control exact"
+
+
 def test_the_pooled_csv_row_count_matches_what_the_document_claims() -> None:
     """Section 8.10's headline counts are quoted in three chapters; the CSV is the only authority."""
     lines = POOL_CSV.read_text(encoding="utf-8").splitlines()
