@@ -135,6 +135,29 @@ def test_the_rule_control_table_is_both_reports() -> None:
         "the section must keep citing the count that makes the control exact"
 
 
+def test_the_capacity_arm_table_is_the_two_ablation_pools_and_the_headline() -> None:
+    """Section 8.13's capacity comparison: three reports, six rates and six ranks each."""
+    text = RESULTS.read_text(encoding="utf-8")
+    pools = {}
+    for name, path in (("narrow_64", "results/cross_arena/narrow_64_blocks.json"),
+                       ("committed", "results/cross_arena/blocks10.json"),
+                       ("wide_256", "results/cross_arena/wide_256_blocks.json")):
+        report = json.loads((ROOT / path).read_text(encoding="utf-8"))["per_architecture"]
+        order = sorted(report, key=lambda a: -report[a]["win_rate"])
+        pools[name] = (report, {a: order.index(a) + 1 for a in order})
+    table = rows(section(text, "### The capacity arms against the common pool"))
+    body = [r for r in table if len(r) == 4 and r[0] in pools["committed"][0]]
+    assert len(body) == 6, f"the capacity table parsed {len(body)} rows, expected six"
+    for row in body:
+        architecture = row[0]
+        for column, (report, ranks) in zip(row[1:], (pools["narrow_64"], pools["committed"], pools["wide_256"])):
+            cell = column.replace("**", "")
+            rate, _, rank = cell.partition(" · ")
+            assert nearly(float(rate), report[architecture]["win_rate"], 3), (architecture, column)
+            assert int(rank.removesuffix("th").removesuffix("st").removesuffix("nd").removesuffix("rd")) \
+                == ranks[architecture], (architecture, column, ranks[architecture])
+
+
 def test_the_pooled_csv_row_count_matches_what_the_document_claims() -> None:
     """Section 8.10's headline counts are quoted in three chapters; the CSV is the only authority."""
     lines = POOL_CSV.read_text(encoding="utf-8").splitlines()
