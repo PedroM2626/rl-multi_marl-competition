@@ -202,8 +202,59 @@ blocks instead of this machine's scratch, which is what makes the re-measurement
 each experiment must be evaluated by the tree that trained it, a boundary the harness enforces because a
 same-shaped state dict loads into the wrong architecture without complaint.
 `scripts/run_readout_campaign.sh` plays all twenty
-replicates at T = 0, 0.5 and 1; until that pool exists, nothing here quotes a sampled win rate, and the 2.5×
-spread and 35.6 % agreement above — measured from the artefacts the training runs wrote — remain the evidence.
+replicates at T = 0, 0.5 and 1. That campaign has run — 27,000 matches, 4 h 43 min of wall clock, in
+`results/readout/` — and the sampled win rates are below. The 2.5× spread and 35.6 % agreement above stay in
+print because they are measured from a different source: the traces the training runs wrote themselves, not
+a re-evaluation.
+
+### What the same networks do when the readout is not argmax <a name="readout-re-measured"></a>
+
+**The control is exact, which is what makes the rest readable.** Replaying all sixty cells at T = 0 — the
+same checkpoints, the same `seed + 9000` stream, the same 150 matches, argmax as published — reproduced
+`results/study/` on **every cell to the last decimal**: paired difference +0.000, *p* = 1.000, and every
+behavioural column (survival, eliminations, shots, accuracy) identical. Re-measurement noise is therefore
+zero on this instrument, and any difference in the two sampled arms is the action rule and nothing else.
+The campaign read the study's own scratch runs (`checkpoint_set: scratch` in each arm's `summary.json`), and
+all sixty of those checkpoints have a byte-identical twin under `data/training_replicates/`, so
+`--checkpoint-set versioned` reproduces the same numbers from a clone rather than only from this machine.
+
+| Experiment / architecture | argmax (published) | T = 0 (control) | T = 0.5 | T = 1 |
+|---|---:|---:|---:|---:|
+| exp1 DTE | 0.381 | 0.381 | 0.379 | 0.372 |
+| exp1 CTDE | 0.326 | 0.326 | 0.337 | 0.353 |
+| exp1 CTE | 0.252 | 0.252 | 0.255 | 0.255 |
+| exp2 CTDE-VD | **0.367** | 0.367 | 0.323 | 0.331 |
+| exp2 CTDE-Comm | 0.331 | 0.331 | 0.331 | **0.346** |
+| exp2 CTDE-CAC | 0.282 | 0.282 | 0.325 | 0.314 |
+
+Four things follow, and the first two are the ones that change what this repository is allowed to say.
+
+1. **Experiment 1's ordering is readout-invariant; experiment 2's is not.** DTE > CTDE > CTE in all four
+   columns, though the DTE–CTDE gap shrinks from 0.055 to 0.019 at T = 1 (*p* = 0.635 paired against the
+   control). In experiment 2 the architecture that wins *depends on how it is asked*: CTDE-VD is first under
+   argmax, **last** at T = 0.5 and second at T = 1, while CTDE-CAC moves from 0.282 to 0.325 (+0.043,
+   *p* = 0.020) and CTDE-VD loses −0.044 (*p* = 0.051). Those are the only two cells in the whole study whose
+   readout shift reaches an uncorrected 0.05 — and neither survives the study's own Bonferroni threshold of
+   0.0167, so the honest statement is not "sampling makes CAC best" but "**VD's first place in experiment 2
+   is a property of the argmax readout**".
+2. **Sampling does not buy precision.** Between-seed SD is 0.170–0.220 at T = 0.5 and 0.164–0.199 at T = 1,
+   against 0.171–0.218 under argmax: the replicate-to-replicate spread is the training variance, and it is
+   untouched by how the actions are selected. The forward power at T = 0.5 for the observed experiment-2
+   differences is ~18,000 to ~240,000 replicates. The 2.5× figure above was about the *within-replicate*
+   distribution versus the training trace, and this section's remedy — fix or dual-report the readout — is
+   now measured as necessary for interpretation and useless for power.
+3. **Behaviour moves monotonically with temperature, and the win rate does not follow it.** Taking exp1 CTDE
+   as the column: shots per match 101 → 82 → 63, shot accuracy 2.65 % → 3.90 % → 4.60 %, eliminations per
+   match 1.97 → 2.01 → 2.12, mean survival 18.4 → 15.2 → 11.6 s. The sampled policy fires less, hits more,
+   kills slightly more, dies noticeably sooner, and wins about the same amount. That is the mechanism behind
+   the divergence: argmax commits every step to the modal action, which is a firing pattern the training
+   distribution only sometimes visits.
+4. **The null result is now supported by two readouts.** At both temperatures, every within-experiment paired
+   comparison in both experiments is not significant (all *p* ≥ 0.197 in experiment 1, all ≥ 0.942 at
+   T = 0.5 and ≥ 0.770 at T = 1 in experiment 2, seed-level). The study's conclusion that these architectures
+   do not separate was drawn from the greedy arm; it does not become a different conclusion when the same
+   networks are asked stochastically.
+
 
 ### Two regimes: wipeouts and timeouts <a name="two-regimes"></a>
 
@@ -1381,7 +1432,7 @@ domain randomisation on".
 |---|---|
 | **RQ1** — does CTDE beat CTE and DTE? | **No, and the ordering is not ours to report.** CTDE finishes **second** at 0.326 behind DTE at 0.381 and ahead of CTE at 0.252. The paired per-seed differences are +0.074 vs CTE (*p* = 0.348) and −0.055 vs DTE (*p* = 0.640); detecting them would need ~110 and ~450 replicates. Removing the single degenerate replicate (seed 6) puts CTDE first at 0.362 and flips the sign of the CTDE–DTE difference — so the honest answer is that **this study measures no exp-1 ordering at all.** |
 | **RQ2** — which CTDE variant wins? | **No detectable difference.** VD 0.367, Comm 0.331, CAC 0.282; every paired per-seed comparison has *p* ≥ 0.363, and the smallest gap costs ~117 replicates to confirm. The historical claim that Comm loses decisively **does not reproduce**, and the historical winner CAC is now last of three. |
-| **RQ3** — is it stable? | **No — and that is the headline result.** Between-seed SD is 0.122–0.218 against a 1/3 chance baseline; single replicates range from **0.000 to 0.767** within one architecture; 1 of 30 paradigm-slots reads out as a never-fires policy under greedy action selection while the same network led its own match on kills during training ([§ Readout](#readout-divergence)); 5 of 20 replicates play a different game entirely, matches decided by the 90 s clock rather than by kills. The dominant finding is variance, not ranking, and most of that variance is introduced by the readout rather than by training. |
+| **RQ3** — is it stable? | **No — and that is the headline result.** Between-seed SD is 0.122–0.218 against a 1/3 chance baseline; single replicates range from **0.000 to 0.767** within one architecture; 1 of 30 paradigm-slots reads out as a never-fires policy under greedy action selection while the same network led its own match on kills during training ([§ Readout](#readout-divergence)); 5 of 20 replicates play a different game entirely, matches decided by the 90 s clock rather than by kills. The dominant finding is variance, not ranking — and re-measuring the same networks under a sampled readout locates it: the between-replicate spread does **not** shrink when the action rule changes (0.164–0.220 at T = 0.5 and T = 1 against 0.171–0.218 under argmax), so what is unstable is the training, not the measurement. What the readout does control is the level and, in experiment 2, which architecture appears first ([§ Readout re-measured](#readout-re-measured)). |
 | **RQ4** — do the two experiments' numbers belong on one scale? | **Yes — and on that one scale the finding is one arm wide, not a ranking.** The cross-experiment round-robin ([§ 8.10](#cross-arena)) puts all six arms on common opponents over **30,000 matches and ten independently trained networks per architecture, which is every replicate the study produced**: Comm 0.359, VD 0.331, CTDE 0.317, CAC 0.315, DTE 0.310, CTE 0.304. Four of fifteen pairs clear Bonferroni-corrected McNemar, all four put CTDE-Comm above another arm, and three of the four survive deleting any one checkpoint set. The count of separations went 2 → 8 → 5 → 4 as the checkpoint sets went 1 → 3 → 6 → 10, and three of the five pairs the six-block pool separated lost correction when four more trained networks were added — DTE fell from the top band to fifth. What the ten-block pool does *not* support is any ordering among the five architectures without learned communication. |
 
 **What this repository can defensibly claim.**

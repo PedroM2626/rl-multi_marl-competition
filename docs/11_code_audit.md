@@ -1104,9 +1104,14 @@ Items 1–3 were the original list and are done; 6 is done; 4 is partly done; 7 
    That is wrong: during training it *led its own match* on eliminations (2.68/match) and accuracy (10.4 %);
    only the greedy readout produces 3.8 shots and 0.000 wins. The open question is therefore about the
    **measurement**, not the reward — see [§ Readout](08_results.md#readout-divergence) and item 10.
-10. **New:** fix the readout before adding replicates. Greedy held-out win rate has 2.5× the spread of the
-    sampled policy it summarises (SD 0.177 vs 0.072) and agrees with its within-replicate ranking only
-    35.6 % of the time. Report both readouts, or evaluate the stochastic policy at a fixed temperature.
+10. ~~**New:** fix the readout before adding replicates.~~ **Done, and it changed a conclusion.** Greedy
+    held-out win rate has 2.5× the spread of the sampled policy it summarises (SD 0.177 vs 0.072) and agrees
+    with its within-replicate ranking only 35.6 % of the time, so `EVAL_TEMPERATURE` and
+    `scripts/eval_readout.py` were built and all sixty cells replayed at T = 0, 0.5 and 1: the control is
+    bit-identical to the published study, experiment 2's first place moves from CTDE-VD to CTDE-Comm under
+    sampling, and the between-replicate spread does not shrink at any temperature — the replication problem
+    is training variance, which a better readout cannot fix
+    ([§ 8.1](08_results.md#readout-re-measured)).
 11. ~~The round-robin measures one checkpoint per architecture, so it compares networks rather than
     designs.~~ **Done** — the study's replicates are versioned under `data/training_replicates/` and the pool
     replayed over them: three blocks (9,000 matches), then six (18,000), then all ten (30,000). It changed the

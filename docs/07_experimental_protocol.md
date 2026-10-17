@@ -254,6 +254,11 @@ that run's initialisation and geometry stream, so they are not independent draws
     150 matches — so the two arms differ only in how an action is chosen from the logits, and
     `--temperature 0` is the control that prices re-measurement noise against the readout difference.
     `tests/test_readout_parity.py` pins that protocol line for line rather than trusting a docstring.
+    The campaign has since run — sixty cells at each of T = 0, 0.5 and 1, 27,000 matches — and the control
+    came back bit-identical to the published study, which is what lets the two sampled arms be read as the
+    action rule alone: experiment 2's ordering is a readout artefact (CTDE-VD first under argmax, last at
+    T = 0.5), while the between-replicate spread is untouched by it
+    ([§ 8.1](08_results.md#readout-re-measured)).
 
 **Secondary — the historical single-seed runs.** Point estimates as `summary.json` reports them (a
 cumulative average over a non-stationary trajectory), Wilson intervals on the 46 recorded matches per

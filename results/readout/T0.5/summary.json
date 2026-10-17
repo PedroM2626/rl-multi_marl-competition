@@ -1,0 +1,39 @@
+{
+  "readout": "sampled at temperature 0.5",
+  "eval_temperature": 0.5,
+  "checkpoint_set": "scratch",
+  "protocol": {
+    "matches_per_replicate": 150,
+    "seed_offset": 9000,
+    "domain_randomization": false,
+    "training_mode": false,
+    "hidden_dim": 128,
+    "arena": {
+      "alive_bonus": 0.015,
+      "alive_decay_half_life_s": 0.0,
+      "cap_awards_win": true,
+      "match_duration_seconds": 90.0
+    }
+  },
+  "rows": 60,
+  "experiments": [
+    "exp1",
+    "exp2"
+  ],
+  "seeds_per_experiment": {
+    "exp1": 10,
+    "exp2": 10
+  },
+  "skipped_for_absent_checkpoints": [
+    [],
+    []
+  ],
+  "wall_seconds_by_part": [
+    3709.4,
+    5987.6
+  ],
+  "parts": [
+    "results/readout/parts/exp1_T0.5",
+    "ctde_arena/results/readout/parts/exp2_T0.5"
+  ]
+}

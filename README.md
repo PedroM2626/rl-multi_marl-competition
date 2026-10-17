@@ -45,6 +45,7 @@ Honest summary of what is finished and what is not:
 | Absolute strength vs random opponents | 2,700 matches over 6 checkpoint sets, slot-matched null 0.330 ([§ 8.11](docs/08_results.md#absolute-strength)) | same |
 | Round-robin re-measured under arena v2 | 36 of those networks under the v2 rule, 18,000 matches — six blocks, so the comparison is six-vs-six: endpoints hold, 8 pairs separate instead of 5 ([§ 8.12](docs/08_results.md#arena-v2-pool)) | same |
 | Round-robin re-measured on `no_dr` checkpoints | 3 blocks × 5 seeds, 9,000 matches: Comm falls 1st → 5th, between-block SD up to 0.223 ([§ 8.13](docs/08_results.md#no-dr-pool)) | same |
+| Study re-measured under a sampled readout | 27,000 held-out matches over the same sixty cells at T = 0 / 0.5 / 1; the T = 0 control is bit-identical to the published study, and experiment 2's first place moves from CTDE-VD to CTDE-Comm ([§ 8.1](docs/08_results.md#readout-re-measured)) | same |
 | Arena-v2 re-measurement | 10 seeds × 500k steps under a decayed alive bonus and draw-on-cap ([§ 8.12](docs/08_results.md#arena-v2)) | same |
 | Configuration ablations | `no_dr`, `narrow_64`, `wide_256` at 3 seeds × both experiments ([§ 8.13](docs/08_results.md#ablations)) | same |
 | Dependency audit | 33 of the 34 pins in the measured lock have no known OSV vulnerability; `torch` does, and its one CRITICAL is the `weights_only=True` path — accepted risk, quantified in [§ 9.10](docs/09_reproducibility.md#dependency-audit) | same |
@@ -171,11 +172,18 @@ Findings worth knowing before reading anything else:
 * **One replicate reverses the experiment 1 ranking.** Seed 6's CTDE arm reads out at 3.8 shots per match
   and 0.000 wins; remove it and CTDE goes from second to first, flipping the sign of its difference against
   DTE ([§ 8.1](docs/08_results.md#leave-one-out)).
-* **The greedy readout is not the trained policy.** That same seed-6 arm *led its own match* during
+* **The greedy readout is not the trained policy — and one experiment's winner turns out to be its
+  artefact.** That same seed-6 arm *led its own match* during
   training on kills (2.68/match) and accuracy (10.4 %) — only argmax turns it into something that never
   fires. Pooled over all 60 arm-replicate cells, greedy win rate has **2.5× the spread** of the sampled
   policy it summarises (SD 0.177 vs 0.072) and reproduces its rankings just **35.6 %** of the time
-  ([§ 8.1 Readout](docs/08_results.md#readout-divergence)). Fix the readout before adding replicates.
+  ([§ 8.1 Readout](docs/08_results.md#readout-divergence)). The remedy was then applied rather than
+  recommended: all sixty cells were re-played at T = 0, 0.5 and 1 — 27,000 matches — and the T = 0 control
+  came back **bit-identical to the published study**, so every difference in the sampled arms is the action
+  rule. Under it CTDE-VD, first in experiment 2 at 0.367 under argmax, is **last** at 0.323 (T = 0.5), while
+  the between-replicate spread does not shrink at any temperature (0.164–0.220 against 0.171–0.218). The
+  readout controls which architecture appears best; the instability belongs to training
+  ([§ 8.1 Readout re-measured](docs/08_results.md#readout-re-measured)).
 * **A quarter of replicates are not measuring fighting.** Five of twenty end most matches on the 90 s
   clock, where winning means "most alive at the buzzer"
   ([§ 8.1](docs/08_results.md#two-regimes)).

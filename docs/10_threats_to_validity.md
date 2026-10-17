@@ -194,14 +194,21 @@ applied to the original single-seed evidence, and left three that no amount of r
     119.0), but fell for CTE (121.7 → 107.4), and eliminations fell for both DTE (1.95 → 1.72) and CTE
     (2.22 → 2.03). Cheap survival does not reliably buy aggression, so the incentive diagnosis stands and
     the prediction built on it does not.
-11. **The readout is not the trained policy.** Greedy held-out win rate — the headline response variable
-   of every table in [§ 8.1](08_results.md#replicated-study) — has 2.5× the spread of the
+11. **The readout is not the trained policy — now measured, and it changes experiment 2's winner.** Greedy
+   held-out win rate — the headline response variable of every table in
+   [§ 8.1](08_results.md#replicated-study) — has 2.5× the spread of the
    sampled policy it summarises (SD 0.177 vs 0.072 across 60 arm-replicate cells) and preserves its
-   within-replicate ranking in only 35.6 % of comparable pairs. So part of what the study measures is
-   the argmax of a stochastic policy rather than its behaviour. This is a construct-validity problem
-   introduced by the remedy for the previous version of this threat, and it is the strongest argument
-   in the repository for reporting both readouts rather than one
-   ([§ Readout](08_results.md#readout-divergence)).
+   within-replicate ranking in only 35.6 % of comparable pairs. The remedy was applied and the threat
+   quantified: all sixty cells were replayed at T = 0 (bit-identical to the published study, so the
+   instrument contributes no noise), at T = 0.5 and at T = 1
+   ([§ Readout re-measured](08_results.md#readout-re-measured)). Two results matter. **Experiment 2's ordering
+   is a readout artefact**: CTDE-VD leads at 0.367 under argmax and is last at 0.323 under T = 0.5, with
+   CTDE-CAC gaining +0.043 (*p* = 0.020) — the only cells in the study whose shift reaches an uncorrected
+   0.05, and neither clears its Bonferroni threshold. **The variance is not the readout's**: between-seed SD
+   stays at 0.164–0.220 under both sampled temperatures against 0.171–0.218 greedy, so the instability this
+   document keeps reporting is training variance, and dual-reporting buys interpretability rather than
+   power. What remains open is the choice the study still makes: the published tables are the greedy arm, so
+   every experiment-2 ranking in them carries the qualification above.
 12. **~~The round-robin tests six checkpoints, not six architectures.~~ Closed at ten; the threat moved from
     the sample to the finding.** The single-checkpoint version represented each arm by its promoted replicate,
     so its two corrected-significant results were statements about particular trained networks — and that is

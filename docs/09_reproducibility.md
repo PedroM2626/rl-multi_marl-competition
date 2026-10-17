@@ -321,6 +321,7 @@ implication for a JAX/vectorised-env port are in
 | Round-robin replay, 6 blocks × 5 seeds, arena-v2 rule | **89 min** | `scripts/run_pool_v2_campaign.sh` phase 1: 18,000 matches, five concurrent runs per block, 17–20 min per wave of 3,000 matches. Evaluation only — the 36 checkpoints already existed |
 | Round-robin replay, 3 `no_dr` blocks × 5 seeds | **≈ 85 min** | same script, phase 2: 9,000 matches, 25–30 min per wave. The slower per-match rate is the finding, not the machine: policies trained without domain randomisation end only 41.1 % of their matches by wipeout against 58.8 % for the randomised ones, so more matches run to the 90 s cap |
 | Round-robin extension, 4 blocks × 5 seeds, then re-pool | **79 min** | `scripts/run_ten_block_campaign.sh`: 20 new runs and 12,000 matches at 16–27 min per wave of 3,000, then the fifty-directory merge and its report. Evaluation only — all sixty checkpoints were versioned before it started. Chained behind the two rows above, so each campaign's wall clock is its own |
+| Readout re-measurement, 60 cells × 3 temperatures | **4 h 43 min** | `scripts/run_readout_campaign.sh`: 27,000 held-out matches (150 per cell), two processes at a time — one per tree. The arms are not equal: 246 → 485 → 684 s per cell, i.e. 1.6 → 3.2 → 4.6 s per match, and the cause is the action rule's own compute rather than longer play — the sampled matches are *shorter* (median duration 30.3 → 18.4 s, mean survival 21.6 → 13.9 s). Evaluation only, and the T = 0 arm is the control that makes the other two interpretable |
 
 The measured per-replicate throughput under full 20-way load is 82.6–92.9 steps/s against 368 steps/s for an
 isolated process, so 20 concurrent replicates cost 36.2 CPU-hours and take about as long as four sequential
@@ -417,7 +418,7 @@ inclination to replay 2,700 matches.
 
 ## 9.7 Artefact inventory
 
-Every versioned experiment artefact (202 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed, and each hash is of the blob Git stores rather than of the file on disk — a text artefact checked out with CRLF on Windows hashes differently from the same committed bytes on Linux, and a reader on any platform should be able to reproduce this column.
+Every versioned experiment artefact (208 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed, and each hash is of the blob Git stores rather than of the file on disk — a text artefact checked out with CRLF on Windows hashes differently from the same committed bytes on Linux, and a reader on any platform should be able to reproduce this column.
 
 **Promoted replicate.** The artefacts that match the current code. Chosen by `promote_run.py --seed median`, which is the replicate with the least L1 distance to the per-arm study means; `PROVENANCE.json` records the choice and the full run summary behind it.
 
@@ -459,6 +460,17 @@ Every versioned experiment artefact (202 files), with SHA-256 for integrity chec
 | `results/study/analysis.json` | 4,226 | `0761e5fa08f9be1cbee21f515b28eb17ad48e65b7207868bc161ce933f87527b` |
 | `results/study/learning_curves.png` | 137,532 | `1915d48d117e8a96730b3659e0259e5ad6446c0fb7103d0642a6a5e7bd601cbe` |
 | `results/study/per_seed_metrics.csv` | 5,226 | `a69098a4e88eef37c1291f73b1cb2526f0d31a98c0c2c6f0da27af0263b30d17` |
+
+**Readout re-measurement.** The same replicates played twice, under argmax and under a fixed-temperature sample of the policy's own logits: `results/readout/T0` is the published readout replayed as a control, and `T0.5` / `T1` are the sampled arms. The schema is `run_study.py`'s, which is what lets `report_study.py --compare-to results/study` pair them against the study without a new instrument.
+
+| Path | Bytes | SHA-256 |
+|---|---:|---|
+| `results/readout/T0.5/per_seed_metrics.csv` | 6,253 | `8dd06a4f383f3504dece6b378e7ab5776310bee4adb1bbe64524b4dd95605ef8` |
+| `results/readout/T0.5/summary.json` | 768 | `b74c6371ad86660f9f29d6af6849b7d924e004a6305d43e979e20493b10e6427` |
+| `results/readout/T0/per_seed_metrics.csv` | 6,301 | `1f1d328c8e96458e31d7cf75fbc530479c4f609280c0a95b82a9b2b76684a959` |
+| `results/readout/T0/summary.json` | 744 | `5e3aed9b3f58064d172ecfa7506fd8e464452eefb402f37df9361046db73ad04` |
+| `results/readout/T1/per_seed_metrics.csv` | 6,272 | `aa8a41376889dd121efc21f439cfd16705dd6ee53b59f059cd6077f104a1f4d5` |
+| `results/readout/T1/summary.json` | 764 | `9e9b1b22f063c9a7f58a21462be60dd579d87f87828021bcb9e3b1804920e661` |
 
 **Superseded round-robin pools.** The earlier replication counts of the same instrument, kept because chapter 8's history is quoted from them and not from the current table: `pairwise_first_run_600.json` is the first single-checkpoint run (600 matches) whose verdict was 'no pair separates'; `seeds/` holds the five 600-match runs that made up `replicates.csv` (3,000 matches, one checkpoint set, and the pooled analysis whose missing `harness_seed` key left every pair meeting 600 times -- [A-39](11_code_audit.md#the-pooled-round-robin-analysis-dropped-a-replication-column-from-its-match-key)); `replicates.json` is that 3,000-match report. None of them is evidence about the current ranking, and the chain 600 -> 3,000 -> 9,000 -> 18,000 -> 30,000 is the reason every separation in [§ 8.10](08_results.md#cross-arena) is quoted with its replication count.
 
