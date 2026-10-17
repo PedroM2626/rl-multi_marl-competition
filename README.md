@@ -174,8 +174,9 @@ Findings worth knowing before reading anything else:
   DTE ([§ 8.1](docs/08_results.md#leave-one-out)).
 * **The greedy readout is not the trained policy — and one experiment's winner turns out to be its
   artefact.** That same seed-6 arm *led its own match* during
-  training on kills (2.68/match) and accuracy (10.4 %) — only argmax turns it into something that never
-  fires. Pooled over all 60 arm-replicate cells, greedy win rate has **2.5× the spread** of the sampled
+  training on kills (2.68/match) and accuracy (10.4 %) — and the held-out protocol turns it into something
+that never fires, under **every** action rule (0.020 with 7–8 shots at T = 0.5 and T = 1), so the anomaly
+is evaluation against fixed opponents rather than argmax. Pooled over all 60 arm-replicate cells, greedy win rate has **2.5× the spread** of the sampled
   policy it summarises (SD 0.177 vs 0.072) and reproduces its rankings just **35.6 %** of the time
   ([§ 8.1 Readout](docs/08_results.md#readout-divergence)). The remedy was then applied rather than
   recommended: all sixty cells were re-played at T = 0, 0.5 and 1 — 27,000 matches — and the T = 0 control

@@ -138,10 +138,15 @@ through the stochastic action sampler it was actually trained with, was the *bes
 | shot accuracy | **0.1041** (highest of the three arms) | 0.0018 |
 | mean survival | 4.84 s | 9.3 s |
 
-So the policy learned to fight — it led its own match in kills and accuracy — and only the argmax readout
-turns it into something that never fires. What this replicate reveals is a **readout divergence**, not a
-reward-landscape basin. The general form of it is in [§ 8.1 Readout](#readout-divergence) below, and it is
-the larger finding.
+So the policy learned to fight — it led its own match in kills and accuracy — and the held-out protocol turns
+it into something that never fires. **Which part of that protocol is responsible has now been measured, and it
+is not the argmax.** Replayed on the same checkpoint, the same seed and the same 150 matches, this cell reads
+0.000 with 3.8 shots per match under greedy, 0.020 with 7.3 shots at T = 0.5 and 0.020 with 8.0 shots at
+T = 1 ([§ Readout re-measured](#readout-re-measured)) — an order of magnitude below the 325 and 372 its
+opponents fire, under every action rule. What separates this row from the training column is therefore
+*evaluation against fixed opponents in a randomisation-off arena*, not the choice between sampling and argmax.
+The readout divergence is real and it moves levels and orderings — but it does not explain this collapse, and
+an earlier version of this paragraph claimed it did.
 
 Recomputing exp 1 with that one replicate removed, using the same shipped `paired_t`:
 
@@ -1439,7 +1444,7 @@ domain randomisation on".
 |---|---|
 | **RQ1** — does CTDE beat CTE and DTE? | **No, and the ordering is not ours to report.** CTDE finishes **second** at 0.326 behind DTE at 0.381 and ahead of CTE at 0.252. The paired per-seed differences are +0.074 vs CTE (*p* = 0.348) and −0.055 vs DTE (*p* = 0.640); detecting them would need ~110 and ~450 replicates. Removing the single degenerate replicate (seed 6) puts CTDE first at 0.362 and flips the sign of the CTDE–DTE difference — so the honest answer is that **this study measures no exp-1 ordering at all.** |
 | **RQ2** — which CTDE variant wins? | **No detectable difference.** VD 0.367, Comm 0.331, CAC 0.282; every paired per-seed comparison has *p* ≥ 0.363, and the smallest gap costs ~117 replicates to confirm. The historical claim that Comm loses decisively **does not reproduce**, and the historical winner CAC is now last of three. |
-| **RQ3** — is it stable? | **No — and that is the headline result.** Between-seed SD is 0.122–0.218 against a 1/3 chance baseline; single replicates range from **0.000 to 0.767** within one architecture; 1 of 30 paradigm-slots reads out as a never-fires policy under greedy action selection while the same network led its own match on kills during training ([§ Readout](#readout-divergence)); 5 of 20 replicates play a different game entirely, matches decided by the 90 s clock rather than by kills. The dominant finding is variance, not ranking — and re-measuring the same networks under a sampled readout locates it: the between-replicate spread does **not** shrink when the action rule changes (0.128–0.220 at T = 0.5 and T = 1 against 0.122–0.218 under argmax), so what is unstable is the training, not the measurement. What the readout does control is the level and, in experiment 2, which architecture appears first ([§ Readout re-measured](#readout-re-measured)). |
+| **RQ3** — is it stable? | **No — and that is the headline result.** Between-seed SD is 0.122–0.218 against a 1/3 chance baseline; single replicates range from **0.000 to 0.767** within one architecture; 1 of 30 paradigm-slots reads out as a never-fires policy while the same network led its own match on kills during training — and it stays at 0.020 under a sampled readout, so the anomaly is held-out evaluation rather than argmax ([§ Readout](#readout-divergence)); 5 of 20 replicates play a different game entirely, matches decided by the 90 s clock rather than by kills. The dominant finding is variance, not ranking — and re-measuring the same networks under a sampled readout locates it: the between-replicate spread does **not** shrink when the action rule changes (0.128–0.220 at T = 0.5 and T = 1 against 0.122–0.218 under argmax), so what is unstable is the training, not the measurement. What the readout does control is the level and, in experiment 2, which architecture appears first ([§ Readout re-measured](#readout-re-measured)). |
 | **RQ4** — do the two experiments' numbers belong on one scale? | **Yes — and on that one scale the finding is one arm wide, not a ranking.** The cross-experiment round-robin ([§ 8.10](#cross-arena)) puts all six arms on common opponents over **30,000 matches and ten independently trained networks per architecture, which is every replicate the study produced**: Comm 0.359, VD 0.331, CTDE 0.317, CAC 0.315, DTE 0.310, CTE 0.304. Four of fifteen pairs clear Bonferroni-corrected McNemar, all four put CTDE-Comm above another arm, and three of the four survive deleting any one checkpoint set. The count of separations went 2 → 8 → 5 → 4 as the checkpoint sets went 1 → 3 → 6 → 10, and three of the five pairs the six-block pool separated lost correction when four more trained networks were added — DTE fell from the top band to fifth. What the ten-block pool does *not* support is any ordering among the five architectures without learned communication. |
 
 **What this repository can defensibly claim.**

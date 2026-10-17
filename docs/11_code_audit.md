@@ -1077,10 +1077,15 @@ Items 1–3 were the original list and are done; 6 is done; 4 is partly done; 7 
    is what [§ 8.1](08_results.md#replicated-study) reports.
 3. ~~Add a held-out greedy evaluation.~~ **Done** — 150 greedy fixed-variant matches per replicate.
 4. Log `PPOStats` (A-15) and a real `approx_kl` (A-14) so convergence and divergence are distinguishable.
-   **Partly done** — both are now computed and written to `run_summary.json`, but the study still judges the
-   arms by outcome only; nothing correlates a replicate's win rate with its KL or value loss. The seed-6
-   divergence ([§ 8.1](08_results.md#readout-divergence)) is exactly the event those traces would have
-   flagged — the policy was fine and the readout was not — and it went undiagnosed for two campaigns.
+   **Done in the code, unusable on this study.** Both are computed and written to
+   `training_log.json` — verified on a fresh 4,000-step run, which records per-team policy loss, value loss,
+   entropy and a measured `approx_kl` — but they are not in `run_summary.json`, and no replicate of the
+   study, the arena-v2 re-run or the ablations has a log on disk, because all of them were trained before the
+   logger landed. So the analysis this item asks for — correlating a replicate's win rate with its KL —
+   cannot be run on existing artefacts; it costs a re-training of the twenty replicates (117.5 min at the
+   [§ 9.5](09_reproducibility.md#95-cost-of-a-run) rate), and the seed-6 case that motivated it turned out to
+   be an evaluation anomaly rather than an optimiser one
+   ([§ 8.1](08_results.md#leave-one-out)).
 5. ~~Report shots-per-second-of-alive-life per agent~~ **Done** — `shots per match / (3 x mean survival)`,
    computed by `report_study.py` and by both pool instruments and discussed with its numbers in
    [§ Firing volume per unit of alive life](08_results.md#firing-rate). The answer for experiment 2 is the one
@@ -1100,10 +1105,14 @@ Items 1–3 were the original list and are done; 6 is done; 4 is partly done; 7 
    tables in [§ 8.1](08_results.md#replicated-study) still pool them, and the termination rule is unchanged
    — although `TERMINATION_CAP_AWARDS_WIN=false` now exists so a campaign can change it
    ([A-34](#the-termination-and-reward-knobs-are-configurable)).
-9. **Superseded by a better diagnosis.** The seed-6 arm was first described as a never-fires reward basin.
-   That is wrong: during training it *led its own match* on eliminations (2.68/match) and accuracy (10.4 %);
-   only the greedy readout produces 3.8 shots and 0.000 wins. The open question is therefore about the
-   **measurement**, not the reward — see [§ Readout](08_results.md#readout-divergence) and item 10.
+9. **Superseded twice, and the second correction is measured.** The seed-6 arm was first described as a
+   never-fires reward basin. That is wrong: during training it *led its own match* on eliminations
+   (2.68/match) and accuracy (10.4 %), while the greedy readout produces 3.8 shots and 0.000 wins. The
+   diagnosis that replaced it — "only the argmax readout does this" — is also wrong: re-measured on the same
+   checkpoint at T = 0.5 and T = 1 the cell still reads 0.020 with 7.3 and 8.0 shots per match, against the
+   325 and 372 its held-out opponents fire. The anomaly is therefore in **evaluation** (fixed opponents,
+   randomisation off) rather than in the action rule; the readout knob explains level and ordering shifts,
+   not this collapse ([§ 8.1](08_results.md#readout-re-measured)).
 10. ~~**New:** fix the readout before adding replicates.~~ **Done, and it changed a conclusion.** Greedy
     held-out win rate has 2.5× the spread of the sampled policy it summarises (SD 0.177 vs 0.072) and agrees
     with its within-replicate ranking only 35.6 % of the time, so `EVAL_TEMPERATURE` and
