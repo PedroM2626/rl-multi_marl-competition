@@ -107,37 +107,66 @@ def trace_features(log: Path) -> dict[str, dict[str, float]]:
     return out
 
 
+def run_roots(runs_dir: Path) -> list[Path]:
+    """Both trees, because each child resolves a relative `--out` against its own working directory.
+
+    Experiment 1's replicates land in `data/...` and experiment 2's in `ctde_arena/data/...`. Reading only
+    the launcher's root is the defect the audit records as A-35, and it produced an aggregate with half the
+    replicates and no failure to report; an analysis that silently sees only one experiment is the same bug
+    one step later, so this raises instead.
+    """
+    roots = [runs_dir]
+    sibling = ROOT / "ctde_arena" / runs_dir.relative_to(ROOT) if runs_dir.is_relative_to(ROOT) else None
+    if sibling is not None and sibling.is_dir() and sibling not in roots:
+        roots.append(sibling)
+    return roots
+
+
+def find_run(runs_dirs: list[Path], name: str) -> Path | None:
+    for base in runs_dirs:
+        candidate = base / name
+        if candidate.is_dir():
+            return candidate
+    return None
+
+
 def collect(args: argparse.Namespace) -> tuple[list[dict[str, object]], dict[str, object]]:
     with (args.study if args.study.is_absolute() else ROOT / args.study).open(
             newline="", encoding="utf-8") as handle:
         study_rows = list(csv.DictReader(handle))
 
     runs_dir = args.runs_dir if args.runs_dir.is_absolute() else ROOT / args.runs_dir
+    runs_dirs = run_roots(runs_dir)
     replicates = args.replicates if args.replicates.is_absolute() else ROOT / args.replicates
     cells: list[dict[str, object]] = []
     weight_matches = weight_differs = 0
     held_out_deltas: list[float] = []
     retrained_rates: dict[tuple[str, str, str], float] = {}
 
-    for run_dir in sorted(runs_dir.glob("exp*_seed*")):
-        summary = run_dir / "evaluation" / "run_summary.json"
-        if summary.is_file():
+    for base in runs_dirs:
+        for run_dir in sorted(base.glob("exp*_seed*")):
+            summary = run_dir / "evaluation" / "run_summary.json"
+            if not summary.is_file():
+                continue
             payload = json.loads(summary.read_text(encoding="utf-8"))
             rotation = payload.get("paradigms", {})
+            experiment = "exp1" if run_dir.name.startswith("exp1") else "exp2"
             for team, stats in payload.get("held_out_greedy", {}).get("per_team", {}).items():
-                experiment = "exp1" if run_dir.name.startswith("exp1") else "exp2"
                 retrained_rates[(experiment, run_dir.name.rsplit("seed", 1)[1], rotation.get(team, ""))] = \
                     float(stats["win_rate"])
-        for candidate in sorted((run_dir / "checkpoints").glob("*.pt")):
-            twin = replicates / run_dir.name / candidate.name
-            if twin.is_file() and sha256(twin) == sha256(candidate):
-                weight_matches += 1
-            else:
-                weight_differs += 1
+            for candidate in sorted((run_dir / "checkpoints").glob("*.pt")):
+                twin = replicates / run_dir.name / candidate.name
+                if twin.is_file() and sha256(twin) == sha256(candidate):
+                    weight_matches += 1
+                else:
+                    weight_differs += 1
 
     for row in study_rows:
         experiment, seed, paradigm = row["experiment"], row["seed"], row["paradigm"]
-        run_dir = runs_dir / f"{experiment}_seed{seed}"
+        run_dir = find_run(runs_dirs, f"{experiment}_seed{seed}")
+        if run_dir is None:
+            raise SystemExit(f"no re-trained run directory for {experiment}_seed{seed} under "
+                             f"{[p.as_posix() for p in runs_dirs]}")
         log = run_dir / "checkpoints" / "training_log.json"
         if not log.is_file():
             raise SystemExit(f"{log} missing: the re-training did not produce a trace for "
@@ -154,14 +183,21 @@ def collect(args: argparse.Namespace) -> tuple[list[dict[str, object]], dict[str
             "retrained_held_out_win_rate": retrained_rates.get(key),
             "train_win_rate": float(row["train_win_rate"]),
             "divergence": abs(float(row["eval_win_rate"]) - float(row["train_win_rate"])),
+            # The signed version, because the absolute one conflates the two directions: a cell where the
+            # frozen policy reads better than it trained and one where it reads worse move the same way.
+            "gap": float(row["eval_win_rate"]) - float(row["train_win_rate"]),
             **{feature: value for feature, value in features.items() if feature in FEATURES},
             "trace_points": features["trace_points"],
         })
     controls = {
+        # A-42: a committed record spells paths with forward slashes and relative to the repository,
+        # so a reader on another host can still see where the traces were read from.
+        "run_roots": [p.relative_to(ROOT).as_posix() if p.is_relative_to(ROOT) else p.as_posix()
+                    for p in runs_dirs],
         "checkpoint_comparisons": weight_matches + weight_differs,
         "checkpoints_hash_matching_the_versioned_set": weight_matches,
         "checkpoints_differing": weight_differs,
-        "retrained_runs_with_a_held_out_summary": len(retrained_rates),
+        "retrained_runs_with_a_held_out_summary": len({k[:2] for k in retrained_rates}),
         "max_abs_held_out_delta_vs_study": max((abs(d) for d in held_out_deltas), default=float("nan")),
         "mean_abs_held_out_delta_vs_study": statistics.fmean(
             [abs(d) for d in held_out_deltas]) if held_out_deltas else float("nan"),
@@ -169,21 +205,70 @@ def collect(args: argparse.Namespace) -> tuple[list[dict[str, object]], dict[str
     return cells, controls
 
 
+def spearman_p(value: float, n: int) -> float:
+    """Two-sided p for a Spearman rho by Fisher's z, which is the approximation the sample size supports.
+
+    n = 60 with 24 correlations on the table is exactly the situation where a bare rho invites a reading it
+    cannot support, so the p-values and the corrected threshold are computed here rather than left to whoever
+    quotes them.
+    """
+    if math.isnan(value) or n < 5 or abs(value) >= 1.0:
+        return float("nan")
+    z = math.atanh(value) * math.sqrt(n - 3)
+    return math.erfc(abs(z) / math.sqrt(2))
+
+
 def correlate(cells: list[dict[str, object]]) -> dict[str, dict[str, float]]:
     targets = {
         "held_out_win_rate": [float(c["held_out_win_rate"]) for c in cells],
         "train_win_rate": [float(c["train_win_rate"]) for c in cells],
         "divergence": [float(c["divergence"]) for c in cells],
+        "gap": [float(c["gap"]) for c in cells],
     }
     out: dict[str, dict[str, float]] = {}
     for feature in FEATURES:
         values = [float(c[feature]) for c in cells]
         if all(math.isnan(v) for v in values):
             continue
-        out[feature] = {f"spearman_with_{target}": spearman(values, series)
-                        for target, series in targets.items()}
-        out[feature].update({f"pearson_with_{target}": pearson(values, series)
-                             for target, series in targets.items()})
+        entry: dict[str, float] = {}
+        for target, series in targets.items():
+            pairs = [(v, s) for v, s in zip(values, series) if not math.isnan(v)]
+            rho = spearman([v for v, _ in pairs], [s for _, s in pairs])
+            entry[f"spearman_with_{target}"] = rho
+            entry[f"p_with_{target}"] = spearman_p(rho, len(pairs))
+        out[feature] = entry
+    tests = sum(len(v) // 2 for v in out.values())
+    for entry in out.values():
+        entry["bonferroni_alpha"] = round(0.05 / tests, 6) if tests else float("nan")
+    return out
+
+
+def run_level(cells: list[dict[str, object]]) -> dict[str, dict[str, float]]:
+    """The same correlations with the run as the unit, which is the only independent one.
+
+    Three arms inside a run share its RNG stream, its opponents and its match history, so 60 cells are 20
+    draws with three readings each. A signal that is real across runs survives the collapse; one that was
+    carried by within-run structure does not, and the difference between those two is the whole content of
+    this block.
+    """
+    grouped: dict[tuple[str, int], dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
+    for cell in cells:
+        key = (str(cell["experiment"]), int(cell["seed"]))
+        grouped[key]["held_out_win_rate"].append(float(cell["held_out_win_rate"]))
+        for feature in FEATURES:
+            value = float(cell[feature])
+            if not math.isnan(value):
+                grouped[key][feature].append(value)
+    held = [statistics.fmean(values["held_out_win_rate"]) for values in grouped.values()]
+    out: dict[str, dict[str, float]] = {}
+    for feature in FEATURES:
+        series = [statistics.fmean(values[feature]) for values in grouped.values() if values.get(feature)]
+        if len(series) != len(held):
+            continue
+        rho = spearman(held, series)
+        out[feature] = {"spearman_with_held_out_win_rate": rho,
+                        "p_with_held_out_win_rate": spearman_p(rho, len(series)),
+                        "runs": len(series)}
     return out
 
 
@@ -194,22 +279,44 @@ def main() -> None:
     cells, controls = collect(args)
     print(f"{len(cells)} arm-replicate cells; controls: {json.dumps(controls)}", flush=True)
     correlations = correlate(cells)
-    print("\n| feature | Spearman with held-out | with in-training | with the divergence |")
-    print("|---|---:|---:|---:|")
+    print("\n| feature | ρ vs held-out | p | ρ vs in-training | ρ vs the signed gap | p | ρ vs abs(gap) |")
+    print("|---|---:|---:|---:|---:|---:|---:|")
     for feature, values in sorted(correlations.items(),
                                   key=lambda kv: -abs(kv[1]["spearman_with_held_out_win_rate"])):
-        print("| {feature} | {a:+.3f} | {b:+.3f} | {c:+.3f} |".format(
+        print("| {feature} | {a:+.3f} | {pa:.4f} | {b:+.3f} | {g:+.3f} | {pg:.4f} | {c:+.3f} |".format(
             feature=feature, a=values["spearman_with_held_out_win_rate"],
-            b=values["spearman_with_train_win_rate"], c=values["spearman_with_divergence"]))
+            pa=values["p_with_held_out_win_rate"], b=values["spearman_with_train_win_rate"],
+            g=values["spearman_with_gap"], pg=values["p_with_gap"],
+            c=values["spearman_with_divergence"]))
+
+    alpha = next(iter(correlations.values()))["bonferroni_alpha"]
+    print(f"\n{sum(len(v) - 1 for v in correlations.values()) // 2 * 3} correlations; "
+          f"Bonferroni alpha = {alpha:.5f}")
+
+    per_run = run_level(cells)
+    runs = next(iter(per_run.values()))["runs"]
+    print(f"\nSame statistics with the **run** as the unit (n = {runs} independent draws, not {len(cells)} "
+          "cells):")
+    print("| feature | rho vs held-out, run-level | p | cell-level rho for comparison |")
+    print("|---|---:|---:|---:|")
+    for feature, values in sorted(per_run.items(),
+                                  key=lambda kv: -abs(kv[1]["spearman_with_held_out_win_rate"])):
+        print("| {feature} | {r:+.3f} | {p:.4f} | {c:+.3f} |".format(
+            feature=feature, r=values["spearman_with_held_out_win_rate"],
+            p=values["p_with_held_out_win_rate"],
+            c=correlations[feature]["spearman_with_held_out_win_rate"]))
 
     extreme = sorted(cells, key=lambda c: float(c["held_out_win_rate"]))[:3] + \
         sorted(cells, key=lambda c: float(c["held_out_win_rate"]))[-2:]
     payload = {
         "cells": len(cells),
+        "runs": runs,
         "controls": controls,
         "correlations": correlations,
+        "run_level_correlations": per_run,
+        "bonferroni_alpha": alpha,
         "extreme_cells": [{k: c[k] for k in ("experiment", "seed", "paradigm", "held_out_win_rate",
-                                             "train_win_rate", "divergence", "approx_kl_final",
+                                             "train_win_rate", "divergence", "gap", "approx_kl_final",
                                              "entropy_final", "value_loss_final")} for c in extreme],
         "per_cell": cells,
     }

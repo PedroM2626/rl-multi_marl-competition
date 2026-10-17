@@ -1077,16 +1077,19 @@ is the re-training that item 4 has been waiting on since the first audit.
 2. ~~Fix A-2, then run 5 seeds.~~ **Done** — and then superseded: the study was re-run at 10 seeds, which
    is what [§ 8.1](08_results.md#replicated-study) reports.
 3. ~~Add a held-out greedy evaluation.~~ **Done** — 150 greedy fixed-variant matches per replicate.
-4. Log `PPOStats` (A-15) and a real `approx_kl` (A-14) so convergence and divergence are distinguishable.
-   **Done in the code, unusable on this study.** Both are computed and written to
-   `training_log.json` — verified on a fresh 4,000-step run, which records per-team policy loss, value loss,
-   entropy and a measured `approx_kl` — but they are not in `run_summary.json`, and no replicate of the
-   study, the arena-v2 re-run or the ablations has a log on disk, because all of them were trained before the
-   logger landed. So the analysis this item asks for — correlating a replicate's win rate with its KL —
-   cannot be run on existing artefacts; it costs a re-training of the twenty replicates (117.5 min at the
-   [§ 9.5](09_reproducibility.md#95-cost-of-a-run) rate), and the seed-6 case that motivated it turned out to
-   be an evaluation anomaly rather than an optimiser one
-   ([§ 8.1](08_results.md#leave-one-out)).
+4. ~~Log `PPOStats` (A-15) and a real `approx_kl` (A-14) so convergence and divergence are distinguishable.~~
+   **Done, and the answer it was waiting for is negative.** The capture existed in `train_rl.py` only, which
+   is why none of the forty committed replicates has a trace; `run_experiment.py` now records one per sampled
+   match (proved passive by checkpoint hash, and pinned by `tests/test_run_experiment_traces.py`), and the
+   twenty replicates were re-trained with it — 134.8 min, 60/60 checkpoints byte-identical to
+   `data/training_replicates/`, held-out rates equal to the published ones within 3.3e-05 — so the traces
+   belong to the networks every table in this repository quotes. Correlating them against the readout
+   ([§ 8.1](08_results.md#traces-measured), `results/trace_analysis.json`) finds nothing: the strongest
+   cell-level signal (final entropy, rho −0.361, p 0.0043) clears neither the 96-test Bonferroni threshold
+   nor the change of unit to the run, where it is +0.119. The seed-6 collapse that motivated the item sits
+   mid-field in its own trace — entropy rank 33 of 60, maximum KL in the lowest octile — so no optimiser
+   guard would have flagged it, which agrees with the re-measured finding that the anomaly lives in the
+   evaluation rather than in training.
 5. ~~Report shots-per-second-of-alive-life per agent~~ **Done** — `shots per match / (3 x mean survival)`,
    computed by `report_study.py` and by both pool instruments and discussed with its numbers in
    [§ Firing volume per unit of alive life](08_results.md#firing-rate). The answer for experiment 2 is the one

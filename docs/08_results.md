@@ -266,6 +266,54 @@ Four things follow, and the first two are the ones that change what this reposit
    networks are asked stochastically.
 
 
+### What the optimiser's own trace says about the readout <a name="traces-measured"></a>
+
+The audit's open-work item 4 has asked since the first pass whether a replicate that collapses under the
+held-out readout looks different from the inside — whether a KL or entropy trace would have flagged the
+seed-6 arm two campaigns before anyone noticed it. The traces did not exist for the study's replicates, so
+the twenty were re-trained with the capture in place, and the re-training first had to prove it was the same
+training. It did: **all 60 produced checkpoints hash-match `data/training_replicates/`**, and the re-trained
+held-out rates equal the published ones to at most 3.3e-05 (mean 2.3e-05, which is the CSV's rounding). 20
+runs, 500 k steps, 134.8 min of wall clock at 20-way concurrency, nothing committed but the analysis.
+
+Then the answer, and it is a negative one. Spearman correlations across the 60 arm-replicate cells:
+
+| Feature | ρ vs held-out | *p* | ρ vs in-training | ρ vs the signed gap | *p* |
+|---|---:|---:|---:|---:|---:|
+| entropy, final | **−0.361** | 0.0043 | +0.069 | −0.270 | 0.0365 |
+| entropy, mean over the run | −0.303 | 0.0181 | +0.136 | −0.247 | 0.0565 |
+| `approx_kl`, mean | −0.271 | 0.0355 | −0.173 | −0.153 | 0.2431 |
+| `approx_kl`, final | −0.271 | 0.0361 | −0.136 | −0.137 | 0.2963 |
+| value loss, final | +0.113 | 0.3921 | +0.196 | −0.030 | 0.8214 |
+| value loss, mean | −0.090 | 0.4942 | **+0.539** | −0.276 | 0.0324 |
+| `approx_kl`, maximum | −0.037 | 0.7776 | −0.318 | +0.121 | 0.3587 |
+| policy loss, final | +0.024 | 0.8585 | +0.250 | −0.129 | 0.3262 |
+
+**Nothing here survives the 96 tests it comes from** (Bonferroni alpha = 0.00156; the smallest *p* is 0.0043),
+and the strongest cell-level number disappears when the unit of analysis is corrected to the run: three arms
+inside a run share its RNG stream, its opponents and its match history, so 60 cells are 20 independent draws
+with three readings each. At run level, entropy_final is **+0.119** (*p* = 0.62), entropy_mean −0.088, and
+`approx_kl` mean −0.332 (*p* = 0.155) — with the sign of the final-KL reading flipping between the two units,
+which is what a within-run artefact looks like. The one number that does survive correction, value loss
+against the *in-training* win rate (+0.539, *p* = 5e-06), is mechanical rather than predictive: a team that
+wins more collects return variance for its critic to chase, in the same matches that produced both numbers,
+and it does not carry over to the held-out read (−0.090).
+
+The seed-6 case can now be answered directly instead of by inference. Its trace is unremarkable: final
+entropy 0.509 against a field median of 0.459 (**rank 33 of 60**), mean KL 0.0027 (rank 24), mean value loss
+0.587 (rank 31), and its maximum KL 0.0255 sits in the lowest octile (rank 8) — the runs with the largest KL
+spikes are not the ones that collapsed. A KL guard watching this run would have seen an ordinary optimisation
+and said nothing. That is the same conclusion the sampled-readout re-measurement reached from the other
+direction ([§ Readout re-measured](#readout-re-measured)): the collapse is a property of evaluating a frozen
+policy against fixed opponents with randomisation off, not of what happened during training, and no optimiser
+instrument would have caught it.
+
+One property of the estimator deserves a note before anyone graphs these columns: `approx_kl` here is
+`mean(old_log_prob − new_log_prob)`, a signed log-ratio rather than a non-negative divergence estimate, so it
+goes negative — the field minimum is −0.0042 — and that is the estimator behaving as written, not a defect
+([A-14](11_code_audit.md#approx-kl-placeholder) is about the field being hard-coded to zero, which it no
+longer is).
+
 ### Two regimes: wipeouts and timeouts <a name="two-regimes"></a>
 
 Held-out median match duration is bimodal across replicates, not noisy around a mean:

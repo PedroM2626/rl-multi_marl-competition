@@ -44,6 +44,17 @@ GROUPS = [
          "results/cross_arena/no_dr_blocks.csv", "results/cross_arena/no_dr_blocks.json"),
     ),
     (
+        "Optimiser traces and the analysis of them",
+        "`results/trace_analysis.json`: the KL, entropy and value-loss traces of the re-trained "
+        "twenty replicates joined to the published per-replicate reads, with the two controls the "
+        "analysis rests on recorded alongside it — every produced checkpoint hash-matches "
+        "`data/training_replicates/`, and the re-trained held-out rates match `results/study/` to "
+        "3.3e-05. The per-run `training_log.json` files themselves are git-ignored scratch under "
+        "`data/runs_traces/`; this is the derived summary, reproducible with "
+        "`scripts/analyse_traces.py` from a machine that has re-run the campaign.",
+        ("results/trace_analysis.json",),
+    ),
+    (
         "Readout re-measurement",
         "The same replicates played twice, under argmax and under a fixed-temperature sample of the policy's "
         "own logits: `results/readout/T0` is the published readout replayed as a control, and `T0.5` / `T1` "
