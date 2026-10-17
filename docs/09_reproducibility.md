@@ -218,7 +218,7 @@ ImportError: cannot import name 'ValueDecompositionCriticNetwork' from 'marl_are
 
 ```
 $ python -m pytest tests/ -q            # experiment 1
-128 passed, 1 skipped
+132 passed, 1 skipped
 $ cd ctde_arena && python -m pytest tests/ -q
 75 passed, 1 skipped
 ```
@@ -269,7 +269,9 @@ end of that section on coverage not being correctness.
 
 The two artefact gates are the interesting ones, because they turn claims this chapter makes in prose into
 something a machine checks: § 9.6 says `blocks6.json` is derived data reproducible from `blocks6.csv`, and CI
-now re-derives it on a different operating system than the one that produced it. `bash -n` on the campaign
+now re-derives it on a different operating system than the one that produced it. A third check works in the
+other direction — `tests/test_docs_quote_the_pool.py` recomputes § 8.10's published tables *from* the report,
+so the document cannot quietly keep a number an earlier pool produced. `bash -n` on the campaign
 scripts exists after two of them "completed" while launching nothing (see [§ 9.3](#93-commands) and the
 six-block campaign's post-mortem); a syntax check does not catch that, but it does catch the family of
 quoting and variable-name errors in the same scripts.

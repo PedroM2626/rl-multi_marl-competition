@@ -726,7 +726,12 @@ parity control rather than a fresh instrument — that block reproduces the tabl
 it had one checkpoint per architecture, to four decimals, on all six arms.
 
 `scripts/combine_cross_arena.py` stamps every row with its `training_block` and `harness_seed`;
-`scripts/report_cross_arena.py` does the analysis. **Both columns have to be part of the match key.** The
+`scripts/report_cross_arena.py` does the analysis. The pooled, pairwise and leave-one-block-out tables below
+are transcribed from that analysis, and `tests/test_docs_quote_the_pool.py` re-derives them from
+`blocks10.json` — rank, interval, discordant counts, p-values, robustness verdicts and the headline match
+counts — so a documentation edit that drifts from the report fails the suite instead of shipping. The
+stability and per-regime tables are not covered by that gate and are quoted from the same report's printed
+output. **Both columns have to be part of the match key.** The
 first pooled analysis omitted `harness_seed`, which merged the five match streams of a block onto the same 600
 keys (20 triples x 30 matches): it
 ran its paired tests on one fifth of the evidence and still printed a complete-looking table with plausible
