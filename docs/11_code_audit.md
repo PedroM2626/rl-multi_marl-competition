@@ -1068,8 +1068,9 @@ back identical, which is what lets the fix be a path-spelling change rather than
 
 ## Open work: suggested measurements
 
-Items 1–3 were the original list and are done; 6 is done; 4 is partly done; 7 was deliberately not done;
-11 and 12 are done at ten blocks, and 13 is what is left open on this instrument.
+Items 1–3 were the original list and are done; 6 is done; 7 was deliberately not done; 11 and 12 are done
+at ten blocks; 13 is closed except for the `no_dr` arm, which cannot reach ten without training; and 14
+is the re-training that item 4 has been waiting on since the first audit.
 
 1. ~~Fix A-1, then re-run both experiments.~~ **Done** — see
    [§ Replicated study](08_results.md#replicated-study).
@@ -1149,5 +1150,14 @@ Items 1–3 were the original list and are done; 6 is done; 4 is partly done; 7 
     measured, and the ordering turns out not to be stable under width scaling in either direction
     ([§ 8.13](08_results.md#capacity-pool)) — at three blocks each, which is the most those arms can give and
     is stated as a limit. `scripts/run_absolute_ten_block.sh` has also run, so absolute strength is now
-    measured over the same ten blocks as the peer pool and the headline agreement is a matched +0.886 rather
+     measured over the same ten blocks as the peer pool and the headline agreement is a matched +0.886 rather
     than the +0.77 the six-set artefact reported.
+14. **Running:** the trace the study never had. `run_experiment.py` now records `approx_kl`, entropy and the
+    two losses per sampled match (proved passive by checkpoint hash, and pinned by
+    `tests/test_run_experiment_traces.py`), and `scripts/run_traces_campaign.sh` is re-training the twenty
+    replicates with it so the correlation between a replicate's optimiser behaviour and its held-out win rate
+    can actually be computed. The same campaign writes its own controls into
+    `results/trace_analysis.json`: whether the re-training reproduced the versioned weights, and how far the
+    re-trained held-out rates sit from the published ones. `scripts/run_no_dr_extension.sh` is queued behind
+    it to take the `no_dr` arm from three seeds to ten, which is the only way that pool can ever reach the
+    headline's replication count.

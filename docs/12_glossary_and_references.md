@@ -78,6 +78,8 @@
 | `scripts/run_ten_block_campaign.sh` | Queued the four remaining blocks behind the pool campaign and re-pooled all fifty run directories, refusing to merge an incomplete set | § 8.10, § 9.3 |
 | `scripts/run_pool_v2_ten_block.sh` | The same extension for the arena-v2 arm, chained behind the readout campaign, so the rule control is measured over ten blocks like the table it is compared against | § 8.12, § 9.3 |
 | `scripts/run_capacity_pool_campaign.sh` | Plays the `narrow_64` and `wide_256` arms on the common opponent pool, deriving each arm's `RL_HIDDEN_DIM` from the manifest so the capacity guard cannot be bypassed by a typo | § 8.13, § 9.3, docs/10 § 10.1 |
+| `scripts/run_traces_campaign.sh` | Re-trains the twenty replicates so the study has an optimiser trace, then correlates KL, entropy and value loss with what the held-out readout measured | § 8.1, docs/11 item 4 |
+| `scripts/run_no_dr_extension.sh` | Trains the `no_dr` arm to ten seeds and replays it on the common pool at the headline's replication count | § 8.13, § 9.3 |
 | `scripts/run_absolute_ten_block.sh` | Re-measures absolute strength over all ten blocks against the ten-block peer pool, at the cell size the six-set artefact used | § 8.11, § 9.3 |
 | `scripts/eval_readout.py` | Re-plays a replicate's checkpoints under the sampled readout at a fixed temperature, or under the published argmax at `--temperature 0`, in the study's own held-out protocol; emits the `per_seed_metrics.csv` schema | § 8.1, § 7.6, § 9.3 |
 | `scripts/run_readout_campaign.sh` | Queues the three readout arms over both experiments and merges them for `report_study.py --compare-to` | § 8.1, § 9.3 |
