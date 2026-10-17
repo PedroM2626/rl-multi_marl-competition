@@ -189,13 +189,16 @@ The largest single divergences are not marginal either:
 | exp-2 seed 6, CTDE-Comm | 0.271 | 0.767 |
 
 This does not invalidate the study's null result — a measurement with more noise cannot detect an effect, and
-the conclusion was that no effect is detectable. It does relocate the main finding: **the architecture
-differences the repository spent two campaigns chasing are smaller than the difference between sampling and
-argmax-ing the same network.** Any future campaign should fix the readout before it adds replicates: report
-both, or evaluate under the stochastic policy at a fixed temperature, and treat a one-sided greedy number as
-incomplete.
+the conclusion was that no effect is detectable. It does relocate part of the main finding: **the architecture
+differences this repository spent two campaigns chasing are the same size as the shift produced by changing
+how the same frozen network picks an action** — experiment 2's spread across its three arms is 0.085 under
+argmax, and the readout moves individual arms by up to 0.044, enough to reorder them. The sentence this
+section used to end with — "fix the readout before adding replicates" — has now been tested rather than
+followed, and it needs both halves: dual-reporting the readout is necessary for interpretation and useless
+for power ([§ below](#readout-re-measured)).
 
-**That remedy is now an instrument, and this section's numbers are still greedy-only.** `EVAL_TEMPERATURE`
+**The remedy is now an instrument, and the tables above stay the greedy arm; the sampled re-measurement is the
+subsection that follows.** `EVAL_TEMPERATURE`
 (§ 7.6, point 11) switches the held-out readout from argmax to a fixed-temperature sample of the same
 network's logits, and `scripts/eval_readout.py` replays a trained replicate under both without touching its
 weights — the protocol is copied from the study's own held-out evaluation and pinned by
