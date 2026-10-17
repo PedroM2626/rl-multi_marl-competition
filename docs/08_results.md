@@ -951,13 +951,13 @@ the count on both sides.
   orthogonal design. A cross-experiment comparison still cannot fully separate "this exp-1 replicate was
   strong" from "this exp-1 × exp-2 pairing interacted"; with ten of the hundred possible pairings, it cannot
   average the interaction away either.
-* **It is one configuration — but two of its axes have now been varied, at lower replication.** The numbers
-  above inherit the spawn bias, the 90 s clock, hidden width 128 and domain randomisation on. Under the
-  arena-v2 termination and reward rule the same instrument was run over six blocks, not ten, so § 8.12's
-  comparison against this table is six-vs-six rather than ten-vs-ten; checkpoints trained without domain
-  randomisation exist for three blocks only, because that arm trained three seeds per experiment, and they
-  reorder the table outright, with CTDE-Comm falling from first to fifth
-  ([§ 8.13](#no-dr-pool)). What has *not* been varied on this instrument is network capacity, which is the
+* **It is one configuration — but two of its axes have now been varied.** The numbers
+  above inherit the spawn bias, the 90 s clock, hidden width 128 and domain randomisation on. The first has
+  been re-measured at the same replication: the arena-v2 replay covers all ten blocks and the same sixty
+  networks, so § 8.12 is matched on both sides and finds the top of this ordering intact and its bottom
+  swapped. The second axis cannot be matched: checkpoints trained without domain randomisation exist for
+  three blocks only, because that arm trained three seeds per experiment, and they reorder the table
+  outright, with CTDE-Comm falling from first to fifth ([§ 8.13](#no-dr-pool)). What has *not* been varied on this instrument is network capacity, which is the
   confound the ablation arms exist to measure under their own protocol instead.
 
 ### What this adds to the conclusions
@@ -1188,55 +1188,63 @@ Three expectations from the diagnosis, and what the data says:
   swaps relative to the committed arena while VD stays first, so the v2 ranking is not a cleaned-up version
   of the v1 ranking in either experiment.
 
-### The same 36 networks, played under the v2 rule <a name="arena-v2-pool"></a>
+### The same 60 networks, played under the v2 rule <a name="arena-v2-pool"></a>
 
 Retraining the study under v2 changes the rule *and* what converges under it, so its null result cannot be
 attributed to either. The rule alone is separable now, because A-34 made it configuration and the round-robin
 checkpoints are versioned: `bash scripts/run_pool_v2_campaign.sh` exports
 `REWARD_ALIVE_BONUS=0.0015 REWARD_ALIVE_DECAY_HALF_LIFE_S=30 TERMINATION_CAP_AWARDS_WIN=false` and replays
-the same six blocks over the same five harness seeds. 18,000 matches, `results/cross_arena/v2_blocks.csv`.
-**This arm is six blocks while [§ 8.10](#cross-arena) is now ten**, so every comparison below is six-against-
-six at matched replication rather than against the headline table; playing the four remaining blocks under the
-v2 rule is the queued follow-up ([§ 9.5](09_reproducibility.md#95-cost-of-a-run),
-[open work item 13](11_code_audit.md#open-work-suggested-measurements)).
+the blocks over the same five harness seeds, and `bash scripts/run_pool_v2_ten_block.sh` extended it to all
+ten. **30,000 matches, `results/cross_arena/v2_blocks.csv` — the same population of trained networks as
+[§ 8.10](#cross-arena), so this is a matched comparison on both sides.**
 
-The control is exact, and it is worth stating because it validates the whole instrument: **10,578 matches ended
-in a wipeout in both pools, and every arm's wipeout-only win rate is identical to four decimals** — 0.3942 for
-CTDE-Comm, 0.3554 DTE, 0.3319 CTDE, 0.3141 CAC, 0.3144 VD, 0.2897 CTE. Same networks, same streams, same
-fights. The only thing that moved is what the other 6,840 matches are called: `timeout` 6,840 → 0 and
-`draw` 582 → 7,422.
+The control is exact, and it is worth stating because it validates the whole instrument: **17,614 matches
+ended in a wipeout in both pools — the same number — and every arm's wipeout-only win rate is identical to
+four decimals** (0.3937 CTDE-Comm, 0.3442 CTDE-VD, 0.3382 CTDE, 0.3183 CTDE-CAC, 0.3054 CTE, 0.3004 DTE).
+Same networks, same streams, same fights: a frozen policy's trajectory does not depend on how a
+clock-out is scored, so the two pools contain the same 6,000 matches with the same mean duration of 81.3 s.
+The only thing that moved is what the other 12,386 are called: `timeout` 11,449 → 0 and `draw` 937 → 12,386.
 
-| Architecture | Same six blocks, committed rule | v2-rule pool | change |
+| Architecture | Committed rule, ten blocks | v2-rule pool, ten blocks | change |
 |---|---:|---:|---:|
-| CTDE-Comm | 0.355 | 0.234 | −0.121 |
-| DTE | 0.349 | 0.206 | −0.143 |
-| CTDE-CAC | 0.321 | 0.185 | −0.136 |
-| CTDE | 0.314 | 0.199 | −0.115 |
-| CTDE-VD | 0.307 | 0.179 | −0.129 |
-| CTE | 0.290 | 0.172 | −0.118 |
+| CTDE-Comm | 0.359 | 0.232 | −0.127 |
+| CTDE-VD | 0.331 | 0.198 | −0.133 |
+| CTDE | 0.317 | 0.199 | −0.118 |
+| CTDE-CAC | 0.315 | 0.190 | −0.125 |
+| DTE | 0.310 | 0.174 | −0.136 |
+| CTE | 0.304 | 0.182 | −0.122 |
 
-Four things follow.
+Four things follow, and the first is a correction this section published at six blocks.
 
-1. **The endpoints of the ordering do not depend on the buzzer rule.** Comm is first and CTE last under both
-   rules; the single change in between is CTDE and CTDE-CAC exchanging third and fourth, which are
-   indistinguishable in either pool (*p* = 0.217 committed, 0.573 under v2).
-2. **Levels fall by almost exactly the draw share** (every arm −0.115 to −0.143), so the pooled win rate is not
-   comparable across the two instruments — which is why nothing below quotes a cross-pool difference as an
-   effect size.
-3. **More pairs separate under v2, not fewer: 8 of 15 against 5**, and all five of the committed ones survive.
-   The three that appear are CTDE-Comm above CTDE-CAC, DTE above CTDE-CAC, and CTDE-Comm above DTE — CTDE-CAC
-   is in two of the three, and it is the arm whose head-to-head record against both of those opponents the
-   committed pool had left unseparated. Nothing here explains *why* the extra separations appear; the pools
-   differ in one rule and nothing else, so the honest statement is that the number of separations is a
-   property of the rule as much as of the architectures.
-4. **The leave-one-block-out core barely moves**: three pairs are robust under each rule, two of them the same
-   (Comm > CTE, CTE > DTE), with CTDE-VD > DTE robust only under the committed rule and CTDE-Comm > CTDE-VD
-   robust only under v2. Between-block SD is 0.033–0.046 against 0.018–0.063.
+1. **The top of the ordering does not depend on the buzzer rule; the bottom does.** CTDE-Comm is first under
+   both (0.359 and 0.232), and under v2 it is separated from *all five* other arms — including CTDE-VD,
+   against which the committed rule cannot make the call (0.051). At six blocks this section could say
+   "Comm first and CTE last under both rules"; with ten blocks the last place swaps — CTE is sixth under the
+   committed rule, DTE sixth under v2 — and the pair that swaps is exactly the one neither pool separates
+   (`CTE vs DTE` at *p* = 0.0100 committed, 0.384 under v2). The
+   endpoints that survive are therefore "one arm above the field" and "two arms at the bottom that no rule
+   can rank", not a preserved order.
+2. **Levels fall by almost exactly the share of matches that stops having a winner** (every arm −0.118 to
+   −0.136, against a draw share that rises from 3.1 % to 41.3 %), so the pooled win rate is not comparable
+   across the two instruments — which is why nothing here quotes a cross-pool difference as an effect size.
+3. **More pairs separate under v2, not fewer: 8 of 15 against 4**, and all four of the committed ones
+   survive. The four that appear are CTDE above DTE (3.01e-06), CTDE-VD above DTE (1.58e-04), CTDE-Comm
+   above CTDE-VD (1.21e-03) and CTDE-VD above CTE (2.49e-03). DTE is in two of the four and falls to last;
+   nothing here explains *why* — the pools differ in one rule and nothing else — so the honest statement is
+   that the number of separations, and which arm sits at the bottom, is a property of the rule as much as of
+   the architectures.
+4. **The leave-one-block-out core is nested, not shifted.** Three pairs are robust under the committed rule
+   (Comm > CTDE, Comm > CTDE-CAC, Comm > CTE) and all three are robust under v2 as well, which adds
+   Comm > DTE to make four. Between-block SD is 0.036–0.063 under v2 against 0.026–0.086 under the committed
+   rule: the rule that ends every undecided match as a draw *tightens* the checkpoint-to-checkpoint spread,
+   which is what it should do if part of the committed pool's variance is the clock awarding wins to
+   whichever arm happens to be alive rather than to whichever fought better.
 
 So the accounting of [§ 8.12's standing](#standing-of-this-section) sharpens rather than changes: about four
-matches in ten of the headline readout were decided by the clock, and the *ranking* was not one of the things
-the clock decided. What the v2 retraining did change — everything falling into noise — is therefore attributable
-to the policies a de-weighted survival bonus converges to, not to the draw rule applied to the same policies.
+matches in ten of the headline readout were decided by the clock, and the *top* of the ranking was not one of
+the things the clock decided — but the bottom of it was. What the v2 retraining did change — everything
+falling into noise — is therefore attributable to the policies a de-weighted survival bonus converges to,
+not to the draw rule applied to the same policies.
 
 ### Standing of this section
 
@@ -1491,11 +1499,13 @@ domain randomisation on".
    that **44 % and 39 % of held-out matches have no winner at all**, that no arm separates (paired *p* ≥
    0.439), and that experiment 1's top place moves from DTE to CTDE inside noise. The study's inability to
    rank the paradigms is not an artefact of the buzzer rule, and removing that route is not a path to a
-   resolution ([§ 8.12](#arena-v2)). Played a second way — the **same** 36 round-robin networks under the v2
-   rule, so the rule varies and nothing else does — the endpoints of the ordering survive (Comm first, CTE
-   last), the only swap is between two arms already indistinguishable, and **more** pairs separate (8 of 15
-   against 5), so the retrained v2 study's null is a result about the policies the new objective converges
-   to, not about the rule ([§ 8.12](#arena-v2-pool)).
+   resolution ([§ 8.12](#arena-v2)). Played a second way — the **same** 60 round-robin networks under the v2
+   rule over the same ten blocks, so the rule varies and nothing else does, and the 17,614 wipeout matches
+   come through identical — the top of the ordering survives (Comm first, separated from all five arms), the
+   **bottom does not** (CTE last under the committed rule, DTE last under v2, and the pair that swaps is the
+   one neither pool separates), and **more** pairs separate (8 of 15 against 4), so the retrained v2 study's
+   null is a result about the policies the new objective converges to, not about the rule
+   ([§ 8.12](#arena-v2-pool)).
 7. The comparison is **conditional on one configuration**, and that configuration is not a neutral
    backdrop: changing one key — domain randomisation off — moves a paradigm's held-out win rate by up to
    **0.253** and inverts the ranking of both experiments, while the whole between-paradigm spread of the

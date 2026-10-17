@@ -1139,14 +1139,14 @@ Items 1–3 were the original list and are done; 6 is done; 4 is partly done; 7 
     against the between-seed SD (0.12–0.22) that every other caveat in this document uses. The result is in
     [§ 8.10](08_results.md#cross-arena): one arm separates, five do not, and the two arms that had looked like
     a top band at six blocks are now first and fifth.
-13. **In progress, and cheap:** the re-measurement arms are at lower replication than the headline pool. The
-    arena-v2 replay covers six of the ten blocks (its comparison against the committed rule is therefore
-    six-vs-six) and the `no_dr` replay three, because that arm trained three seeds per experiment — it cannot
-    reach ten without training. `scripts/run_pool_v2_ten_block.sh` is playing the four remaining v2 blocks
-    now, and `scripts/run_capacity_pool_campaign.sh` and `scripts/run_absolute_ten_block.sh` are queued behind
-    it: the first puts the capacity arms on the common pool for the first time, which is the confound
+13. **Partly closed:** the re-measurement arms were at lower replication than the headline pool. The
+    arena-v2 replay now covers all ten blocks and the same sixty networks, so § 8.12 is matched on both
+    sides — and matching it changed its conclusion, from "the endpoints of the ordering survive the rule"
+    to "the top survives, the bottom swaps between CTE and DTE". The `no_dr` replay stays at three blocks,
+    because that arm trained three seeds per experiment and cannot reach ten without training.
+    `scripts/run_capacity_pool_campaign.sh` and `scripts/run_absolute_ten_block.sh` are queued next: the
+    first puts the capacity arms on the common pool for the first time, which is the confound
     [docs/10 § 10.1](10_threats_to_validity.md#unmatched-model-capacity) says the study cannot currently rule
-    out, and the second takes absolute strength to ten blocks so both scales hold the same population. Until
-    those pools land, § 8.12 and § 8.11 keep their six-block figures and name the count they are matched at.
-    A capacity-arm pool of three blocks is a *smaller* claim than the ten-block study pool, and will be stated
-    as one.
+    out — and three blocks is the most those arms can give, which will be stated as a limit rather than
+    smoothed over — and the second takes absolute strength to ten blocks so both scales hold the same
+    population.

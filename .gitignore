@@ -55,6 +55,8 @@ mlruns/
 /results/cross_arena_blocks/
 /results/cross_arena_v2_blocks/
 /results/cross_arena_campaign/
+# cross_arena_capacity/ is the same scratch again for the two capacity arms, three blocks each.
+/results/cross_arena_capacity/
 # Per-arm intermediates of the readout campaign: one CSV per experiment per temperature, merged into
 # results/readout/T<temperature>/per_seed_metrics.csv, which is the artefact report_study.py reads.
 /results/readout/parts/

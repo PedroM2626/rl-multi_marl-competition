@@ -105,8 +105,9 @@ not be relied on are set out in [§ Threats to validity](10_threats_to_validity.
    them still significant with any one checkpoint set left
    out), and its first 600-match single-checkpoint run reached the opposite verdict on both the ranking and
    the separations — which is the case for replicating an *evaluation*, in both dimensions, not only a
-   training run ([§ 8.10](08_results.md#cross-arena)). 36 of those 60 checkpoints have since been replayed under
-   the arena-v2 termination rule, where the endpoints of the ordering hold and *more* pairs separate, and the
+   training run ([§ 8.10](08_results.md#cross-arena)). All 60 have since been replayed under
+   the arena-v2 termination rule at the same ten blocks, where the top of the ordering holds, the bottom
+   swaps between CTE and DTE, and *more* pairs separate; and the
    no_dr arm's 18 networks have been played against the same pool, where the ordering does break — the two
    variations the table's own caveats asked for, at their own replication counts ([§ 8.12](08_results.md#arena-v2-pool),
    [§ 8.13](08_results.md#no-dr-pool)).
