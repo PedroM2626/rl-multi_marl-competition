@@ -132,22 +132,19 @@ of them in the same place.
 | `python scripts/report_cross_arena.py --in results/cross_arena/blocks.csv --json-out results/cross_arena/blocks.json` | root | McNemar pairwise tests, the leave-one-training-block-out column, the slot control and both stability tables |
 | `python scripts/combine_cross_arena.py results/cross_arena_blocks/*` | root | Pool replicated round-robin runs, stamping each row with its training block and harness seed |
 | `python scripts/run_cross_arena.py --campaign no_dr --exp1-replicate S --exp2-replicate M --seed H --out results/cross_arena_campaign/no_dr__e1sS_e2sM_hH` | run from `ctde_arena/` | One block of the round-robin over an **ablation** checkpoint set from `data/campaign_replicates/`; the capacity guard runs first, so `RL_HIDDEN_DIM` must equal the arm's width |
-| `python scripts/version_campaign_checkpoints.py` (or `--check`) | root | Copy the three ablation sets into `data/campaign_replicates/` and write the manifest that records each set's override, hidden width and hashes; `--check` verifies the versioned bytes without writing |
+| `python scripts/version_campaign_checkpoints.py` (or `--check`) | root | Copy each ablation arm's completed runs into `data/campaign_replicates/` and write the manifest that records each set's override, hidden width, seed coverage and hashes; the seeds an arm covers are discovered on disk, so an extended arm cannot be left half-versioned, and `run_cross_arena.py --campaign` refuses an unversioned set rather than reading the scratch |
 | `python scripts/version_training_replicates.py --pairs 5:6,6:8,7:9,8:10` | root | Version further study blocks into `data/training_replicates/`, resolving each replicate from the git-ignored scratch in whichever tree it was written; `--check --pairs …` verifies the bytes and writes nothing |
 | `bash scripts/run_pool_v2_campaign.sh` | both | Queue the two pool re-measurements: the versioned checkpoints replayed under the arena-v2 termination and reward rule (30 runs at launch, later extended to all ten blocks by `run_pool_v2_ten_block.sh`), then the `no_dr` arm's checkpoints played against the committed pool (15 runs), each pooled and reported |
 | `bash scripts/run_ten_block_campaign.sh` | both | Queue the four extra blocks (20 runs, 12,000 matches) behind the pool campaign, then re-pool all fifty run directories into `results/cross_arena/blocks10.csv` and its report — the merge refuses to run unless every new directory wrote a `matches.csv` |
 | `bash scripts/run_pool_v2_ten_block.sh` | both | The same extension for the arena-v2 arm: four more blocks under the exported v2 keys, re-pooled into `results/cross_arena/v2_blocks.csv` at ten blocks, so § 8.12's rule control is measured against the headline pool's population rather than a six-block subset. Chained behind the readout campaign, and its merge refuses anything that is not `10 training blocks x 5 harness seeds` |
 | `bash scripts/run_capacity_pool_campaign.sh` | both | Play the two capacity arms (`narrow_64`, `wide_256`) on the common opponent pool — 3 blocks × 5 streams each, the most those arms can give. `RL_HIDDEN_DIM` is read out of `MANIFEST.json` per arm rather than typed, because the round-robin's capacity guard is what stops one arm's weights being played at another's width. Chained behind the v2 extension |
-| `bash scripts/run_traces_campaign.sh` | both | Re-train the twenty study replicates into the git-ignored `data/runs_traces/` so each carries a `training_log.json`, then join those traces to `results/study/` with `scripts/analyse_traces.py`. The campaign writes its own two controls into the record and both came back clean: 60/60 checkpoints hash-match `data/training_replicates/`, and the re-trained held-out rates sit within 3.3e-05 of the published ones |
-| `bash scripts/run_no_dr_extension.sh` | both | Train the `no_dr` arm out to seeds 4-10 under the same single key change, version the new sets, and replay the arm over ten blocks so its common-pool result is measured at the same replication count as § 8.10. Chained behind the traces campaign |
-| `bash scripts/run_absolute_ten_block.sh` | run from `ctde_arena/` | Extend the absolute-strength instrument to the ten versioned blocks at the headline cell size (25 matches per architecture per block per stream, three streams), against the slot-matched null and the **ten-block** peer pool, so both scales finally hold the same population. Refuses to call the result a ten-block pool unless the record holds exactly 27,000 team-match rows |
 | `python scripts/eval_readout.py --temperature 1 --seeds 1,…,10 --matches 150` | either tree, on its own replicates | Re-evaluate existing checkpoints under the sampled readout (`--temperature 0` replays the published argmax as the control), writing `per_seed_metrics.csv` in the study schema so `report_study.py --results-dir … --compare-to results/study` pairs it against the published numbers |
 | `bash scripts/run_readout_campaign.sh` | both | Queue all three readout arms (T = 0, 0.5, 1) over both experiments' ten seeds each, merge the per-tree parts, and report each arm against `results/study/`; chained behind the pool campaigns so no cost figure in § 9.5 is measured under two campaigns at once |
 | `python scripts/run_absolute_eval.py --matches 150 --seeds 1,2,3` | run from `ctde_arena/` | Absolute strength on the promoted checkpoints: each trained policy against two uniform-random controllers, trained slot rotated |
 | `python scripts/run_absolute_eval.py --blocks 1:7,10:5,9:2 --matches 50 --seeds 1,2,3 --out results/absolute_blocks --null-json results/baseline/random_baseline_uniform.json --compare-pool results/cross_arena/blocks.json` | run from `ctde_arena/` | The same over three training blocks, with the slot-matched null and the agreement with the peer pool; `--campaign <arm>` takes the ablation sets instead, behind the same capacity guard |
 | `python scripts/run_absolute_eval.py --blocks 1:7,10:5,2:1,3:3,4:4,9:2 --matches 25 --seeds 1,2,3 --out results/absolute_six --null-json results/baseline/random_baseline_uniform.json --compare-pool results/cross_arena/blocks6.json` | run from `ctde_arena/` | The six-block predecessor of the headline artefact, still quoted because § 8.11's replication ladder is its finding |
 | `bash scripts/run_traces_campaign.sh` | both | Re-train the twenty study replicates into the git-ignored `data/runs_traces/` so each carries a `training_log.json`, then join those traces to `results/study/` with `scripts/analyse_traces.py`. The campaign writes its own two controls into the record and both came back clean: 60/60 checkpoints hash-match `data/training_replicates/`, and the re-trained held-out rates sit within 3.3e-05 of the published ones |
-| `bash scripts/run_no_dr_extension.sh` | both | Train the `no_dr` arm out to seeds 4-10 under the same single key change, version the new sets, and replay the arm over ten blocks so its common-pool result is measured at the same replication count as § 8.10. Chained behind the traces campaign |
+| `bash scripts/run_no_dr_extension.sh` | both | Train the `no_dr` arm out to seeds 4-10 under the same single key change, version the new sets, and replay the arm over ten blocks so its common-pool result is measured at the same replication count as § 8.10. Chained behind the traces campaign. Re-launching it does not re-train: the training block is skipped once all fourteen run summaries exist, and the replay refuses to start unless the manifest lists 20 `no_dr` sets — [A-43](11_code_audit.md#an-arm-was-extended-and-the-versioning-step-silently-versioned-none-of-it) is why that guard exists |
 | `bash scripts/run_absolute_ten_block.sh` | run from `ctde_arena/`, via the script | The headline [§ 8.11](08_results.md#absolute-strength) artefact: all ten blocks at the same cell size, against the peer pool at the *same* replication count — which is what the −0.04 story says the comparison requires. The script verifies the record's shape (4,500 rows, 750 per architecture, ten blocks x three streams) and that the summary names `blocks10.json` as its peer pool before calling it done |
 | `python scripts/run_absolute_eval.py --report-only --out results/absolute_blocks …` | run from `ctde_arena/` | Re-derive a summary from its recorded `matches.csv`, playing nothing |
 | `bash scripts/run_arena_v2_campaign.sh` | both | Queue the arena-v2 study: 10 seeds x 2 experiments at 500 k steps under the decayed alive bonus and draw-on-cap, waiting for whatever is already on the machine |
@@ -434,7 +431,7 @@ inclination to replay 4,500 matches.
 
 ## 9.7 Artefact inventory
 
-Every versioned experiment artefact (215 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed, and each hash is of the blob Git stores rather than of the file on disk — a text artefact checked out with CRLF on Windows hashes differently from the same committed bytes on Linux, and a reader on any platform should be able to reproduce this column.
+Every versioned experiment artefact (257 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed, and each hash is of the blob Git stores rather than of the file on disk — a text artefact checked out with CRLF on Windows hashes differently from the same committed bytes on Linux, and a reader on any platform should be able to reproduce this column.
 
 **Promoted replicate.** The artefacts that match the current code. Chosen by `promote_run.py --seed median`, which is the replicate with the least L1 distance to the per-arm study means; `PROVENANCE.json` records the choice and the full run summary behind it.
 
@@ -609,7 +606,7 @@ Every versioned experiment artefact (215 files), with SHA-256 for integrity chec
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
-| `data/campaign_replicates/MANIFEST.json` | 25,469 | `5b888d5d653fce2034ff75730310985d4d404f9b7ab63f5f7f0eb510c91a8c76` |
+| `data/campaign_replicates/MANIFEST.json` | 45,531 | `c68f43ed4eb3c58ea3f59b719402577234b4c735db9d98c7f4cd775a2a9f1431` |
 | `data/campaign_replicates/narrow_64/exp1_seed1/team_1_dte.pt` | 42,082 | `7ad507f6be709f8d6e1b68b5fc3fe08d24fe152d0b88f14f4365b30e1716d92e` |
 | `data/campaign_replicates/narrow_64/exp1_seed1/team_2_ctde.pt` | 89,720 | `ec9e1b3f931f6bbeecbf7400944b9a4da3bbd855a93facb33c516f9a5959f3b5` |
 | `data/campaign_replicates/narrow_64/exp1_seed1/team_3_cte.pt` | 98,914 | `02f49b03fcd359ec64b1b0fe8e02edc0723fae487bb421705f41c7c8dbe08970` |
@@ -631,21 +628,63 @@ Every versioned experiment artefact (215 files), with SHA-256 for integrity chec
 | `data/campaign_replicates/no_dr/exp1_seed1/team_1_dte.pt` | 145,762 | `34ac57fbacba389eb9d8243ed714419a18ed81f9087f2aae241879595e416861` |
 | `data/campaign_replicates/no_dr/exp1_seed1/team_2_ctde.pt` | 304,248 | `3c557870975f0d2a4b3fb8e0d3b719a4aa26034f7d436799c00f3d3efd3b726c` |
 | `data/campaign_replicates/no_dr/exp1_seed1/team_3_cte.pt` | 323,170 | `e349b6f9c20e2983a89a33115607d00cb0816b26028aa05c6b717e38d91d89e0` |
+| `data/campaign_replicates/no_dr/exp1_seed10/team_1_dte.pt` | 145,762 | `2d0f5159a3eed63c308a654cbf14c337cd7c14f873281f57161470a07510b75c` |
+| `data/campaign_replicates/no_dr/exp1_seed10/team_2_ctde.pt` | 304,248 | `e6ff77ce09246966896ddb7f00445e38887ac5c42b7d115c4d0b1373e779754e` |
+| `data/campaign_replicates/no_dr/exp1_seed10/team_3_cte.pt` | 323,170 | `0ed90b7a85dff91a401997f775ec246d77513421d1b624c384e58f817b2f772e` |
 | `data/campaign_replicates/no_dr/exp1_seed2/team_1_ctde.pt` | 304,248 | `b0cd2b2128ef62b4d2be90386ed51cad5288d9b602a3d124e3f0dbc6a1101d5b` |
 | `data/campaign_replicates/no_dr/exp1_seed2/team_2_cte.pt` | 323,170 | `5b79caffd167889ecae76a1d09e0452d5e361dd6dd531d4f89c0259db2c4eebf` |
 | `data/campaign_replicates/no_dr/exp1_seed2/team_3_dte.pt` | 145,762 | `5b6376c077aaaea762a18f6a68ad71cc262a56c03b6dad735004a4c0a362e9e0` |
 | `data/campaign_replicates/no_dr/exp1_seed3/team_1_cte.pt` | 323,170 | `9e0a636f0abf14fe6698522d294a0690c98f38e34b78dc14f32ce50106c413af` |
 | `data/campaign_replicates/no_dr/exp1_seed3/team_2_dte.pt` | 145,762 | `94d0bce0fa8e04e37274cc66ac81699d0397e67568f00f6d6f06931a38cbcec4` |
 | `data/campaign_replicates/no_dr/exp1_seed3/team_3_ctde.pt` | 304,248 | `83c0fddb58c6a02776709a992019ff8e87c95b288613793fcdfbc055c4345f59` |
+| `data/campaign_replicates/no_dr/exp1_seed4/team_1_dte.pt` | 145,762 | `f346d872ff5c975de82b23309beb19d6c857ed467ba701e42a38d39197fe87e2` |
+| `data/campaign_replicates/no_dr/exp1_seed4/team_2_ctde.pt` | 304,248 | `ce2ee0234b6c37bfa37e86f3c3a9b30171458347f861613fcec6c30d82a5228d` |
+| `data/campaign_replicates/no_dr/exp1_seed4/team_3_cte.pt` | 323,170 | `4018d384ffb24694c0179fd7575202704ced48cba9b3fdc674e69206207db202` |
+| `data/campaign_replicates/no_dr/exp1_seed5/team_1_ctde.pt` | 304,248 | `4164ca4617d040b4a966c8017c4c8461f1b3a105f4ae1d10f7b5b59b52885e75` |
+| `data/campaign_replicates/no_dr/exp1_seed5/team_2_cte.pt` | 323,170 | `03d22829b748a44e8e0dfbca5cf06337991d8bcba7dd538f7f8b7365b611cdf2` |
+| `data/campaign_replicates/no_dr/exp1_seed5/team_3_dte.pt` | 145,762 | `94d0328b6c9fea56adb603fada9864824026a1ce72fcb01c0d9db8186f356e02` |
+| `data/campaign_replicates/no_dr/exp1_seed6/team_1_cte.pt` | 323,170 | `aacc86c4bec34c7d7442e38f143f0c843303222df92487db4d16b365b84337f9` |
+| `data/campaign_replicates/no_dr/exp1_seed6/team_2_dte.pt` | 145,762 | `8867383e3df02d747320a6faa1af523625d23e3d698b62fdbf3a03cf03e37b3c` |
+| `data/campaign_replicates/no_dr/exp1_seed6/team_3_ctde.pt` | 304,248 | `e50d5983cda9c9977c520345581c26086fcb3d82b76520399cc7a288e26f2ea8` |
+| `data/campaign_replicates/no_dr/exp1_seed7/team_1_dte.pt` | 145,762 | `93d30270806e93d30b02789a87bb4aa30a41ab75d8599d77e11f0f54dbfe4141` |
+| `data/campaign_replicates/no_dr/exp1_seed7/team_2_ctde.pt` | 304,248 | `680705b5e7ac155f9f678d12fe6f270820d7b43d9613691a038ef64941ca856b` |
+| `data/campaign_replicates/no_dr/exp1_seed7/team_3_cte.pt` | 323,170 | `1dba455057b6a0d3a82266e60687c8e00db498ae862bb9d2fc29c92f1191fc74` |
+| `data/campaign_replicates/no_dr/exp1_seed8/team_1_ctde.pt` | 304,248 | `6c0740ad0cfea1103b3fb81442a7fd048d28daee530d5d0ef15cf0b232da49b7` |
+| `data/campaign_replicates/no_dr/exp1_seed8/team_2_cte.pt` | 323,170 | `a55ffe06a231fd177cb08cd7c84b2fd24330001e5b1d7abbc28bb84ae8d924db` |
+| `data/campaign_replicates/no_dr/exp1_seed8/team_3_dte.pt` | 145,762 | `9a1fa58947538630920c53e9379a5e36ac771a7e996aea37c52736c8d6507aed` |
+| `data/campaign_replicates/no_dr/exp1_seed9/team_1_cte.pt` | 323,170 | `7e245e7435ff4342eb9a206fb22f6b4e022e46096ab8bb55ccd5b32646f9feb8` |
+| `data/campaign_replicates/no_dr/exp1_seed9/team_2_dte.pt` | 145,762 | `a676d850181d01749e2c266274780aafd135d2f45b83f2f857d78da37353f59f` |
+| `data/campaign_replicates/no_dr/exp1_seed9/team_3_ctde.pt` | 304,248 | `a31b189939ab81683692a4fc29659a6e356325e81a02ead85078dd9bb59c8fbf` |
 | `data/campaign_replicates/no_dr/exp2_seed1/team_1_ctde-cac.pt` | 304,400 | `df5d5cfefc509477ecb7b71191c8bb457afaa7f3c40e6c4e2e66b4a3490c165c` |
 | `data/campaign_replicates/no_dr/exp2_seed1/team_2_ctde-comm.pt` | 313,778 | `564b544c004dad03765cc03d77507bcfe85242c48dfeb6514e03ca6e433559db` |
 | `data/campaign_replicates/no_dr/exp2_seed1/team_3_ctde-vd.pt` | 217,330 | `432d2d0808e08c58e4b81ee0fb0b923f9d23870fb85bf7bda6b9ef315305af9d` |
+| `data/campaign_replicates/no_dr/exp2_seed10/team_1_ctde-cac.pt` | 304,400 | `fee0226dd6dfc5034c4f37db3da277969be5ba7a84f7f3bfd21a92934a06d23a` |
+| `data/campaign_replicates/no_dr/exp2_seed10/team_2_ctde-comm.pt` | 313,778 | `1754b346759f4fdfcab4b487a4b1546723f332177e8704b8e8fde8ae8943650e` |
+| `data/campaign_replicates/no_dr/exp2_seed10/team_3_ctde-vd.pt` | 217,330 | `bb13e97d7a74656234338b66db1d4eff36b9f7871a45a6e68eba30385029abc2` |
 | `data/campaign_replicates/no_dr/exp2_seed2/team_1_ctde-comm.pt` | 313,778 | `0d5c44dd9b6444ce5936aec67d03d08dab3eb098567567065c2ab339c4308685` |
 | `data/campaign_replicates/no_dr/exp2_seed2/team_2_ctde-vd.pt` | 217,330 | `fa888e1f414b6d126bf02ad2031dd6724b712524e76408a27e41befa9b8fb8b5` |
 | `data/campaign_replicates/no_dr/exp2_seed2/team_3_ctde-cac.pt` | 304,400 | `6b7b7ec27657fd381981c6418d9293560dd5bebe63a615205a1bdf5ece77d586` |
 | `data/campaign_replicates/no_dr/exp2_seed3/team_1_ctde-vd.pt` | 217,330 | `ff1e848b2a9170991dd714da09b5025cc1260eff9fc5a2c00d74e6bb05bd3afc` |
 | `data/campaign_replicates/no_dr/exp2_seed3/team_2_ctde-cac.pt` | 304,400 | `a7636e6f9f4054fe437dbebfc6bf6b7b0880c0c2ec9edf6f66eaa989ccbd7349` |
 | `data/campaign_replicates/no_dr/exp2_seed3/team_3_ctde-comm.pt` | 313,778 | `41b245d02ca4f27ab5b631e2676003718bd7bc5613576293119112f425769627` |
+| `data/campaign_replicates/no_dr/exp2_seed4/team_1_ctde-cac.pt` | 304,400 | `70bde01fbe0e938db312e757237e0654dd3eae32699cd66f6398ceed35175fd8` |
+| `data/campaign_replicates/no_dr/exp2_seed4/team_2_ctde-comm.pt` | 313,778 | `c78579fe46ffbabedb8bc4d8a553232a3965ea3e8f6ec36f9e350e8a89b07bdd` |
+| `data/campaign_replicates/no_dr/exp2_seed4/team_3_ctde-vd.pt` | 217,330 | `2f8be6988743fe07d5c43970b16c410aba771994192aba37e9d529167a49500e` |
+| `data/campaign_replicates/no_dr/exp2_seed5/team_1_ctde-comm.pt` | 313,778 | `b71dfaab6e517fa668083ebc622c1b4bba6e12a4af23fd400b951a31d4f5f510` |
+| `data/campaign_replicates/no_dr/exp2_seed5/team_2_ctde-vd.pt` | 217,330 | `c54e4d5e4538e8ef98d23bbd67090e25163916d6015683b65278008454e2151b` |
+| `data/campaign_replicates/no_dr/exp2_seed5/team_3_ctde-cac.pt` | 304,400 | `9b6e641d8195207cc49e1a6ddebace03fd09c87bc0daf3ad08a5f8fc254b4c9a` |
+| `data/campaign_replicates/no_dr/exp2_seed6/team_1_ctde-vd.pt` | 217,330 | `8f9f1e4f01285883b0131f5b1444b899960b6bc077ea4fd888e12b6da604d913` |
+| `data/campaign_replicates/no_dr/exp2_seed6/team_2_ctde-cac.pt` | 304,400 | `1b820be4ff6932ec2a2d63e5ecb34d705625978b8b3e4b4fda753603aad2e1e9` |
+| `data/campaign_replicates/no_dr/exp2_seed6/team_3_ctde-comm.pt` | 313,778 | `0bcb750d63532324dd9034960b7000a1923a4848640ff0e057a4c3e4067331b6` |
+| `data/campaign_replicates/no_dr/exp2_seed7/team_1_ctde-cac.pt` | 304,400 | `415f9674cc109b33c980a4f3f1d8d0c9c24521e4313e1e279fbdc6fc1cc76d64` |
+| `data/campaign_replicates/no_dr/exp2_seed7/team_2_ctde-comm.pt` | 313,778 | `044a301ff94acf4af29b0e070feb3bdf191b3a4bc4d812c5649aa56e66e156ed` |
+| `data/campaign_replicates/no_dr/exp2_seed7/team_3_ctde-vd.pt` | 217,330 | `291196260ca39255319b12f35df084a2a50c2749fe076beb1a084243701dfdd6` |
+| `data/campaign_replicates/no_dr/exp2_seed8/team_1_ctde-comm.pt` | 313,778 | `e7764bc917957979c44b293eadfc788dfaa81310f8a3ba26a4455b3beae4a7d7` |
+| `data/campaign_replicates/no_dr/exp2_seed8/team_2_ctde-vd.pt` | 217,330 | `f627418fca163af8215a1263b5e3c49d1b4772d8330b23b7b3475d566b38fa5c` |
+| `data/campaign_replicates/no_dr/exp2_seed8/team_3_ctde-cac.pt` | 304,400 | `cc647fe3b9ae5af3e85624f34809b9635c92d31d1fb8d5474720f2a3f2f79be9` |
+| `data/campaign_replicates/no_dr/exp2_seed9/team_1_ctde-vd.pt` | 217,330 | `18a6661512a4145d40138009f9fc9b0599675100dca532c764f0724dc642e654` |
+| `data/campaign_replicates/no_dr/exp2_seed9/team_2_ctde-cac.pt` | 304,400 | `712fd1f2de85ad2022b2252fb7ae78aa6158986eb2867ef7fda7269c95d78ebd` |
+| `data/campaign_replicates/no_dr/exp2_seed9/team_3_ctde-comm.pt` | 313,778 | `0bd4cc857e4cd1ceb5105fafb61f973dd0baf812226d45803a3cee83abec8967` |
 | `data/campaign_replicates/wide_256/exp1_seed1/team_1_dte.pt` | 549,730 | `4b9fd74f1cfb3b7c01cdecc34f4c568d355f49229cd51cdcfdb4b419439e0805` |
 | `data/campaign_replicates/wide_256/exp1_seed1/team_2_ctde.pt` | 1,126,584 | `fd0ba963dddc738a585a75b65f2f6908e4af0e38b1e1c70c22eb676febccfb39` |
 | `data/campaign_replicates/wide_256/exp1_seed1/team_3_cte.pt` | 1,164,898 | `c91c63842ad3037827e8371994881cf3a5f93d68ad4cab6ac1f00790baebbc3f` |
@@ -817,7 +856,7 @@ hole in it.
 **Why the pin was not simply raised.** [§ 9.1](#verification-environment-actually-used) measures what changing
 torch costs: the arena geometry and randomisation streams stay bit-identical, while the first PPO update
 differs at 1e-6 and every saved checkpoint differs after 4,000 steps. Moving the measured environment to
-2.6.0 would leave the 36 round-robin checkpoints, the 54 ablation checkpoints and every table in
+2.6.0 would leave the 36 round-robin checkpoints, the 96 ablation checkpoints and every table in
 [§ Results](08_results.md) describing a configuration no reader can rebuild from the documentation.
 `requirements.txt` — the file for someone who wants a working arena rather than *these* numbers — already
 pins 2.6.0, which is the version the CRITICAL advisory names as fixed.

@@ -3,7 +3,8 @@
 docs/08_results.md#ablations measures three arms that differ from the committed study by exactly one
 configuration key each. Its aggregates are versioned (`results/ablation_*`), but the policies behind them
 were not: they sat under the git-ignored `**/data/runs*/` scratch, so reproducing an arm meant retraining it
-(~70 min of wall clock per arm, measured) and a reader could not replay a single match of it.
+(~70 min of wall clock per three-seed arm, measured; 170.8 min for the seven seeds `no_dr` grew by) and a
+reader could not replay a single match of it.
 
 This script copies each arm's checkpoints into `data/campaign_replicates/<arm>/<experiment>_seedN/` and
 writes `MANIFEST.json` beside them. The manifest matters more than the copies: a `.pt` in this repository
@@ -14,6 +15,12 @@ the right value before running anything.
 
 Idempotent: a destination whose bytes already match the source is left alone, and a mismatch aborts instead
 of overwriting, so the versioned set cannot drift from the scratch it came from.
+
+Which seeds an arm covers is *discovered from the scratch*, not listed here. A constant seed tuple was a
+defect: `run_no_dr_extension.sh` trained seeds 4 to 10, this script copied only 1-3 because that is what it
+was told to look for, and the pool replay then read the git-ignored scratch -- an arm whose published
+checkpoints were not the ones that produced its numbers. A run is only picked up if it has three
+checkpoints *and* an evaluation summary, so a training run that died halfway cannot be versioned silently.
 
     python scripts/version_campaign_checkpoints.py            # copy + manifest
     python scripts/version_campaign_checkpoints.py --check    # hashes only, writes nothing
@@ -33,13 +40,13 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "campaign_replicates"
 
 # Exactly the overrides scripts/run_ablation_campaign.sh exported per arm; the baseline for all three is
-# results/study (domain randomisation on, hidden width 128, seeds 1-3, 500,000 steps).
+# results/study (domain randomisation on, hidden width 128, 500,000 steps). The study covers seeds 1-10 of
+# both experiments, and each arm covers as many of them as its scratch holds -- see completed_seeds.
 ARMS = {
     "no_dr": {"DOMAIN_RANDOMIZATION": "false"},
     "narrow_64": {"RL_HIDDEN_DIM": "64"},
     "wide_256": {"RL_HIDDEN_DIM": "256"},
 }
-SEEDS = (1, 2, 3)
 EXPERIMENTS = ("exp1", "exp2")
 # Experiment 2's scratch tree is inside ctde_arena/, which is where its runs were written.
 SCRATCH_ROOT = {"exp1": ROOT, "exp2": ROOT / "ctde_arena"}
@@ -88,6 +95,40 @@ def source_dir(arm: str, experiment: str, seed: int) -> Path:
     return SCRATCH_ROOT[experiment] / "data" / f"runs_ablation_{arm}" / f"{experiment}_seed{seed}"
 
 
+def completed_seeds(arm: str, experiment: str) -> list[int]:
+    """Every seed of this arm whose training run finished, found on disk rather than from a list.
+
+    A set counts as finished only if it wrote three checkpoints *and* an evaluation summary: an arm killed
+    mid-training leaves checkpoints behind, and versioning those would publish weights that no aggregate in
+    docs/08_results.md was computed from.
+    """
+    root = SCRATCH_ROOT[experiment] / "data" / f"runs_ablation_{arm}"
+    if not root.is_dir():
+        return []
+    seeds = []
+    for run_dir in sorted(root.glob(f"{experiment}_seed*")):
+        name = run_dir.name
+        if not name.removeprefix(f"{experiment}_seed").isdigit():
+            continue
+        checkpoints = list((run_dir / "checkpoints").glob("*.pt"))
+        if len(checkpoints) == 3 and (run_dir / "evaluation" / "run_summary.json").is_file():
+            seeds.append(int(name.removeprefix(f"{experiment}_seed")))
+    return sorted(seeds)
+
+
+def versioned_seeds(arm: str, experiment: str) -> list[int]:
+    """The seeds this arm+experiment already has committed under data/campaign_replicates/."""
+    root = OUT / arm
+    if not root.is_dir():
+        return []
+    seeds = []
+    for run_dir in sorted(root.glob(f"{experiment}_seed*")):
+        suffix = run_dir.name.removeprefix(f"{experiment}_seed")
+        if suffix.isdigit() and len(list(run_dir.glob("*.pt"))) == 3:
+            seeds.append(int(suffix))
+    return sorted(seeds)
+
+
 def record(run_dir: Path, files: list[Path]) -> dict:
     """Everything the run wrote about itself, plus what the weights say about their own shape."""
     summary_path = run_dir / "evaluation" / "run_summary.json"
@@ -130,9 +171,13 @@ def main() -> None:
         "purpose": "Checkpoints of the configuration ablations in docs/08_results.md#ablations, versioned "
                    "so an arm can be replayed without retraining it and its capacity is recorded somewhere "
                    "other than the campaign script.",
-        "produced_by": "bash scripts/run_ablation_campaign.sh",
-        "baseline": "results/study (seeds 1-3 of both experiments, 500000 steps, domain randomisation on, "
-                    "RL_HIDDEN_DIM=128)",
+        "produced_by": "bash scripts/run_ablation_campaign.sh, then bash scripts/run_no_dr_extension.sh "
+                       "for the seeds that arm carries past three",
+        "baseline": "results/study (both experiments, 500000 steps, domain randomisation on, "
+                    "RL_HIDDEN_DIM=128, seeds 1-10)",
+        "seed_coverage": "each arm's 'seeds' field lists what its scratch actually holds, discovered per "
+                         "experiment rather than assumed; report_study.py pairs on seed number, so an arm "
+                         "with fewer seeds than the control is compared on the shared ones only",
         "reproduce_training": "bash scripts/run_ablation_campaign.sh, or one arm on its own: "
                               "env RL_HIDDEN_DIM=64 python scripts/run_study.py --steps 500000 "
                               "--seeds 1,2,3 --jobs 3 --eval-matches 150 "
@@ -145,13 +190,23 @@ def main() -> None:
 
     for arm, overrides in ARMS.items():
         sets: dict[str, object] = {}
+        discovered: dict[str, list[int]] = {}
         for experiment in EXPERIMENTS:
-            for seed in SEEDS:
+            seeds = completed_seeds(arm, experiment)
+            discovered[experiment] = seeds
+            if not seeds:
+                raise SystemExit(f"{arm}: no completed {experiment} run found under "
+                                 f"{SCRATCH_ROOT[experiment] / 'data' / f'runs_ablation_{arm}'} -- the "
+                                 f"scratch is git-ignored, so this script can only run on the machine that "
+                                 f"trained the arm")
+            on_disk = set(seeds)
+            stale = sorted(set(versioned_seeds(arm, experiment)) - on_disk)
+            if stale:
+                raise SystemExit(f"{arm}: {experiment}_seed{stale} is versioned but its scratch is gone or "
+                                 f"incomplete; the manifest would describe weights it cannot re-derive")
+            for seed in seeds:
                 run_dir = source_dir(arm, experiment, seed)
                 source = run_dir / "checkpoints"
-                if not source.is_dir():
-                    raise SystemExit(f"{arm}: missing {source} -- the scratch is git-ignored, so this "
-                                     f"script can only run on the machine that trained the arm")
                 files = sorted(source.glob("*.pt"))
                 if len(files) != 3:
                     raise SystemExit(f"{arm}: expected three checkpoints in {source}, found "
@@ -180,7 +235,7 @@ def main() -> None:
                     "source_scratch": run_dir.relative_to(ROOT).as_posix(),
                     **record(run_dir, files),
                 }
-        arms[arm] = {"overrides": overrides, "sets": sets}
+        arms[arm] = {"overrides": overrides, "seeds": {k: v for k, v in discovered.items()}, "sets": sets}
 
     if args.check:
         print(f"verified {checked} versioned checkpoints against their scratch; nothing written")
@@ -196,7 +251,9 @@ def main() -> None:
           f"{sum(len(a['sets']) for a in arms.values())} sets -> {OUT / 'MANIFEST.json'}")
     for arm, payload in arms.items():
         widths = sorted({entry["hidden_dim"] for entry in payload["sets"].values()})  # type: ignore[index]
-        print(f"  {arm}: hidden width {widths} over {len(payload['sets'])} sets")  # type: ignore[arg-type]
+        coverage = ", ".join(f"{e} seeds {v}" for e, v in payload["seeds"].items())  # type: ignore[index]
+        sets = len(payload["sets"])  # type: ignore[arg-type]
+        print(f"  {arm}: hidden width {widths} over {sets} sets ({coverage})")
 
 
 if __name__ == "__main__":

@@ -242,12 +242,13 @@ def test_parse_blocks_prefixes_an_ablation_set_and_checks_its_capacity() -> None
 
 
 def test_replicate_policies_falls_back_to_the_scratch_of_the_right_tree(tmp_path: Path, monkeypatch) -> None:
-    """A replicate that was never versioned must resolve from `data/runs`, in whichever tree it sits.
+    """A study replicate that was never versioned resolves from `data/runs`, in whichever tree it sits.
 
     The study wrote both experiments under the repository root; the ablation campaign wrote experiment 2 inside
     `ctde_arena/`. A fallback that assumed one tree raised "no such training replicate" for the other case --
     the failure a reader hits when asking for a block that was never versioned. Built on synthetic trees
-    because every study seed is versioned now, and a real scratch would make the test machine-dependent.
+    because every study seed is versioned now, and a real scratch would make the test machine-dependent. A
+    *campaign* replicate gets no such fallback, which the second half of this test pins.
     """
     harness = _load("run_cross_arena")
     root, other = tmp_path / "root", tmp_path / "ctde"
@@ -275,7 +276,9 @@ def test_replicate_policies_falls_back_to_the_scratch_of_the_right_tree(tmp_path
     assert len(from_scratch) == 3, from_scratch
     assert all(p.is_file() for p in policies.values())
 
-    # The ablation shape: experiment 2's scratch inside its own tree, under runs_ablation_<arm>/.
+    # The ablation shape: a campaign arm has no scratch fallback at all. Its scratch sits in `ctde_arena/`
+    # for experiment 2 and in the root tree for experiment 1, and reading either of those would mean a
+    # published pool whose weights a reader cannot obtain.
     ablation = other / "data" / "runs_ablation_no_dr" / "exp2_seed6" / "checkpoints"
     ablation.mkdir(parents=True)
     for index, paradigm in enumerate(("ctde-vd", "ctde-cac", "ctde-comm"), 1):
@@ -285,9 +288,9 @@ def test_replicate_policies_falls_back_to_the_scratch_of_the_right_tree(tmp_path
     (campaign_versioned / "exp1_seed5").mkdir()
     for index, paradigm in enumerate(("cte", "dte", "ctde"), 1):
         (campaign_versioned / "exp1_seed5" / f"team_{index}_{paradigm}.pt").write_bytes(b"v")
-    resolved = harness.replicate_policies(5, 6, "no_dr")
-    assert any(str(ablation) in str(path) for path in resolved.values()), \
-        "the campaign fallback did not look in the ctde tree"
+    with pytest.raises(SystemExit, match="exp2_seed6 is not versioned under "
+                                         "data/campaign_replicates/no_dr"):
+        harness.replicate_policies(5, 6, "no_dr")
     with pytest.raises(SystemExit):
         harness.replicate_policies(99, 6, "no_dr")
 
@@ -432,7 +435,15 @@ def test_the_campaign_manifest_matches_the_weights() -> None:
     files = 0
     for arm, payload in manifest["arms"].items():
         declared = int(payload["overrides"].get("RL_HIDDEN_DIM", 128))
-        assert len(payload["sets"]) == 6, f"{arm}: three seeds x two experiments"
+        coverage = payload["seeds"]
+        assert {k: sorted(v) for k, v in coverage.items()} == (
+            {"exp1": list(range(1, 11)), "exp2": list(range(1, 11))} if arm == "no_dr"
+            else {"exp1": [1, 2, 3], "exp2": [1, 2, 3]}), f"{arm}: unexpected seed coverage"
+        assert len(payload["sets"]) == sum(len(v) for v in coverage.values()), \
+            f"{arm}: the manifest lists seeds it did not version"
+        on_disk = sorted(p.name for p in (root / arm).iterdir() if p.is_dir())
+        assert on_disk == sorted(payload["sets"]), (f"{arm}: versioned directories and manifest sets differ "
+                                                   f"-- on disk {on_disk}, listed {sorted(payload['sets'])}")
         for name, entry in payload["sets"].items():
             assert entry["hidden_dim"] == declared, (arm, name)
             assert entry["completed_steps"] == entry["target_steps"] == 500000, (arm, name)
@@ -444,7 +455,7 @@ def test_the_campaign_manifest_matches_the_weights() -> None:
                 if file == sorted(entry["files"])[0]:
                     assert derive(path)[0] == meta["hidden_dim"], (arm, name, file)
                 files += 1
-    assert files == 54, files
+    assert files == 96, files
 
 
 def test_the_capacity_guard_refuses_an_arm_the_configuration_cannot_load() -> None:
@@ -459,6 +470,27 @@ def test_the_capacity_guard_refuses_an_arm_the_configuration_cannot_load() -> No
             harness.check_campaign_capacity(arm)
     with pytest.raises(SystemExit, match="no campaign"):
         harness.check_campaign_capacity("not_an_arm")
+
+
+def test_a_campaign_arm_is_only_ever_played_from_its_versioned_checkpoints() -> None:
+    """An unversioned campaign set must abort instead of resolving to the git-ignored scratch.
+
+    The no_dr pool was replayed for a minute against seeds 4-10 read straight out of
+    `data/runs_ablation_no_dr/`, because the versioning script was told to look for seeds 1-3 and copied
+    only those. Nothing noticed: the matches were real, they were just played from weights no reader can
+    obtain. A campaign arm therefore has exactly one legal source -- `data/campaign_replicates/<arm>/`.
+    """
+    harness = _load("run_cross_arena")
+    with pytest.raises(SystemExit, match="is not versioned under data/campaign_replicates/narrow_64"):
+        harness.replicate_policies(4, 4, "narrow_64")
+    # The study arm keeps its scratch fallback: those checkpoints are promoted separately, and a reader
+    # who has trained them locally is allowed to play them.
+    with pytest.raises(SystemExit, match="no such training replicate: exp1_seed999"):
+        harness.replicate_policies(999, 1, "")
+    played = harness.replicate_policies(4, 4, "no_dr")
+    assert len(played) == 6
+    assert all(path.is_file() for path in played.values())
+    assert {path.parent.name for path in played.values()} == {"exp1_seed4", "exp2_seed4"}
 
 
 def test_report_only_rederives_the_summary_from_the_recorded_matches(tmp_path: Path) -> None:

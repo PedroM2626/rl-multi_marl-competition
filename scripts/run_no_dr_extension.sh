@@ -28,19 +28,41 @@ OUTDIR="results/cross_arena_campaign"
 while [ ! -f /tmp/traces.flag ]; do sleep 300; done
 echo "traces complete; training no_dr seeds 4-10 at $(date -Is)"
 
-env DOMAIN_RANDOMIZATION=false "$PY" scripts/run_study.py --steps 500000 --seeds "$NEW_SEEDS" --jobs 14 \
-  --eval-matches 150 --out data/runs_ablation_no_dr --results-dir results/ablation_no_dr \
-  > "$TMP/no_dr_extension.log" 2>&1
-tail -6 "$TMP/no_dr_extension.log"
-if ! grep -q "failures: none" "$TMP/no_dr_extension.log"; then
-  echo "the no_dr extension did not finish cleanly; see $TMP/no_dr_extension.log" >&2
-  exit 1
+# Training is the expensive, once-only part (170.8 min measured for these 14 runs). Re-launching the
+# campaign to redo the pool replay must not retrain it, so the block is skipped when every run of the
+# extension already wrote its evaluation summary.
+trained=0
+for s in 4 5 6 7 8 9 10; do
+  for e in exp1 exp2; do
+    tree="$ROOT/data/runs_ablation_no_dr"; [ "$e" = exp2 ] && tree="$ROOT/ctde_arena/data/runs_ablation_no_dr"
+    [ -f "$tree/${e}_seed${s}/evaluation/run_summary.json" ] && trained=$((trained+1))
+  done
+done
+if [ "$trained" = 14 ]; then
+  echo "all 14 extension runs already trained; skipping training at $(date -Is)"
+else
+  echo "$trained of 14 extension runs trained so far; running the study"
+  env DOMAIN_RANDOMIZATION=false "$PY" scripts/run_study.py --steps 500000 --seeds "$NEW_SEEDS" --jobs 14 \
+    --eval-matches 150 --out data/runs_ablation_no_dr --results-dir results/ablation_no_dr \
+    > "$TMP/no_dr_extension.log" 2>&1
+  tail -6 "$TMP/no_dr_extension.log"
+  if ! grep -q "failures: none" "$TMP/no_dr_extension.log"; then
+    echo "the no_dr extension did not finish cleanly; see $TMP/no_dr_extension.log" >&2
+    exit 1
+  fi
 fi
 
 # Version the new sets before playing them: run_cross_arena.py reads data/campaign_replicates/, and the
-# manifest's hidden width is what its capacity guard checks.
+# manifest's hidden width is what its capacity guard checks. Refusing to replay unversioned weights is the
+# point -- a pool whose checkpoints are not in the repository is not reproducible.
 "$PY" scripts/version_campaign_checkpoints.py > "$TMP/no_dr_versioning.log" 2>&1
 tail -4 "$TMP/no_dr_versioning.log"
+sets=$("$PY" -c 'import json;print(len(json.load(open("data/campaign_replicates/MANIFEST.json"))["arms"]["no_dr"]["sets"]))')
+if [ "$sets" != 20 ]; then
+  echo "the no_dr arm is versioned at $sets sets, expected 20 (10 seeds x 2 experiments); the versioning " \
+       "script derives seeds from disk, so check $TMP/no_dr_versioning.log" >&2
+  exit 1
+fi
 
 for pair in "${PAIRS[@]}"; do
   set -- $pair; S=$1; M=$2

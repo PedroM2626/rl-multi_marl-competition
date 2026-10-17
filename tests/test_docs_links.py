@@ -89,3 +89,26 @@ def test_explicit_anchors_are_unique_per_file() -> None:
             dupes = sorted({n for n in names if names.count(n) > 1})
             duplicates.append(f"{path.relative_to(PROJECT_ROOT)}: {dupes}")
     assert not duplicates, "an <a name> used twice makes one of them unreachable:\n" + "\n".join(duplicates)
+
+
+def test_documented_commands_are_listed_once_per_table() -> None:
+    """A command row appended twice reads as two different instructions that happen to say the same thing.
+
+    § 9.3 carries one row per campaign script, and a chained-campaign edit landed three of them twice --
+    `run_traces_campaign.sh` and `run_no_dr_extension.sh` verbatim, `run_absolute_ten_block.sh` with its
+    wording revised between the two, which no gate can see. Rows whose first cell is a backticked command or
+    script are therefore compared verbatim, so an exact repeat is a failure rather than something a reader
+    has to notice.
+    """
+    repeated = []
+    for path in documentation_files():
+        seen: dict[str, int] = {}
+        for line in path.read_text(encoding="utf-8").splitlines():
+            row = line.strip()
+            if not row.startswith("| `") or not row.endswith("|"):
+                continue
+            seen[row] = seen.get(row, 0) + 1
+        for row, count in seen.items():
+            if count > 1:
+                repeated.append(f"{path.relative_to(PROJECT_ROOT)}: x{count} {row[:90]}")
+    assert not repeated, "the same command row appears more than once:\n" + "\n".join(repeated)

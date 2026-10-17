@@ -1388,8 +1388,8 @@ weight their win rates can carry:
 
 Until now this section's evidence was its aggregates: `results/ablation_*/per_seed_metrics.csv` is
 versioned, the policies behind it were not, so reproducing an arm meant retraining it — and replaying even
-one of its matches meant having trained it. `scripts/version_campaign_checkpoints.py` copies the 54
-checkpoints into `data/campaign_replicates/<arm>/<experiment>_seedN/` (24 MB added to Git, against roughly
+one of its matches meant having trained it. `scripts/version_campaign_checkpoints.py` copies the 96
+checkpoints into `data/campaign_replicates/<arm>/<experiment>_seedN/` (35 MB added to Git, against roughly
 70 min of wall clock per arm if a reader would rather re-derive them) and writes `MANIFEST.json` beside them.
 
 The manifest matters more than the copies. A `.pt` in this repository stores
@@ -1400,14 +1400,20 @@ the first layer of each actor:
 
 | Arm | Override | Sets | Width the weights show |
 |---|---|---:|---|
-| `no_dr` | `DOMAIN_RANDOMIZATION=false` | 6 | 128 |
+| `no_dr` | `DOMAIN_RANDOMIZATION=false` | 20 | 128 |
 | `narrow_64` | `RL_HIDDEN_DIM=64` | 6 | 64 |
 | `wide_256` | `RL_HIDDEN_DIM=256` | 6 | 256 |
 
 That is the first statement about the arms that does not depend on the campaign script's `env` line: the
 capacity claimed in the table above is what the stored tensors say about themselves, and a test
 (`tests/test_cross_arena_report.py::test_the_campaign_manifest_matches_the_weights`) re-derives it, the byte
-counts and the SHA-256 of every one of the 54 files.
+counts and the SHA-256 of every one of the 96 files. It also re-derives the *coverage* — 20 sets for `no_dr`
+(seeds 1–10 of both experiments) against 6 for each capacity arm — from the manifest's own seed lists rather
+than from a constant in the test, because the constant was the defect: `version_campaign_checkpoints.py` used
+to iterate a hard-coded `SEEDS = (1, 2, 3)`, so when the `no_dr` arm grew to ten seeds the versioning step
+copied none of the new weights and reported success. [A-43](11_code_audit.md#an-arm-was-extended-and-the-versioning-step-silently-versioned-none-of-it)
+is that story, and `run_cross_arena.py --campaign` now refuses any set that is not versioned instead of
+quietly reading the git-ignored scratch.
 
 Both pool instruments can now play an arm — `run_cross_arena.py --campaign no_dr --exp1-replicate 1
 --exp2-replicate 1` and `run_absolute_eval.py --campaign wide_256 --blocks 1:1` — behind a guard that

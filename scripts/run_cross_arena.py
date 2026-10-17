@@ -133,11 +133,12 @@ def replicate_policies(exp1_seed: int, exp2_seed: int, campaign: str = "") -> di
         versioned = ROOT_ROOT / "data" / "campaign_replicates" / campaign
     else:
         versioned = ROOT_ROOT / "data" / "training_replicates"
-    scratch_name = f"runs_ablation_{campaign}" if campaign else "runs"
-    # Which tree a campaign wrote experiment 2's runs into depends on how it was launched: the study's are
-    # under the repository root (`data/runs/exp2_seedN`), the ablation campaign's under `ctde_arena/`. Both
-    # are searched rather than guessed. The versioned set above is what a reader normally resolves to; this
-    # scratch fallback only exists on the machine that trained them.
+    scratch_name = "runs"
+    # Which tree a study run wrote experiment 2 into depends on how it was launched: the study's are under
+    # the repository root (`data/runs/exp2_seedN`), some campaigns wrote theirs under `ctde_arena/`. Both
+    # are searched rather than guessed. Only the study arm gets this fallback at all: a named campaign must
+    # resolve from `data/campaign_replicates/`, or its pool would be measured on weights that are not
+    # committed and therefore not the weights a reader can replay.
     scratch_roots = (ROOT_ROOT, CTDE_ROOT)
     out: dict[str, Path] = {}
     for experiment, seed, paradigms in (
@@ -148,12 +149,18 @@ def replicate_policies(exp1_seed: int, exp2_seed: int, campaign: str = "") -> di
         # git-ignored study scratch is only present on the machine that produced them.
         directory = versioned / f"{experiment}_seed{seed}"
         if not directory.is_dir():
+            if campaign:
+                raise SystemExit(
+                    f"campaign {campaign}: {experiment}_seed{seed} is not versioned under "
+                    f"{versioned.relative_to(ROOT_ROOT).as_posix()}. An ablation arm is only ever played "
+                    f"from its committed checkpoints -- running scripts/version_campaign_checkpoints.py "
+                    f"is what makes that true, and silently reading the git-ignored scratch here would "
+                    f"publish a pool whose weights are not in the repository")
             candidates = [root / "data" / scratch_name / f"{experiment}_seed{seed}" / "checkpoints"
                           for root in scratch_roots]
             directory = next((path for path in candidates if path.is_dir()), candidates[0])
         if not directory.is_dir():
-            raise SystemExit(f"no such training replicate: {experiment}_seed{seed}"
-                             + (f" in campaign {campaign}" if campaign else ""))
+            raise SystemExit(f"no such training replicate: {experiment}_seed{seed}")
         for paradigm in paradigms:
             found = sorted(directory.glob(f"*_{paradigm.lower()}.pt"))
             if len(found) != 1:
