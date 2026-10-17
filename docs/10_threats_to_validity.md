@@ -205,7 +205,7 @@ applied to the original single-seed evidence, and left three that no amount of r
    is a readout artefact**: CTDE-VD leads at 0.367 under argmax and is last at 0.323 under T = 0.5, with
    CTDE-CAC gaining +0.043 (*p* = 0.020) — the only cells in the study whose shift reaches an uncorrected
    0.05, and neither clears its Bonferroni threshold. **The variance is not the readout's**: between-seed SD
-   stays at 0.164–0.220 under both sampled temperatures against 0.171–0.218 greedy, so the instability this
+   spans 0.128–0.220 under both sampled temperatures against 0.122–0.218 greedy, so the instability this
    document keeps reporting is training variance, and dual-reporting buys interpretability rather than
    power. What remains open is the choice the study still makes: the published tables are the greedy arm, so
    every experiment-2 ranking in them carries the qualification above.

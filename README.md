@@ -50,7 +50,7 @@ Honest summary of what is finished and what is not:
 | Configuration ablations | `no_dr`, `narrow_64`, `wide_256` at 3 seeds × both experiments ([§ 8.13](docs/08_results.md#ablations)) | same |
 | Dependency audit | 33 of the 34 pins in the measured lock have no known OSV vulnerability; `torch` does, and its one CRITICAL is the `weights_only=True` path — accepted risk, quantified in [§ 9.10](docs/09_reproducibility.md#dependency-audit) | same |
 | Gameplay clips of the trained policies | yes (`docs/assets/`) | yes |
-| Tests | 133 (132 passed, 1 skipped), **94 %** statement coverage | 76 (75 passed, 1 skipped), **89 %** coverage |
+| Tests | 136 (135 passed, 1 skipped), **94 %** statement coverage | 76 (75 passed, 1 skipped), **89 %** coverage |
 | Continuous integration | both suites plus tree parity, documentation links, inventory and pooled/absolute re-derivation, artefact-path portability, campaign-script syntax — green on `ubuntu-latest`, and the re-derivation gate is what caught [A-42](docs/11_code_audit.md#a-committed-artefact-recorded-windows-paths) ([§ 9.4](docs/09_reproducibility.md#continuous-integration)) | same job |
 | Docker | n/a | **never built or run** |
 
@@ -181,7 +181,8 @@ Findings worth knowing before reading anything else:
   recommended: all sixty cells were re-played at T = 0, 0.5 and 1 — 27,000 matches — and the T = 0 control
   came back **bit-identical to the published study**, so every difference in the sampled arms is the action
   rule. Under it CTDE-VD, first in experiment 2 at 0.367 under argmax, is **last** at 0.323 (T = 0.5), while
-  the between-replicate spread does not shrink at any temperature (0.164–0.220 against 0.171–0.218). The
+  the between-replicate spread does not shrink at any temperature (0.128–0.220 sampled against
+  0.122–0.218 greedy). The
   readout controls which architecture appears best; the instability belongs to training
   ([§ 8.1 Readout re-measured](docs/08_results.md#readout-re-measured)).
 * **A quarter of replicates are not measuring fighting.** Five of twenty end most matches on the 90 s
@@ -332,7 +333,7 @@ and a positive value samples the policy's softmax at that temperature
 │   ├── rl/                     # actions, buffer + GAE, networks, ppo
 │   ├── systems/                # match_variant, simulation, metrics, plotting
 │   └── ui/dashboard.py         # in-game overlay text
-├── tests/                      # 133 tests, incl. tree-parity, collision geometry, the round-robin statistics and artefact-path portability
+├── tests/                      # 136 tests, incl. tree-parity, collision geometry, the round-robin statistics and artefact-path portability
 ├── data/                       # experiment 1: promoted replicate + historical_100k/ + PROVENANCE.json
 ├── results/
 │   ├── study/                  # per_seed_metrics.csv, analysis.json, learning_curves.png
