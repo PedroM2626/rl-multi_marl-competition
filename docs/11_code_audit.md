@@ -1144,9 +1144,9 @@ Items 1–3 were the original list and are done; 6 is done; 4 is partly done; 7 
     sides — and matching it changed its conclusion, from "the endpoints of the ordering survive the rule"
     to "the top survives, the bottom swaps between CTE and DTE". The `no_dr` replay stays at three blocks,
     because that arm trained three seeds per experiment and cannot reach ten without training.
-    `scripts/run_capacity_pool_campaign.sh` and `scripts/run_absolute_ten_block.sh` are queued next: the
-    first puts the capacity arms on the common pool for the first time, which is the confound
-    [docs/10 § 10.1](10_threats_to_validity.md#unmatched-model-capacity) says the study cannot currently rule
-    out — and three blocks is the most those arms can give, which will be stated as a limit rather than
-    smoothed over — and the second takes absolute strength to ten blocks so both scales hold the same
-    population.
+    `scripts/run_capacity_pool_campaign.sh` has since played both capacity arms on the common pool — the
+    confound [docs/10 § 10.1](10_threats_to_validity.md#unmatched-model-capacity) could not rule out is now
+    measured, and the ordering turns out not to be stable under width scaling in either direction
+    ([§ 8.13](08_results.md#capacity-pool)) — at three blocks each, which is the most those arms can give and
+    is stated as a limit. `scripts/run_absolute_ten_block.sh` remains: it takes absolute strength to ten
+    blocks so both scales hold the same population.

@@ -328,6 +328,7 @@ implication for a JAX/vectorised-env port are in
 | Round-robin replay, 3 `no_dr` blocks × 5 seeds | **≈ 85 min** | same script, phase 2: 9,000 matches, 25–30 min per wave. The slower per-match rate is the finding, not the machine: policies trained without domain randomisation end only 41.1 % of their matches by wipeout against 58.8 % for the randomised ones, so more matches run to the 90 s cap |
 | Round-robin extension, 4 blocks × 5 seeds, committed rule, then re-pool | **79 min** | `scripts/run_ten_block_campaign.sh`: 20 new runs and 12,000 matches at 16–27 min per wave of 3,000, then the fifty-directory merge and its report. Evaluation only — all sixty checkpoints were versioned before it started. Chained behind the two rows above, so each campaign's wall clock is its own |
 | Round-robin extension, 4 blocks × 5 seeds, arena-v2 rule | **5 h 08 min (upper bound, not a machine cost)** | `scripts/run_pool_v2_ten_block.sh`: 12,000 matches in four waves of 52, 110, 85 and 57 min, against the 17–20 min per wave the same script's first six blocks took nine hours earlier the same day. The work is identical per match — the two pools share the same 17,614 wipeout matches and the same 81.3 s mean duration — no sleep event is in the system log, and a 20-match probe run at the end of the campaign clocked 2.2 s/match, the afternoon rate. So the night window carried host load this repository cannot attribute, and the honest figure for the campaign is its own wave times rather than a throughput claim |
+| Capacity arms on the common pool, 2 × 3 blocks × 5 seeds | **1 h 59 min** | `scripts/run_capacity_pool_campaign.sh`: 18,000 matches, 15 runs per arm, five concurrent. The two arms are not comparable in cost even though they play the same number of matches — `narrow_64` took 35 min (9–14 min per wave) and `wide_256` 94 min (25–35 min per wave) on the same machine an hour apart, which is the network width showing up in the evaluation harness rather than in the result. Both ran at the rate the afternoon probe measured, so unlike the row above this is a machine cost |
 | Readout re-measurement, 60 cells × 3 temperatures | **4 h 43 min** | `scripts/run_readout_campaign.sh`: 27,000 held-out matches (150 per cell), two processes at a time — one per tree. The arms are not equal: 246 → 485 → 684 s per cell, i.e. 1.6 → 3.2 → 4.6 s per match, and the cause is the action rule's own compute rather than longer play — the sampled matches are *shorter* (median duration 30.3 → 18.4 s, mean survival 21.6 → 13.9 s). Evaluation only, and the T = 0 arm is the control that makes the other two interpretable |
 
 The measured per-replicate throughput under full 20-way load is 82.6–92.9 steps/s against 368 steps/s for an
@@ -425,7 +426,7 @@ inclination to replay 2,700 matches.
 
 ## 9.7 Artefact inventory
 
-Every versioned experiment artefact (208 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed, and each hash is of the blob Git stores rather than of the file on disk — a text artefact checked out with CRLF on Windows hashes differently from the same committed bytes on Linux, and a reader on any platform should be able to reproduce this column.
+Every versioned experiment artefact (212 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed, and each hash is of the blob Git stores rather than of the file on disk — a text artefact checked out with CRLF on Windows hashes differently from the same committed bytes on Linux, and a reader on any platform should be able to reproduce this column.
 
 **Promoted replicate.** The artefacts that match the current code. Chosen by `promote_run.py --seed median`, which is the replicate with the least L1 distance to the per-arm study means; `PROVENANCE.json` records the choice and the full run summary behind it.
 
@@ -460,10 +461,14 @@ Every versioned experiment artefact (208 files), with SHA-256 for integrity chec
 | `results/cross_arena/blocks10.json` | 21,745 | `1a86501c13ea5f38d76d2e77e3006e2f6ff8219acd0345689a756076991a0bd6` |
 | `results/cross_arena/blocks6.csv` | 4,772,724 | `fec107ccfba9b8ad3f681659f1161659523878804c39be399987883891e2c89f` |
 | `results/cross_arena/blocks6.json` | 18,588 | `4b4b5e32d1919089d7567355dc27715ba2715d6a2f266344e9ecaf4abf244537` |
+| `results/cross_arena/narrow_64_blocks.csv` | 2,653,460 | `49e3add91d4582ba98c2c29d5e2ab856911ce2de95a273a2c41e63b8b3aed447` |
+| `results/cross_arena/narrow_64_blocks.json` | 15,877 | `a6ea0ba6ac6cd8eb21ee069f433e3f52a3e3f886b802b3232c77c838afe75e69` |
 | `results/cross_arena/no_dr_blocks.csv` | 2,533,758 | `e9689e27298e9b50d84b76bd7efc0760f7983aa00980702ae7771f6c005d0e48` |
 | `results/cross_arena/no_dr_blocks.json` | 18,021 | `357982487cd87184e0e834ba52f86d3f79460ddb85b308c081de2a5f2903145a` |
 | `results/cross_arena/v2_blocks.csv` | 8,172,817 | `49aad95f0f96c2343e45d590174a5ac1705c32114302a116bda777f2366691d5` |
 | `results/cross_arena/v2_blocks.json` | 30,490 | `d521631979c371743d84532e045c0274289b8b7f8db7a31861680760030ba485` |
+| `results/cross_arena/wide_256_blocks.csv` | 2,626,611 | `a4cf32ed064c04e5789222ec13dcf55420a5289c2f0b38f4a2936da90f794375` |
+| `results/cross_arena/wide_256_blocks.json` | 16,659 | `9e25a582e234ebbe41ff12b1025d1f8af7b068acf1845ab047f0ad6b0eb1a7c5` |
 | `results/study/analysis.json` | 4,226 | `0761e5fa08f9be1cbee21f515b28eb17ad48e65b7207868bc161ce933f87527b` |
 | `results/study/learning_curves.png` | 137,532 | `1915d48d117e8a96730b3659e0259e5ad6446c0fb7103d0642a6a5e7bd601cbe` |
 | `results/study/per_seed_metrics.csv` | 5,226 | `a69098a4e88eef37c1291f73b1cb2526f0d31a98c0c2c6f0da27af0263b30d17` |

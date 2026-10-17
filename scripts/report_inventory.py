@@ -34,7 +34,10 @@ GROUPS = [
         "(the first three sets, kept because two of the three agreement statistics in [§ 8.11]"
         "(08_results.md#absolute-strength) are computed against its `blocks.json`), and the v2 and ablation "
         "pools the re-measurement campaign writes.",
-        ("results/study/", "results/cross_arena/blocks.csv", "results/cross_arena/blocks.json",
+        ("results/study/", "results/cross_arena/narrow_64_blocks.csv",
+         "results/cross_arena/narrow_64_blocks.json", "results/cross_arena/wide_256_blocks.csv",
+         "results/cross_arena/wide_256_blocks.json",
+         "results/cross_arena/blocks.csv", "results/cross_arena/blocks.json",
          "results/cross_arena/blocks6.csv", "results/cross_arena/blocks6.json",
          "results/cross_arena/blocks10.csv", "results/cross_arena/blocks10.json",
          "results/cross_arena/v2_blocks.csv", "results/cross_arena/v2_blocks.json",

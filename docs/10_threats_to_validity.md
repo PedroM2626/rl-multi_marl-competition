@@ -26,6 +26,15 @@ parameters against CTDE-CAC's 39,041.
 
 *Remedy:* match total trainable parameters per team, e.g. by widening the smaller network.
 
+**Measured, and it is worse than the remedy assumed.** Both capacity arms have now been played on the
+common opponent pool ([§ 8.13](08_results.md#capacity-pool)), and the ordering is not stable under width
+scaling in either direction: at 64 the arm that leads the field at 128 falls from first to fifth, at 256 it
+stays first while a different arm collapses from fourth to last. That is not a monotone capacity effect — it
+is the ordering being conditional on the configuration — and it means matching parameter totals would fix an
+asymmetry without any guarantee of restoring the ranking the 128 pool reports. The largest rank move is four
+positions and the largest win-rate move 0.044, against 0.253 for turning domain randomisation off on the same
+instrument, so of the two configuration axes this study can vary, capacity is the milder one.
+
 ### Slot confounding (fixed) <a name="slot-and-seed-confounding"></a>
 
 Team identity is fixed to a spawn corner, a controller seed offset (11/23/37), and an initialisation

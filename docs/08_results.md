@@ -951,14 +951,16 @@ the count on both sides.
   orthogonal design. A cross-experiment comparison still cannot fully separate "this exp-1 replicate was
   strong" from "this exp-1 × exp-2 pairing interacted"; with ten of the hundred possible pairings, it cannot
   average the interaction away either.
-* **It is one configuration — but two of its axes have now been varied.** The numbers
-  above inherit the spawn bias, the 90 s clock, hidden width 128 and domain randomisation on. The first has
-  been re-measured at the same replication: the arena-v2 replay covers all ten blocks and the same sixty
-  networks, so § 8.12 is matched on both sides and finds the top of this ordering intact and its bottom
-  swapped. The second axis cannot be matched: checkpoints trained without domain randomisation exist for
-  three blocks only, because that arm trained three seeds per experiment, and they reorder the table
-  outright, with CTDE-Comm falling from first to fifth ([§ 8.13](#no-dr-pool)). What has *not* been varied on this instrument is network capacity, which is the
-  confound the ablation arms exist to measure under their own protocol instead.
+* **It is one configuration — and three of its axes have now been varied, two of them at lower replication.**
+  The numbers above inherit the spawn bias, the 90 s clock, hidden width 128 and domain randomisation on. The
+  first has been re-measured at the same replication: the arena-v2 replay covers all ten blocks and the same
+  sixty networks, so § 8.12 is matched on both sides and finds the top of this ordering intact and its bottom
+  swapped. The other two cannot be matched: checkpoints trained without domain randomisation and checkpoints
+  trained at width 64 and 256 exist for three blocks each, because those arms trained three seeds, and both
+  reorder the table — CTDE-Comm falls from first to fifth without domain randomisation
+  ([§ 8.13](#no-dr-pool)) and from first to fifth again at half width ([§ 8.13](#capacity-pool)), while at
+  double width CTDE-CAC drops from fourth to last. Three blocks is a weaker instrument than ten, so those are
+  demonstrations that the ordering is configuration-conditional, not measurements of by how much.
 
 ### What this adds to the conclusions
 
@@ -1413,10 +1415,60 @@ visible in the match outcomes: 41.1 % of the no_dr pool's matches ended in a wip
 committed pool's, with 12.6 % drawn against 3.2 % — networks trained in a fixed arena finish fewer fights
 against this opponent mix, whatever their win rate.
 
-**What this does not do:** it does not re-measure the *absolute-strength* instrument under either variation,
-and the two arms whose capacity was ablated (`narrow_64`, `wide_256`) are not played on the common pool at all
-— they need `RL_HIDDEN_DIM` 64 and 256, and playing them would confound the arena configuration with the
-network size, which is the confound [§ 8.13's own tables](#ablations) already exist to measure separately.
+**What this does not do:** it does not re-measure the *absolute-strength* instrument under either variation.
+The two arms whose capacity was ablated are now played on the common pool — [below](#capacity-pool) — which
+needed `RL_HIDDEN_DIM` 64 and 256 exported per arm, and the capacity guard in `run_cross_arena.py` is what
+makes that safe: it reads each set's width out of `MANIFEST.json` and refuses to play a checkpoint at a width
+it was not trained at.
+
+### The capacity arms against the common pool <a name="capacity-pool"></a>
+
+[§ 8.13's within-run tables](#ablations) can say that halving or doubling the network changes an arm's own
+held-out win rate; they cannot say what it does to the *comparison*, because in each run the three arms share
+the configuration and fight each other. The common pool answers that, and it is evaluation time on
+checkpoints that were versioned months ago: `bash scripts/run_capacity_pool_campaign.sh` plays `narrow_64`
+and `wide_256` over their three blocks and five harness seeds each — 9,000 matches per arm-pool, the most
+those arms can give, since each trained three seeds.
+
+| Architecture | `narrow_64` (3 blocks) | committed width 128 (10 blocks) | `wide_256` (3 blocks) |
+|---|---:|---:|---:|
+| CTDE-Comm | 0.318 · 5th | **0.359 · 1st** | 0.366 · 2nd |
+| CTDE-VD | 0.335 · 3rd | 0.331 · 2nd | **0.367 · 1st** |
+| CTDE | 0.355 · 1st | 0.317 · 3rd | 0.318 · 3rd |
+| CTDE-CAC | 0.319 · 4th | 0.315 · 4th | 0.271 · 6th |
+| DTE | 0.354 · 2nd | 0.310 · 5th | 0.316 · 4th |
+| CTE | 0.243 · 6th | 0.304 · 6th | 0.281 · 5th |
+
+**Capacity reorders this pool, and not monotonically with size.** Halving the width moves CTDE-Comm from
+first to fifth (−0.041) and lifts plain CTDE and DTE to the top two places; doubling it leaves Comm at the top
+— statistically tied with CTDE-VD, 0.366 against 0.367 and no separation between them — but drops CTDE-CAC
+from fourth to last (−0.044). The largest single move is 0.044 and the largest rank move is four positions,
+which is an order of magnitude less than what turning domain randomisation off does to the same instrument
+(0.253, [above](#no-dr-pool)). Because the six arms of any such pool average 1/3 by construction, capacity
+cannot shift the level of these numbers at all — it can only choose who beats whom.
+
+The separations multiply rather than resolve: **6 of 15 pairs clear Bonferroni at `narrow_64` and 7 at
+`wide_256`, against 4 at the committed width** — but each of those pools has three checkpoint sets and 9,000
+matches where the headline has ten and 30,000, and the leave-one-block-out core collapses accordingly: **none
+of the six is robust at `narrow_64`** (removing one of three blocks always leaves two, and every pair's
+worst subset exceeds alpha), while `wide_256` keeps three (CTDE-CAC below CTDE-Comm at 5.7e-08 and below DTE
+at 2.4e-04, CTDE-Comm above CTE at 6.9e-10). Five of the six `narrow_64` separations are some arm above CTE,
+which reads  0.243 there and is last or fifth in all three pools — the one arm the instrument keeps putting at
+the bottom whatever the width.
+
+Three limits, stated because the table invites a comparison it cannot support. **n = 3, not 10:** these
+pools' between-block SD is estimated on three draws (and CTE's at `narrow_64` is 0.123, four times the
+headline pool's widest arm), so a rank in this table is a weaker statement than the same rank in § 8.10.
+**Different networks:** the blocks are seeds 1–3 of the ablation runs, and no block label overlaps the
+committed pool, so no individual trained network appears in both columns — this is a comparison of training
+configurations, not a paired test. **Width is not parameter count:** the arms enter each pool with their own
+parameter totals (35,465 to 79,369 at width 128, [§ 10.1](10_threats_to_validity.md#unmatched-model-capacity)),
+so what these two columns vary is the width of every arm at once, which is the experiment the "match total
+trainable parameters" remedy would *not* reproduce. What the section can now say instead is that the
+cross-architecture ordering is conditional on hidden width 128 in a measured way: two of the six arms change
+rank by four positions when the width is halved, and the arm that leads the field at 128 leads it at 256 and
+sits fifth at 64.
+
 
 ### Status of this section
 
@@ -1431,12 +1483,12 @@ from the run summaries already on disk, with no re-training. And on this mostly-
 replicates run at 243–350 steps/s in 24–34 minutes, against the 85–92 steps/s and 90–101 minutes the
 committed study measured under its 20-way load ([§ 9.5](09_reproducibility.md#95-cost-of-a-run)).
 
-**What this does not do:** it does not re-run the *random-pool* instrument under these configurations, and the
-two capacity arms are not played on the common pool at all, so it cannot say whether the
-[§ 8.11](#absolute-strength) agreement survives a different `RL_HIDDEN_DIM` or no domain randomisation. The
-common-opponent pool has now been re-run for `no_dr` ([above](#no-dr-pool)), which is the arm whose key the
-study's own analysis singled out; each arm still measures teams that co-adapted inside their own run, so the
-pool result is about the trained networks, not about the ablation's within-run comparison. It also does not
+**What this does not do:** it does not re-run the *random-pool* instrument under these configurations, so it
+cannot yet say whether the [§ 8.11](#absolute-strength) agreement survives a different `RL_HIDDEN_DIM` or no
+domain randomisation. The common-opponent pool has now been re-run for `no_dr` ([above](#no-dr-pool)), which
+is the arm whose key the study's own analysis singled out, and for both capacity arms
+([above](#capacity-pool)); each arm still measures teams that co-adapted inside their own run, so the pool
+result is about the trained networks, not about the ablation's within-run comparison. It also does not
 close the power gap:
 three seeds is the sample the study's own forward-power table puts an order of magnitude short of what
 would resolve the differences it reports.
