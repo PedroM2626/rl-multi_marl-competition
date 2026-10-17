@@ -40,10 +40,37 @@ if [ ! -s "$ROOT/results/absolute_ten/matches.csv" ] || [ ! -s "$ROOT/results/ab
   exit 1
 fi
 rows=$(( $(wc -l < "$ROOT/results/absolute_ten/matches.csv") - 1 ))
-echo "  wrote $rows team-match rows"
-if [ "$rows" -ne 27000 ]; then
-  # 10 blocks x 3 streams x 6 architectures x 25 matches = 4,500 matches, three rows each.
-  echo "expected 27,000 rows (4,500 matches), got $rows -- refusing to call this the ten-block pool" >&2
-  exit 1
-fi
+echo "  wrote $rows rows"
+# One row per match, not per team-match: the absolute instrument plays one trained team against two random
+# controllers, so a match contributes a single row naming the trained paradigm. The shape the campaign must
+# have is therefore 10 blocks x 3 streams x 6 architectures x 25 matches = 4,500 rows, 750 per architecture.
+"$PY" - "$ROOT/results/absolute_ten/matches.csv" "$ROOT/results/absolute_ten/summary.json" <<'PY'
+import csv, json, sys
+from collections import Counter
+from pathlib import Path
+csv_path, summary_path = Path(sys.argv[1]), Path(sys.argv[2])
+with csv_path.open(newline="", encoding="utf-8") as handle:
+    rows = list(csv.DictReader(handle))
+per_architecture = Counter(row["paradigm"] for row in rows)
+blocks = {row["training_block"] for row in rows}
+streams = {row["harness_seed"] for row in rows}
+summary = json.loads(summary_path.read_text(encoding="utf-8"))
+problems = []
+if len(rows) != 4_500:
+    problems.append(f"{len(rows)} rows, expected 4,500 (10 blocks x 3 streams x 6 arms x 25 matches)")
+if set(per_architecture.values()) != {750}:
+    problems.append(f"unequal per-architecture counts: {dict(per_architecture)}")
+if len(blocks) != 10 or len(streams) != 3:
+    problems.append(f"{len(blocks)} blocks x {len(streams)} streams, expected 10 x 3")
+if summary.get("blocks") and len(summary["blocks"]) != 10:
+    problems.append("the summary lists fewer than ten blocks, so this is not the ten-block pool")
+if summary.get("inputs", {}).get("compare_pool") != "results/cross_arena/blocks10.json":
+    problems.append(f"the agreement was computed against {summary.get('inputs', {}).get('compare_pool')!r}, "
+                    "not the ten-block peer pool")
+if problems:
+    raise SystemExit("; ".join(problems) + " -- refusing to call this the ten-block absolute pool")
+print(f"  shape ok: {len(rows)} rows, {len(blocks)} blocks x {len(streams)} streams, "
+      f"750 matches per architecture, peer pool blocks10.json")
+PY
+if [ "$?" -ne 0 ]; then exit 1; fi
 echo ABS_TEN_DONE > /tmp/abs_ten.flag

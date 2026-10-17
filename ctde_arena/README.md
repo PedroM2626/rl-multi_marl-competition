@@ -29,7 +29,7 @@ Each paradigm controls one team; three teams of three agents fight in the same a
 | MLflow curves | **1 logged point** for the 100k run — see [A-9](../docs/11_code_audit.md#mlflow-cadence) |
 | Tests | 76 (75 passed, 1 skipped), **89 %** statement coverage |
 | Cross-experiment round-robin | hosted here, since this tree's package is the superset holding all six architectures |
-| Absolute strength vs random opponents | `results/absolute_six/` at the repository root (six checkpoint sets), from `scripts/run_absolute_eval.py`; `results/absolute_blocks/` and `results/absolute/` are the three-set and promoted-set predecessors, kept because [§ 8.11](../docs/08_results.md#absolute-strength) quotes their history ([§ 8.11](../docs/08_results.md#absolute-strength)) |
+| Absolute strength vs random opponents | `results/absolute_ten/` at the repository root (ten checkpoint sets — every replicate either experiment trained), from `scripts/run_absolute_eval.py`; `results/absolute_six/` is its six-set predecessor, `results/absolute_blocks/` and `results/absolute/` are the three-set and promoted-set predecessors, kept because [§ 8.11](../docs/08_results.md#absolute-strength) quotes their history ([§ 8.11](../docs/08_results.md#absolute-strength)) |
 | Docker image | **never built or run** — unverified configuration |
 
 Read [Results](../docs/08_results.md) and [Threats to validity](../docs/10_threats_to_validity.md)

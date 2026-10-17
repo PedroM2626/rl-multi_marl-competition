@@ -238,8 +238,9 @@ that run's initialisation and geometry stream, so they are not independent draws
     ([A-30](11_code_audit.md#greedy-evaluation-of-an-untrained-network-is-not-random-play)), and the null is
     taken from the arena rather than from symmetry -- three mutually random teams split
     0.257 / 0.270 / 0.463 by spawn slot ([§ 8.9](08_results.md#random-baseline)), so the slot-balanced chance
-    level is 0.330. Over six checkpoint sets the two procedures rank the architectures the same way
-    (Spearman +0.77, Pearson +0.72), which is corroboration the peer-relative ranking previously had none of;
+    level is 0.330. Over ten checkpoint sets on both sides the two procedures rank the architectures the
+    same way (Spearman +0.886, Pearson +0.787), which is corroboration the peer-relative ranking previously
+    had none of;
     the statistic is +0.41 and +0.94 at one and three sets, and −0.04 only when a one-set measurement is
     compared against a three-set peer table. The agreement is therefore credited to replicating the training
     and to matching the replication counts, not to playing more matches. Every win rate here is still stated

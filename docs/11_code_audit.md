@@ -1148,5 +1148,6 @@ Items 1–3 were the original list and are done; 6 is done; 4 is partly done; 7 
     confound [docs/10 § 10.1](10_threats_to_validity.md#unmatched-model-capacity) could not rule out is now
     measured, and the ordering turns out not to be stable under width scaling in either direction
     ([§ 8.13](08_results.md#capacity-pool)) — at three blocks each, which is the most those arms can give and
-    is stated as a limit. `scripts/run_absolute_ten_block.sh` remains: it takes absolute strength to ten
-    blocks so both scales hold the same population.
+    is stated as a limit. `scripts/run_absolute_ten_block.sh` has also run, so absolute strength is now
+    measured over the same ten blocks as the peer pool and the headline agreement is a matched +0.886 rather
+    than the +0.77 the six-set artefact reported.

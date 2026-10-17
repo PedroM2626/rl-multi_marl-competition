@@ -143,7 +143,8 @@ of them in the same place.
 | `bash scripts/run_readout_campaign.sh` | both | Queue all three readout arms (T = 0, 0.5, 1) over both experiments' ten seeds each, merge the per-tree parts, and report each arm against `results/study/`; chained behind the pool campaigns so no cost figure in § 9.5 is measured under two campaigns at once |
 | `python scripts/run_absolute_eval.py --matches 150 --seeds 1,2,3` | run from `ctde_arena/` | Absolute strength on the promoted checkpoints: each trained policy against two uniform-random controllers, trained slot rotated |
 | `python scripts/run_absolute_eval.py --blocks 1:7,10:5,9:2 --matches 50 --seeds 1,2,3 --out results/absolute_blocks --null-json results/baseline/random_baseline_uniform.json --compare-pool results/cross_arena/blocks.json` | run from `ctde_arena/` | The same over three training blocks, with the slot-matched null and the agreement with the peer pool; `--campaign <arm>` takes the ablation sets instead, behind the same capacity guard |
-| `python scripts/run_absolute_eval.py --blocks 1:7,10:5,2:1,3:3,4:4,9:2 --matches 25 --seeds 1,2,3 --out results/absolute_six --null-json results/baseline/random_baseline_uniform.json --compare-pool results/cross_arena/blocks6.json` | run from `ctde_arena/` | The headline [§ 8.11](08_results.md#absolute-strength) artefact: six blocks, and the peer pool at the *same* replication count, which is what the −0.04 story says the comparison requires |
+| `python scripts/run_absolute_eval.py --blocks 1:7,10:5,2:1,3:3,4:4,9:2 --matches 25 --seeds 1,2,3 --out results/absolute_six --null-json results/baseline/random_baseline_uniform.json --compare-pool results/cross_arena/blocks6.json` | run from `ctde_arena/` | The six-block predecessor of the headline artefact, still quoted because § 8.11's replication ladder is its finding |
+| `bash scripts/run_absolute_ten_block.sh` | run from `ctde_arena/`, via the script | The headline [§ 8.11](08_results.md#absolute-strength) artefact: all ten blocks at the same cell size, against the peer pool at the *same* replication count — which is what the −0.04 story says the comparison requires. The script verifies the record's shape (4,500 rows, 750 per architecture, ten blocks x three streams) and that the summary names `blocks10.json` as its peer pool before calling it done |
 | `python scripts/run_absolute_eval.py --report-only --out results/absolute_blocks …` | run from `ctde_arena/` | Re-derive a summary from its recorded `matches.csv`, playing nothing |
 | `bash scripts/run_arena_v2_campaign.sh` | both | Queue the arena-v2 study: 10 seeds x 2 experiments at 500 k steps under the decayed alive bonus and draw-on-cap, waiting for whatever is already on the machine |
 | `bash scripts/run_ablation_campaign.sh` | both | Queue the three configuration ablations (`no_dr`, `narrow_64`, `wide_256`), each one key different from the committed study, after the v2 campaign |
@@ -218,7 +219,7 @@ ImportError: cannot import name 'ValueDecompositionCriticNetwork' from 'marl_are
 
 ```
 $ python -m pytest tests/ -q            # experiment 1
-136 passed, 1 skipped
+138 passed, 1 skipped
 $ cd ctde_arena && python -m pytest tests/ -q
 75 passed, 1 skipped
 ```
@@ -328,6 +329,7 @@ implication for a JAX/vectorised-env port are in
 | Round-robin replay, 3 `no_dr` blocks × 5 seeds | **≈ 85 min** | same script, phase 2: 9,000 matches, 25–30 min per wave. The slower per-match rate is the finding, not the machine: policies trained without domain randomisation end only 41.1 % of their matches by wipeout against 58.8 % for the randomised ones, so more matches run to the 90 s cap |
 | Round-robin extension, 4 blocks × 5 seeds, committed rule, then re-pool | **79 min** | `scripts/run_ten_block_campaign.sh`: 20 new runs and 12,000 matches at 16–27 min per wave of 3,000, then the fifty-directory merge and its report. Evaluation only — all sixty checkpoints were versioned before it started. Chained behind the two rows above, so each campaign's wall clock is its own |
 | Round-robin extension, 4 blocks × 5 seeds, arena-v2 rule | **5 h 08 min (upper bound, not a machine cost)** | `scripts/run_pool_v2_ten_block.sh`: 12,000 matches in four waves of 52, 110, 85 and 57 min, against the 17–20 min per wave the same script's first six blocks took nine hours earlier the same day. The work is identical per match — the two pools share the same 17,614 wipeout matches and the same 81.3 s mean duration — no sleep event is in the system log, and a 20-match probe run at the end of the campaign clocked 2.2 s/match, the afternoon rate. So the night window carried host load this repository cannot attribute, and the honest figure for the campaign is its own wave times rather than a throughput claim |
+| Absolute strength, 10 blocks × 3 streams × 25 matches per arm | **27 min** | `scripts/run_absolute_ten_block.sh`: 4,500 matches in one process, ~0.36 s per match — random opponents never act, so the mean match runs 10 s of the 90 s cap instead of the 81 s the peer pool's matches take. The cheapest extension in this table by a wide margin, and the one that removed the last replication-count mismatch between two published numbers |
 | Capacity arms on the common pool, 2 × 3 blocks × 5 seeds | **1 h 59 min** | `scripts/run_capacity_pool_campaign.sh`: 18,000 matches, 15 runs per arm, five concurrent. The two arms are not comparable in cost even though they play the same number of matches — `narrow_64` took 35 min (9–14 min per wave) and `wide_256` 94 min (25–35 min per wave) on the same machine an hour apart, which is the network width showing up in the evaluation harness rather than in the result. Both ran at the rate the afternoon probe measured, so unlike the row above this is a machine cost |
 | Readout re-measurement, 60 cells × 3 temperatures | **4 h 43 min** | `scripts/run_readout_campaign.sh`: 27,000 held-out matches (150 per cell), two processes at a time — one per tree. The arms are not equal: 246 → 485 → 684 s per cell, i.e. 1.6 → 3.2 → 4.6 s per match, and the cause is the action rule's own compute rather than longer play — the sampled matches are *shorter* (median duration 30.3 → 18.4 s, mean survival 21.6 → 13.9 s). Evaluation only, and the T = 0 arm is the control that makes the other two interpretable |
 
@@ -414,6 +416,7 @@ outputs are pure functions of other committed files, and each was re-derived and
 | `results/cross_arena/v2_blocks.json`, `no_dr_blocks.json` | their own pooled CSVs | the same report over `results/cross_arena_v2_blocks/*` and `results/cross_arena_campaign/*` | deterministic; CI re-derives every pooled JSON in `results/cross_arena/` in a loop, so a new campaign is covered without editing the workflow |
 | `results/study/learning_curves.png` | `data/runs/*/evaluation/run_summary.json` | `scripts/plot_study.py --runs-dir data/runs` | identical SHA-256 (`1915d48d…`) |
 | `results/absolute_six/summary.json` | `results/absolute_six/matches.csv` | `scripts/run_absolute_eval.py --report-only --out results/absolute_six` | no matches replayed |
+| `results/absolute_ten/summary.json` | `results/absolute_ten/matches.csv` | `scripts/run_absolute_eval.py --report-only --out results/absolute_ten` | no matches replayed; this is the headline artefact, and CI re-derives every `results/absolute*` directory by glob rather than by a list |
 
 Two of these four are re-derived on every push by CI, on Linux, from the committed inputs — the round-robin
 reports against their CSVs, and the artefact inventory against `git ls-files`
@@ -422,11 +425,11 @@ drift.
 
 The last row is the point of `--report-only`: the headline aggregation of chapter 8's absolute-strength
 section can be re-derived from the raw per-match record in seconds, on a machine with no GPU and no
-inclination to replay 2,700 matches.
+inclination to replay 4,500 matches.
 
 ## 9.7 Artefact inventory
 
-Every versioned experiment artefact (212 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed, and each hash is of the blob Git stores rather than of the file on disk — a text artefact checked out with CRLF on Windows hashes differently from the same committed bytes on Linux, and a reader on any platform should be able to reproduce this column.
+Every versioned experiment artefact (214 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed, and each hash is of the blob Git stores rather than of the file on disk — a text artefact checked out with CRLF on Windows hashes differently from the same committed bytes on Linux, and a reader on any platform should be able to reproduce this column.
 
 **Promoted replicate.** The artefacts that match the current code. Chosen by `promote_run.py --seed median`, which is the replicate with the least L1 distance to the per-arm study means; `PROVENANCE.json` records the choice and the full run summary behind it.
 
@@ -674,7 +677,7 @@ Every versioned experiment artefact (212 files), with SHA-256 for integrity chec
 | `results/study_v2/learning_curves.png` | 70,161 | `a2f19be70612de222a47c329f44730d4de78bb29b909db5e531ea3b3219274a0` |
 | `results/study_v2/per_seed_metrics.csv` | 5,278 | `76e50a118474572b85fcaaab1d39751cdec7ff7c4aec39bad6e32754490618b3` |
 
-**Absolute-strength evaluation.** `run_absolute_eval.py` output: one trained policy against two uniform-random controllers, trained slot rotated. `absolute/` is the promoted checkpoint set, `absolute_blocks/` three sets and `absolute_six/` six, each at 450 matches per architecture; each `summary.json` re-derives from its `matches.csv` with `--report-only`.
+**Absolute-strength evaluation.** `run_absolute_eval.py` output: one trained policy against two uniform-random controllers, trained slot rotated. `absolute_ten/` is the headline — ten checkpoint sets, 750 matches per architecture, the same population as the round-robin — and `absolute/`, `absolute_blocks/` and `absolute_six/` are its one-, three- and six-set predecessors, kept because the replication ladder is the section's finding. Each `summary.json` re-derives from its `matches.csv` with `--report-only`.
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
@@ -684,6 +687,8 @@ Every versioned experiment artefact (212 files), with SHA-256 for integrity chec
 | `results/absolute_blocks/summary.json` | 23,708 | `eaff0097f88b98816689bae8c8e2f96ba1df65eabd12ba272f8c6b6782f1f98d` |
 | `results/absolute_six/matches.csv` | 140,415 | `33a771cc57f2562ca7821040442e28723541be57d5c04a7bf64f5e3dff311c11` |
 | `results/absolute_six/summary.json` | 32,520 | `ce5bf03714ed4af11c3d84eecab2f0b23c2b909438001fc07ba45815589ca777` |
+| `results/absolute_ten/matches.csv` | 234,107 | `6d9466a0b0bd3137de4c010bd322bc0b65f01bc380ad3664cbe9c17ce0d99f53` |
+| `results/absolute_ten/summary.json` | 44,744 | `f6e8f52dbb7ee660c0aa02bde66d1f5ede381cd4762049879e57311089a6e609` |
 
 **Gameplay clips.** Rendered by `render_trailer.py` from the promoted replicate's trained policies; the JSON beside each clip records the seed, rotation, paradigm per slot and the per-frame alive and shot counts the caption asserts.
 

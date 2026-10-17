@@ -158,6 +158,40 @@ def test_the_capacity_arm_table_is_the_two_ablation_pools_and_the_headline() -> 
                 == ranks[architecture], (architecture, column, ranks[architecture])
 
 
+def test_the_absolute_headline_table_is_both_artefacts() -> None:
+    """Section 8.11's floor table and its rank comparison, recomputed from absolute_ten + blocks10."""
+    text = RESULTS.read_text(encoding="utf-8")
+    absolute = json.loads((ROOT / "results" / "absolute_ten" / "summary.json").read_text(encoding="utf-8"))
+    peers = json.loads(POOL.read_text(encoding="utf-8"))["per_architecture"]
+    table = rows(section(text, "### Every arm clears the floor"))
+    body = [r for r in table if len(r) == 8 and r[0].isdigit()]
+    assert len(body) == 6, f"the floor table parsed {len(body)} rows, expected six"
+    pooled = absolute["pooled"]
+    null = absolute["matched_null_balanced"]
+    for row in body:
+        rank, name, win, ci, excess, losses, draws, spread = (c.replace("**", "") for c in row)
+        architecture = name
+        recorded = pooled[architecture]
+        assert nearly(float(win), recorded["win_rate_vs_random"], 3), architecture
+        assert ci == f"[{recorded['wilson_95_ci'][0]:.3f}, {recorded['wilson_95_ci'][1]:.3f}]", architecture
+        assert nearly(float(excess.strip("+")), recorded["win_rate_vs_random"] - null, 3), architecture
+        assert nearly(float(losses), recorded["loss_rate"], 3), architecture
+        assert nearly(float(draws), recorded["draw_rate"], 3), architecture
+        assert nearly(float(spread), absolute["spread_across_training_blocks"][architecture]["sd"], 3), \
+            architecture
+        assert int(rank) == sorted(pooled, key=lambda a: -pooled[a]["win_rate_vs_random"]).index(architecture) + 1
+    agreement = rows(section(text, "### The two opponent pools order the architectures the same way"))
+    for row in [r for r in agreement if len(r) == 5 and r[1].isdigit()]:
+        architecture, rank_random, win_random, rank_peers, win_peers = (c.replace("**", "") for c in row)
+        assert nearly(float(win_random), pooled[architecture]["win_rate_vs_random"], 3), architecture
+        assert nearly(float(win_peers), peers[architecture]["win_rate"], 3), architecture
+        assert int(rank_random) == int(absolute["agreement_with_peer_pool"]["per_arm"][architecture]["rank_random"])
+        assert int(rank_peers) == int(absolute["agreement_with_peer_pool"]["per_arm"][architecture]["rank_peers"])
+    correlation = absolute["agreement_with_peer_pool"]
+    assert f"Spearman **+{correlation['spearman_rank_correlation']:.3f}**" in text
+    assert f"Pearson **+{correlation['pearson_win_rate']:.3f}**" in text
+
+
 def test_the_pooled_csv_row_count_matches_what_the_document_claims() -> None:
     """Section 8.10's headline counts are quoted in three chapters; the CSV is the only authority."""
     lines = POOL_CSV.read_text(encoding="utf-8").splitlines()

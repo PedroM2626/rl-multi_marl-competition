@@ -117,10 +117,12 @@ GROUPS = [
     (
         "Absolute-strength evaluation",
         "`run_absolute_eval.py` output: one trained policy against two uniform-random controllers, trained "
-        "slot rotated. `absolute/` is the promoted checkpoint set, `absolute_blocks/` three sets and "
-        "`absolute_six/` six, each at 450 matches per architecture; each `summary.json` re-derives from its "
-        "`matches.csv` with `--report-only`.",
-        ("results/absolute/", "results/absolute_blocks/", "results/absolute_six/"),
+        "slot rotated. `absolute_ten/` is the headline — ten checkpoint sets, 750 matches per architecture, "
+        "the same population as the round-robin — and `absolute/`, `absolute_blocks/` and `absolute_six/` "
+        "are its one-, three- and six-set predecessors, kept because the replication ladder is the "
+        "section's finding. Each `summary.json` re-derives from its `matches.csv` with `--report-only`.",
+        ("results/absolute/", "results/absolute_blocks/", "results/absolute_six/",
+         "results/absolute_ten/"),
     ),
     (
         "Gameplay clips",

@@ -997,58 +997,59 @@ Three design points before the numbers.
   0.257 / 0.270 / 0.463 by slot. Averaged over the rotation that gives **0.3300**, which is close to 1/3 by
   construction rather than by symmetry — and it is the matched comparison, because a random focal team in
   that baseline run also faced two random opponents.
-* **Six checkpoint sets, 450 matches per architecture.** `results/absolute_six/` plays each arm's six
-  independently trained replicates (the same blocks as [§ 8.10](#cross-arena)) over three harness seeds at 25
-  matches per architecture per block per seed. The rotation is not exactly balanced, because 25 is not a
-  multiple of 3: the pooled slot counts are 162 / 144 / 144 per arm. Re-computing each arm's pooled rate with
-  the three slots weighted equally moves it by at most 0.0042 (DTE, 0.6867 to 0.6908) — the imbalance is
-  therefore worth less than a fortieth of the between-architecture spread it could distort.
-  Two earlier artefacts are kept — `results/absolute_blocks/` (three blocks, 50 per block per seed) and
-  `results/absolute/` (the promoted set alone, 150 per seed) — because their history is the lesson of this
-  section.
+* **Ten checkpoint sets, 750 matches per architecture.** `results/absolute_ten/` plays each arm's ten
+  independently trained replicates — the same blocks as [§ 8.10](#cross-arena), which is every replicate the
+  study produced — over three harness seeds at 25 matches per architecture per block per seed. The rotation
+  is not exactly balanced, because 25 is not a multiple of 3: the pooled slot counts are 270 / 240 / 240 per
+  arm. Re-computing each arm's pooled rate with the three slots weighted equally moves it by at most 0.0034
+  (DTE, 0.6067 to 0.6100) — worth less than a fortieth of the between-architecture spread it could distort.
+  Three earlier artefacts are kept — `results/absolute_six/` (six blocks, the headline until the pool grew),
+  `results/absolute_blocks/` (three blocks) and `results/absolute/` (the promoted set alone) — because their
+  history is the lesson of this section.
 
 ### Every arm clears the floor
 
-Pooled over the six checkpoint sets:
+Pooled over the ten checkpoint sets:
 
 | Rank | Architecture | Win rate vs random | 95 % CI | Excess over the matched null | Losses | Draws | SD across blocks |
 |---|---|---:|---|---:|---:|---:|---:|
-| 1 | **CTDE-Comm** | **0.769** | [0.728, 0.806] | +0.439 | 0.231 | 0.000 | **0.020** |
-| 2 | CTDE | 0.729 | [0.686, 0.768] | +0.399 | 0.271 | 0.000 | 0.130 |
-| 3 | CTDE-CAC | 0.698 | [0.654, 0.738] | +0.368 | 0.302 | 0.000 | 0.123 |
-| 4 | DTE | 0.687 | [0.642, 0.728] | +0.357 | 0.311 | 0.002 | 0.101 |
-| 5 | CTDE-VD | 0.667 | [0.622, 0.709] | +0.337 | 0.333 | 0.000 | 0.101 |
-| 6 | CTE | 0.633 | [0.588, 0.677] | +0.303 | 0.362 | 0.004 | 0.119 |
+| 1 | **CTDE-Comm** | **0.760** | [0.728, 0.789] | +0.430 | 0.240 | 0.000 | **0.026** |
+| 2 | CTDE | 0.725 | [0.692, 0.756] | +0.395 | 0.275 | 0.000 | 0.150 |
+| 3 | CTDE-VD | 0.696 | [0.662, 0.728] | +0.366 | 0.304 | 0.000 | 0.090 |
+| 4 | CTDE-CAC | 0.679 | [0.644, 0.711] | +0.349 | 0.321 | 0.000 | 0.117 |
+| 5 | CTE | 0.649 | [0.615, 0.683] | +0.319 | 0.347 | 0.004 | 0.101 |
+| 6 | **DTE** | 0.607 | [0.571, 0.641] | +0.277 | 0.388 | 0.005 | 0.200 |
 
 Every interval excludes the matched null, so training helps under every information-flow paradigm — but the
-spread is the story: five of the six arms move by 0.10–0.13 across checkpoint sets, while **CTDE-Comm moves
-by 0.020**. It is the only architecture here whose absolute strength looks like a property of the design
-rather than of the run that produced it, and that is the same stability it shows against trained peers
-(block SD 0.025 in [§ 8.10](#cross-arena)).
+spread is the story, and at ten sets it is larger than the six-set pool showed: five of the six arms move by
+0.09–0.20 across checkpoint sets, while **CTDE-Comm moves by 0.026**. It is the only architecture here whose
+absolute strength looks like a property of the design rather than of the run that produced it, and that is the
+same stability it shows against trained peers (block SD 0.026 in [§ 8.10](#cross-arena)) — the two instruments
+agree on which arm is reproducible even where they disagree on the order of the other five.
 
-Matches are short and decided by elimination: median 10.6 s of the 90 s cap, 3.7 % reach the clock,
-0.0–0.4 % drawn. Against random opponents the buzzer regime barely exists, which is part of why this scale is
-cleaner than the peer-relative one.
+Matches are short and decided by elimination: median 9.4–11.6 s of the 90 s cap, 7 draws in 4,500 matches.
+Against random opponents the buzzer regime barely exists, which is part of why this scale is cleaner than the
+peer-relative one.
 
 ### The two opponent pools order the architectures the same way
 
-Ranking the same six architectures — and, after this round, the same six checkpoint sets — by how often they
-beat trained peers ([§ 8.10](#cross-arena)) and by how often they beat uniform noise:
+Ranking the same six architectures — and now the same **ten** checkpoint sets on both sides, which is the
+matched comparison this section's own history says it requires:
 
 | Architecture | Rank vs random | Win rate vs random | Rank vs trained peers | Pooled win rate vs peers |
 |---|---:|---:|---:|---:|
-| CTDE-Comm | 1 | 0.769 | 1 | 0.355 |
-| CTDE | 2 | 0.729 | 4 | 0.314 |
-| CTDE-CAC | 3 | 0.698 | 3 | 0.321 |
-| DTE | 4 | 0.687 | 2 | 0.349 |
-| CTDE-VD | 5 | 0.667 | 5 | 0.307 |
-| CTE | 6 | 0.633 | 6 | 0.290 |
+| CTDE-Comm | 1 | 0.760 | 1 | 0.359 |
+| CTDE | 2 | 0.725 | 3 | 0.317 |
+| CTDE-VD | 3 | 0.696 | 2 | 0.331 |
+| CTDE-CAC | 4 | 0.679 | 4 | 0.315 |
+| CTE | 5 | 0.649 | 6 | 0.304 |
+| DTE | 6 | 0.607 | 5 | 0.310 |
 
-Spearman **+0.77**, Pearson **+0.72** (`run_absolute_eval.py --compare-pool results/cross_arena/blocks6.json`).
-Two of the six positions are on the move — CTDE above its peer rank, DTE below — but the head of one scale is
-the head of the other and the tail is the tail. That is corroboration the peer-relative ordering never had:
-the two measurements share an engine and nothing else, no opponent, no reward logic, no tie in the
-comparison.
+Spearman **+0.886**, Pearson **+0.787** (`run_absolute_eval.py --compare-pool results/cross_arena/blocks10.json`,
+both recorded in the artefact). Two of the six positions differ between the scales — CTDE and CTDE-VD exchange
+second and third, CTE and DTE exchange fifth and sixth — and the head of one scale is the head of the other.
+That is corroboration the peer-relative ordering never had: the two measurements share an engine and nothing
+else, no opponent, no reward logic, no tie in the comparison.
 
 Agreement is high at every **matched** replication count and does not increase monotonically:
 
@@ -1056,14 +1057,15 @@ Agreement is high at every **matched** replication count and does not increase m
 |---:|---|
 | 1 (promoted set only) | +0.41 |
 | 3 | +0.94 |
-| 6 | **+0.77** |
+| 6 | +0.77 |
+| 10 (every replicate the study produced) | **+0.886** |
 
-The mismatched case is the one this table deliberately excludes, and it is now available rather than
-hypothetical: recomputing the six-set absolute rates against the **ten-block** peer pool of
-[§ 8.10](#cross-arena) — six sets against ten, so the two sides no longer measure the same populations —
-gives Spearman **+0.66**, Pearson +0.74, with CTDE-Comm still first and CTE still last. The corroboration
-survives a peer pool that reordered four of the six middle ranks; its magnitude is not the committed figure,
-and the committed figure is the matched one.
+The mismatched case is the one this table deliberately excludes, and it is worth keeping on the record
+because it is the error this section already made once: the six-set absolute rates recomputed against the
+**ten-block** peer pool — six sets against ten, so the two sides no longer measure the same populations — give
+Spearman **+0.66**, Pearson +0.74, where the matched ten-vs-ten comparison of the same peer pool gives
++0.886. Reading a peer pool across replication counts cost 0.23 of rank correlation without changing a single
+match.
 
 ### The correction that produced this result
 
@@ -1100,10 +1102,11 @@ centralised training with decentralised execution.
 
 ### What this section can and cannot support
 
-**Can:** that all six trained replicates of every architecture beat uniform-random play by an interval that
-excludes the matched null (+0.303 to +0.439); that the two opponent pools rank the six architectures the same
-way at every matched replication count (+0.41, +0.94, +0.77); and that CTDE-Comm's strength is the only one
-that does not depend on which run produced it (block SD 0.020 against 0.101–0.130 for the other five).
+**Can:** that all ten trained replicates of every architecture beat uniform-random play by an interval that
+excludes the matched null (+0.277 to +0.430); that the two opponent pools rank the six architectures the same
+way at every matched replication count (+0.41, +0.94, +0.77, +0.886); and that CTDE-Comm's strength is the
+only one that does not depend on which run produced it (block SD 0.026 against 0.090–0.200 for the other
+five).
 
 **Cannot:** place any number here against a published result — uniform-random play in this arena is not any
 paper's baseline, and there is still no scripted opponent, no second game and no shared benchmark; say that
@@ -1535,17 +1538,15 @@ domain randomisation on".
 4. The arena itself is biased: one of the three spawn positions wins 49 % of matches against 22 % and 26 %
    for the other two, for every architecture, measured over 90,000 team-matches
    ([A-32](11_code_audit.md#the-arena-spawn-geometry-is-not-symmetric)).
-5. Every architecture — all ten trained replicates of each on the common pool, six sets on the random pool —
-   beats uniform-random play by an interval
-   that excludes the slot-matched null (+0.303 to +0.439), and the two opponent pools rank the six
-   architectures **the same way**: Spearman +0.77 and Pearson +0.72 between "beats trained peers" and "beats
-   random play", over six checkpoint sets on both scales, with the same arm first and the same arm last
-   ([§ 8.11](#absolute-strength)). Recomputed against the ten-block pool, where the two sides no longer have
-   the same replication count, the statistic is +0.66 with the same arm first and the same arm last. The same
-   comparison on a single checkpoint set that was compared against a
-   three-set peer table gave −0.04 — a scope error, and the sharpest available demonstration that in this
-   arena a single replicate destroys the relationship between two independent measurements of the same six
-   networks.
+5. Every architecture — all ten trained replicates of each, on **both** scales — beats uniform-random play
+   by an interval that excludes the slot-matched null (+0.277 to +0.430), and the two opponent pools rank the
+   six architectures **the same way**: Spearman +0.886 and Pearson +0.787 between "beats trained peers" and
+   "beats random play", over ten checkpoint sets on both sides, with the same arm first and only two rank
+   swaps between the scales ([§ 8.11](#absolute-strength)). The same statistic is +0.41, +0.94 and +0.77 at
+   one, three and six **matched** sets, +0.66 when the six-set absolute rates are read against the ten-block
+   peer pool, and −0.04 when a one-set measurement is compared against a three-set peer table — a scope error,
+   and the sharpest available demonstration that in this arena a single replicate, or a mismatched count,
+   destroys the relationship between two independent measurements of the same six networks.
 6. Re-measuring the study under an arena that removes both objective-side confounds — an alive bonus an
    order of magnitude smaller and decaying with a 30 s half-life, and no win for surviving the clock — shows
    that **44 % and 39 % of held-out matches have no winner at all**, that no arm separates (paired *p* ≥

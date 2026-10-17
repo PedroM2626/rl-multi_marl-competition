@@ -42,7 +42,7 @@ Honest summary of what is finished and what is not:
 | Bit-for-bit reproducible training | verified | verified with `--no-mlflow` |
 | MLflow tracking | n/a | wired, but only **1 logged point** for the 100k run |
 | Cross-experiment round-robin | 30,000 matches, all six arms on common opponents, 10 checkpoint sets x 5 harness seeds — every replicate either experiment trained (shared, run from `ctde_arena/`) | same |
-| Absolute strength vs random opponents | 2,700 matches over 6 checkpoint sets, slot-matched null 0.330 ([§ 8.11](docs/08_results.md#absolute-strength)) | same |
+| Absolute strength vs random opponents | 4,500 matches over all 10 checkpoint sets — the same population as the round-robin — slot-matched null 0.330 ([§ 8.11](docs/08_results.md#absolute-strength)) | same |
 | Round-robin re-measured under arena v2 | the same 60 networks under the v2 rule, 30,000 matches at the headline's ten blocks: the same 17,614 wipeout matches, top of the ordering intact, bottom swapped (CTE last under the committed rule, DTE last under v2), and 8 pairs separate instead of 4 ([§ 8.12](docs/08_results.md#arena-v2-pool)) | same |
 | Round-robin re-measured on the capacity arms | `narrow_64` and `wide_256` played on the common pool, 3 blocks x 5 seeds each: at half width the arm that leads the field falls from 1st to 5th, at double width a different arm falls from 4th to last ([§ 8.13](docs/08_results.md#capacity-pool)) | same |
 | Round-robin re-measured on `no_dr` checkpoints | 3 blocks × 5 seeds, 9,000 matches: Comm falls 1st → 5th, between-block SD up to 0.223 ([§ 8.13](docs/08_results.md#no-dr-pool)) | same |
@@ -51,7 +51,7 @@ Honest summary of what is finished and what is not:
 | Configuration ablations | `no_dr`, `narrow_64`, `wide_256` at 3 seeds × both experiments ([§ 8.13](docs/08_results.md#ablations)) | same |
 | Dependency audit | 33 of the 34 pins in the measured lock have no known OSV vulnerability; `torch` does, and its one CRITICAL is the `weights_only=True` path — accepted risk, quantified in [§ 9.10](docs/09_reproducibility.md#dependency-audit) | same |
 | Gameplay clips of the trained policies | yes (`docs/assets/`) | yes |
-| Tests | 137 (136 passed, 1 skipped), **94 %** statement coverage | 76 (75 passed, 1 skipped), **89 %** coverage |
+| Tests | 139 (138 passed, 1 skipped), **94 %** statement coverage | 76 (75 passed, 1 skipped), **89 %** coverage |
 | Continuous integration | both suites plus tree parity, documentation links, inventory and pooled/absolute re-derivation, artefact-path portability, campaign-script syntax — green on `ubuntu-latest`, and the re-derivation gate is what caught [A-42](docs/11_code_audit.md#a-committed-artefact-recorded-windows-paths) ([§ 9.4](docs/09_reproducibility.md#continuous-integration)) | same job |
 | Docker | n/a | **never built or run** |
 
@@ -195,14 +195,14 @@ is evaluation against fixed opponents rather than argmax. Pooled over all 60 arm
   while the whole between-paradigm spread of the ten-seed study is 0.085–0.129. Halving the network costs at
   most 0.064. So every "X beats Y" claim in this repository is to be read as "under hidden width 128 and
   domain randomisation on" ([§ 8.13](docs/08_results.md#ablations)).
-* **Two opponent pools agree, once each architecture is replicated.** Ranking the six architectures by how
-  often they beat trained peers and by how often they beat uniform-random teams gives Spearman **+0.77** over
-  six independently trained checkpoints per architecture, with the same arm first (CTDE-Comm) and the same
-  arm last (CTE). Compared on one checkpoint set against a three-set peer table the identical statistic is
-  **−0.04** — the agreement comes from replicating the training and matching the counts, not from playing
-  more matches. Re-measured against the ten-block peer pool, where the two sides no longer have matched
-  counts, it is **+0.66** with the same arm first and the same arm last: the direction survives a peer table
-  that reordered four of the six ranks, the magnitude is the matched figure ([§ 8.11](docs/08_results.md#absolute-strength)).
+* **Two opponent pools agree, once each architecture is replicated at the same count on both sides.**
+  Ranking the six architectures by how often they beat trained peers and by how often they beat
+  uniform-random teams, over **ten** independently trained checkpoints on both scales, gives Spearman
+  **+0.886** and Pearson +0.787, with the same arm first (CTDE-Comm) and only two rank swaps between the
+  scales. Compared on one checkpoint set against a three-set peer table the identical statistic is **−0.04**,
+  and the six-set absolute rates read against the ten-block peer pool give **+0.66** — so the agreement comes
+  from replicating the training *and* matching the counts, and the mismatch costs 0.23 of rank correlation
+  without changing a single match ([§ 8.11](docs/08_results.md#absolute-strength)).
 
 Against a genuine random-play baseline
 ([§ 8.9](docs/08_results.md#random-baseline)) training clearly does something — trained agents survive
@@ -335,7 +335,7 @@ and a positive value samples the policy's softmax at that temperature
 │   ├── rl/                     # actions, buffer + GAE, networks, ppo
 │   ├── systems/                # match_variant, simulation, metrics, plotting
 │   └── ui/dashboard.py         # in-game overlay text
-├── tests/                      # 137 tests, incl. tree-parity, collision geometry, the round-robin statistics and artefact-path portability
+├── tests/                      # 139 tests, incl. tree-parity, collision geometry, the round-robin statistics and artefact-path portability
 ├── data/                       # experiment 1: promoted replicate + historical_100k/ + PROVENANCE.json
 ├── results/
 │   ├── study/                  # per_seed_metrics.csv, analysis.json, learning_curves.png
