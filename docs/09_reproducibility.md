@@ -223,7 +223,7 @@ ImportError: cannot import name 'ValueDecompositionCriticNetwork' from 'marl_are
 
 ```
 $ python -m pytest tests/ -q            # experiment 1
-138 passed, 1 skipped
+140 passed, 1 skipped
 $ cd ctde_arena && python -m pytest tests/ -q
 75 passed, 1 skipped
 ```
@@ -485,7 +485,7 @@ Every versioned experiment artefact (215 files), with SHA-256 for integrity chec
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
-| `results/trace_analysis.json` | 48,594 | `71983bb063a53fa8cd6816f3287d3f56e7c39bb5c8f439659a4a915227461237` |
+| `results/trace_analysis.json` | 48,529 | `dfe996ed0e5bff04bebc6c55f003dde6d57ca45bffc094e4778080a1929a6b39` |
 
 **Readout re-measurement.** The same replicates played twice, under argmax and under a fixed-temperature sample of the policy's own logits: `results/readout/T0` is the published readout replayed as a control, and `T0.5` / `T1` are the sampled arms. The schema is `run_study.py`'s, which is what lets `report_study.py --compare-to results/study` pair them against the study without a new instrument.
 
