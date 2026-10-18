@@ -1145,10 +1145,19 @@ headline pool, and that is now a stated limit rather than an open task.
    A-30's initialisation caveat survives the normalisation, and is recorded with it.
 6. ~~Rotate architecture-to-slot assignment across seeds~~ (A-27). **Done** — `paradigm_rotation` is derived
    from the seed and recorded in every `run_summary.json`.
-7. Re-run at the 3 M-step budget the code defaults to, to test whether CTDE-Comm's late improvement
-   continues. **Deliberately not done.** The 10-replicate study showed the curve *direction* flipping when
-   the replicate count changed, so a longer budget would refine an estimate of a quantity that is not
-   stable; the binding problem is the reward and termination design, not the step count.
+7. **Running:** re-run at the 3 M-step budget the code defaults to, to test whether CTDE-Comm's late improvement
+   continues. It read **Deliberately not done** for the whole history of this list, on the argument that the
+   10-replicate study showed the curve *direction* flipping when the replicate count changed, so a longer budget
+   would refine an estimate of a quantity that is not stable and the binding problem is the reward and
+   termination design, not the step count. That argument is itself a claim about this arena, so it is now being
+   measured rather than asserted: `scripts/run_three_million_campaign.sh` launched 2026-10-18 00:29 local and
+   trains the same twenty replicates — same seeds, same 150 held-out greedy matches, same slot rotation, only
+   `--steps` different — into `data/runs_3m/` and `results/study_3m/`. Two instruments answer two different
+   questions: `report_study.py --results-dir results/study_3m --compare-to results/study` pairs the held-out
+   rates on seed number, and `scripts/analyse_budget.py` reads each run's own held-out curve at 25/50/75/100 % of
+   its budget, because a fraction of 3,000,000 is not a fraction of 500,000 and the two curves can only be
+   compared as drift within a budget. Cost, scaled from the measured campaign: about six times the 500 k × 20
+   study's 117.5 min, so roughly 12 h of wall clock at twenty concurrent.
 8. **Partly done:** separate the two match regimes. A quarter of replicates decide matches on the 90 s clock
    rather than on eliminations ([§ 8.1](08_results.md#two-regimes)), so any pooled win rate mixes "who wins a
    fight" with "who is most alive at the buzzer". The round-robin now reports the regimes side by side
