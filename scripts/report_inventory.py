@@ -32,8 +32,10 @@ GROUPS = [
         "(six sets, the peer pool of the arena-v2 control and of the headline two-scale agreement, kept at the "
         "count those comparisons are matched at), `blocks.csv` "
         "(the first three sets, kept because two of the three agreement statistics in [§ 8.11]"
-        "(08_results.md#absolute-strength) are computed against its `blocks.json`), and the v2 and ablation "
-        "pools the re-measurement campaign writes.",
+        "(08_results.md#absolute-strength) are computed against its `blocks.json`), the v2 and capacity pools, "
+        "and the `no_dr` pools at both replication counts -- `no_dr_blocks.csv` at ten sets is the current "
+        "result, `no_dr_blocks3.csv` is the three-set pool it replaced, kept because [§ 8.13]"
+        "(08_results.md#no-dr-pool) quotes its numbers as the correction.",
         ("results/study/", "results/cross_arena/narrow_64_blocks.csv",
          "results/cross_arena/narrow_64_blocks.json", "results/cross_arena/wide_256_blocks.csv",
          "results/cross_arena/wide_256_blocks.json",
@@ -41,7 +43,8 @@ GROUPS = [
          "results/cross_arena/blocks6.csv", "results/cross_arena/blocks6.json",
          "results/cross_arena/blocks10.csv", "results/cross_arena/blocks10.json",
          "results/cross_arena/v2_blocks.csv", "results/cross_arena/v2_blocks.json",
-         "results/cross_arena/no_dr_blocks.csv", "results/cross_arena/no_dr_blocks.json"),
+         "results/cross_arena/no_dr_blocks.csv", "results/cross_arena/no_dr_blocks.json",
+         "results/cross_arena/no_dr_blocks3.csv", "results/cross_arena/no_dr_blocks3.json"),
     ),
     (
         "Optimiser traces and the analysis of them",
@@ -103,10 +106,11 @@ GROUPS = [
         "Ablation checkpoints behind the arm tables",
         "The three configuration-ablation sets of [§ 8.13](08_results.md#ablations), versioned for the same "
         "reason as the round-robin blocks -- the scratch they were trained into is git-ignored -- so an arm "
-        "can be replayed without retraining it. `MANIFEST.json` beside them records each set's single "
-        "override, the hidden width read out of its own weights, and a SHA-256 per file; a `.pt` in this "
-        "repository stores no capacity metadata, which is the one thing that distinguishes `narrow_64` and "
-        "`wide_256` from the control.",
+        "can be replayed without retraining it: twenty sets for `no_dr` (seeds 1-10 of both experiments) and "
+        "six for each capacity arm (seeds 1-3). `MANIFEST.json` beside them records each set's single "
+        "override, the hidden width read out of its own weights, the arm's seed coverage, and a SHA-256 per "
+        "file; a `.pt` in this repository stores no capacity metadata, which is the one thing that "
+        "distinguishes `narrow_64` and `wide_256` from the control.",
         ("data/campaign_replicates/",),
     ),
     (
@@ -120,8 +124,9 @@ GROUPS = [
     (
         "Ablation and arena-v2 campaigns",
         "`run_arena_v2_campaign.sh` and `run_ablation_campaign.sh` output, each aggregated by "
-        "`run_study.py` from 500 k-step replicates on seeds 1-3 (v2: 10 seeds). Every arm differs from "
-        "`results/study/` by exactly one configuration key.",
+        "`run_study.py` from 500 k-step replicates: `no_dr` on seeds 1-10 (extended by "
+        "`run_no_dr_extension.sh`), the two capacity arms on seeds 1-3, arena v2 on seeds 1-10. Every arm "
+        "differs from `results/study/` by exactly one configuration key.",
         ("results/study_v2/", "results/ablation_no_dr/", "results/ablation_narrow_64/",
          "results/ablation_wide_256/"),
     ),

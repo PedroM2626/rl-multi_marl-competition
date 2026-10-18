@@ -118,13 +118,18 @@ stochastic action sampling. Neither the final policy nor a greedy-action evaluat
 ### ~~Domain randomisation is unmeasured~~ Measured, and it is not a neutral control
 
 Randomisation is applied during training and disabled during evaluation. Turning it off
-([§ 8.13](08_results.md#ablations)) moves a paradigm's held-out win rate by up to 0.253, inverts the ranking
-of both experiments, and roughly triples mean survival time -- so its contribution was not merely unknown, it
-was larger than the effect the study set out to measure. Two consequences remain open: the ablated arms were
-evaluated only against their own co-adapted teammates, so the common-opponent
-([§ 8.10](08_results.md#cross-arena)) and random-pool ([§ 8.11](08_results.md#absolute-strength)) results are still
-single-configuration measurements; and survival changing that much means part of what `no_dr` "wins" is the
-buzzer, which [§ 8.12](08_results.md#arena-v2) shows is a separate large effect.
+([§ 8.13](08_results.md#ablations)) moves a paradigm's held-out win rate by up to 0.161, reorders experiment 1
+completely and swaps the bottom pair in experiment 2, and roughly doubles mean survival time -- so its
+contribution was not merely unknown, it is larger than the effect the study set out to measure. At three seeds
+the same arm read 0.253 and inverted both experiments, and plain CTDE's own shift had the opposite sign: the
+direction of the largest effect in this document was set by three draws ([§ 8.13](08_results.md#no-dr-pool)).
+Two consequences. One is closed: the ablated arms are no longer evaluated only against their own co-adapted
+teammates -- all three now play the common opponent pool
+([§ 8.13](08_results.md#no-dr-pool), [§ 8.13](08_results.md#capacity-pool)), where the `no_dr` field reorders
+around CTDE instead of CTDE-Comm and carries 1.3x to 4.5x the committed pool's between-block spread. One is
+open: the random-pool instrument ([§ 8.11](08_results.md#absolute-strength)) is still a single-configuration
+measurement. And survival changing that much means part of what `no_dr` "wins" is the buzzer, which
+[§ 8.12](08_results.md#arena-v2) shows is a separate large effect.
 
 ### Win rate is not the same construct as competence
 

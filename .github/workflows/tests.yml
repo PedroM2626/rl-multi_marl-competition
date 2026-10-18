@@ -92,10 +92,12 @@ jobs:
         run: |
           set -e
           changed=0
-          # Every pooled round-robin CSV and every absolute-strength directory, rather than a list that has
-          # to be edited each time a campaign lands. A pool that exists with its report is re-derived; if the
-          # two disagree, the committed report was not produced by the committed code over the committed rows.
-          for csv in results/cross_arena/*_blocks.csv results/cross_arena/blocks*.csv; do
+          # Every pooled round-robin CSV rather than a list that has to be edited each time a campaign lands.
+          # A pool that exists with its report is re-derived; if the two disagree, the committed report was not
+          # produced by the committed code over the committed rows. The pattern also covers a superseded pool
+          # kept under a numbered name -- `no_dr_blocks3.csv` is the three-block record § 8.13 quotes its
+          # correction from -- so a rescued artefact cannot sit in the repository unchecked.
+          for csv in results/cross_arena/*blocks*.csv; do
             [ -f "$csv" ] || continue
             json="${csv%.csv}.json"
             [ -f "$json" ] || continue

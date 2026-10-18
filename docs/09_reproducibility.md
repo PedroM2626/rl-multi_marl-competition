@@ -327,7 +327,8 @@ implication for a JAX/vectorised-env port are in
 | same again as arena v2 | **104.3 min total** | `scripts/run_arena_v2_campaign.sh`; 20 runs, same budget, three arena keys changed ([§ 8.12](08_results.md#arena-v2)) |
 | 500 k × 3 seeds × 2 experiments, one arm | **69–81 min per arm** | `scripts/run_ablation_campaign.sh`; 6 concurrent, so 24–34 min of training per replicate at 243–350 steps/s (against 85–92 steps/s under 20-way load) plus the held-out evaluation. Three arms in series: 3.9 h |
 | Round-robin replay, 6 blocks × 5 seeds, arena-v2 rule | **89 min** | `scripts/run_pool_v2_campaign.sh` phase 1: 18,000 matches, five concurrent runs per block, 17–20 min per wave of 3,000 matches. Evaluation only — the 36 checkpoints already existed |
-| Round-robin replay, 3 `no_dr` blocks × 5 seeds | **≈ 85 min** | same script, phase 2: 9,000 matches, 25–30 min per wave. The slower per-match rate is the finding, not the machine: policies trained without domain randomisation end only 41.1 % of their matches by wipeout against 58.8 % for the randomised ones, so more matches run to the 90 s cap |
+| 500 k × 7 new seeds × 2 experiments, one arm (`no_dr` to ten seeds) | **170.8 min** | `scripts/run_no_dr_extension.sh` phase 1: fourteen concurrent replicates under `DOMAIN_RANDOMIZATION=false`, each recording 96–132 min of train-plus-held-out time — 25.8 CPU-hours of training in 2.85 h of wall clock, the same ratio the twenty-run study row reports. This is the one re-measurement in this table that could not be bought with evaluation time alone: a pool cannot be extended past the seeds that exist, and item 13 of the audit's open list waited on it |
+| Round-robin replay, 10 `no_dr` blocks × 5 seeds | **3 h 49 min** | `scripts/run_no_dr_extension.sh`: 35 new runs and 21,000 matches (63,000 team-matches) at twelve concurrent, 58–78 min per run, first finish 20:20 and last 23:11 after a 19:21 launch. Evaluation only — the 20 checkpoint sets were versioned first. The per-run time is the finding, not the machine: policies trained without domain randomisation end only 44.8 % of their matches by wipeout against 58.7 % for the randomised ones, so more matches run to the 90 s cap. The campaign's first shape was five concurrent in a wave per block, which measured 3 min per triple of architectures and left 27 of this machine's 32 cores idle; the queue width is why this row is hours rather than the ≈ 85 min its three-block predecessor took |
 | Round-robin extension, 4 blocks × 5 seeds, committed rule, then re-pool | **79 min** | `scripts/run_ten_block_campaign.sh`: 20 new runs and 12,000 matches at 16–27 min per wave of 3,000, then the fifty-directory merge and its report. Evaluation only — all sixty checkpoints were versioned before it started. Chained behind the two rows above, so each campaign's wall clock is its own |
 | Round-robin extension, 4 blocks × 5 seeds, arena-v2 rule | **5 h 08 min (upper bound, not a machine cost)** | `scripts/run_pool_v2_ten_block.sh`: 12,000 matches in four waves of 52, 110, 85 and 57 min, against the 17–20 min per wave the same script's first six blocks took nine hours earlier the same day. The work is identical per match — the two pools share the same 17,614 wipeout matches and the same 81.3 s mean duration — no sleep event is in the system log, and a 20-match probe run at the end of the campaign clocked 2.2 s/match, the afternoon rate. So the night window carried host load this repository cannot attribute, and the honest figure for the campaign is its own wave times rather than a throughput claim |
 | Absolute strength, 10 blocks × 3 streams × 25 matches per arm | **27 min** | `scripts/run_absolute_ten_block.sh`: 4,500 matches in one process, ~0.36 s per match — random opponents never act, so the mean match runs 10 s of the 90 s cap instead of the 81 s the peer pool's matches take. The cheapest extension in this table by a wide margin, and the one that removed the last replication-count mismatch between two published numbers |
@@ -415,7 +416,7 @@ outputs are pure functions of other committed files, and each was re-derived and
 | `results/cross_arena/blocks10.json` | `blocks10.csv` | `scripts/report_cross_arena.py --in results/cross_arena/blocks10.csv` | deterministic, no RNG |
 | `results/cross_arena/blocks6.csv` | the first 30 of those run-directory CSVs | `scripts/combine_cross_arena.py` over the six-block subset | identical SHA-256 (`06b23f4d1419…`) |
 | `results/cross_arena/blocks6.json` | `blocks6.csv` | `scripts/report_cross_arena.py --in results/cross_arena/blocks6.csv` | deterministic, no RNG |
-| `results/cross_arena/v2_blocks.json`, `no_dr_blocks.json` | their own pooled CSVs | the same report over `results/cross_arena_v2_blocks/*` and `results/cross_arena_campaign/*` | deterministic; CI re-derives every pooled JSON in `results/cross_arena/` in a loop, so a new campaign is covered without editing the workflow |
+| `results/cross_arena/v2_blocks.json`, `no_dr_blocks.json`, `no_dr_blocks3.json` | their own pooled CSVs | the same report over `results/cross_arena_v2_blocks/*` and `results/cross_arena_campaign/*` | deterministic; CI re-derives every pooled JSON in `results/cross_arena/` in a loop over `*blocks*.csv`, so a new campaign — or a superseded pool kept for a correction, which is what `no_dr_blocks3.*` is — is covered without editing the workflow |
 | `results/study/learning_curves.png` | `data/runs/*/evaluation/run_summary.json` | `scripts/plot_study.py --runs-dir data/runs` | identical SHA-256 (`1915d48d…`) |
 | `results/absolute_six/summary.json` | `results/absolute_six/matches.csv` | `scripts/run_absolute_eval.py --report-only --out results/absolute_six` | no matches replayed |
 | `results/absolute_ten/summary.json` | `results/absolute_ten/matches.csv` | `scripts/run_absolute_eval.py --report-only --out results/absolute_ten` | no matches replayed; this is the headline artefact, and CI re-derives every `results/absolute*` directory by glob rather than by a list |
@@ -431,7 +432,7 @@ inclination to replay 4,500 matches.
 
 ## 9.7 Artefact inventory
 
-Every versioned experiment artefact (257 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed, and each hash is of the blob Git stores rather than of the file on disk — a text artefact checked out with CRLF on Windows hashes differently from the same committed bytes on Linux, and a reader on any platform should be able to reproduce this column.
+Every versioned experiment artefact (259 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed, and each hash is of the blob Git stores rather than of the file on disk — a text artefact checked out with CRLF on Windows hashes differently from the same committed bytes on Linux, and a reader on any platform should be able to reproduce this column.
 
 **Promoted replicate.** The artefacts that match the current code. Chosen by `promote_run.py --seed median`, which is the replicate with the least L1 distance to the per-arm study means; `PROVENANCE.json` records the choice and the full run summary behind it.
 
@@ -456,7 +457,7 @@ Every versioned experiment artefact (257 files), with SHA-256 for integrity chec
 | `data/metrics/team_match_metrics.csv` | 10,809 | `25a31953f7198bd676752f18d4aa7dca6b305307eed05866fcfdfc99d2649b2f` |
 | `data/metrics/trajectory_metrics.csv` | 1,343,793 | `e3539dd0a2667159b63559869c9ca391d670406850e2af69c7e5102a3f6db59f` |
 
-**Study aggregates.** Recomputed by `report_study.py`, `plot_study.py` and `report_cross_arena.py` from the per-replicate and per-match summaries. The round-robin rows are the pooled tables chapter 8 quotes: `blocks10.csv` and `blocks10.json` (ten checkpoint sets x five match streams, the current result -- every replicate either experiment trained), `blocks6.csv` (six sets, the peer pool of the arena-v2 control and of the headline two-scale agreement, kept at the count those comparisons are matched at), `blocks.csv` (the first three sets, kept because two of the three agreement statistics in [§ 8.11](08_results.md#absolute-strength) are computed against its `blocks.json`), and the v2 and ablation pools the re-measurement campaign writes.
+**Study aggregates.** Recomputed by `report_study.py`, `plot_study.py` and `report_cross_arena.py` from the per-replicate and per-match summaries. The round-robin rows are the pooled tables chapter 8 quotes: `blocks10.csv` and `blocks10.json` (ten checkpoint sets x five match streams, the current result -- every replicate either experiment trained), `blocks6.csv` (six sets, the peer pool of the arena-v2 control and of the headline two-scale agreement, kept at the count those comparisons are matched at), `blocks.csv` (the first three sets, kept because two of the three agreement statistics in [§ 8.11](08_results.md#absolute-strength) are computed against its `blocks.json`), the v2 and capacity pools, and the `no_dr` pools at both replication counts -- `no_dr_blocks.csv` at ten sets is the current result, `no_dr_blocks3.csv` is the three-set pool it replaced, kept because [§ 8.13](08_results.md#no-dr-pool) quotes its numbers as the correction.
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
@@ -468,8 +469,10 @@ Every versioned experiment artefact (257 files), with SHA-256 for integrity chec
 | `results/cross_arena/blocks6.json` | 18,588 | `4b4b5e32d1919089d7567355dc27715ba2715d6a2f266344e9ecaf4abf244537` |
 | `results/cross_arena/narrow_64_blocks.csv` | 2,653,460 | `49e3add91d4582ba98c2c29d5e2ab856911ce2de95a273a2c41e63b8b3aed447` |
 | `results/cross_arena/narrow_64_blocks.json` | 15,877 | `a6ea0ba6ac6cd8eb21ee069f433e3f52a3e3f886b802b3232c77c838afe75e69` |
-| `results/cross_arena/no_dr_blocks.csv` | 2,533,758 | `e9689e27298e9b50d84b76bd7efc0760f7983aa00980702ae7771f6c005d0e48` |
-| `results/cross_arena/no_dr_blocks.json` | 18,021 | `357982487cd87184e0e834ba52f86d3f79460ddb85b308c081de2a5f2903145a` |
+| `results/cross_arena/no_dr_blocks.csv` | 8,487,835 | `40cad9bc389d7202759155b78a5de661a2b9233c7dee0a7b717618b019190e6c` |
+| `results/cross_arena/no_dr_blocks.json` | 36,003 | `706d39ef0ba9a296ef2f7c3f0899a8f956f2398bf529c325f141d529a1739501` |
+| `results/cross_arena/no_dr_blocks3.csv` | 2,533,758 | `e9689e27298e9b50d84b76bd7efc0760f7983aa00980702ae7771f6c005d0e48` |
+| `results/cross_arena/no_dr_blocks3.json` | 18,021 | `357982487cd87184e0e834ba52f86d3f79460ddb85b308c081de2a5f2903145a` |
 | `results/cross_arena/v2_blocks.csv` | 8,172,817 | `49aad95f0f96c2343e45d590174a5ac1705c32114302a116bda777f2366691d5` |
 | `results/cross_arena/v2_blocks.json` | 30,490 | `d521631979c371743d84532e045c0274289b8b7f8db7a31861680760030ba485` |
 | `results/cross_arena/wide_256_blocks.csv` | 2,626,611 | `a4cf32ed064c04e5789222ec13dcf55420a5289c2f0b38f4a2936da90f794375` |
@@ -602,7 +605,7 @@ Every versioned experiment artefact (257 files), with SHA-256 for integrity chec
 | `data/training_replicates/exp2_seed9/team_2_ctde-cac.pt` | 304,400 | `9d5fd224b499af62b0a28de54e5a14ed9db402ebc808f085c939b9629ccd0318` |
 | `data/training_replicates/exp2_seed9/team_3_ctde-comm.pt` | 313,778 | `6f9355bd19f43e84b5d18519ebc175e26048d00eb5cbb67f0b5a9ed13bcc1760` |
 
-**Ablation checkpoints behind the arm tables.** The three configuration-ablation sets of [§ 8.13](08_results.md#ablations), versioned for the same reason as the round-robin blocks -- the scratch they were trained into is git-ignored -- so an arm can be replayed without retraining it. `MANIFEST.json` beside them records each set's single override, the hidden width read out of its own weights, and a SHA-256 per file; a `.pt` in this repository stores no capacity metadata, which is the one thing that distinguishes `narrow_64` and `wide_256` from the control.
+**Ablation checkpoints behind the arm tables.** The three configuration-ablation sets of [§ 8.13](08_results.md#ablations), versioned for the same reason as the round-robin blocks -- the scratch they were trained into is git-ignored -- so an arm can be replayed without retraining it: twenty sets for `no_dr` (seeds 1-10 of both experiments) and six for each capacity arm (seeds 1-3). `MANIFEST.json` beside them records each set's single override, the hidden width read out of its own weights, the arm's seed coverage, and a SHA-256 per file; a `.pt` in this repository stores no capacity metadata, which is the one thing that distinguishes `narrow_64` and `wide_256` from the control.
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
@@ -713,14 +716,14 @@ Every versioned experiment artefact (257 files), with SHA-256 for integrity chec
 | `requirements-measured.lock.txt` | 2,448 | `13a9ead65d70af5c9c42671c50477a8b736b864b790b25e38d61bee78a1f55bd` |
 | `results/dependency_audit.json` | 11,288 | `5de3f482896f88e80460bda28378eca0a48b0f9661d270e6f92b0c8e705ec3dd` |
 
-**Ablation and arena-v2 campaigns.** `run_arena_v2_campaign.sh` and `run_ablation_campaign.sh` output, each aggregated by `run_study.py` from 500 k-step replicates on seeds 1-3 (v2: 10 seeds). Every arm differs from `results/study/` by exactly one configuration key.
+**Ablation and arena-v2 campaigns.** `run_arena_v2_campaign.sh` and `run_ablation_campaign.sh` output, each aggregated by `run_study.py` from 500 k-step replicates: `no_dr` on seeds 1-10 (extended by `run_no_dr_extension.sh`), the two capacity arms on seeds 1-3, arena v2 on seeds 1-10. Every arm differs from `results/study/` by exactly one configuration key.
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
 | `results/ablation_narrow_64/analysis.json` | 3,478 | `c419dde1780a142055687fcedd15cf36a611179038c857db7f3c69d4bda8ed61` |
 | `results/ablation_narrow_64/per_seed_metrics.csv` | 1,731 | `1c141c4c9911a0b51bdb4a59c8bc0d524e6b5347127d62dc19a44e717833f2bc` |
-| `results/ablation_no_dr/analysis.json` | 3,460 | `220ea9542aaf6c23405d22e5bf4b4858e82c8d67aabbdebb16f44396b91b81f4` |
-| `results/ablation_no_dr/per_seed_metrics.csv` | 1,706 | `75aae63a4457992acd5c179fb3072c509513b19f60f80f680701269f8e63cdb0` |
+| `results/ablation_no_dr/analysis.json` | 4,200 | `8945d5b4881e4dcee76b3757d438e573b2b704fa1e48ff9feced43f06df9d656` |
+| `results/ablation_no_dr/per_seed_metrics.csv` | 5,208 | `3f6a735c527816947c34b1253742a36accce62e8936a6f589cc1fb5d81307346` |
 | `results/ablation_wide_256/analysis.json` | 3,476 | `a760c1e3b92c53ac0a09158fafd4a27527f76e7e9a5bf1e9f94c71bff66028c0` |
 | `results/ablation_wide_256/per_seed_metrics.csv` | 1,723 | `26c751cf5cd3a70aec4fe0e79ad6eb369a1de3ad18465ef4f16c7d18f9429e80` |
 | `results/study_v2/analysis.json` | 4,222 | `44242faee5785f288be1c4eb754ddd38eca0d41d4a00822a966638772425dec8` |

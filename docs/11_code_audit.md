@@ -1114,9 +1114,10 @@ rather than deriving it, which passes exactly when nothing has changed and passe
 
 ## Open work: suggested measurements
 
-Items 1–3 were the original list and are done; 6 is done; 7 was deliberately not done; 11 and 12 are done
-at ten blocks; 13 is closed except for the `no_dr` arm, which cannot reach ten without training; and 14
-is the re-training that item 4 has been waiting on since the first audit.
+Items 1–3 were the original list and are done; 6 is done; 7 was deliberately not done; 11, 12, 13 and 14 are
+done — 13 by re-training the `no_dr` arm to ten seeds and 14 by the optimiser-trace campaign that item 4 had
+been waiting on since the first audit. Only the two capacity arms remain at lower replication than the
+headline pool, and that is now a stated limit rather than an open task.
 
 1. ~~Fix A-1, then re-run both experiments.~~ **Done** — see
    [§ Replicated study](08_results.md#replicated-study).
@@ -1189,11 +1190,18 @@ is the re-training that item 4 has been waiting on since the first audit.
     against the between-seed SD (0.12–0.22) that every other caveat in this document uses. The result is in
     [§ 8.10](08_results.md#cross-arena): one arm separates, five do not, and the two arms that had looked like
     a top band at six blocks are now first and fifth.
-13. **Partly closed:** the re-measurement arms were at lower replication than the headline pool. The
+13. **Closed:** the re-measurement arms were at lower replication than the headline pool. The
     arena-v2 replay now covers all ten blocks and the same sixty networks, so § 8.12 is matched on both
     sides — and matching it changed its conclusion, from "the endpoints of the ordering survive the rule"
-    to "the top survives, the bottom swaps between CTE and DTE". The `no_dr` replay stays at three blocks,
-    because that arm trained three seeds per experiment and cannot reach ten without training.
+    to "the top survives, the bottom swaps between CTE and DTE". The `no_dr` replay now covers ten blocks
+    too, after `scripts/run_no_dr_extension.sh` trained the arm's seeds 4–10 (14 runs, 170.8 min) and
+    replayed 35 new run directories (21,000 matches, 3 h 49 min): § 8.13's arm table is paired on the
+    control's full seed set and its common-pool table is the headline pool's own population. Both moved.
+    The arm table's largest effect went from −0.193 to **+0.074** for plain CTDE — the three-seed reading
+    had the sign wrong — and the pool table's CTE rise from sixth to second went away, CTE being sixth in
+    both pools now ([§ 8.13](08_results.md#no-dr-pool)). Getting there exposed
+    [A-43](#an-arm-was-extended-and-the-versioning-step-silently-versioned-none-of-it): the versioning step
+    had a hard-coded seed list and copied none of the new weights.
     `scripts/run_capacity_pool_campaign.sh` has since played both capacity arms on the common pool — the
     confound [docs/10 § 10.1](10_threats_to_validity.md#unmatched-model-capacity) could not rule out is now
     measured, and the ordering turns out not to be stable under width scaling in either direction
@@ -1201,12 +1209,14 @@ is the re-training that item 4 has been waiting on since the first audit.
     is stated as a limit. `scripts/run_absolute_ten_block.sh` has also run, so absolute strength is now
      measured over the same ten blocks as the peer pool and the headline agreement is a matched +0.886 rather
     than the +0.77 the six-set artefact reported.
-14. **Running:** the trace the study never had. `run_experiment.py` now records `approx_kl`, entropy and the
+14. **Closed:** the trace the study never had. `run_experiment.py` now records `approx_kl`, entropy and the
     two losses per sampled match (proved passive by checkpoint hash, and pinned by
-    `tests/test_run_experiment_traces.py`), and `scripts/run_traces_campaign.sh` is re-training the twenty
-    replicates with it so the correlation between a replicate's optimiser behaviour and its held-out win rate
-    can actually be computed. The same campaign writes its own controls into
-    `results/trace_analysis.json`: whether the re-training reproduced the versioned weights, and how far the
-    re-trained held-out rates sit from the published ones. `scripts/run_no_dr_extension.sh` is queued behind
-    it to take the `no_dr` arm from three seeds to ten, which is the only way that pool can ever reach the
-    headline's replication count.
+    `tests/test_run_experiment_traces.py`), and `scripts/run_traces_campaign.sh` re-trained the twenty
+    replicates with it, joining those traces to `results/study/` through
+    `results/trace_analysis.json`. The record carries its own two controls — 60/60 checkpoints
+    hash-matched `data/training_replicates/`, and the re-trained held-out rates sat within 3.3e-05 of the
+    published ones — and the answer is negative: no KL or entropy quantity keeps a signal after the
+    Bonferroni correction or after the unit changes
+    ([§ 8.1 Readout](08_results.md#traces-measured)). A failing optimiser trace would not have flagged the
+    seed-6 arm. `scripts/run_no_dr_extension.sh` was queued behind that campaign and has also finished; item
+    13 is its result.

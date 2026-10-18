@@ -45,14 +45,14 @@ Honest summary of what is finished and what is not:
 | Absolute strength vs random opponents | 4,500 matches over all 10 checkpoint sets — the same population as the round-robin — slot-matched null 0.330 ([§ 8.11](docs/08_results.md#absolute-strength)) | same |
 | Round-robin re-measured under arena v2 | the same 60 networks under the v2 rule, 30,000 matches at the headline's ten blocks: the same 17,614 wipeout matches, top of the ordering intact, bottom swapped (CTE last under the committed rule, DTE last under v2), and 8 pairs separate instead of 4 ([§ 8.12](docs/08_results.md#arena-v2-pool)) | same |
 | Round-robin re-measured on the capacity arms | `narrow_64` and `wide_256` played on the common pool, 3 blocks x 5 seeds each: at half width the arm that leads the field falls from 1st to 5th, at double width a different arm falls from 4th to last ([§ 8.13](docs/08_results.md#capacity-pool)) | same |
-| Round-robin re-measured on `no_dr` checkpoints | 3 blocks × 5 seeds, 9,000 matches: Comm falls 1st → 5th, between-block SD up to 0.223 ([§ 8.13](docs/08_results.md#no-dr-pool)) | same |
+| Round-robin re-measured on `no_dr` checkpoints | 10 blocks × 5 seeds, 30,000 matches — the headline's own replication: the field reorders around CTDE (0.317 → 0.354, 3rd → **1st**) and CTDE-Comm falls to 4th (0.359 → 0.299), ten of fifteen pairs separate against four in the committed pool, and between-block SD is 1.3× to 4.5× the committed pool's in five of six arms. The three-block version of this table put CTE **second**; at ten blocks it is sixth again ([§ 8.13](docs/08_results.md#no-dr-pool)) | same |
 | Optimiser traces for the whole study | The twenty replicates re-trained with the capture in place — 60/60 checkpoints byte-identical to the versioned set — and correlated against the readout: nothing survives correction or a change of unit to the run, and the collapsed replicate is mid-field in its own KL and entropy ([§ 8.1](docs/08_results.md#traces-measured)) | same |
 | Study re-measured under a sampled readout | 27,000 held-out matches over the same sixty cells at T = 0 / 0.5 / 1; the T = 0 control is bit-identical to the published study, and experiment 2's first place moves from CTDE-VD to CTDE-Comm ([§ 8.1](docs/08_results.md#readout-re-measured)) | same |
 | Arena-v2 re-measurement | 10 seeds × 500k steps under a decayed alive bonus and draw-on-cap ([§ 8.12](docs/08_results.md#arena-v2)) | same |
-| Configuration ablations | `no_dr`, `narrow_64`, `wide_256` at 3 seeds × both experiments ([§ 8.13](docs/08_results.md#ablations)) | same |
+| Configuration ablations | `no_dr` at 10 seeds × both experiments (the control's full replication), `narrow_64` and `wide_256` at 3 ([§ 8.13](docs/08_results.md#ablations)) | same |
 | Dependency audit | 33 of the 34 pins in the measured lock have no known OSV vulnerability; `torch` does, and its one CRITICAL is the `weights_only=True` path — accepted risk, quantified in [§ 9.10](docs/09_reproducibility.md#dependency-audit) | same |
 | Gameplay clips of the trained policies | yes (`docs/assets/`) | yes |
-| Tests | 143 (142 passed, 1 skipped), **94 %** statement coverage | 76 (75 passed, 1 skipped), **89 %** coverage |
+| Tests | 150 (149 passed, 1 skipped), **94 %** statement coverage | 76 (75 passed, 1 skipped), **89 %** coverage |
 | Continuous integration | both suites plus tree parity, documentation links, inventory and pooled/absolute re-derivation, artefact-path portability, campaign-script syntax — green on `ubuntu-latest`, and the re-derivation gate is what caught [A-42](docs/11_code_audit.md#a-committed-artefact-recorded-windows-paths) ([§ 9.4](docs/09_reproducibility.md#continuous-integration)) | same job |
 | Docker | n/a | **never built or run** |
 
@@ -191,11 +191,15 @@ is evaluation against fixed opponents rather than argmax. Pooled over all 60 arm
 * **A quarter of replicates are not measuring fighting.** Five of twenty end most matches on the 90 s
   clock, where winning means "most alive at the buzzer"
   ([§ 8.1](docs/08_results.md#two-regimes)).
-* **One configuration key moves the outcome more than the paradigm does.** Turning domain randomisation
-  off shifts a paradigm's held-out win rate by up to **0.253** and inverts the ranking of both experiments,
-  while the whole between-paradigm spread of the ten-seed study is 0.085–0.129. Halving the network costs at
-  most 0.064. So every "X beats Y" claim in this repository is to be read as "under hidden width 128 and
-  domain randomisation on" ([§ 8.13](docs/08_results.md#ablations)).
+* **One configuration key moves the outcome more than the paradigm does — and three seeds got its sign
+  wrong.** Turning domain randomisation off shifts a paradigm's held-out win rate by up to **0.161**, paired
+  on the study's full ten seeds, while the whole between-paradigm spread of the ten-seed study is 0.085–0.129.
+  It reorders experiment 1 completely — the control's best arm, DTE, finishes last — and swaps the bottom pair
+  in experiment 2. Measured on three seeds the same arm read 0.253, inverted both experiments, and put plain
+  CTDE 0.193 *below* its control; on ten seeds CTDE is 0.074 *above* it
+  ([§ 8.13](docs/08_results.md#ablations)). Halving or doubling the hidden width costs at most 0.064, still on
+  three seeds. So every "X beats Y" claim in this repository is to be read as "under hidden width 128 and
+  domain randomisation on".
 * **Two opponent pools agree, once each architecture is replicated at the same count on both sides.**
   Ranking the six architectures by how often they beat trained peers and by how often they beat
   uniform-random teams, over **ten** independently trained checkpoints on both scales, gives Spearman
@@ -336,7 +340,7 @@ and a positive value samples the policy's softmax at that temperature
 │   ├── rl/                     # actions, buffer + GAE, networks, ppo
 │   ├── systems/                # match_variant, simulation, metrics, plotting
 │   └── ui/dashboard.py         # in-game overlay text
-├── tests/                      # 143 tests, incl. tree-parity, collision geometry, the round-robin statistics and artefact-path portability
+├── tests/                      # 150 tests, incl. tree-parity, collision geometry, the round-robin statistics and artefact-path portability
 ├── data/                       # experiment 1: promoted replicate + historical_100k/ + PROVENANCE.json
 ├── results/
 │   ├── study/                  # per_seed_metrics.csv, analysis.json, learning_curves.png

@@ -242,11 +242,13 @@ the fifty-run loop of [§ 9.3](../docs/09_reproducibility.md#93-commands).
 
 ### Configuration ablations (this experiment too)
 
-`no_dr`, `narrow_64` and `wide_256` re-train these three variants on seeds 1-3 with one key changed each
-([§ 8.13](../docs/08_results.md#ablations)). Domain randomisation off drops CTDE-Comm from 0.353 to 0.100 —
-below the control's worst seed in all three of its own — and moves CTDE-VD from last of three to first,
-while halving the hidden width costs Comm 0.020. Neither experiment's ranking is a property of the
-paradigms alone.
+`no_dr`, `narrow_64` and `wide_256` re-train these three variants with one key changed each — `no_dr` on
+seeds 1-10, the capacity arms on seeds 1-3
+([§ 8.13](../docs/08_results.md#ablations)). Domain randomisation off drops CTDE-Comm from 0.331 to 0.216 —
+below the control on 8 of its 10 seeds — and swaps it with CTDE-CAC at the bottom of experiment 2, while
+halving the hidden width costs Comm 0.020. Neither experiment's ranking is a property of the paradigms alone. Measured on three seeds
+this same arm read a 0.253 drop for Comm and put plain CTDE 0.193 *below* its control — on ten seeds CTDE is
+0.074 *above* it ([§ 8.13](../docs/08_results.md#no-dr-pool)).
 
 ### Against untrained play
 

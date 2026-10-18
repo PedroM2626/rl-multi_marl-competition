@@ -64,20 +64,40 @@ if [ "$sets" != 20 ]; then
   exit 1
 fi
 
+# One bounded pool, not a wave per block. Each run is single-threaded and measured 3 min per triple of
+# architectures (20 triples per run), so five runs at a time -- the shape the earlier campaigns used --
+# leaves 27 of this machine's 32 cores idle and stretches the 35 pending runs to seven hours. With a pool
+# of 12 the same work is under two and a half hours. Parallelism cannot change a result: every run carries
+# its own harness seed and writes its own directory, and the merge below reads only the files that exist.
+PAR=${NODR_PARALLEL:-12}
+pending=()
 for pair in "${PAIRS[@]}"; do
-  set -- $pair; S=$1; M=$2
+  set -- $pair
   for H in 1 2 3 4 5; do
-    dir="no_dr__e1s${S}_e2s${M}_h${H}"
+    dir="no_dr__e1s$1_e2s${2}_h${H}"
     if [ -f "$ROOT/$OUTDIR/$dir/matches.csv" ]; then
       echo "  $dir already played, skipping"
       continue
     fi
-    ( "$PY" "$ROOT/scripts/run_cross_arena.py" --campaign no_dr --exp1-replicate "$S" --exp2-replicate "$M" \
-        --seed "$H" --out "$OUTDIR/$dir" > "$TMP/nodr10_${S}_${M}_${H}.log" 2>&1 ) &
+    pending+=("$1 $2 $H")
   done
-  wait
-  echo "  no_dr block exp1_seed${S}+exp2_seed${M} done at $(date -Is)"
 done
+echo "replaying ${#pending[@]} no_dr runs, $PAR at a time, at $(date -Is)"
+
+running=0
+for spec in "${pending[@]}"; do
+  set -- $spec
+  "$PY" "$ROOT/scripts/run_cross_arena.py" --campaign no_dr --exp1-replicate "$1" --exp2-replicate "$2" \
+      --seed "$3" --out "$OUTDIR/no_dr__e1s$1_e2s$2_h$3" > "$TMP/nodr10_$1_$2_$3.log" 2>&1 &
+  running=$((running+1))
+  if [ "$running" -ge "$PAR" ]; then
+    wait -n
+    running=$((running-1))
+    echo "  a no_dr run finished, $running still running at $(date -Is)"
+  fi
+done
+wait
+echo "  all no_dr runs replayed at $(date -Is)"
 
 missing=0
 for pair in "${PAIRS[@]}"; do

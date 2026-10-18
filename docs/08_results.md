@@ -1000,15 +1000,17 @@ the count on both sides.
   strong" from "this exp-1 × exp-2 pairing interacted"; with ten of the hundred possible pairings, it cannot
   average the interaction away either.
 * **It is one configuration — and three of its axes have now been varied, two of them at lower replication.**
-  The numbers above inherit the spawn bias, the 90 s clock, hidden width 128 and domain randomisation on. The
-  first has been re-measured at the same replication: the arena-v2 replay covers all ten blocks and the same
-  sixty networks, so § 8.12 is matched on both sides and finds the top of this ordering intact and its bottom
-  swapped. The other two cannot be matched: checkpoints trained without domain randomisation and checkpoints
-  trained at width 64 and 256 exist for three blocks each, because those arms trained three seeds, and both
-  reorder the table — CTDE-Comm falls from first to fifth without domain randomisation
-  ([§ 8.13](#no-dr-pool)) and from first to fifth again at half width ([§ 8.13](#capacity-pool)), while at
-  double width CTDE-CAC drops from fourth to last. Three blocks is a weaker instrument than ten, so those are
-  demonstrations that the ordering is configuration-conditional, not measurements of by how much.
+  The numbers above inherit the spawn bias, the 90 s clock, hidden width 128 and domain randomisation on. Two
+  have been re-measured at the same replication: the arena-v2 replay covers all ten blocks and the same sixty
+  networks, so § 8.12 is matched on both sides and finds the top of this ordering intact and its bottom
+  swapped; the `no_dr` replay now does too, after the arm was re-trained to ten seeds, and it also reorders —
+  plain CTDE rises from third to first and CTDE-Comm falls from first to fourth
+  ([§ 8.13](#no-dr-pool)). The capacity arms cannot be matched: checkpoints trained at width 64 and 256 exist
+  for three blocks each, because those arms trained three seeds, and they reorder the table as well —
+  CTDE-Comm falls from first to fifth at half width ([§ 8.13](#capacity-pool)) while at double width CTDE-CAC
+  drops from fourth to last. Three blocks is a weaker instrument than ten, so those are demonstrations that the
+  ordering is configuration-conditional, not measurements of by how much. The `no_dr` arm is the counterexample
+  to that sentence: its three-block reading put CTE second, and seven more blocks moved it back to sixth.
 
 ### What this adds to the conclusions
 
@@ -1318,9 +1320,11 @@ moves the top of experiment 1 inside noise.
 
 The study fixes every knob by convention and varies only the paradigm, which the protocol calls a control.
 A control that is never varied cannot say whether the ranking came from the paradigm or from the
-configuration. Three arms re-train experiment 1 **and** experiment 2 at 500,000 steps on seeds 1, 2 and 3 —
-the same seed numbers as the committed study, so the paradigm-to-slot rotation matches the control seed by
-seed and every comparison is paired — changing exactly one key each.
+configuration. Three arms re-train experiment 1 **and** experiment 2 at 500,000 steps — `no_dr` on seeds 1
+through 10, the two capacity arms on seeds 1, 2 and 3 — using the same seed numbers as the committed study, so
+the paradigm-to-slot rotation matches the control seed by seed and every comparison is paired. `no_dr` is at
+the control's full replication because [item 13 of the open-work list](11_code_audit.md#open-work-suggested-measurements)
+was closed by re-training it; the capacity arms are still three seeds short, and their tables say so.
 
 | Arm | Key | Control → arm |
 |---|---|---|
@@ -1339,45 +1343,78 @@ Reproduce with `python scripts/report_study.py --results-dir results/ablation_no
 
 ### A configuration key moves the outcome more than a paradigm does
 
-Held-out greedy win rate, mean over seeds 1-3, paired against the control on the same seeds:
+Held-out greedy win rate, paired against the control on the same seed number. `no_dr` is paired on ten seeds
+— every seed the control has — and the two capacity arms on the three they trained, so the control column is
+not the same number in the two tables: it is the control's mean **over the seeds that arm shares with it**.
 
-| Paradigm | Control | `no_dr` | Δ | *p* | below | `narrow_64` | Δ | *p* | `wide_256` | Δ | *p* |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| **exp1** CTDE | 0.478 | 0.284 | −0.193 | 0.430 | 2/3 | 0.438 | −0.040 | 0.750 | 0.491 | +0.013 | 0.774 |
-| **exp1** CTE | 0.184 | 0.287 | +0.102 | 0.518 | 1/3 | 0.120 | −0.064 | 0.255 | 0.124 | −0.060 | **0.016** |
-| **exp1** DTE | 0.320 | 0.202 | −0.118 | 0.496 | 2/3 | 0.351 | +0.031 | 0.894 | 0.373 | +0.053 | 0.340 |
-| **exp2** CAC | 0.318 | 0.302 | −0.016 | 0.935 | 2/3 | 0.302 | −0.016 | 0.916 | 0.320 | +0.002 | 0.965 |
-| **exp2** Comm | 0.353 | 0.100 | **−0.253** | 0.238 | **3/3** | 0.333 | −0.020 | 0.737 | 0.280 | −0.073 | 0.076 |
-| **exp2** VD | 0.302 | 0.349 | +0.047 | 0.892 | 2/3 | 0.331 | +0.029 | 0.703 | 0.382 | +0.080 | 0.276 |
+**`no_dr`, paired on seeds 1–10:**
 
-"below" counts the arm's seeds that landed under the control's value on the same seed. With three seeds and
-18 comparisons the corrected threshold is alpha = 0.0028 and **no cell in this table is significant** — two
-reach nominal p < 0.05. What carries the finding is the size of the columns, not their p-values:
+| Paradigm | Control | `no_dr` | Δ | *t* | *p* | seeds below control |
+|---|---:|---:|---:|---:|---:|---:|
+| **exp1** CTDE | 0.326 | 0.400 | +0.074 | +0.82 | 0.432 | 3/10 |
+| **exp1** CTE | 0.252 | 0.262 | +0.010 | +0.09 | 0.927 | 6/10 |
+| **exp1** DTE | 0.381 | 0.220 | **−0.161** | −2.39 | 0.041 | 7/10 |
+| **exp2** CAC | 0.282 | 0.254 | −0.028 | −0.30 | 0.768 | 5/10 |
+| **exp2** Comm | 0.331 | 0.216 | −0.115 | −1.60 | 0.144 | **8/10** |
+| **exp2** VD | 0.367 | 0.385 | +0.018 | +0.17 | 0.868 | 6/10 |
 
-* **The largest single-key move is 0.253** (CTDE-Comm, `no_dr`) and the second is 0.193 (CTDE, `no_dr`).
-  For scale, the entire between-paradigm spread in the ten-seed study is 0.129 in experiment 1 (DTE 0.381
-  over CTE 0.252) and 0.085 in experiment 2 (VD 0.367 over CAC 0.282). **One configuration key moves these
-  outcomes further than the thing the study was built to measure.**
-* **The rankings invert.** In experiment 1 the control on these seeds reads CTDE > DTE > CTE; `no_dr` reads
-  CTE ≈ CTDE > DTE, putting the control's last arm first. In experiment 2 the control reads Comm > CAC > VD
-  and `no_dr` reads VD > CAC > Comm, with Comm at 0.100 — under the control's *worst* seed in every one of
-  its own three.
+**`narrow_64` and `wide_256`, paired on seeds 1–3:**
+
+| Paradigm | Control | `narrow_64` | Δ | *p* | `wide_256` | Δ | *p* |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| **exp1** CTDE | 0.478 | 0.438 | −0.040 | 0.750 | 0.491 | +0.013 | 0.774 |
+| **exp1** CTE | 0.184 | 0.120 | −0.064 | 0.255 | 0.124 | −0.060 | **0.016** |
+| **exp1** DTE | 0.320 | 0.351 | +0.031 | 0.894 | 0.373 | +0.053 | 0.340 |
+| **exp2** CAC | 0.318 | 0.302 | −0.016 | 0.916 | 0.320 | +0.002 | 0.965 |
+| **exp2** Comm | 0.353 | 0.333 | −0.020 | 0.737 | 0.280 | −0.073 | 0.076 |
+| **exp2** VD | 0.302 | 0.331 | +0.029 | 0.703 | 0.382 | +0.080 | 0.276 |
+
+"below" counts the arm's seeds that landed under the control's value on the same seed. With 18 comparisons the
+corrected threshold is alpha = 0.0028 and **no cell in either table is significant** — one, DTE at *p* = 0.041,
+reaches nominal p < 0.05. What carries the finding is the size of the columns, not their p-values:
+
+* **The largest single-key move is 0.161** (DTE, `no_dr`) and the second is 0.115 (CTDE-Comm, `no_dr`). For
+  scale, the entire between-paradigm spread in the ten-seed study is 0.129 in experiment 1 (DTE 0.381 over CTE
+  0.252) and 0.085 in experiment 2 (VD 0.367 over CAC 0.282). **One configuration key still moves these
+  outcomes further than the thing the study was built to measure** — but by 0.032, not by the 0.124 the
+  three-seed reading appeared to show.
+* **The three-seed version of this table had the sign of its biggest effect wrong.** It reported CTDE at
+  −0.193 (control 0.478 → arm 0.284): turning domain randomisation off looked catastrophic for plain CTDE.
+  Paired on the full ten seeds, the same arm reads **+0.074**, the control's mean is 0.326 rather than 0.478,
+  and CTDE is the one architecture `no_dr` leaves *above* the field. Three seeds did not understate the effect,
+  they inverted it. The largest move at three seeds, Comm at −0.253, is −0.115 at ten: the same direction, less
+  than half the size, and the least consistent one in the table — Comm is below the control on 8 of 10 seeds.
+  Plain CTDE, which the three-seed reading had placed second in experiment 1 — level with CTE and 0.193 under
+  its own control — is that experiment's best arm under `no_dr`, at 0.400.
+* **The rankings still reorder, less completely than before.** In experiment 1 the control reads DTE > CTDE >
+  CTE and `no_dr` reads CTDE > CTE > DTE: two of the three pairwise orderings flip, and the control's best arm
+  finishes last. In experiment 2 the control reads VD > Comm > CAC and `no_dr` reads VD > CAC > Comm — the top
+  stays put and the bottom two exchange. The three-seed version said both experiments inverted; at ten seeds
+  one reorders and one swaps a pair.
 * **Capacity is nearly free, which is the opposite of what the parameter counts suggest.** Halving the
   network costs at most 0.064 and changes no ranking. Doubling it is similarly mild, and in both
   directions the arms stay within the seed-to-seed noise the study already reports (between-seed SD
   0.122–0.218 in the ten-seed run). A reader who inferred "CTDE-Comm loses because its critic is too
-  small" from the parameter table would be wrong in the direction of that inference.
+  small" from the parameter table would be wrong in the direction of that inference. These two arms are the
+  ones still measured on three seeds, and the sign flips above are the reason that is treated as a limit
+  rather than as enough.
 
 ### The arms play a different game, not only a different score
 
 The behavioural columns show the configuration changes *what the policies do*, which matters for how much
 weight their win rates can carry:
 
-* Turning domain randomisation off roughly **triples mean survival** (13.9–21.8 s in the control to
-  40.0–46.1 s) while eliminations fall (2.77 → 1.94 for CTDE, 2.29 → 0.24 for Comm). With a fixed arena the
-  agents do not finish each other; they stall. Those win rates are therefore more contaminated by the
-  buzzer than the control's, which [§ 8.12](#arena-v2) showed to be a large effect on its own — the two
-  knobs interact through the termination rule, and neither arm's number can be read as pure fighting skill.
+* Turning domain randomisation off roughly **doubles mean survival** (18.4–25.0 s in the control to
+  36.5–56.0 s) while eliminations fall (1.95–2.22 → 1.26–1.78 per match) and firing falls further still
+  (93–122 → 27–96 shots per match). Normalised by the life the agents actually get, the collapse is the
+  headline: **shots per second of alive time go from 1.34–1.94 to 0.21–0.78**, a drop of 1.8× to 8.2× per
+  architecture and of at least a half in every one of them. With a fixed arena the agents do not finish each
+  other; they stall. Those win rates
+  are therefore more contaminated by the buzzer than the control's — 46.4 % of this arm's pool matches end on
+  the clock against 38.2 % for the committed checkpoints ([below](#no-dr-pool)) — which
+  [§ 8.12](#arena-v2) showed to be a large effect on its own. The two knobs interact through the termination
+  rule, and neither arm's number can be read as pure fighting skill. At three seeds this bullet read "roughly
+  triples, 13.9–21.8 s to 40.0–46.1 s"; the direction is the same and the magnitude was a third of a sample.
 * `narrow_64` **doubles CTDE's firing rate** (95 → 203 shots per match) at lower accuracy (3.40 % → 1.82 %):
   a smaller network shoots more and hits less. The same pattern appears for CTE (60 → 154 shots).
 * `wide_256` raises CTDE's accuracy to 4.64 % while cutting its volume to 59 shots — the opposite policy,
@@ -1426,51 +1463,67 @@ read as six match streams over three checkpoints rather than two over two.
 
 The other half of the question, now that the arm's weights are versioned: play networks that were trained
 without domain randomisation against the same six-way opponent pool, under the committed rule.
-`bash scripts/run_pool_v2_campaign.sh` does it for the three no_dr blocks (`no_dr:exp1_seed1+exp2_seed1`,
-`no_dr:exp1_seed2+exp2_seed2`, `no_dr:exp1_seed3+exp2_seed3`) over the five harness seeds — 9,000 matches,
-`results/cross_arena/no_dr_blocks.csv`.
+`bash scripts/run_no_dr_extension.sh` does it for all ten no_dr blocks (`no_dr:exp1_seed1+exp2_seed1` …
+`no_dr:exp1_seed10+exp2_seed10`) over the five harness seeds — 30,000 matches, 90,000 team-matches,
+`results/cross_arena/no_dr_blocks.csv`. That is the same replication count as
+[§ 8.10](#cross-arena), which is what lets the reference column below be the headline table itself; the
+three-block version of this subsection had to compare against a six-block subset instead, and said so.
 
-| Architecture | Committed pool, six blocks | no_dr pool (3 blocks) | positions |
+| Architecture | Committed pool, ten blocks | no_dr pool, ten blocks | positions |
 |---|---:|---:|---|
-| CTDE | 0.314 | **0.386** | 4th → 1st |
-| CTE | 0.290 | 0.316 | 6th → 2nd |
-| CTDE-VD | 0.307 | 0.300 | 5th → 3rd |
-| CTDE-CAC | 0.321 | 0.300 | 3rd → 4th |
-| CTDE-Comm | 0.355 | 0.243 | **1st → 5th** |
-| DTE | 0.349 | 0.203 | **2nd → 6th** |
+| CTDE | 0.317 | **0.354** | 3rd → **1st** |
+| CTDE-CAC | 0.315 | 0.322 | 4th → 2nd |
+| CTDE-VD | 0.331 | 0.302 | 2nd → 3rd |
+| CTDE-Comm | 0.359 | 0.299 | **1st → 4th** |
+| DTE | 0.310 | 0.279 | 5th → 5th |
+| CTE | 0.304 | 0.269 | 6th → 6th |
 
-The reference column is the six-block pool, not [§ 8.10](#cross-arena)'s ten-block headline, and that is a
-substantive choice rather than a stale one: the ten-block table puts DTE fifth and CTDE-VD second, so a
-no_dr-versus-ten-block contrast would move the replication count and the training environment together. The
-positions column is a statement about the pool this arm was measured against.
+Ten of fifteen pairs clear the Bonferroni bar (alpha = 0.00333) in this pool against **four of fifteen** in the
+committed one, and four are robust to leaving a block out — CTDE > CTDE-VD, CTDE > CTE, CTDE > DTE and
+CTDE-CAC > CTE — against three in the committed pool, all three of which involve CTDE-Comm. The committed
+pool's entire ordering rests on one arm sitting above four others; the no_dr pool's rests on a different arm,
+and it separates two and a half times as many pairs while doing so.
 
-Nine of fifteen pairs clear the Bonferroni bar in this pool against five in the six-block committed one, and only two are
-robust to leaving a block out (CTDE > DTE at *p* = 1.7e-05 pooled, CTDE-CAC > DTE). What makes the pool
-interesting is not the count of separations but what happens to the spread behind them:
+What makes the pool interesting is not the count of separations but the spread behind them:
 
-| Architecture | Between-block SD, committed six-block pool | Between-block SD, no_dr pool | the three blocks |
-|---|---:|---:|---|
-| CTDE-VD | 0.018 | 0.141 | 0.160 / 0.248 / 0.493 |
-| CTDE-Comm | 0.025 | 0.112 | 0.182 / 0.399 / 0.147 |
-| DTE | 0.027 | 0.018 | 0.211 / 0.178 / 0.220 |
-| CTDE | 0.043 | 0.112 | 0.229 / 0.462 / 0.469 |
-| CTE | 0.059 | 0.134 | 0.127 / 0.404 / 0.417 |
-| CTDE-CAC | 0.063 | **0.223** | 0.615 / 0.129 / 0.155 |
+| Architecture | Between-block SD, committed pool | Between-block SD, no_dr pool | ratio | the ten no_dr blocks, min – max |
+|---|---:|---:|---:|---|
+| CTDE-Comm | 0.026 | 0.115 | **4.5×** | 0.123 – 0.414 |
+| CTE | 0.055 | 0.137 | 2.5× | 0.065 – 0.510 |
+| CTDE-VD | 0.038 | 0.097 | 2.6× | 0.160 – 0.493 |
+| CTDE-CAC | 0.074 | 0.129 | 1.7× | 0.129 – 0.615 |
+| DTE | 0.084 | 0.111 | 1.3× | 0.112 – 0.453 |
+| CTDE | 0.086 | 0.086 | 1.0× | 0.213 – 0.469 |
 
-**Domain randomisation is doing something that looks like stability, not just level.** Four of the six arms
-carry a between-block SD two to eight times what the same instrument measures on the randomised checkpoints,
-and CTDE-CAC swings from winning 61.5 % of its pool matches to winning 12.9 % on nothing but a different seed.
-An architecture comparison made of one training run per arm is therefore a much weaker statement when the arena
-was fixed during training than when it was varied — which is the mechanism § 8.13 previously could only report
-as a difference in win rates.
+**Domain randomisation is doing something that looks like stability, not just level.** Five of the six arms
+carry a larger between-block SD without it, by 1.3× to 4.5×; the sixth, plain CTDE, is the same on both scales
+(0.086 to three decimals, 0.0859 against 0.0862 unrounded). One architecture's ten block levels span a factor of nearly five — CTDE-CAC wins 61.5 % of its
+pool matches in one block and 12.9 % in another — on nothing but a different training seed. An architecture
+comparison made of one training run per arm is therefore a much weaker statement when the arena was fixed
+during training than when it was varied.
 
-Three caveats are load-bearing. The no_dr pool has three blocks against six, so its SD is itself estimated on
-three draws and is not a precise quantity; the two pools are different networks, so this is a comparison of
-training environments and not a paired test of anything; and the block labels do not overlap with the
-committed pool's, so no individual network appears in both tables. A useful signature of the difference is
-visible in the match outcomes: 41.1 % of the no_dr pool's matches ended in a wipeout against 58.8 % of the
-committed pool's, with 12.6 % drawn against 3.2 % — networks trained in a fixed arena finish fewer fights
-against this opponent mix, whatever their win rate.
+**This subsection replaced a three-block version, and the replacement is the finding.** The first version, 9,000
+matches over blocks 1–3 — kept as `results/cross_arena/no_dr_blocks3.csv` and `.json`, and every number in this
+paragraph is recomputed from it by `tests/test_docs_quote_the_ablations.py` — read: CTDE 0.386 first, CTE 0.316
+**second** (from sixth), CTDE-VD and CTDE-CAC tied at 0.300, CTDE-Comm 0.243 fifth, DTE 0.203 last;
+between-block SD up to 0.223 and "two to eight times" the committed pool's; nine of fifteen pairs separating and
+two surviving leave-one-block-out. Seven more blocks changed most of that. CTE is sixth again — its 0.316 came from two of three
+blocks landing above 0.400 — DTE is fifth rather than last, CTDE-Comm's fall is to fourth rather than fifth, and
+CTDE-CAC rises rather than falls. DTE's SD, the smallest in the three-block table at 0.018, is 0.111 over ten
+blocks: three draws did not merely misplace that arm, they made it look stable. What survives is the direction
+of the spread claim at a lower magnitude, 4.5× rather than "up to eight times", and the top and bottom of the
+order — CTDE first, CTE last — which is the pair the seven extra blocks agree on.
+
+Three caveats are load-bearing. Every policy in a no_dr match is a no_dr policy: the arm replaces the whole
+six-way field rather than one architecture inside it, so a win rate here is relative to opponents trained in a
+fixed arena, and the positions column is a statement about that field, not about the committed one. The two
+pools share no network, so this is a comparison of training environments and not a paired test of anything —
+the block labels carry the arm (`no_dr:exp1_seed1+exp2_seed1`) precisely so they cannot be pooled with the
+study's. And each no_dr block is one training run per architecture: ten blocks is ten draws, which is the same
+sample the headline pool has and no larger. A signature of the difference is visible in how the matches end:
+44.8 % of the no_dr pool's matches ended in a wipeout against 58.7 % of the committed pool's, 46.4 % were
+decided with the clock running out against 38.2 %, and 8.8 % were draws against 3.1 % — networks trained in a
+fixed arena finish fewer fights against this opponent mix, whatever their win rate.
 
 **What this does not do:** it does not re-measure the *absolute-strength* instrument under either variation.
 The two arms whose capacity was ablated are now played on the common pool — [below](#capacity-pool) — which
@@ -1499,9 +1552,13 @@ those arms can give, since each trained three seeds.
 **Capacity reorders this pool, and not monotonically with size.** Halving the width moves CTDE-Comm from
 first to fifth (−0.041) and lifts plain CTDE and DTE to the top two places; doubling it leaves Comm at the top
 — statistically tied with CTDE-VD, 0.366 against 0.367 and no separation between them — but drops CTDE-CAC
-from fourth to last (−0.044). The largest single move is 0.044 and the largest rank move is four positions,
-which is an order of magnitude less than what turning domain randomisation off does to the same instrument
-(0.253, [above](#no-dr-pool)). Because the six arms of any such pool average 1/3 by construction, capacity
+from fourth to last (−0.044). The largest single move is 0.044 and the largest rank move is four positions; on
+the same instrument, turning domain randomisation off moves an arm by at most 0.060
+([above](#no-dr-pool)), so the two configuration keys are of a size once they are measured against common
+opponents — and both are small next to what the held-out readout shows for `no_dr` (0.161). An earlier version
+of this sentence compared capacity's 0.044 with `no_dr`'s 0.253, but that figure is a held-out number from a
+different instrument: the two instruments do not agree on how large this effect is, which is why every claim
+here names the one it was measured on. Because the six arms of any such pool average 1/3 by construction, capacity
 cannot shift the level of these numbers at all — it can only choose who beats whom.
 
 The separations multiply rather than resolve: **6 of 15 pairs clear Bonferroni at `narrow_64` and 7 at
@@ -1545,10 +1602,12 @@ cannot yet say whether the [§ 8.11](#absolute-strength) agreement survives a di
 domain randomisation. The common-opponent pool has now been re-run for `no_dr` ([above](#no-dr-pool)), which
 is the arm whose key the study's own analysis singled out, and for both capacity arms
 ([above](#capacity-pool)); each arm still measures teams that co-adapted inside their own run, so the pool
-result is about the trained networks, not about the ablation's within-run comparison. It also does not
-close the power gap:
-three seeds is the sample the study's own forward-power table puts an order of magnitude short of what
-would resolve the differences it reports.
+result is about the trained networks, not about the ablation's within-run comparison. It also does not close
+the power gap for the two arms above: at three blocks each they remain the sample the study's own forward-power
+table puts an order of magnitude short of what would resolve the differences it reports. `no_dr` no longer
+shares that limitation — it was re-trained to ten seeds for exactly that reason, and
+[A-43](11_code_audit.md#an-arm-was-extended-and-the-versioning-step-silently-versioned-none-of-it) is what the
+extension caught on the way.
 
 **What it establishes:** the repository's architecture comparisons are conditional on one configuration, and
 that configuration is not a neutral backdrop — moving one key reorders both experiments. Any statement of
@@ -1615,20 +1674,25 @@ domain randomisation on".
    ([§ 8.12](#arena-v2-pool)).
 7. The comparison is **conditional on one configuration**, and that configuration is not a neutral
    backdrop: changing one key — domain randomisation off — moves a paradigm's held-out win rate by up to
-   **0.253** and inverts the ranking of both experiments, while the whole between-paradigm spread of the
-   ten-seed study is 0.085–0.129. Every "X beats Y" statement here should be read as "under hidden width
-   128 and domain randomisation on" ([§ 8.13](#ablations)). On the common-opponent pool the same key moves
-   more than the ordering: CTDE-Comm falls from first to fifth and DTE from second to last, and the
-   between-block SD of four of the six arms becomes 2–8× what the randomised checkpoints show (CTDE-CAC
-   0.223 against 0.063, swinging 0.615 → 0.129 → 0.155 across three seeds), which is the mechanism the
-   earlier tables could only report as a difference in levels ([§ 8.13](#no-dr-pool)).
+   **0.161**, paired on the study's full ten seeds, reorders experiment 1 completely and swaps the bottom pair
+   in experiment 2, while the whole between-paradigm spread of the ten-seed study is 0.085–0.129. Every "X
+   beats Y" statement here should be read as "under hidden width 128 and domain randomisation on"
+   ([§ 8.13](#ablations)). At three seeds the same arm read 0.253, inverted both experiments and put plain
+   CTDE 0.193 below its control; on ten seeds CTDE is 0.074 above it, so the direction of the largest effect
+   in this document was set by three draws. On the common-opponent pool the same key changes who beats whom
+   rather than the level — CTDE-Comm falls from first to fourth and plain CTDE rises to first, ten of fifteen
+   pairs separate against the committed pool's four — and the between-block SD of five of the six arms becomes
+   1.3–4.5× what the randomised checkpoints show (CTDE-Comm 0.115 against 0.026; CTDE-CAC swings 0.615 → 0.129
+   across blocks), which is the mechanism the earlier tables could only report as a difference in levels
+   ([§ 8.13](#no-dr-pool)).
 
 **What it cannot claim:** that any architecture is best, or that the six admit a strict ordering — CTDE-Comm
 and DTE cannot be told apart, and neither can CTDE, CTDE-CAC and CTDE-VD; that the ordering is settled by six
 checkpoints per architecture, since the count of separated pairs has moved at every replication step
 (2 → 8 → 5) and two of the three-block table's headline separations disappeared at six; that within-experiment differences exist at all, since every corrected significance is
 *cross*-experiment; that win rate here measures fighting skill rather than, in a third of matches,
-survival to the clock; that the ablated configurations generalise — the three arms are measured inside their
-own co-adapted runs, only `no_dr` has been through the common-opponent pool
-([§ 8.13](#no-dr-pool)), neither capacity arm has, and no arm has been through the random-pool instrument; or
+survival to the clock; that the ablated configurations generalise — each arm's own table is measured inside its
+own co-adapted runs, and while all three have now been through the common-opponent pool
+([§ 8.13](#no-dr-pool)), the two capacity arms reach it at three blocks rather than ten and no arm has been
+through the random-pool instrument; or
 that any of it holds under a different setting of the keys [§ 8.13](#ablations) shows to matter.
