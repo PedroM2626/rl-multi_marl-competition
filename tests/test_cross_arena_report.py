@@ -410,14 +410,21 @@ def test_the_versioning_scripts_share_one_copy_and_verify_rule() -> None:
     borrowed: set[str] = set()
     for variable in re.findall(r"(\w+) = _shared\(\)", caller):
         borrowed |= set(re.findall(rf"\b{variable}\.([a-z_]+)\(", caller))
-    assert borrowed == {"copy_verified"}, f"unexpected cross-script calls: {sorted(borrowed)}"
+    assert "copy_verified" in borrowed, \
+        f"the caller stopped borrowing the copy rule and now carries its own: {sorted(borrowed)}"
     missing = sorted(borrowed - set(helpers))
     assert not missing, (f"{missing} is called by the committed caller but not defined by the committed "
                          "helper -- they were committed apart")
 
-    assert "def copy_verified" not in caller, \
-        "the caller grew its own copy rule; there must be one rule, defined once"
-    assert callable(_load("version_campaign_checkpoints").copy_verified)
+    # Deliberately not a fixed list of borrowed names: the set grew from one helper to two when the
+    # checkpoint format split (.pt/.npz, A-45), and an assertion on the exact set failed a change that is
+    # precisely what the rule asks for -- borrow, do not copy. What has to hold is that everything borrowed
+    # exists in the committed helper, and that nothing borrowed is also defined at home.
+    duplicated = sorted(name for name in borrowed if re.search(rf"^def {name}\(", caller, re.M))
+    assert not duplicated, f"the caller redefines {duplicated}; there must be one rule, defined once"
+    module = _load("version_campaign_checkpoints")
+    for name in sorted(borrowed):
+        assert callable(getattr(module, name)), name
 
 
 def test_the_campaign_manifest_matches_the_weights() -> None:

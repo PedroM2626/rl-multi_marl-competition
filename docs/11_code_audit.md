@@ -1187,6 +1187,18 @@ still flip a decision the sample has not yet produced. What may not be said is t
 regenerated bit-for-bit by this runtime; what may be said is that no divergence has been observed where
 one was expected.
 
+**Green here, red there, and why the gate was right to fail.** The commit that carried the fixes above was
+pushed with both suites passing locally and failed CI on
+`test_the_versioning_scripts_share_one_copy_and_verify_rule` -- a gate that reads `git show HEAD:` cannot be
+satisfied by the commit that changes what it reads, so the pre-commit run saw the previous commit's set of
+shared helpers and CI saw the new one. The assertion was also over-specified: it demanded the borrowed names
+be exactly `{copy_verified}`, which fails the change the rule exists to encourage -- when the checkpoint
+format split, `version_training_replicates` was supposed to *borrow* the new `policy_files` rather than copy
+the .pt/.npz preference into a second script. Fixed by gating the invariant instead of the list (every
+borrowed name must exist in the committed helper, none may be defined at home as well, and `copy_verified`
+must be among them), and by re-running both suites with HEAD at the state being pushed before pushing the
+follow-up: 161 passed / 2 skipped and 77 passed / 2 skipped.
+
 **What is still owed.** No replication study has been run under this runtime, so every chapter-8 number
 describes the Torch environment that `requirements-measured.lock.txt` pins, and the runtime in
 `requirements.txt` is a different one. [§ 9.6](09_reproducibility.md#96-what-is-and-is-not-reproducible)
