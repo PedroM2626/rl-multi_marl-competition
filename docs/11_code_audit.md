@@ -1148,10 +1148,8 @@ Two quieter halves of the same change. `requirements.txt` dropped Torch while
 `version_campaign_checkpoints.actor_shape` -- the function that reads a set's hidden width out of its own
 tensors, and what the capacity guard of the round-robin is made of -- still imported it, so the CI job that
 installs exactly that file would fail on the manifest test: the same class of defect as A-40, a committed
-command that only works on the machine that wrote it. And the new pin said `jax==0.4.38` while every
-measurement in this tree was made on 0.6.2, which is A-31's shape: a lock file describing an environment
-nobody verified. `native/arena_core/target/` was also not ignored, so a `git add native/` would have
-committed a built `.dll` and a Cargo build tree.
+command that only works on the machine that wrote it. `native/arena_core/target/` was also not ignored, so a
+`git add native/` would have committed a built `.dll` and a Cargo build tree.
 
 **Fixed** by making the archive carry both formats, and by proving the conversion rather than trusting it:
 `convert_torch_checkpoints.py` now walks the four archive roots in both trees (it had covered only
@@ -1162,7 +1160,21 @@ zip error. `MANIFEST.json` now describes the committed, loadable files, so the c
 NumPy and Torch is needed by nothing that runs routinely. `tests/test_checkpoint_archive.py` holds the
 structural invariant without Torch installed -- every `.pt` has a tracked `.npz` partner, every parameter
 array is float32, every file says its paradigm, and each arm's declared width is re-derived from the `.npz`.
-Jax and jaxlib are pinned to the 0.6.2 that was used, and the Rust build output is ignored.
+Jax and jaxlib are pinned to the 0.4.38 installed beside the built Rust wheel, and the Rust build output is
+ignored.
+
+**A defect of mine that the same pass created: the JAX pin.** The port left `requirements.txt` listing Torch
+and never pinned JAX, while `docs/09`, both READMEs and the environment on this host all said JAX 0.4.38. When
+the Torch line was removed, the pin I wrote in its place was `jax==0.6.2` -- a version read off the global
+Python 3.11 on this machine, not off anything that ran a measurement here. That is the A-31 defect in the
+opposite direction: a pin describing an environment nobody verified, and this time it also contradicted the
+prose two files above it. The check that settles it is which interpreter can import what the measurement
+needed: `benchmark_runtime.py` refuses to run without `marl_arena_rust`, and that wheel is installed only in
+the Python 3.10.11 virtualenv holding `jax`/`jaxlib` 0.4.38 (both installed during the port, hours before the
+sample § 9.5 reports). The 0.6.2 interpreter has no Rust extension at all, so no Rust-versus-Python number in
+this document can have come from it. The pin is 0.4.38 again in both trees, and it is installable on CI's
+Python 3.11 -- `jaxlib` 0.4.38 ships a cp311 win_amd64 wheel and accepts the pinned NumPy 2.2.6, which was
+checked by downloading the wheel rather than by assuming it.
 
 **What the conversion does and does not preserve.** The stored arrays are identical: the `.npz` holds exactly
 the tensors of the `.pt`, in Torch's `[out, in]` layout, which is the layout `JAXNetwork.load_state_dict`
@@ -1388,3 +1400,16 @@ re-derived end to end under JAX -- the replay of a committed round-robin block f
 the measurement that speaks to it, and its outcome drift is reported in A-45 rather than assumed away.
 A full replication run under the new runtime is what would let the published numbers be described as
 reproducible by it, and none has been done.
+
+What the new runtime costs, measured after A-45 rather than assumed: [§ 9.5](09_reproducibility.md#runtime-jax-rust-sample)
+now carries four warmed repeats of the benchmark instead of the single pair written during the port. The Rust
+core is the faster route in every repeat -- median 290.8 against the Python fallback's 254.3 steps/s, about
+**+14 %** -- which reverses the sign of that first pair and retires its level (410.6 steps/s recurred in none
+of the four). The same section measures a scaling defect the Torch runtime did not have: aggregate throughput
+across concurrent replicates peaks at four processes and then falls, and the CPU burned per environment step
+rises from 4.65 ms alone to 21.96 ms at eight and 42.21 ms at sixteen, while a control whose processes carry
+6 threads instead of ~104 scales to 5.9× at eight. The caps `marl_arena.config` writes into the environment do
+cut a training process from 127 threads to 104, which is not the same as making it single-threaded, and the
+flag that would is rejected by this jaxlib. Campaign widths of twelve and twenty were chosen when one thread
+per process was enforced by `torch.set_num_threads(1)`; under JAX the measured optimum on this host is about
+four, and that is a scheduling fact about the queue rather than a result about the arena.

@@ -56,7 +56,7 @@ Honest summary of what is finished and what is not:
 | Study re-measured at the shipped step budget | the same twenty replicates trained to 3,000,000 steps instead of 500,000: the lead changes hands in **both** experiments (CTDE 0.429 overtakes DTE; CTDE-Comm 0.395 takes first while CTDE-VD falls to last) and no paired comparison clears the corrected bar ([§ 8.13](docs/08_results.md#budget-3m)) | same |
 | Historical dependency audit | The measured PyTorch lock has recorded advisories; the current runtime requirements use JAX and retain the old lock for historical reproduction ([§ 9.10](docs/09_reproducibility.md#dependency-audit)) | same |
 | Gameplay clips of the trained policies | yes (`docs/assets/`) | yes |
-| Current tests | 161 passed, 2 skipped, **85 %** statement coverage | 77 passed, 2 skipped, **86 %** coverage |
+| Current tests | 166 passed, 1 skipped, **86 %** statement coverage | 78 passed, 1 skipped, **87 %** coverage |
 | Continuous integration | both suites plus tree parity, documentation links, inventory and pooled/absolute re-derivation, artefact-path portability, campaign-script syntax — green on `ubuntu-latest`, and the re-derivation gate is what caught [A-42](docs/11_code_audit.md#a-committed-artefact-recorded-windows-paths) ([§ 9.4](docs/09_reproducibility.md#continuous-integration)) | same job |
 | Docker | n/a | **never built or run** |
 
@@ -299,14 +299,18 @@ python main.py
 > the slot. The shipped `.env` is set so that `python main.py` loads the promoted policies; a different
 > rotation warns rather than silently demoing random networks. See `data/PROVENANCE.json`.
 
-**Cost.** The older scalar-policy path measured 368 env steps/s on CPU with one Torch thread
-([A-26](docs/11_code_audit.md#gpu-and-thread-scaling)). The current batched path reached 599.5 steps/s in a
-paired 1,500-step training run, about 2.8 minutes per 100k steps or 14 minutes per 500k at that rate
-([A-44](docs/11_code_audit.md#per-agent-policy-dispatch-was-the-training-bottleneck)). The published
-20-replicate study cost **36.2 CPU-hours and 117.5 minutes wall clock** was measured before batching; a new
-20-way campaign has not been timed ([§ 9.5](docs/09_reproducibility.md#95-cost-of-a-run)).
-The newer nearest-enemy and clear-obstacle fast paths reduce their isolated hot-function times, but host
-load made the follow-up whole-training timing inconclusive; see [A-44](docs/11_code_audit.md#per-agent-policy-dispatch-was-the-training-bottleneck).
+**Cost.** The runtime that trains today is JAX with the optional Rust core, and four warmed repeats of its
+benchmark put the Rust route at **290.8 steps/s** against 254.3 for the Python fallback (about +14 %), on CPU
+([§ 9.5](docs/09_reproducibility.md#runtime-jax-rust-sample)). The PyTorch figures are
+historical: 368 steps/s for the scalar path with one Torch thread
+([A-26](docs/11_code_audit.md#gpu-and-thread-scaling)) and 599.5 steps/s for the batched path in a paired
+1,500-step run ([A-44](docs/11_code_audit.md#per-agent-policy-dispatch-was-the-training-bottleneck)); the port
+has not been shown to beat that second number, and no controlled backend comparison exists. The published
+20-replicate study cost **36.2 CPU-hours and 117.5 minutes of wall clock**, measured before batching.
+Running more processes at once is not how a JAX campaign gets cheaper: aggregate throughput peaks at about four
+concurrent replicates and then falls, because each training process here carries ~104 threads (NumPy's BLAS
+pool plus JAX's CPU backend), and the environment caps in `src/marl_arena/config.py` reduce that from 127
+without removing it. The measurement and the control that isolates it are in the section above.
 
 ## Controls in the 3D view
 

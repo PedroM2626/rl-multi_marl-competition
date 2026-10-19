@@ -237,20 +237,22 @@ ImportError: cannot import name 'ValueDecompositionCriticNetwork' from 'marl_are
 
 ## 9.4 Test results
 
-Current JAX/Rust verification on 2026-10-18:
+Current JAX/Rust verification on 2026-10-18, re-run the same evening after A-45:
 
 ```
 $ python -m pytest tests/ -q
-158 passed, 1 skipped in 83.99s
+166 passed, 1 skipped in 40.03s
 $ cd ctde_arena && python -m pytest tests/ -q
-78 passed, 1 skipped in 19.46s
+78 passed, 1 skipped in 12.74s
 ```
 
-Coverage was not remeasured after the port. The following earlier transcript and coverage figures belong
-to the previous implementation.
+Three consecutive runs of each suite returned those totals unchanged. One earlier run of the root suite failed
+a single case, and the summary line was the only thing captured, so the case is unnamed here; it did not
+reproduce in the sixteen root-suite runs that followed, and the suite contains no time-dependent assertion.
+Runtimes are quoted from the idle machine, and they are dominated by whatever else is on it.
 
 ```
-$ python -m pytest tests/ -q            # experiment 1
+$ python -m pytest tests/ -q            # experiment 1, before the JAX/Rust port
 140 passed, 1 skipped
 $ cd ctde_arena && python -m pytest tests/ -q
 75 passed, 1 skipped
@@ -260,32 +262,40 @@ The skipped test in each suite is `test_render.py`'s offscreen path, which needs
 requirement installs it, the verification environment above does not, so those assertions only run where the
 commented rendering block of `requirements-measured.lock.txt` has been installed. The clips in
 `docs/assets/` were rendered in such an environment, and the test numbers here are not from it — which means
-the render path is verified by inspection of its output, not by the suite that is quoted above. Runtimes are
-omitted from the transcript because they are dominated by whatever else is on the machine, not by the suites.
+the render path is verified by inspection of its output, not by the suite that is quoted above.
 
-Historical statement coverage over `src/marl_arena`, measured with `coverage run --source=src/marl_arena -m pytest`
-(`pytest-cov` is not installed, and the two suites must still be run separately):
+Current statement coverage over `src/marl_arena`, measured with `coverage run --source=src/marl_arena -m pytest`
+(`pytest-cov` is not installed, and the two suites must still be run separately), alongside the figures the
+previous implementation recorded:
 
-| Tree | Statements | Missing | Coverage |
-|---|---:|---:|---:|
-| Experiment 1 | 1,548 | 91 | **94 %** |
-| Experiment 2 (`ctde_arena/`) | 1,660 | 187 | **89 %** |
+| Tree | Statements | Missing | Coverage | Runtime measured |
+|---|---:|---:|---:|---|
+| Experiment 1 | 1,854 | 263 | **86 %** | JAX/Rust |
+| Experiment 2 (`ctde_arena/`) | 1,854 | 240 | **87 %** | JAX/Rust |
+| Experiment 1 | 1,548 | 91 | 94 % | PyTorch, historical |
+| Experiment 2 (`ctde_arena/`) | 1,660 | 187 | 89 % | PyTorch, historical |
 
-Three consecutive runs of each suite gave the totals above unchanged. Earlier in the project the same
+The port lowered measured coverage in both trees, by seven and two points, without adding a feature that is
+untested: the two files that grew are `rl/networks.py`, whose 65 missing statements are the CTDE-VD and
+CTDE-Comm forward and `state_dict` branches plus the unknown-kind and shape-mismatch raises, and
+`controllers/batching.py` at 15. A second implementation of every function is, by construction, a second set of
+paths, and the suites train the paradigms they name rather than every branch of each. Three consecutive runs
+of each suite gave the current totals unchanged. Earlier in the project the same
 measurement did move by a couple of missing statements between identical invocations — four runs of
 experiment 1 gave 90, 84, 88 and 90, which is why this table carried ranges for a while — and CI re-runs both
 suites on Linux with `requirements.txt` ([§ 9.4](#continuous-integration)), where a statement or two is
 expected to differ from the host numbers quoted here.
 
-The gap is in the engine rather than the presentation. Nine files account for experiment 1's 91 missing
-statements: `simulation.py` (33), `controllers/rl_controller.py` (15), `config.py` (12),
-`controllers/base.py` (9), `systems/metrics.py` (9), `systems/plotting.py` (8), `systems/match_variant.py`
-(3), `rl/actions.py` (1) and `rl/ppo.py` (1). Experiment 2's extra 96 are its own architectures and optimiser:
-`rl/ppo.py` (+60), `rl/networks.py` (+17, a file experiment 1 does not have),
-`controllers/rl_controller.py` (+17) and `rl/actions.py` (+2). `ui/dashboard.py`, which was the single
+Eleven files hold experiment 1's 263 missing statements: `simulation.py` (73), `rl/networks.py` (65),
+`controllers/rl_controller.py` (39), `controllers/base.py` (32), `controllers/batching.py` (15),
+`rl/actions.py` (11), `systems/metrics.py` (9), `systems/plotting.py` (8), `rl/ppo.py` (7),
+`systems/match_variant.py` (3) and `config.py` (1). Experiment 2 shares nine of them at the same counts, and
+the 23-statement difference between the two trees is its own four: `rl/networks.py` (−34) and
+`controllers/batching.py` (−4) are less exercised there, `rl/actions.py` (+12) and `rl/ppo.py` (+3) more.
+`ui/dashboard.py`, which was the single
 largest uncovered file for most of this repository's life, is at 100 % in both trees.
 
-What the 238 current test cases do **not** cover is catalogued in
+What the 244 current test cases do **not** cover is catalogued in
 [§ Coverage](11_code_audit.md#coverage). The collision solver is now geometrically verified against
 hand-computed values, but no test checks a *metric* against an independent reference — see the note at the
 end of that section on coverage not being correctness.
@@ -355,24 +365,66 @@ below are still the measurements from before batching; a concurrent campaign has
 The subsequent vectorized nearest-enemy and clear-obstacle paths improved isolated hot-function timings;
 whole-training timings were too noisy to replace the paired 599.5 steps/s measurement.
 
-### Current JAX/Rust runtime sample (2026-10-18)
+### Current JAX/Rust runtime sample (2026-10-18) <a name="runtime-jax-rust-sample"></a>
 
-Measured from the repository root with `python scripts/benchmark_runtime.py --steps 1500
---warmup-steps 1500 --repeats 2`, CPU backend, seed 42, domain randomisation off, all teams training.
+The environment is the one the port actually runs on here: Python 3.10.11, `jax`/`jaxlib` 0.4.38, NumPy
+1.26.4 and `marl_arena_rust` 0.1.0 -- the versions A-45 records below, and the reason `requirements.txt`
+pins this JAX build rather than the one an unverified reading once put in it.
+
+Measured from the repository root with `python scripts/benchmark_runtime.py --steps 2000
+--warmup-steps 2000 --repeats 4`, CPU backend, seed 42, domain randomisation off, all teams training.
 The script runs both paths in one process, warms each path before timing, and checks match boundaries,
-winners and final parameter hashes. In the first paired 1,500-step sample, Rust reached **410.6 steps/s**
-and the Python fallback **420.9 steps/s**. Both produced the same nine match boundaries and identical
-final JAX weights. This single pair does not show an end-to-end speedup from the Rust extension; at this
-team size, Python/JAX policy work and PPO updates dominate the movement and collision loops. A later pair
-overlapped a separate training process and was excluded. Use the benchmark script on an idle machine for a
-new measurement. The warm-up rates are intentionally not compared: the first route includes JAX's compile
-cost, and the second route reuses the compiled programs.
+winners and final parameter hashes; `exact_outcome_and_weight_parity` was true again.
 
-This sample was slower than the older 599.5 steps/s PyTorch/batched-inference record above. These are not
-a controlled backend comparison: the JAX optimizer and action RNG changed, and only one warmed pair was
-measured here. A JAX/Rust replication campaign is still required before making a training-speed or result
-claim. On this Windows x86_64 host JAX used CPU; the [JAX platform table](https://docs.jax.dev/en/latest/installation.html)
-marks that CPU combination experimental and does not provide Windows GPU support.
+| Route | Four warmed 2,000-step repeats (steps/s) | Median |
+|---|---|---:|
+| Rust/PyO3 core | 291.6, 309.7, 275.0, 290.0 | **290.8** |
+| Python fallback | 241.3, 262.9, 245.6, 265.7 | **254.3** |
+
+The Rust route is ahead in every repeat, so the port is worth about **+14 % end to end** at this team size.
+That reverses the first pair recorded here (410.6 Rust against 420.9 Python, one repeat each), which was a
+single draw rather than a measurement: its own level did not recur in any of the four repeats, and the
+machine was not idle while it ran. The warm-up rates are intentionally not compared: the first route includes
+JAX's compile cost, and the second route reuses the compiled programs.
+
+**Why a campaign does not scale with processes.** The same warm-then-measure route, run as `N` concurrent
+processes on an idle machine (steady 2,000-step windows, Rust core):
+
+| N | steps/s per process | Aggregate steps/s | CPU ms per env step |
+|---:|---:|---:|---:|
+| 1 | 335.4 | 335.4 | 4.65 |
+| 2 | 286.4 | 572.8 | 7.21 |
+| 4 | 196.3 | **785.4** | 7.88 |
+| 8 | 76.2 | 609.8 | 21.96 |
+| 16 | 40.6 | 649.8 | 42.21 |
+
+Aggregate throughput peaks at four processes and then falls, while the CPU burned per step rises nine-fold --
+wasted scheduling, not lost clock. The host is not the limit: a control with no repository code in it, eight
+concurrent NumPy matmul loops with their BLAS and OpenMP pools capped to one thread, gives 1,197.8 iterations/s
+alone against 878–888 each at eight (≈7,030 aggregate, **5.9× from eight processes**), and its CPU time per
+iteration grows only 1.39×. The difference is what each process carries. A bare Python process here has 6
+threads; NumPy's BLAS pool takes it to 29; after JAX's CPU backend initialises it is 104, and 127 if
+`marl_arena.config`'s environment caps are skipped. Those caps are therefore doing something -- 127 to 104 --
+but they do not make the process single-threaded, and the flag that would is not available: putting
+`--intra_op_parallelism_threads=1` in `XLA_FLAGS` aborts the child at
+`external/xla/xla/parse_flags_from_env.cc:226` with "Unknown flags in XLA_FLAGS". Eight arena processes are
+~830 runnable threads on this machine's 32 logical cores.
+
+Two things follow. A JAX campaign should be queued about **four deep**, which is where the measured aggregate
+peaks, rather than the twelve or twenty the committed campaign scripts ran: on this instrument four processes
+deliver about **1.2× the aggregate throughput of sixteen**, and they do it with a quarter of the threads in
+flight. Those windows are early training, where matches are short, so no wall-clock hour figure may be read
+off them -- the 3 M-step study below measured 49.1 steps/s per replicate at twenty-way because a learned
+policy takes longer to kill than a random one. And no JAX number in this document may be compared with a
+PyTorch one as if the two runtimes were the same instrument: the port's per-step work, optimizer and action RNG
+all changed, and the older records below were measured with one thread per process while these are measured
+with a hundred.
+
+None of this closes the replication question. A JAX/Rust replication campaign is still required before any
+chapter-8 number may be described as reproducible by this runtime. On this Windows x86_64 host JAX used CPU;
+the [JAX platform table](https://docs.jax.dev/en/latest/installation.html) marks that CPU combination
+experimental and provides no Windows GPU support, so this machine's discrete GPU is not a lever the runtime can
+pull without changing operating system.
 
 For the historical PyTorch runtime, one thread was the selected setting because each model is small and
 each team batch has at most three rows. The original profile and the per-agent dispatch cost are in
