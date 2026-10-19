@@ -21,13 +21,21 @@ IDENTICAL = [
     "src/marl_arena/models.py",
     "src/marl_arena/controllers/__init__.py",
     "src/marl_arena/controllers/base.py",
+    "src/marl_arena/controllers/batching.py",
+    "src/marl_arena/controllers/rl_controller.py",
     "src/marl_arena/rl/__init__.py",
     "src/marl_arena/rl/actions.py",
     "src/marl_arena/rl/buffer.py",
+    "src/marl_arena/rl/networks.py",
+    "src/marl_arena/rl/ppo.py",
     "src/marl_arena/systems/__init__.py",
     "src/marl_arena/systems/metrics.py",
     "src/marl_arena/systems/plotting.py",
     "src/marl_arena/systems/simulation.py",
+    "native/arena_core/Cargo.toml",
+    "native/arena_core/Cargo.lock",
+    "native/arena_core/pyproject.toml",
+    "native/arena_core/src/lib.rs",
     "src/marl_arena/ui/__init__.py",
     "src/marl_arena/ui/dashboard.py",
     "scripts/plot_metrics.py",
@@ -35,19 +43,20 @@ IDENTICAL = [
     "scripts/render_trailer.py",
     "scripts/run_experiment.py",
     "scripts/eval_readout.py",
+    "scripts/convert_torch_checkpoints.py",
+    "scripts/benchmark_runtime.py",
     "tests/test_collision.py",
     "tests/test_render.py",
     "tests/test_arena_config.py",
     "tests/test_readout_parity.py",
+    "tests/test_policy_batching.py",
+    "tests/test_native_parity.py",
     "tests/test_dashboard.py",
 ]
 
-# Files that legitimately differ: the paradigms themselves and the MLflow integration. The engine,
-# the renderer and the arena are shared verbatim.
+# Files that legitimately differ: the paradigm cycle and the MLflow integration. The engine, the
+# JAX optimizer, the Rust kernels, the renderer and the arena are shared verbatim.
 EXPECTED_DIFFERENT = [
-    "src/marl_arena/controllers/rl_controller.py",    # paradigm selection and decision paths
-    "src/marl_arena/rl/networks.py",                  # VD + Comm networks
-    "src/marl_arena/rl/ppo.py",                       # VD + Comm update paths
     "src/marl_arena/systems/match_variant.py",        # PARADIGM_CYCLE only
     "scripts/train_rl.py",                            # MLflow integration
 ]

@@ -59,6 +59,10 @@ out_name, steps = sys.argv[1], int(sys.argv[2])
 bad, seen = [], 0
 for tree in (root, root / "ctde_arena"):
     for run_dir in sorted((tree / out_name).glob("*_seed*")):
+        # run_study writes exp1_seedN.log beside the run directories, and a glob of "*_seed*"
+        # catches both: only the directories are runs.
+        if not run_dir.is_dir():
+            continue
         summary = run_dir / "evaluation" / "run_summary.json"
         if not summary.is_file():
             bad.append(f"{run_dir}: no summary")

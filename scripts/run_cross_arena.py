@@ -54,14 +54,16 @@ def campaign_names() -> list[str]:
 
 CAMPAIGNS = campaign_names()
 
-# Default policies: the promoted replicate of each experiment, versioned in the two data/ trees.
+# Default policies: the promoted replicate of each experiment, versioned in the two data/ trees. The `.npz`
+# form is what this runtime loads; the `.pt` beside each one is the file that produced the published numbers,
+# and `scripts/convert_torch_checkpoints.py` is what stands between the two (A-45).
 POLICIES = {
-    "CTE": CTDE_ROOT.parent / "data" / "checkpoints" / "team_1_cte.pt",
-    "DTE": CTDE_ROOT.parent / "data" / "checkpoints" / "team_2_dte.pt",
-    "CTDE": CTDE_ROOT.parent / "data" / "checkpoints" / "team_3_ctde.pt",
-    "CTDE-VD": CTDE_ROOT / "data" / "checkpoints" / "team_2_ctde-vd.pt",
-    "CTDE-CAC": CTDE_ROOT / "data" / "checkpoints" / "team_3_ctde-cac.pt",
-    "CTDE-Comm": CTDE_ROOT / "data" / "checkpoints" / "team_1_ctde-comm.pt",
+    "CTE": CTDE_ROOT.parent / "data" / "checkpoints" / "team_1_cte.npz",
+    "DTE": CTDE_ROOT.parent / "data" / "checkpoints" / "team_2_dte.npz",
+    "CTDE": CTDE_ROOT.parent / "data" / "checkpoints" / "team_3_ctde.npz",
+    "CTDE-VD": CTDE_ROOT / "data" / "checkpoints" / "team_2_ctde-vd.npz",
+    "CTDE-CAC": CTDE_ROOT / "data" / "checkpoints" / "team_3_ctde-cac.npz",
+    "CTDE-Comm": CTDE_ROOT / "data" / "checkpoints" / "team_1_ctde-comm.npz",
 }
 # Which architectures experiment 1's controller class was written for.
 ROOT_PARADIGMS = {"CTE", "DTE", "CTDE"}
@@ -162,7 +164,15 @@ def replicate_policies(exp1_seed: int, exp2_seed: int, campaign: str = "") -> di
         if not directory.is_dir():
             raise SystemExit(f"no such training replicate: {experiment}_seed{seed}")
         for paradigm in paradigms:
-            found = sorted(directory.glob(f"*_{paradigm.lower()}.pt"))
+            slug = paradigm.lower()
+            # .npz first: this runtime cannot read a .pt at all (A-45), and every committed set now carries
+            # both forms, the .pt being the file that produced the published tables.
+            found = sorted(directory.glob(f"*_{slug}.npz")) or sorted(directory.glob(f"*_{slug}.pt"))
+            if not found:
+                raise SystemExit(
+                    f"no loadable {paradigm} checkpoint in {directory}. The runtime reads .npz; the archive "
+                    f"stores .pt, so run python scripts/convert_torch_checkpoints.py once to produce the "
+                    f"loadable form from the committed files.")
             if len(found) != 1:
                 raise SystemExit(
                     f"expected one {paradigm} checkpoint in {directory}, found {[m.name for m in found]}"

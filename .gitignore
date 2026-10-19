@@ -64,3 +64,9 @@ mlruns/
 # results/readout/T<temperature>/per_seed_metrics.csv, which is the artefact report_study.py reads.
 /results/readout/parts/
 /ctde_arena/results/readout/parts/
+
+# Rust extension build output (native/arena_core): rebuilt by maturin, never committed.
+native/arena_core/target/
+native/**/*.dll
+native/**/*.so
+native/**/*.pyd

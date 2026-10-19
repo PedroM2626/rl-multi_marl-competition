@@ -152,6 +152,16 @@ CommNet. The differences that matter:
 
 ## 5.7 Checkpoint contents
 
+The current runtime writes `.npz` files through `save_checkpoint`: parameter arrays use NumPy's
+non-pickle format, with a JSON metadata entry for the paradigm. JAX stores dense kernels in
+input-by-output order in memory and transposes them at the Torch-compatible state-dictionary boundary,
+which lets the converter import the historical layer names and shapes. The checked-in `.pt` files remain
+as source artefacts for the old study; `scripts/convert_torch_checkpoints.py` converts them once to the
+`.npz` files loaded by the current controllers. PyTorch is needed only when running this one-time
+converter or the historical campaign archiver.
+
+The older files listed below were written by the PyTorch runtime:
+
 `save_checkpoint` writes `{"paradigm": str, "actor": state_dict, "critic": state_dict}` and nothing
 else, verified by loading the three versioned policies:
 
@@ -167,6 +177,5 @@ No optimizer state, no step counter, no seed, no configuration snapshot. Consequ
   zero even though `_load_if_exists()` restores the weights;
 * a checkpoint does not record how long it was trained for, so provenance depends entirely on the
   accompanying `training_log.json`;
-* `torch.load` is now called with `weights_only=True` (verified compatible with these payloads), which
-  removes the arbitrary-code-execution surface that `weights_only=False` implies for model files of
-  unknown origin.
+* The one-time legacy converter uses `torch.load(weights_only=True)` to read these trusted historical
+  payloads before writing the NPZ format. The training runtime does not load pickle checkpoints.

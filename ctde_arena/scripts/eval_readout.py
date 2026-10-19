@@ -125,7 +125,7 @@ PARADIGMS = {"exp1": ("CTE", "DTE", "CTDE"), "exp2": ("CTDE-VD", "CTDE-CAC", "CT
 
 
 def paradigms_from_files(experiment: str, files: list[Path]) -> dict[str, str]:
-    """`team_2_ctde-vd.pt` -> {"Team 2": "CTDE-VD"}: the versioned sets carry no run summary.
+    """`team_2_ctde-vd.npz` -> {"Team 2": "CTDE-VD"}: the versioned sets carry no run summary.
 
     The checkpoint name is the slot's own record of which paradigm trained it, which is why the round-robin
     can resolve a block from a directory name alone. Deriving it here keeps the two instruments agreeing on
@@ -136,7 +136,8 @@ def paradigms_from_files(experiment: str, files: list[Path]) -> dict[str, str]:
     for path in files:
         parts = path.stem.split("_", 2)  # team_2_ctde-vd -> ["team", "2", "ctde-vd"]
         if len(parts) != 3 or parts[0] != "team":
-            raise SystemExit(f"{path.name}: not a team checkpoint name (team_<slot>_<paradigm>.pt)")
+            raise SystemExit(f"{path.name}: not a team checkpoint name "
+                                 f"(team_<slot>_<paradigm>.npz)")
         if parts[2] not in known:
             raise SystemExit(f"{path.name}: paradigm {parts[2]!r} is not one of {sorted(known)}")
         out[f"Team {parts[1]}"] = known[parts[2]]
@@ -177,7 +178,9 @@ def main() -> None:
             else:
                 directory = runs_dir / f"{experiment}_seed{seed}"
                 checkpoints = directory / "checkpoints"
-            files = sorted(checkpoints.glob("*.pt"))
+            # .npz is the format this runtime loads (A-44/A-45); .pt only ever exists next to it, as
+            # the file the published numbers were produced from.
+            files = sorted(checkpoints.glob("*.npz")) or sorted(checkpoints.glob("*.pt"))
             if not checkpoints.is_dir() or not files:
                 if args.require_checkpoints:
                     raise SystemExit(f"{experiment}_seed{seed}: no checkpoints under {checkpoints}")

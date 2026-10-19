@@ -1615,6 +1615,78 @@ the form "paradigm X beats paradigm Y" in this document should be read as "under
 domain randomisation on".
 
 
+### The fourth key is the training budget itself <a name="budget-3m"></a>
+
+Everything else in this section holds `RL_TRAIN_TOTAL_STEPS` at 500,000 and varies a reward, a width or an
+observation. The fourth arm varies that constant: the same twenty replicates — same seeds, same 150 held-out
+greedy matches per arm, same slot rotation, same configuration — trained to **3,000,000 steps**, which is the
+value `main.py` ships with. `bash scripts/run_three_million_campaign.sh` runs it and `scripts/analyse_budget.py`
+writes `results/study_3m/budget_analysis.json`, whose controls are what makes the comparison mean something:
+`target_steps` exactly `[3000000]` on the long side and `[500000]` on the other, twenty runs each, 150
+held-out matches behind every cell, and the 500 k side's parity against the committed study at **3.3e-05** —
+the rounding floor of `results/study/per_seed_metrics.csv`, which is the difference between comparing the
+published study with a re-run and measuring the same runs twice. Both sides were trained by the PyTorch
+runtime: the campaign finished at 21:20 on 2026-10-18, before [A-44](11_code_audit.md#per-agent-policy-dispatch-was-the-training-bottleneck)
+merged, so these numbers sit on the same side of the runtime line as every other table in this chapter.
+
+Held-out greedy win rate, paired on seed number, ten seeds per row:
+
+| Experiment | Arm | 500 k | 3 M | paired Δ | *t* | *p* | seeds below 500 k |
+|---|---|---:|---:|---:|---:|---:|---|
+| exp1 | CTDE | 0.326 | **0.429** | +0.103 | +1.62 | 0.140 | 4/10 |
+| exp1 | CTE | 0.252 | 0.159 | −0.093 | −2.58 | 0.030 | 8/10 |
+| exp1 | DTE | 0.381 | 0.365 | −0.016 | −0.27 | 0.790 | 5/10 |
+| exp2 | CTDE-CAC | 0.282 | 0.290 | +0.008 | +0.12 | 0.904 | 5/10 |
+| exp2 | CTDE-Comm | 0.331 | **0.395** | +0.065 | +0.77 | 0.462 | 5/10 |
+| exp2 | CTDE-VD | 0.367 | 0.277 | −0.090 | −1.49 | 0.170 | 8/10 |
+
+Six comparisons, so the corrected bar is alpha = 0.00833 and **not one of them clears it** — the closest is
+CTE at *p* = 0.030. What moved is the order, and it moved in both experiments:
+
+| Experiment | Order at 500 k | Order at 3 M |
+|---|---|---|
+| exp1 | DTE 0.381 > CTDE 0.326 > CTE 0.252 | **CTDE 0.429 > DTE 0.365 > CTE 0.159** |
+| exp2 | VD 0.367 > Comm 0.331 > CAC 0.282 | **Comm 0.395 > CAC 0.290 > VD 0.277** |
+
+In each experiment the arm that led at 500 k is not the arm that leads at 3 M, and experiment 2 is close to a
+complete inversion — its leader falls to last while its second rises to first. That is the answer to item 7 of
+the open-work list, and it is also a statement about the 500 k ordering itself: an estimate at one budget, not
+a property of the architectures.
+
+**Does CTDE-Comm's late improvement continue? The endpoint moved; the shape did not.** Each run holds out at
+25 / 50 / 75 / 100 % of *its own* budget, so the two rows cannot share an x-axis — 25 % of 3,000,000 is
+750,000 steps, more than half again the whole committed budget — and what is comparable is drift within a
+budget:
+
+| Experiment | Arm | 3 M curve, 25 % → 100 % | drift, 500 k | drift, 3 M |
+|---|---|---|---:|---:|
+| exp1 | CTDE | 0.238 → 0.208 → 0.273 → 0.429 | +0.196 | +0.190 |
+| exp1 | CTE | 0.313 → 0.272 → 0.088 → 0.159 | −0.126 | −0.154 |
+| exp1 | DTE | 0.357 → 0.450 → 0.463 → 0.365 | −0.084 | +0.008 |
+| exp2 | CTDE-CAC | 0.442 → 0.207 → 0.487 → 0.290 | −0.143 | −0.152 |
+| exp2 | CTDE-Comm | 0.275 → 0.387 → 0.113 → 0.395 | +0.141 | +0.120 |
+| exp2 | CTDE-VD | 0.182 → 0.290 → 0.172 → 0.277 | +0.037 | +0.096 |
+
+Comm's drift is +0.141 at the short budget and +0.120 at the long one — statistically the same shape — while
+its endpoint rises from 0.331 to 0.395. Its 75 % point, 0.113, is lower than anything else in its row: six
+times the budget bought a higher endpoint, not a smoother curve. The hypothesis that communication needs time
+to bootstrap is therefore neither confirmed nor refuted here. It survives as one arm ending first in one of
+two experiments, on ten seeds, with a paired *p* of 0.462 — which is precisely the weakness the rest of this
+chapter has been documenting about single-budget readings, now demonstrated on the budget itself.
+
+**Cost, measured rather than scaled.** The campaign took **1251.1 min** of wall clock at twenty concurrent —
+10.6× the 117.5 min the 500 k × 20 study needed, for 6× the steps. Per run, 49.1 steps/s against the
+85–92 steps/s recorded for the short study under the same load: the same step costs more once the policies
+have learned to stay alive, which is § 8.1's two-regimes finding showing up in the machine's own numbers
+rather than in a win rate.
+
+**What this arm cannot do.** Its checkpoints live in git-ignored `data/runs_3m/`, exactly like the arena-v2
+replicates, so a reader can recompute every number above from the committed CSV and JSON but cannot replay a
+single 3 M match without retraining. And the common-opponent and random-opponent instruments were not replayed
+at this budget: § 8.10 and § 8.11 stay single-budget statements, which is the same limit § 8.13 names for the
+configuration arms, one level up.
+
+
 ------
 
 ## 8.14 Summary of answers <a name="summary-of-answers"></a>

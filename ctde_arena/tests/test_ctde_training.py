@@ -11,7 +11,7 @@ import os
 import sys
 from pathlib import Path
 
-import torch
+import numpy as np
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SRC_DIR = PROJECT_ROOT / "src"
@@ -32,7 +32,7 @@ def _flat_params(controller: RLTeamController) -> dict[str, object]:
     weights: dict[str, object] = {}
     for role, module in (("actor", controller.actor), ("critic", controller.critic)):
         if module is not None:
-            weights.update({f"{role}.{k}": v.detach().clone() for k, v in module.state_dict().items()})
+            weights.update({f"{role}.{k}": v.copy() for k, v in module.state_dict().items()})
     return weights
 
 
@@ -69,9 +69,8 @@ def test_ppo_update_moves_every_variant(tmp_path: Path) -> None:
                 assert len(controller.buffer) == 0, f"{name} buffer was not cleared"
                 after = _flat_params(controller)
                 changed = any(
-                    not torch.equal(before[name][key], value)
+                    not np.array_equal(before[name][key], value)
                     for key, value in after.items()
-                    if isinstance(value, torch.Tensor)
                 )
                 assert changed, f"{name} ({controller.paradigm}) did not take a gradient step"
             simulation.reset_match()

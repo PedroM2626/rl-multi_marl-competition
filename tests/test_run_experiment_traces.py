@@ -48,7 +48,10 @@ def test_a_training_run_leaves_a_ppo_trace() -> None:
             assert set(stats) == TRACE_KEYS, (team, stats)
             assert all(isinstance(value, float) for value in stats.values()), (team, stats)
         # A-14 was a hard-coded zero; a trace of zeros would be the same defect wearing an artefact.
-        assert any(stats["approx_kl"] > 0.0 for stats in teams.values()), teams
+        # The estimator is mean(old_log_prob - log_prob), which is signed: a policy that moves away from
+        # the sampled actions returns a negative value, and that is a measurement, not a bug. So the
+        # invariant this test owns is "not the constant zero", not "positive".
+        assert any(abs(stats["approx_kl"]) > 0.0 for stats in teams.values()), teams
         assert any(stats["entropy"] > 0.0 for stats in teams.values()), teams
     finally:
         shutil.rmtree(RUN_DIR, ignore_errors=True)

@@ -1,0 +1,342 @@
+{
+  "generated_utc": "2026-10-19T00:52:20+00:00",
+  "purpose": "docs/11_code_audit.md#open-work-suggested-measurements item 7: the study re-measured at the 3,000,000-step budget the code defaults to, against the committed 500,000-step study paired on seed number.",
+  "produced_by": "bash scripts/run_three_million_campaign.sh, then scripts/analyse_budget.py",
+  "inputs": {
+    "three_m_runs": "data/runs_3m",
+    "half_m_runs": "data/runs",
+    "three_m_results": "results/study_3m",
+    "control_results": "results/study/per_seed_metrics.csv"
+  },
+  "controls": {
+    "budgets": {
+      "500k": {
+        "runs": 20,
+        "target_steps": [
+          500000
+        ],
+        "completed_steps": [
+          500000
+        ],
+        "held_out_matches_per_arm": [
+          150
+        ]
+      },
+      "3m": {
+        "runs": 20,
+        "target_steps": [
+          3000000
+        ],
+        "completed_steps": [
+          3000000
+        ],
+        "held_out_matches_per_arm": [
+          150
+        ]
+      }
+    },
+    "shared_cells": 60,
+    "half_m_parity_max_abs_delta_vs_committed_study": 3.3e-05,
+    "note": "curve points are held-out snapshots at fractions of each run's OWN budget, so a fraction is not a step count: 0.25 of 3,000,000 is 750,000, more than the whole committed budget. Drift is end-minus-quarter within one budget. The parity figure is expected to be at the rounding floor of results/study/per_seed_metrics.csv, which stores four decimal places -- it says this analysis read the committed study's own runs, not a second measurement of them."
+  },
+  "paired_held_out": {
+    "exp1|CTDE": {
+      "seeds": 10,
+      "held_out_500k": 0.326,
+      "held_out_3m": 0.4287,
+      "paired_diff": 0.1026,
+      "t": 1.618,
+      "p": 0.14021173489800803,
+      "seeds_below_500k": 4
+    },
+    "exp1|CTE": {
+      "seeds": 10,
+      "held_out_500k": 0.252,
+      "held_out_3m": 0.1593,
+      "paired_diff": -0.0927,
+      "t": -2.576,
+      "p": 0.029871230371999416,
+      "seeds_below_500k": 8
+    },
+    "exp1|DTE": {
+      "seeds": 10,
+      "held_out_500k": 0.3807,
+      "held_out_3m": 0.3647,
+      "paired_diff": -0.016,
+      "t": -0.274,
+      "p": 0.7901340616590208,
+      "seeds_below_500k": 5
+    },
+    "exp2|CTDE-CAC": {
+      "seeds": 10,
+      "held_out_500k": 0.282,
+      "held_out_3m": 0.29,
+      "paired_diff": 0.008,
+      "t": 0.124,
+      "p": 0.9037320270522726,
+      "seeds_below_500k": 5
+    },
+    "exp2|CTDE-Comm": {
+      "seeds": 10,
+      "held_out_500k": 0.3306,
+      "held_out_3m": 0.3953,
+      "paired_diff": 0.0647,
+      "t": 0.769,
+      "p": 0.46150221709618455,
+      "seeds_below_500k": 5
+    },
+    "exp2|CTDE-VD": {
+      "seeds": 10,
+      "held_out_500k": 0.3673,
+      "held_out_3m": 0.2773,
+      "paired_diff": -0.09,
+      "t": -1.493,
+      "p": 0.16962871676342972,
+      "seeds_below_500k": 8
+    }
+  },
+  "ranking": {
+    "500k": {
+      "exp1": [
+        {
+          "paradigm": "DTE",
+          "mean": 0.3807
+        },
+        {
+          "paradigm": "CTDE",
+          "mean": 0.326
+        },
+        {
+          "paradigm": "CTE",
+          "mean": 0.252
+        }
+      ],
+      "exp2": [
+        {
+          "paradigm": "CTDE-VD",
+          "mean": 0.3673
+        },
+        {
+          "paradigm": "CTDE-Comm",
+          "mean": 0.3306
+        },
+        {
+          "paradigm": "CTDE-CAC",
+          "mean": 0.282
+        }
+      ]
+    },
+    "3m": {
+      "exp1": [
+        {
+          "paradigm": "CTDE",
+          "mean": 0.4287
+        },
+        {
+          "paradigm": "DTE",
+          "mean": 0.3647
+        },
+        {
+          "paradigm": "CTE",
+          "mean": 0.1593
+        }
+      ],
+      "exp2": [
+        {
+          "paradigm": "CTDE-Comm",
+          "mean": 0.3953
+        },
+        {
+          "paradigm": "CTDE-CAC",
+          "mean": 0.29
+        },
+        {
+          "paradigm": "CTDE-VD",
+          "mean": 0.2773
+        }
+      ]
+    }
+  },
+  "held_out_curves": {
+    "exp1|CTDE": {
+      "seeds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "500k": {
+        "0.25": 0.13,
+        "0.5": 0.4275,
+        "0.75": 0.4675,
+        "1.0": 0.326
+      },
+      "3m": {
+        "0.25": 0.2383,
+        "0.5": 0.2083,
+        "0.75": 0.2733,
+        "1.0": 0.4287
+      },
+      "drift": {
+        "500k": 0.196,
+        "3m": 0.1903
+      }
+    },
+    "exp1|CTE": {
+      "seeds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "500k": {
+        "0.25": 0.3775,
+        "0.5": 0.28,
+        "0.75": 0.225,
+        "1.0": 0.252
+      },
+      "3m": {
+        "0.25": 0.3133,
+        "0.5": 0.2717,
+        "0.75": 0.0883,
+        "1.0": 0.1593
+      },
+      "drift": {
+        "500k": -0.1255,
+        "3m": -0.154
+      }
+    },
+    "exp1|DTE": {
+      "seeds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "500k": {
+        "0.25": 0.465,
+        "0.5": 0.13,
+        "0.75": 0.2425,
+        "1.0": 0.3807
+      },
+      "3m": {
+        "0.25": 0.3567,
+        "0.5": 0.45,
+        "0.75": 0.4633,
+        "1.0": 0.3647
+      },
+      "drift": {
+        "500k": -0.0843,
+        "3m": 0.008
+      }
+    },
+    "exp2|CTDE-CAC": {
+      "seeds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "500k": {
+        "0.25": 0.425,
+        "0.5": 0.095,
+        "0.75": 0.2125,
+        "1.0": 0.282
+      },
+      "3m": {
+        "0.25": 0.4417,
+        "0.5": 0.2067,
+        "0.75": 0.4867,
+        "1.0": 0.29
+      },
+      "drift": {
+        "500k": -0.143,
+        "3m": -0.1517
+      }
+    },
+    "exp2|CTDE-Comm": {
+      "seeds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "500k": {
+        "0.25": 0.19,
+        "0.5": 0.335,
+        "0.75": 0.2575,
+        "1.0": 0.3307
+      },
+      "3m": {
+        "0.25": 0.275,
+        "0.5": 0.3867,
+        "0.75": 0.1133,
+        "1.0": 0.3953
+      },
+      "drift": {
+        "500k": 0.1407,
+        "3m": 0.1203
+      }
+    },
+    "exp2|CTDE-VD": {
+      "seeds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "500k": {
+        "0.25": 0.33,
+        "0.5": 0.345,
+        "0.75": 0.2875,
+        "1.0": 0.3673
+      },
+      "3m": {
+        "0.25": 0.1817,
+        "0.5": 0.29,
+        "0.75": 0.1717,
+        "1.0": 0.2773
+      },
+      "drift": {
+        "500k": 0.0373,
+        "3m": 0.0957
+      }
+    }
+  }
+}

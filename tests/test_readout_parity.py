@@ -15,8 +15,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import numpy as np
 import pytest
-import torch
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SRC_DIR = PROJECT_ROOT / "src"
@@ -86,21 +86,25 @@ def test_temperature_zero_is_argmax_and_positive_samples() -> None:
         _greedy_action = rl_controller.RLTeamController._greedy_action
         _eval_action = rl_controller.RLTeamController._eval_action
 
+        def __init__(self, seed=7):
+            self.action_rng = np.random.default_rng(seed)
+
     original = CONFIG.eval_temperature
     try:
         rl_controller.CONFIG = dataclasses.replace(CONFIG, eval_temperature=0.0)
-        logits = torch.tensor([[0.1, 5.0, 0.2, 0.0]])
+        logits = np.array([0.1, 5.0, 0.2, 0.0], dtype=np.float32)
         assert Probe()._eval_action(logits) == 1, "T=0 must be the argmax the study reported"
 
         rl_controller.CONFIG = dataclasses.replace(CONFIG, eval_temperature=1e6)
         # A flat distribution over four actions: with enough draws every action has to appear.
-        seen = {Probe()._eval_action(logits) for _ in range(400)}
+        probe = Probe()
+        seen = {probe._eval_action(logits) for _ in range(400)}
         assert seen == {0, 1, 2, 3}, seen
 
         rl_controller.CONFIG = dataclasses.replace(CONFIG, eval_temperature=1.0)
-        torch.manual_seed(7)
-        peaked = torch.tensor([[0.0, 9.0, 0.0, 0.0]])
-        assert sum(Probe()._eval_action(peaked) == 1 for _ in range(200)) > 190, \
+        peaked = np.array([0.0, 9.0, 0.0, 0.0], dtype=np.float32)
+        probe = Probe(7)
+        assert sum(probe._eval_action(peaked) == 1 for _ in range(200)) > 190, \
             "temperature 1 on a 9-logit margin must still overwhelmingly take the best action"
     finally:
         rl_controller.CONFIG = CONFIG
@@ -132,11 +136,15 @@ def test_paradigms_come_from_the_checkpoint_names_when_there_is_no_run_summary()
             ("exp1_seed1", {"Team 1": "DTE", "Team 2": "CTDE", "Team 3": "CTE"}),
             ("exp1_seed9", {"Team 1": "CTE", "Team 2": "DTE", "Team 3": "CTDE"}),
             ("exp2_seed1", {"Team 1": "CTDE-CAC", "Team 2": "CTDE-Comm", "Team 3": "CTDE-VD"})):
-        got = module.paradigms_from_files(label.split("_")[0], sorted((replicates / label).glob("*.pt")))
+        directory = replicates / label
+        held = sorted(directory.glob("*.npz")) or sorted(directory.glob("*.pt"))
+        # A-45: the loadable form of the archive is .npz, so this instrument must be reading that.
+        assert all(path.suffix == ".npz" for path in held), f"{label}: {sorted(p.name for p in held)}"
+        got = module.paradigms_from_files(label.split("_")[0], held)
         assert got == expected, (label, got)
     assert module.paradigms_from_files("exp1", []) == {}
     with pytest.raises(SystemExit):
-        module.paradigms_from_files("exp1", [Path("team_1_bogus.pt")])
+        module.paradigms_from_files("exp1", [Path("team_1_bogus.npz")])
     with pytest.raises(SystemExit):
         module.paradigms_from_files("exp1", [Path("policy_cte.pt")])
 

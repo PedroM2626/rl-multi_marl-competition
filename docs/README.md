@@ -31,7 +31,7 @@ Four distinct data sources exist, and they are not interchangeable:
 |--------|----------|------------|
 | `data/metrics/summary.json` (root) | Experiment 1, one promoted study replicate | Yes |
 | `ctde_arena/data/` | Experiment 2 same | Yes |
-| `data/training_replicates/` | The ten checkpoint sets the round-robin is played over: one experiment-1 and one experiment-2 replicate per block, 60 files — every replicate either experiment trained | Yes |
+| `data/training_replicates/` | The ten checkpoint sets the round-robin is played over: one experiment-1 and one experiment-2 replicate per block, 60 files — every replicate either experiment trained. Each is stored twice since A-45: the `.pt` the published numbers were produced with, and the `.npz` the current runtime loads | Yes |
 | `ctde_arena/data/mlflow_export/` | The 48 metric points actually logged to MLflow across two runs | Yes (exported) |
 | `results/study/` | 10 seeds × 500 k steps per experiment, slot-rotated, held-out greedy evaluation, paired *t*-tests, Fisher-exact tests and forward power | Yes |
 | `results/study_v2/` | the same study re-measured with a decayed, ten-times-smaller alive bonus and a clock-out declared a draw ([§ 8.12](08_results.md#arena-v2)) | Yes |
@@ -81,6 +81,7 @@ Experiment 1's artefacts were themselves only committed on 2026-09-27 — before
 | The published round-robin tables themselves | `python -m pytest tests/test_docs_quote_the_pool.py -q` — recomputes every pooled, pairwise and leave-one-out cell in § 8.10 and the whole rule-control table in § 8.12 from `results/cross_arena/blocks10.json` and `v2_blocks.json`, so the document cannot drift from the report |
 | [§ 8.1](08_results.md#readout-re-measured) sampled-readout re-measurement | `bash scripts/run_readout_campaign.sh` — `eval_readout.py` per tree at T = 0, 0.5 and 1 over all twenty replicates, merged into `results/readout/T*/per_seed_metrics.csv` and reported with `report_study.py --compare-to results/study` |
 | [§ 8.13](08_results.md#ablations) configuration ablations | `bash scripts/run_ablation_campaign.sh`, then `python scripts/report_study.py --results-dir results/ablation_no_dr --compare-to results/study` (same for the other two arms); `python scripts/version_campaign_checkpoints.py` copies the arms' checkpoints into `data/campaign_replicates/` and writes the manifest that records each one's capacity |
+| [§ 8.13](08_results.md#budget-3m) the training-budget arm | `bash scripts/run_three_million_campaign.sh` (twenty replicates at 3,000,000 steps, both trees), then `python scripts/analyse_budget.py --three-m data/runs_3m --half-m data/runs --three-m-results results/study_3m --out results/study_3m/budget_analysis.json`; the record carries the budget each side trained and the 500 k side's parity against `results/study/` |
 | [§ 8.11](08_results.md#absolute-strength) absolute strength vs random opponents | `python scripts/run_absolute_eval.py --matches 150 --seeds 1,2,3 --compare-pool results/cross_arena/blocks.json`, run from `ctde_arena/` |
 | [§ 9.10](09_reproducibility.md#dependency-audit) dependency audit | `python scripts/audit_dependencies.py` — one batched OSV query over the exact pins of `requirements-measured.lock.txt`; exits non-zero and writes nothing if the database is unreachable |
 

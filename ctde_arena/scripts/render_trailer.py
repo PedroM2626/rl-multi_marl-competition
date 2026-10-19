@@ -111,7 +111,7 @@ def scratch_data_dir(tree: Path) -> Path:
     (scratch / "checkpoints").mkdir(parents=True)
     source = tree / "data" / "checkpoints"
     if source.is_dir():
-        for item in source.glob("*.pt"):
+        for item in list(source.glob("*.npz")) or list(source.glob("*.pt")):
             shutil.copy2(item, scratch / "checkpoints" / item.name)
     return scratch
 

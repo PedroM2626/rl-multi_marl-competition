@@ -106,14 +106,10 @@ def main() -> None:
 
     seed_everything(args.seed)
 
-    import torch
-
     from marl_arena.config import CONFIG
     from marl_arena.controllers.rl_controller import save_rl_checkpoints, set_rl_training
     from marl_arena.systems.metrics import MetricsStore
     from marl_arena.systems.simulation import ArenaSimulation
-
-    torch.set_num_threads(1)
 
     fractions = sorted(float(f) for f in args.curve_at.split(","))
     next_curve = 0

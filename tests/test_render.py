@@ -62,19 +62,25 @@ def test_caption_band_is_drawn_into_the_frame_and_is_not_blank() -> None:
 
 
 def test_scratch_data_dir_copies_checkpoints_and_leaves_the_tree_alone(tmp_path) -> None:
+    """What the trailer needs is the file the runtime can actually load, copied into a scratch data dir.
+
+    A-45 moved the loadable format to .npz, so this asserts the copy carries .npz and not merely "something
+    with a policy name in it": copying the legacy .pt would leave the render loading random weights in silence.
+    """
     source = renderer.PROJECT_ROOT / "data" / "checkpoints"
     scratch = renderer.scratch_data_dir(renderer.PROJECT_ROOT)
     try:
-        copied = sorted(p.name for p in (scratch / "checkpoints").glob("*.pt"))
+        def names(directory):
+            return sorted(p.name for p in directory.glob("*.npz")) or sorted(p.name for p in directory.glob("*.pt"))
+        copied = names(scratch / "checkpoints")
         if source.is_dir():
-            assert copied == sorted(p.name for p in source.glob("*.pt"))
+            assert copied == names(source)
             assert copied, "no checkpoints were found to copy, so the test proved nothing"
-        assert (scratch / "metrics").exists() is False or True  # MetricsStore creates it lazily
+            assert all(name.endswith(".npz") for name in copied),                 f"the scratch copy is not in the format the runtime loads: {copied}"
     finally:
         import shutil
 
         shutil.rmtree(scratch.parent, ignore_errors=True)
-
 
 def test_capture_produces_a_non_blank_frame() -> None:
     """End-to-end render. Skips where Ursina is absent or no GL context can be created."""

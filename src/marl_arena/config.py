@@ -4,6 +4,12 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+# Configure common CPU thread pools before a training entry point imports JAX/XLA.
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("TF_NUM_INTRAOP_THREADS", "1")
+os.environ.setdefault("TF_NUM_INTEROP_THREADS", "1")
+os.environ.setdefault("XLA_FLAGS", "--xla_cpu_multi_thread_eigen=false")
+
 from dotenv import load_dotenv
 
 
@@ -87,8 +93,8 @@ def seed_all(seed: int) -> None:
     """Seed every RNG the training loop consumes.
 
     ArenaSimulation seeds its own random.Random and each controller gets an offset seed, but weight
-    initialisation comes from Torch's global RNG and the PPO advantage normalisation from NumPy's, so
-    a run is only reproducible if those are pinned too.
+    initialisation and action sampling use explicit JAX keys; PPO shuffling and advantage
+    normalisation use NumPy, so a run is only reproducible if those and Python's RNG are pinned.
     """
     import random as _random
 
@@ -96,13 +102,6 @@ def seed_all(seed: int) -> None:
 
     _random.seed(seed)
     _np.random.seed(seed)
-    try:
-        import torch as _torch
-    except ImportError:
-        return
-    _torch.manual_seed(seed)
-    if _torch.cuda.is_available():
-        _torch.cuda.manual_seed_all(seed)
 
 
 CONFIG = ArenaConfig()

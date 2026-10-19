@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-10-17T22:06:49+00:00",
+  "generated_utc": "2026-10-19T01:38:36+00:00",
   "purpose": "Checkpoints of the configuration ablations in docs/08_results.md#ablations, versioned so an arm can be replayed without retraining it and its capacity is recorded somewhere other than the campaign script.",
   "produced_by": "bash scripts/run_ablation_campaign.sh, then bash scripts/run_no_dr_extension.sh for the seeds that arm carries past three",
   "baseline": "results/study (both experiments, 500000 steps, domain randomisation on, RL_HIDDEN_DIM=128, seeds 1-10)",
@@ -56,23 +56,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 128,
           "files": {
-            "team_1_dte.pt": {
-              "sha256": "34ac57fbacba389eb9d8243ed714419a18ed81f9087f2aae241879595e416861",
-              "bytes": 145762,
+            "team_1_dte.npz": {
+              "sha256": "80a0c8e7c4f9bee6d31bf38a0dda5805e3058f39e24be533014d696f0b608deb",
+              "bytes": 133541,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             },
-            "team_2_ctde.pt": {
-              "sha256": "3c557870975f0d2a4b3fb8e0d3b719a4aa26034f7d436799c00f3d3efd3b726c",
-              "bytes": 304248,
+            "team_2_ctde.npz": {
+              "sha256": "3aaa8065fcc8bb45328b59ba52ef7eae9e2aae8e48a6ac588b7acf50e3e26b3c",
+              "bytes": 280120,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             },
-            "team_3_cte.pt": {
-              "sha256": "e349b6f9c20e2983a89a33115607d00cb0816b26028aa05c6b717e38d91d89e0",
-              "bytes": 323170,
+            "team_3_cte.npz": {
+              "sha256": "e29a90d591272632b7af62c14440a6b89306e2688c779a53db13820e1d5307e9",
+              "bytes": 297664,
               "hidden_dim": 128,
-              "actor_parameters": 40328
+              "actor_parameters": 0
             }
           }
         },
@@ -95,23 +95,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 128,
           "files": {
-            "team_1_ctde.pt": {
-              "sha256": "b0cd2b2128ef62b4d2be90386ed51cad5288d9b602a3d124e3f0dbc6a1101d5b",
-              "bytes": 304248,
+            "team_1_ctde.npz": {
+              "sha256": "a276d846cfbae2287a48947e0f634a345d7cfb15398031f63370184810c4dacb",
+              "bytes": 280140,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             },
-            "team_2_cte.pt": {
-              "sha256": "5b79caffd167889ecae76a1d09e0452d5e361dd6dd531d4f89c0259db2c4eebf",
-              "bytes": 323170,
+            "team_2_cte.npz": {
+              "sha256": "ca535c08cceb5e8605fd54fc90b8992cd414959e01e2cf2fb4e37935de529448",
+              "bytes": 297560,
               "hidden_dim": 128,
-              "actor_parameters": 40328
+              "actor_parameters": 0
             },
-            "team_3_dte.pt": {
-              "sha256": "5b6376c077aaaea762a18f6a68ad71cc262a56c03b6dad735004a4c0a362e9e0",
-              "bytes": 145762,
+            "team_3_dte.npz": {
+              "sha256": "fc8ac4947c989522bf407365bf02b239f900564d9440739d7776135a722d9478",
+              "bytes": 133638,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             }
           }
         },
@@ -134,23 +134,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 128,
           "files": {
-            "team_1_cte.pt": {
-              "sha256": "9e0a636f0abf14fe6698522d294a0690c98f38e34b78dc14f32ce50106c413af",
-              "bytes": 323170,
+            "team_1_cte.npz": {
+              "sha256": "f95bf8a8c60ea893ea73328437acfdfd2e369e7bbe2a610e05e7343b975a2c6f",
+              "bytes": 297637,
               "hidden_dim": 128,
-              "actor_parameters": 40328
+              "actor_parameters": 0
             },
-            "team_2_dte.pt": {
-              "sha256": "94d0bce0fa8e04e37274cc66ac81699d0397e67568f00f6d6f06931a38cbcec4",
-              "bytes": 145762,
+            "team_2_dte.npz": {
+              "sha256": "c9e4f539e68d29a4b01c06d2318a89064f9a1e044966083003a879040a418e99",
+              "bytes": 133608,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             },
-            "team_3_ctde.pt": {
-              "sha256": "83c0fddb58c6a02776709a992019ff8e87c95b288613793fcdfbc055c4345f59",
-              "bytes": 304248,
+            "team_3_ctde.npz": {
+              "sha256": "3371a78419d4ca92a8a88f5ee143cfc21f8df632123467e802e79440e5c4b751",
+              "bytes": 279968,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             }
           }
         },
@@ -173,23 +173,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 128,
           "files": {
-            "team_1_dte.pt": {
-              "sha256": "f346d872ff5c975de82b23309beb19d6c857ed467ba701e42a38d39197fe87e2",
-              "bytes": 145762,
+            "team_1_dte.npz": {
+              "sha256": "05b10fb8a0c7379597cf0199d8eebd8d989b05c11a0d803803bea5a7d0ae155c",
+              "bytes": 133523,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             },
-            "team_2_ctde.pt": {
-              "sha256": "ce2ee0234b6c37bfa37e86f3c3a9b30171458347f861613fcec6c30d82a5228d",
-              "bytes": 304248,
+            "team_2_ctde.npz": {
+              "sha256": "2de406308e60fb50b9b03f6166e26b76d1c135769b296bceb7a9ea2a4fe466eb",
+              "bytes": 280047,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             },
-            "team_3_cte.pt": {
-              "sha256": "4018d384ffb24694c0179fd7575202704ced48cba9b3fdc674e69206207db202",
-              "bytes": 323170,
+            "team_3_cte.npz": {
+              "sha256": "a512c215d9de62502db2d9484626162033cdeb23e63c40b8ebfec90a98b30f2a",
+              "bytes": 297569,
               "hidden_dim": 128,
-              "actor_parameters": 40328
+              "actor_parameters": 0
             }
           }
         },
@@ -212,23 +212,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 128,
           "files": {
-            "team_1_ctde.pt": {
-              "sha256": "4164ca4617d040b4a966c8017c4c8461f1b3a105f4ae1d10f7b5b59b52885e75",
-              "bytes": 304248,
+            "team_1_ctde.npz": {
+              "sha256": "3aa346acd91a7b1b49ff235f976708bc9dc7f34bc3d79609ad053ce964dc33ab",
+              "bytes": 280122,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             },
-            "team_2_cte.pt": {
-              "sha256": "03d22829b748a44e8e0dfbca5cf06337991d8bcba7dd538f7f8b7365b611cdf2",
-              "bytes": 323170,
+            "team_2_cte.npz": {
+              "sha256": "d948c8e67140c42c9e425a0c5c730deab3b68266b6f4436e13fb949e90326055",
+              "bytes": 297676,
               "hidden_dim": 128,
-              "actor_parameters": 40328
+              "actor_parameters": 0
             },
-            "team_3_dte.pt": {
-              "sha256": "94d0328b6c9fea56adb603fada9864824026a1ce72fcb01c0d9db8186f356e02",
-              "bytes": 145762,
+            "team_3_dte.npz": {
+              "sha256": "3c6921326c08418fd4f9b7860e5664aa032d58cd317d3b0262da1b77a3e85695",
+              "bytes": 133697,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             }
           }
         },
@@ -251,23 +251,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 128,
           "files": {
-            "team_1_cte.pt": {
-              "sha256": "aacc86c4bec34c7d7442e38f143f0c843303222df92487db4d16b365b84337f9",
-              "bytes": 323170,
+            "team_1_cte.npz": {
+              "sha256": "5fea9475a8d98e2d0e742ba44fe9e90b23cd1b0bf97fec33a866f9a39c45233a",
+              "bytes": 297603,
               "hidden_dim": 128,
-              "actor_parameters": 40328
+              "actor_parameters": 0
             },
-            "team_2_dte.pt": {
-              "sha256": "8867383e3df02d747320a6faa1af523625d23e3d698b62fdbf3a03cf03e37b3c",
-              "bytes": 145762,
+            "team_2_dte.npz": {
+              "sha256": "a12288ab3f062f5615a375cdfbbf328e02763744421917b07d6b82e8373aa805",
+              "bytes": 133542,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             },
-            "team_3_ctde.pt": {
-              "sha256": "e50d5983cda9c9977c520345581c26086fcb3d82b76520399cc7a288e26f2ea8",
-              "bytes": 304248,
+            "team_3_ctde.npz": {
+              "sha256": "854f81aa5d5c13c6614cf7672686ae0fce3375c16e0598242dc8223a2dc9fd05",
+              "bytes": 280144,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             }
           }
         },
@@ -290,23 +290,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 128,
           "files": {
-            "team_1_dte.pt": {
-              "sha256": "93d30270806e93d30b02789a87bb4aa30a41ab75d8599d77e11f0f54dbfe4141",
-              "bytes": 145762,
+            "team_1_dte.npz": {
+              "sha256": "a231f06df51ba526c418ef8da09c64cf2be974abfe156f41a0c24c8a3203ac06",
+              "bytes": 133581,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             },
-            "team_2_ctde.pt": {
-              "sha256": "680705b5e7ac155f9f678d12fe6f270820d7b43d9613691a038ef64941ca856b",
-              "bytes": 304248,
+            "team_2_ctde.npz": {
+              "sha256": "1a7485734a406161ddd34a64199fc63ff0343781e7111bbe019be43e434b05f6",
+              "bytes": 280070,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             },
-            "team_3_cte.pt": {
-              "sha256": "1dba455057b6a0d3a82266e60687c8e00db498ae862bb9d2fc29c92f1191fc74",
-              "bytes": 323170,
+            "team_3_cte.npz": {
+              "sha256": "6c1a754e703adf160703067f950ee40806606b56ce2c8255fe195f5f76fb3f1a",
+              "bytes": 297582,
               "hidden_dim": 128,
-              "actor_parameters": 40328
+              "actor_parameters": 0
             }
           }
         },
@@ -329,23 +329,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 128,
           "files": {
-            "team_1_ctde.pt": {
-              "sha256": "6c0740ad0cfea1103b3fb81442a7fd048d28daee530d5d0ef15cf0b232da49b7",
-              "bytes": 304248,
+            "team_1_ctde.npz": {
+              "sha256": "4880943f5c52be49dcad05ce3cba722e887bec7ae6097468780fbc5db8aaf5f5",
+              "bytes": 280009,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             },
-            "team_2_cte.pt": {
-              "sha256": "a55ffe06a231fd177cb08cd7c84b2fd24330001e5b1d7abbc28bb84ae8d924db",
-              "bytes": 323170,
+            "team_2_cte.npz": {
+              "sha256": "065fd19cb1c7ed557b445315153a28902dbbb52c75619669996ecd6be4b5f254",
+              "bytes": 297525,
               "hidden_dim": 128,
-              "actor_parameters": 40328
+              "actor_parameters": 0
             },
-            "team_3_dte.pt": {
-              "sha256": "9a1fa58947538630920c53e9379a5e36ac771a7e996aea37c52736c8d6507aed",
-              "bytes": 145762,
+            "team_3_dte.npz": {
+              "sha256": "d4d97252eb1ad1508d08f92436110750605544f29a83537d3fcf825b69bff2e1",
+              "bytes": 133626,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             }
           }
         },
@@ -368,23 +368,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 128,
           "files": {
-            "team_1_cte.pt": {
-              "sha256": "7e245e7435ff4342eb9a206fb22f6b4e022e46096ab8bb55ccd5b32646f9feb8",
-              "bytes": 323170,
+            "team_1_cte.npz": {
+              "sha256": "ed54a8eff29cf251c76eec41819204c798e6e97420723b7f16ce3c0eb4fb75db",
+              "bytes": 297422,
               "hidden_dim": 128,
-              "actor_parameters": 40328
+              "actor_parameters": 0
             },
-            "team_2_dte.pt": {
-              "sha256": "a676d850181d01749e2c266274780aafd135d2f45b83f2f857d78da37353f59f",
-              "bytes": 145762,
+            "team_2_dte.npz": {
+              "sha256": "49670fa56b9ef7d02af8c980bd7330dd8f194d86e59896ec18fac5e66b00eb92",
+              "bytes": 133653,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             },
-            "team_3_ctde.pt": {
-              "sha256": "a31b189939ab81683692a4fc29659a6e356325e81a02ead85078dd9bb59c8fbf",
-              "bytes": 304248,
+            "team_3_ctde.npz": {
+              "sha256": "6d6deb25d659e411844c9e1d0f9bc57693e8e6d67ea5d7fda210a14e5b8d6189",
+              "bytes": 280112,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             }
           }
         },
@@ -407,23 +407,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 128,
           "files": {
-            "team_1_dte.pt": {
-              "sha256": "2d0f5159a3eed63c308a654cbf14c337cd7c14f873281f57161470a07510b75c",
-              "bytes": 145762,
+            "team_1_dte.npz": {
+              "sha256": "b3d032bce583c2c08aed838f80eaf4558343485df0b23182b010e1308b6a2adc",
+              "bytes": 133588,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             },
-            "team_2_ctde.pt": {
-              "sha256": "e6ff77ce09246966896ddb7f00445e38887ac5c42b7d115c4d0b1373e779754e",
-              "bytes": 304248,
+            "team_2_ctde.npz": {
+              "sha256": "502842c05aac239833e974f4da58c2df10a6bfdf5458987f1abe2751e0bf716e",
+              "bytes": 279940,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             },
-            "team_3_cte.pt": {
-              "sha256": "0ed90b7a85dff91a401997f775ec246d77513421d1b624c384e58f817b2f772e",
-              "bytes": 323170,
+            "team_3_cte.npz": {
+              "sha256": "ad783666b47ab649aa389f0d497634c5d533bd84fbe6c615781f4255b3a2ce52",
+              "bytes": 297081,
               "hidden_dim": 128,
-              "actor_parameters": 40328
+              "actor_parameters": 0
             }
           }
         },
@@ -446,23 +446,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 128,
           "files": {
-            "team_1_ctde-cac.pt": {
-              "sha256": "df5d5cfefc509477ecb7b71191c8bb457afaa7f3c40e6c4e2e66b4a3490c165c",
-              "bytes": 304400,
+            "team_1_ctde-cac.npz": {
+              "sha256": "a13dfbfdb55e015a85afa4a69449411c21f1f06c99c8ebeb3246e320650c8fea",
+              "bytes": 280110,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             },
-            "team_2_ctde-comm.pt": {
-              "sha256": "564b544c004dad03765cc03d77507bcfe85242c48dfeb6514e03ca6e433559db",
-              "bytes": 313778,
+            "team_2_ctde-comm.npz": {
+              "sha256": "e9bd40617dd3b7dc990099558a81dd759871ad0e2d77b7f2366a3987c1eeb822",
+              "bytes": 288628,
               "hidden_dim": 128,
-              "actor_parameters": 37644
+              "actor_parameters": 0
             },
-            "team_3_ctde-vd.pt": {
-              "sha256": "432d2d0808e08c58e4b81ee0fb0b923f9d23870fb85bf7bda6b9ef315305af9d",
-              "bytes": 217330,
+            "team_3_ctde-vd.npz": {
+              "sha256": "4dde7f5a7679f716e9392aba4e07b107c4636e1a2ec1c3c76cc886fd185672c8",
+              "bytes": 199380,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             }
           }
         },
@@ -485,23 +485,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 128,
           "files": {
-            "team_1_ctde-comm.pt": {
-              "sha256": "0d5c44dd9b6444ce5936aec67d03d08dab3eb098567567065c2ab339c4308685",
-              "bytes": 313778,
+            "team_1_ctde-comm.npz": {
+              "sha256": "773f76f8f4b7a5e00b6b133fcd9b0356505f9a9f9da32b25748cfd259691d7b3",
+              "bytes": 288885,
               "hidden_dim": 128,
-              "actor_parameters": 37644
+              "actor_parameters": 0
             },
-            "team_2_ctde-vd.pt": {
-              "sha256": "fa888e1f414b6d126bf02ad2031dd6724b712524e76408a27e41befa9b8fb8b5",
-              "bytes": 217330,
+            "team_2_ctde-vd.npz": {
+              "sha256": "1bdf63771634ab39bb48b81dba45b64930d2804331b79003ad48f35fb051dbb2",
+              "bytes": 199446,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             },
-            "team_3_ctde-cac.pt": {
-              "sha256": "6b7b7ec27657fd381981c6418d9293560dd5bebe63a615205a1bdf5ece77d586",
-              "bytes": 304400,
+            "team_3_ctde-cac.npz": {
+              "sha256": "f08836cbeba5e8ae3f7ed4c8e19607aa37cdcb097f2b4716b66edc9db8ad37ec",
+              "bytes": 280021,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             }
           }
         },
@@ -524,23 +524,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 128,
           "files": {
-            "team_1_ctde-vd.pt": {
-              "sha256": "ff1e848b2a9170991dd714da09b5025cc1260eff9fc5a2c00d74e6bb05bd3afc",
-              "bytes": 217330,
+            "team_1_ctde-vd.npz": {
+              "sha256": "fe5a68b21ab4c03f8f7175c9af26d589bf815bc6bca9075a8138433cd471180c",
+              "bytes": 199668,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             },
-            "team_2_ctde-cac.pt": {
-              "sha256": "a7636e6f9f4054fe437dbebfc6bf6b7b0880c0c2ec9edf6f66eaa989ccbd7349",
-              "bytes": 304400,
+            "team_2_ctde-cac.npz": {
+              "sha256": "fb9f357fc160db45a34c7e3f22b50cf91fad83ead42aec027e51a8490cc61471",
+              "bytes": 280036,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             },
-            "team_3_ctde-comm.pt": {
-              "sha256": "41b245d02ca4f27ab5b631e2676003718bd7bc5613576293119112f425769627",
-              "bytes": 313778,
+            "team_3_ctde-comm.npz": {
+              "sha256": "1bcec0d2f2443d748bc215ba466252917cfd6218b1c548a0335f48a4ae4e4283",
+              "bytes": 288692,
               "hidden_dim": 128,
-              "actor_parameters": 37644
+              "actor_parameters": 0
             }
           }
         },
@@ -563,23 +563,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 128,
           "files": {
-            "team_1_ctde-cac.pt": {
-              "sha256": "70bde01fbe0e938db312e757237e0654dd3eae32699cd66f6398ceed35175fd8",
-              "bytes": 304400,
+            "team_1_ctde-cac.npz": {
+              "sha256": "9abef1104596f1a6b5c24f58a7e1e54ddb114118c9aea0a152054db5c1190790",
+              "bytes": 279745,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             },
-            "team_2_ctde-comm.pt": {
-              "sha256": "c78579fe46ffbabedb8bc4d8a553232a3965ea3e8f6ec36f9e350e8a89b07bdd",
-              "bytes": 313778,
+            "team_2_ctde-comm.npz": {
+              "sha256": "fb92eb69fb42ca1b8dfbc8cc244e970ddbbed5a6577a2b5143dce3007b2ad213",
+              "bytes": 288884,
               "hidden_dim": 128,
-              "actor_parameters": 37644
+              "actor_parameters": 0
             },
-            "team_3_ctde-vd.pt": {
-              "sha256": "2f8be6988743fe07d5c43970b16c410aba771994192aba37e9d529167a49500e",
-              "bytes": 217330,
+            "team_3_ctde-vd.npz": {
+              "sha256": "5795547282ff0a7f9f934955b0c23dea5c46907ec2d28ffd2a2315666a51e73b",
+              "bytes": 199538,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             }
           }
         },
@@ -602,23 +602,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 128,
           "files": {
-            "team_1_ctde-comm.pt": {
-              "sha256": "b71dfaab6e517fa668083ebc622c1b4bba6e12a4af23fd400b951a31d4f5f510",
-              "bytes": 313778,
+            "team_1_ctde-comm.npz": {
+              "sha256": "938bf7210ab0f854bc3203ffe56b41eca93693cf402356de5102e479aa8b99d6",
+              "bytes": 288700,
               "hidden_dim": 128,
-              "actor_parameters": 37644
+              "actor_parameters": 0
             },
-            "team_2_ctde-vd.pt": {
-              "sha256": "c54e4d5e4538e8ef98d23bbd67090e25163916d6015683b65278008454e2151b",
-              "bytes": 217330,
+            "team_2_ctde-vd.npz": {
+              "sha256": "8c475c51d70379a78191b728a152f559b404c281c338934cbcdf9d0971c2a8e3",
+              "bytes": 199411,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             },
-            "team_3_ctde-cac.pt": {
-              "sha256": "9b6e641d8195207cc49e1a6ddebace03fd09c87bc0daf3ad08a5f8fc254b4c9a",
-              "bytes": 304400,
+            "team_3_ctde-cac.npz": {
+              "sha256": "222d67bd02972d6d55ea9c25233084a392b40bd8abb5c58022329e1a77726b27",
+              "bytes": 280119,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             }
           }
         },
@@ -641,23 +641,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 128,
           "files": {
-            "team_1_ctde-vd.pt": {
-              "sha256": "8f9f1e4f01285883b0131f5b1444b899960b6bc077ea4fd888e12b6da604d913",
-              "bytes": 217330,
+            "team_1_ctde-vd.npz": {
+              "sha256": "8225705f1e9bfe9d0ae373caa81cf89fe62bcb672f7b1340d29e26149413da20",
+              "bytes": 199631,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             },
-            "team_2_ctde-cac.pt": {
-              "sha256": "1b820be4ff6932ec2a2d63e5ecb34d705625978b8b3e4b4fda753603aad2e1e9",
-              "bytes": 304400,
+            "team_2_ctde-cac.npz": {
+              "sha256": "76da9b9a5c466efff947838085a4b8bd2f30ff84f6e652c965ff35bbb7af955e",
+              "bytes": 279729,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             },
-            "team_3_ctde-comm.pt": {
-              "sha256": "0bcb750d63532324dd9034960b7000a1923a4848640ff0e057a4c3e4067331b6",
-              "bytes": 313778,
+            "team_3_ctde-comm.npz": {
+              "sha256": "447c3303d66de7c4b1bb0bbb7c7d179f235655550ecb28ce11605297d9e8d4b2",
+              "bytes": 288664,
               "hidden_dim": 128,
-              "actor_parameters": 37644
+              "actor_parameters": 0
             }
           }
         },
@@ -680,23 +680,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 128,
           "files": {
-            "team_1_ctde-cac.pt": {
-              "sha256": "415f9674cc109b33c980a4f3f1d8d0c9c24521e4313e1e279fbdc6fc1cc76d64",
-              "bytes": 304400,
+            "team_1_ctde-cac.npz": {
+              "sha256": "9e8defe32684964d7b9a5b21574f30e46937d2a922c3ee37dd9760e49cafe6fe",
+              "bytes": 279956,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             },
-            "team_2_ctde-comm.pt": {
-              "sha256": "044a301ff94acf4af29b0e070feb3bdf191b3a4bc4d812c5649aa56e66e156ed",
-              "bytes": 313778,
+            "team_2_ctde-comm.npz": {
+              "sha256": "4adb202dfa8a0e38f52bd9a3c955434196e9518f294a3b52d4752fde933ee0f3",
+              "bytes": 288735,
               "hidden_dim": 128,
-              "actor_parameters": 37644
+              "actor_parameters": 0
             },
-            "team_3_ctde-vd.pt": {
-              "sha256": "291196260ca39255319b12f35df084a2a50c2749fe076beb1a084243701dfdd6",
-              "bytes": 217330,
+            "team_3_ctde-vd.npz": {
+              "sha256": "16464568ae1c9afe788998f546408536cff12e73491e7c2f48159ed321ee0c69",
+              "bytes": 199450,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             }
           }
         },
@@ -719,23 +719,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 128,
           "files": {
-            "team_1_ctde-comm.pt": {
-              "sha256": "e7764bc917957979c44b293eadfc788dfaa81310f8a3ba26a4455b3beae4a7d7",
-              "bytes": 313778,
+            "team_1_ctde-comm.npz": {
+              "sha256": "25316c04ac66a87b6db39eb7d33d6279afb87cc15e8ab4ca1089f367a0dda150",
+              "bytes": 288955,
               "hidden_dim": 128,
-              "actor_parameters": 37644
+              "actor_parameters": 0
             },
-            "team_2_ctde-vd.pt": {
-              "sha256": "f627418fca163af8215a1263b5e3c49d1b4772d8330b23b7b3475d566b38fa5c",
-              "bytes": 217330,
+            "team_2_ctde-vd.npz": {
+              "sha256": "a9ee805c2e8ecb8dc5233bf41bcecdde0b849eb797e98bf0f0711ec7d1f72398",
+              "bytes": 199137,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             },
-            "team_3_ctde-cac.pt": {
-              "sha256": "cc647fe3b9ae5af3e85624f34809b9635c92d31d1fb8d5474720f2a3f2f79be9",
-              "bytes": 304400,
+            "team_3_ctde-cac.npz": {
+              "sha256": "5d8c26f0fad48f1f77c4ed34cdda34d23ced390ef72d8b5b571cd74bb2bbd89b",
+              "bytes": 279942,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             }
           }
         },
@@ -758,23 +758,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 128,
           "files": {
-            "team_1_ctde-vd.pt": {
-              "sha256": "18a6661512a4145d40138009f9fc9b0599675100dca532c764f0724dc642e654",
-              "bytes": 217330,
+            "team_1_ctde-vd.npz": {
+              "sha256": "1c20557d5ebd154055288d81625ccd766eb7c1f38a0bfed347e5df2ca4027580",
+              "bytes": 199602,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             },
-            "team_2_ctde-cac.pt": {
-              "sha256": "712fd1f2de85ad2022b2252fb7ae78aa6158986eb2867ef7fda7269c95d78ebd",
-              "bytes": 304400,
+            "team_2_ctde-cac.npz": {
+              "sha256": "a79350cf24277a296dd1b3f7b71b7a7712797e7aace1e2dae53f8d57f72cd43b",
+              "bytes": 280058,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             },
-            "team_3_ctde-comm.pt": {
-              "sha256": "0bd4cc857e4cd1ceb5105fafb61f973dd0baf812226d45803a3cee83abec8967",
-              "bytes": 313778,
+            "team_3_ctde-comm.npz": {
+              "sha256": "23566471d681f2600877b112e663de94f2b3ffca0784f9fd83bf2614bd6ed447",
+              "bytes": 288101,
               "hidden_dim": 128,
-              "actor_parameters": 37644
+              "actor_parameters": 0
             }
           }
         },
@@ -797,23 +797,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 128,
           "files": {
-            "team_1_ctde-cac.pt": {
-              "sha256": "fee0226dd6dfc5034c4f37db3da277969be5ba7a84f7f3bfd21a92934a06d23a",
-              "bytes": 304400,
+            "team_1_ctde-cac.npz": {
+              "sha256": "95d997b034ed363332681ae6b3304e97692b407378372ea9e47074a9f1b5a067",
+              "bytes": 280088,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             },
-            "team_2_ctde-comm.pt": {
-              "sha256": "1754b346759f4fdfcab4b487a4b1546723f332177e8704b8e8fde8ae8943650e",
-              "bytes": 313778,
+            "team_2_ctde-comm.npz": {
+              "sha256": "c3e879f114a5c71ddd2f6b9835a10fc474a238e130bd9f0b62f2738d4fec20a1",
+              "bytes": 288893,
               "hidden_dim": 128,
-              "actor_parameters": 37644
+              "actor_parameters": 0
             },
-            "team_3_ctde-vd.pt": {
-              "sha256": "bb13e97d7a74656234338b66db1d4eff36b9f7871a45a6e68eba30385029abc2",
-              "bytes": 217330,
+            "team_3_ctde-vd.npz": {
+              "sha256": "022d1ddaf92c4ab9886d41d67ac361b2c233ccc35185e3c8f0186b6a32bf6a2d",
+              "bytes": 199402,
               "hidden_dim": 128,
-              "actor_parameters": 35465
+              "actor_parameters": 0
             }
           }
         }
@@ -855,23 +855,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 64,
           "files": {
-            "team_1_dte.pt": {
-              "sha256": "7ad507f6be709f8d6e1b68b5fc3fe08d24fe152d0b88f14f4365b30e1716d92e",
-              "bytes": 42082,
+            "team_1_dte.npz": {
+              "sha256": "4c43345e94c8b36b096d34820d6633b7fa5146970608776d50d0e77e6fea7cdb",
+              "bytes": 38042,
               "hidden_dim": 64,
-              "actor_parameters": 9545
+              "actor_parameters": 0
             },
-            "team_2_ctde.pt": {
-              "sha256": "ec9e1b3f931f6bbeecbf7400944b9a4da3bbd855a93facb33c516f9a5959f3b5",
-              "bytes": 89720,
+            "team_2_ctde.npz": {
+              "sha256": "9425241a04115c10265473e7805d2603b7713855af534880113ad5373bead76a",
+              "bytes": 82014,
               "hidden_dim": 64,
-              "actor_parameters": 9545
+              "actor_parameters": 0
             },
-            "team_3_cte.pt": {
-              "sha256": "02f49b03fcd359ec64b1b0fe8e02edc0723fae487bb421705f41c7c8dbe08970",
-              "bytes": 98914,
+            "team_3_cte.npz": {
+              "sha256": "45ac1f4cf94540af80499ec3304e0d33011aeea2aaa5ab228801e296be4a6d6a",
+              "bytes": 90638,
               "hidden_dim": 64,
-              "actor_parameters": 11976
+              "actor_parameters": 0
             }
           }
         },
@@ -894,23 +894,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 64,
           "files": {
-            "team_1_ctde.pt": {
-              "sha256": "c32c300d2ba57e0bb5feada1576adb1b7eafc6ff2b2ac53d44c3f9103a287426",
-              "bytes": 89720,
+            "team_1_ctde.npz": {
+              "sha256": "df2646a83e04ba1fc8c1e1093a5bde65c98dd91c3c5c9cea23e66513339a9aaa",
+              "bytes": 81998,
               "hidden_dim": 64,
-              "actor_parameters": 9545
+              "actor_parameters": 0
             },
-            "team_2_cte.pt": {
-              "sha256": "52c43344a1da513ff1dc92ead7d56f8cba30511b60b115c4964aa5c90d009914",
-              "bytes": 98914,
+            "team_2_cte.npz": {
+              "sha256": "12b760939e1342681249a3119a5839d77956fa76c24b2d90130919b9d9d4c375",
+              "bytes": 90554,
               "hidden_dim": 64,
-              "actor_parameters": 11976
+              "actor_parameters": 0
             },
-            "team_3_dte.pt": {
-              "sha256": "be61390d4e5e5decf56ee9654885e7eaeca6e80aac3aaded40a595db3100fc4b",
-              "bytes": 42082,
+            "team_3_dte.npz": {
+              "sha256": "742b082f384e8329df2ffc860099eddd21411810cbf4557736fac192fc67d439",
+              "bytes": 38076,
               "hidden_dim": 64,
-              "actor_parameters": 9545
+              "actor_parameters": 0
             }
           }
         },
@@ -933,23 +933,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 64,
           "files": {
-            "team_1_cte.pt": {
-              "sha256": "770e3e7cf90eac5b5127946b531ee29a7391d2e830dc9accc313e4e2c30cbcef",
-              "bytes": 98914,
+            "team_1_cte.npz": {
+              "sha256": "fd4ed6068c1eadf9423e0dec66131bdc24d60a8590fd74cac58a569bf7617fdd",
+              "bytes": 90544,
               "hidden_dim": 64,
-              "actor_parameters": 11976
+              "actor_parameters": 0
             },
-            "team_2_dte.pt": {
-              "sha256": "e59b0c10386cc9906b9b044c0f60d3d7935197cbd530ee6760e40efb357d1601",
-              "bytes": 42082,
+            "team_2_dte.npz": {
+              "sha256": "63c388d4ce281a3ae34288b639a392309cbed5c5d9d58ec3c71ec77ee1b23bcc",
+              "bytes": 38014,
               "hidden_dim": 64,
-              "actor_parameters": 9545
+              "actor_parameters": 0
             },
-            "team_3_ctde.pt": {
-              "sha256": "433da5b57ff30f754d515bdae47d992bd82bb2477b123a60d8b01982ffa81a30",
-              "bytes": 89720,
+            "team_3_ctde.npz": {
+              "sha256": "68ea8960f5fbb1046412bf08b46ade147bc8c77cab5f85cebd98dc7fccfd1476",
+              "bytes": 82092,
               "hidden_dim": 64,
-              "actor_parameters": 9545
+              "actor_parameters": 0
             }
           }
         },
@@ -972,23 +972,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 64,
           "files": {
-            "team_1_ctde-cac.pt": {
-              "sha256": "fdef47d77ecb22ff259705ecfc0ac8cf64ed35256c9bb28d5e77cfd68fe99a6b",
-              "bytes": 89872,
+            "team_1_ctde-cac.npz": {
+              "sha256": "2fc9acc0f2201d77e5d62a88d99c58092210dc2dbf8beae8df6530beec3fdfd5",
+              "bytes": 82082,
               "hidden_dim": 64,
-              "actor_parameters": 9545
+              "actor_parameters": 0
             },
-            "team_2_ctde-comm.pt": {
-              "sha256": "a615b5ff2f9eb1b974d970c4d3fb8d87ddc7c1096eecf90017826b5c5017ef5c",
-              "bytes": 94898,
+            "team_2_ctde-comm.npz": {
+              "sha256": "3bbc7f1be95145d40d6f151ae81006b6d223e38c9ab4fc36226021c356695388",
+              "bytes": 86660,
               "hidden_dim": 64,
-              "actor_parameters": 10636
+              "actor_parameters": 0
             },
-            "team_3_ctde-vd.pt": {
-              "sha256": "418c4c9f2265299f91c7cabc7f78faae6e2131989fe3f4b19e3dd625a2f91d71",
-              "bytes": 62450,
+            "team_3_ctde-vd.npz": {
+              "sha256": "908ba18bee744cd38cb26c25399b901b9ad96918a189490bfa77ccb5b8f025f4",
+              "bytes": 56680,
               "hidden_dim": 64,
-              "actor_parameters": 9545
+              "actor_parameters": 0
             }
           }
         },
@@ -1011,23 +1011,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 64,
           "files": {
-            "team_1_ctde-comm.pt": {
-              "sha256": "5678d2b4e1c3a3dfc5e214495cc78c0eca6a93ebdd165be75131addf9bf0d84b",
-              "bytes": 94898,
+            "team_1_ctde-comm.npz": {
+              "sha256": "a73ff0ddfcdad817050e4cc3aba434e0e1e09db233b7051b010285a7606ce023",
+              "bytes": 86652,
               "hidden_dim": 64,
-              "actor_parameters": 10636
+              "actor_parameters": 0
             },
-            "team_2_ctde-vd.pt": {
-              "sha256": "7ac8263c8bd783e6fe6b9e31363d8eeceb61dddc796c9a71e43152e2d8a761a6",
-              "bytes": 62450,
+            "team_2_ctde-vd.npz": {
+              "sha256": "d159c985473d50305faa61542cb9be72aed4fe2160190e5ba195fd7e92c63d16",
+              "bytes": 56668,
               "hidden_dim": 64,
-              "actor_parameters": 9545
+              "actor_parameters": 0
             },
-            "team_3_ctde-cac.pt": {
-              "sha256": "1f49b23d10e4d03a6efd35f35180cc7e6742039a94be011969a7a86c1ac8336b",
-              "bytes": 89872,
+            "team_3_ctde-cac.npz": {
+              "sha256": "364fdd2d6b60eed2ffbf78897393c86043124d82eb8b788644303bd4d27a6020",
+              "bytes": 82070,
               "hidden_dim": 64,
-              "actor_parameters": 9545
+              "actor_parameters": 0
             }
           }
         },
@@ -1050,23 +1050,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 64,
           "files": {
-            "team_1_ctde-vd.pt": {
-              "sha256": "0e3ba7e0cf75416ed4d3c2830d89b1748c01f78837d2fb4bb92045c016996adf",
-              "bytes": 62450,
+            "team_1_ctde-vd.npz": {
+              "sha256": "e73db06920ff10ac7939fe2a1e78d828dea395a49a88914b708973d0839ac51c",
+              "bytes": 56641,
               "hidden_dim": 64,
-              "actor_parameters": 9545
+              "actor_parameters": 0
             },
-            "team_2_ctde-cac.pt": {
-              "sha256": "557da54109e7f0d3969b5d2c95fd264a7d251efc4015bd1e530522ce2ac4defe",
-              "bytes": 89872,
+            "team_2_ctde-cac.npz": {
+              "sha256": "4e05416eece360dc12fde1ae77525f94b56411dbfa7311958bcb6636eef18aa9",
+              "bytes": 82055,
               "hidden_dim": 64,
-              "actor_parameters": 9545
+              "actor_parameters": 0
             },
-            "team_3_ctde-comm.pt": {
-              "sha256": "2a02f732c2a8fcf03ad12666742617bcff7f45699f08bd08a925f9e014036ebf",
-              "bytes": 94898,
+            "team_3_ctde-comm.npz": {
+              "sha256": "88f27b6c01bcc060c67704d8695c07dcb5e685fb20b025f0a3ced4d828cd50c5",
+              "bytes": 86693,
               "hidden_dim": 64,
-              "actor_parameters": 10636
+              "actor_parameters": 0
             }
           }
         }
@@ -1108,23 +1108,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 256,
           "files": {
-            "team_1_dte.pt": {
-              "sha256": "4b9fd74f1cfb3b7c01cdecc34f4c568d355f49229cd51cdcfdb4b419439e0805",
-              "bytes": 549730,
+            "team_1_dte.npz": {
+              "sha256": "9eae088d0e047b3f1007a12e9f981125277e9ba7d3495a916e752fb3358dd133",
+              "bytes": 508259,
               "hidden_dim": 256,
-              "actor_parameters": 136457
+              "actor_parameters": 0
             },
-            "team_2_ctde.pt": {
-              "sha256": "fd0ba963dddc738a585a75b65f2f6908e4af0e38b1e1c70c22eb676febccfb39",
-              "bytes": 1126584,
+            "team_2_ctde.npz": {
+              "sha256": "468308cb80fc87d5d03d85f0cc8e6a29c69884265022581d4e67025d7d28ac7b",
+              "bytes": 1042192,
               "hidden_dim": 256,
-              "actor_parameters": 136457
+              "actor_parameters": 0
             },
-            "team_3_cte.pt": {
-              "sha256": "c91c63842ad3037827e8371994881cf3a5f93d68ad4cab6ac1f00790baebbc3f",
-              "bytes": 1164898,
+            "team_3_cte.npz": {
+              "sha256": "ec88e0389e77003a68c73a48a7e09f9093b266c3593b209660920810fa84c711",
+              "bytes": 1077647,
               "hidden_dim": 256,
-              "actor_parameters": 146184
+              "actor_parameters": 0
             }
           }
         },
@@ -1147,23 +1147,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 256,
           "files": {
-            "team_1_ctde.pt": {
-              "sha256": "36cbc432a43b59f324f3044afdcb66e1bd292a92deef5765a6c6e196517df3f9",
-              "bytes": 1126584,
+            "team_1_ctde.npz": {
+              "sha256": "ee9b3552c8d5f33aa14d9df501c5adb4460c6bc2b44bddfe9c9169cad4359a57",
+              "bytes": 1042437,
               "hidden_dim": 256,
-              "actor_parameters": 136457
+              "actor_parameters": 0
             },
-            "team_2_cte.pt": {
-              "sha256": "dd43339e8215491461cc49d6c1816c1fea74fc77e5d01099f361334a623d5eda",
-              "bytes": 1164898,
+            "team_2_cte.npz": {
+              "sha256": "a883171d47556024aae03b35a42207a5143db70c7dc1a09798163de6d7a10475",
+              "bytes": 1077898,
               "hidden_dim": 256,
-              "actor_parameters": 146184
+              "actor_parameters": 0
             },
-            "team_3_dte.pt": {
-              "sha256": "48f0bc4071384954c8a887f650dc13a0ffe7272f2f0d82123128b783cb8e85b2",
-              "bytes": 549730,
+            "team_3_dte.npz": {
+              "sha256": "77b2a40a6afba66b349fec07d965f1150404fe0bccc054d1fa1195537dc4c13a",
+              "bytes": 508249,
               "hidden_dim": 256,
-              "actor_parameters": 136457
+              "actor_parameters": 0
             }
           }
         },
@@ -1186,23 +1186,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 256,
           "files": {
-            "team_1_cte.pt": {
-              "sha256": "0d84fa6fa111a6fcc96f19f7f50dc75e7b72873ec9c143e46dee67702d6ca063",
-              "bytes": 1164898,
+            "team_1_cte.npz": {
+              "sha256": "330b50b9cc2d185ea0ed9f4dcd1313243f0843b379b0afc17b87e59ac8f44c50",
+              "bytes": 1077955,
               "hidden_dim": 256,
-              "actor_parameters": 146184
+              "actor_parameters": 0
             },
-            "team_2_dte.pt": {
-              "sha256": "625af4a66871cff68616e9a884fcd9f2ec187dc5ea9ca1bd091afc724b0ff7bf",
-              "bytes": 549730,
+            "team_2_dte.npz": {
+              "sha256": "1b2273159fb1604dfb8078b1f16c0149182702435ce9c49e23ad2a086ca29b5f",
+              "bytes": 508211,
               "hidden_dim": 256,
-              "actor_parameters": 136457
+              "actor_parameters": 0
             },
-            "team_3_ctde.pt": {
-              "sha256": "471d85bf4ad9a643f34bcbc6ab50d1270bc3fa243a18577eb013ad192cf77527",
-              "bytes": 1126584,
+            "team_3_ctde.npz": {
+              "sha256": "cf6c79d1c88e03d18cf927a6da15e37c20ea7cfb9fe4b5de2c99fba1c75be360",
+              "bytes": 1042089,
               "hidden_dim": 256,
-              "actor_parameters": 136457
+              "actor_parameters": 0
             }
           }
         },
@@ -1225,23 +1225,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 256,
           "files": {
-            "team_1_ctde-cac.pt": {
-              "sha256": "d80fcfb116f359abfc14fc445b15c5e2223a7b0bb504989e118c55931ae9b74b",
-              "bytes": 1126672,
+            "team_1_ctde-cac.npz": {
+              "sha256": "3fd7d53f2e62556181f635d0c7f5a9518cf1b7abdd153063bfd294a599226caa",
+              "bytes": 1042289,
               "hidden_dim": 256,
-              "actor_parameters": 136457
+              "actor_parameters": 0
             },
-            "team_2_ctde-comm.pt": {
-              "sha256": "b2971445bbfeb0f7e109286e8c2b7d6b1942a72cb7b186028e508c8f3ab400bd",
-              "bytes": 1144818,
+            "team_2_ctde-comm.npz": {
+              "sha256": "e182604d7c7c27db9a6f6d456d921c8b25ae67f72967b443ad898b90685fe08b",
+              "bytes": 1058597,
               "hidden_dim": 256,
-              "actor_parameters": 140812
+              "actor_parameters": 0
             },
-            "team_3_ctde-vd.pt": {
-              "sha256": "d100fcf1938f44f76ebefb9361430f59c1e28bb36995c91b7655b695dbda1d6e",
-              "bytes": 822002,
+            "team_3_ctde-vd.npz": {
+              "sha256": "1d2c8ae19c3bfd6121251511046806beadeb775af04cd4a49766bc158a556674",
+              "bytes": 759581,
               "hidden_dim": 256,
-              "actor_parameters": 136457
+              "actor_parameters": 0
             }
           }
         },
@@ -1264,23 +1264,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 256,
           "files": {
-            "team_1_ctde-comm.pt": {
-              "sha256": "57c1a70dc696cd5e9390d62a092a3fc9f11f9f0a1fe7fcf8979b8c20ed030359",
-              "bytes": 1144818,
+            "team_1_ctde-comm.npz": {
+              "sha256": "e7b2cf74f6c9ccbd0e4694d97d15cf42f60c82e3f4041f9b901e9dca837fd755",
+              "bytes": 1058982,
               "hidden_dim": 256,
-              "actor_parameters": 140812
+              "actor_parameters": 0
             },
-            "team_2_ctde-vd.pt": {
-              "sha256": "93dcd6dee69344733c676aaa777cb4df727be6c30545a4b112803622394c22b4",
-              "bytes": 822002,
+            "team_2_ctde-vd.npz": {
+              "sha256": "cd589bab0efca3a6aa42fdde72c93789278456d8edd2b50fdb6a30289f5dfab6",
+              "bytes": 759194,
               "hidden_dim": 256,
-              "actor_parameters": 136457
+              "actor_parameters": 0
             },
-            "team_3_ctde-cac.pt": {
-              "sha256": "b81a45c88804f0a80598e59832565e4df1a5357ebea03bdd20b5fa3c546e5cdf",
-              "bytes": 1126672,
+            "team_3_ctde-cac.npz": {
+              "sha256": "3e44e8b0ac984784810bc09eddac5b70784c3cc0e2d7e8937213c9fdd519ac45",
+              "bytes": 1041960,
               "hidden_dim": 256,
-              "actor_parameters": 136457
+              "actor_parameters": 0
             }
           }
         },
@@ -1303,23 +1303,23 @@
           "held_out_greedy_matches": 150,
           "hidden_dim": 256,
           "files": {
-            "team_1_ctde-vd.pt": {
-              "sha256": "6ed9b897bcb358daa4a225a83dee13e9b2e3a1dc123a403c0f48cf1c329a1ea4",
-              "bytes": 822002,
+            "team_1_ctde-vd.npz": {
+              "sha256": "d310cc351ccadbbd121f878da100e4a3ef5ef948fd326fbc2a324e9e0d156f4d",
+              "bytes": 759545,
               "hidden_dim": 256,
-              "actor_parameters": 136457
+              "actor_parameters": 0
             },
-            "team_2_ctde-cac.pt": {
-              "sha256": "334ae23dbe0196d78181e149be08d1bfaf927108764d4cee1d52176df6819e9c",
-              "bytes": 1126672,
+            "team_2_ctde-cac.npz": {
+              "sha256": "fcc9e80efa1c19307349518e2054badf0323bccfb3ff700d773331e3588f26db",
+              "bytes": 1041969,
               "hidden_dim": 256,
-              "actor_parameters": 136457
+              "actor_parameters": 0
             },
-            "team_3_ctde-comm.pt": {
-              "sha256": "ea8e5a78869772c416737d1983a51ab8e584553bf3b51183a07eaba57c751dc7",
-              "bytes": 1144818,
+            "team_3_ctde-comm.npz": {
+              "sha256": "d3f778f494cf15037e29f31cbca1019844c67b47d23fe28328825d54e70f3da5",
+              "bytes": 1058811,
               "hidden_dim": 256,
-              "actor_parameters": 140812
+              "actor_parameters": 0
             }
           }
         }

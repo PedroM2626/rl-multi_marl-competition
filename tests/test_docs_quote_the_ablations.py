@@ -14,6 +14,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import re
+import pytest
 import statistics
 from pathlib import Path
 
@@ -23,6 +24,7 @@ DOC = ROOT / "docs" / "08_results.md"
 COMMITTED = ROOT / "results" / "cross_arena" / "blocks10.json"
 NODR_POOL = ROOT / "results" / "cross_arena" / "no_dr_blocks.json"
 NODR_SUPERSEDED = ROOT / "results" / "cross_arena" / "no_dr_blocks3.json"
+NODR_BUDGET = ROOT / "results" / "study_3m" / "budget_analysis.json"
 NODR_CSV = ROOT / "results" / "cross_arena" / "no_dr_blocks.csv"
 
 
@@ -328,3 +330,60 @@ def test_the_superseded_three_block_numbers_are_the_rescued_record() -> None:
                   "its 0.316 came from two of three blocks landing above 0.400",
                   "DTE's SD, the smallest in the three-block table at 0.018, is 0.111 over ten blocks"):
         assert claim in text, claim
+
+def test_the_budget_tables_are_the_pair_study_record() -> None:
+    """Section 8.13's fourth arm: every cell of both budget tables is recomputed from budget_analysis.json.
+
+    This is the one place in the chapter where the *same* arms are compared at two training budgets, so the
+    numbers are load-bearing for the claim that the ordering is an estimate at a budget rather than a property
+    of the architectures -- and the drift column is only meaningful because the curves are fractions of each
+    run's own budget, which the record itself states.
+    """
+    text = " ".join(DOC.read_text(encoding="utf-8").split())
+    record = json.loads(NODR_BUDGET.read_text(encoding="utf-8"))
+    paired = record["paired_held_out"]
+    assert len(paired) == 6
+
+    rows = [[c.strip() for c in line.strip().strip("|").split("|")]
+            for line in DOC.read_text(encoding="utf-8").splitlines() if line.startswith("| exp")]
+    cells_of = [r for r in rows if len(r) == 8 and r[0].startswith("exp")]
+    assert len(cells_of) == 6, rows
+    for cells in cells_of:
+        experiment, paradigm = cells[0], cells[1]
+        key = f"{experiment}|{paradigm}"
+        row = paired[key]
+        assert float(cells[2].replace("**", "")) == pytest.approx(row["held_out_500k"], abs=5e-4), key
+        assert float(cells[3].replace("**", "")) == pytest.approx(row["held_out_3m"], abs=5e-4), key
+        assert abs(float(cells[4].replace("−", "-").replace("**", ""))) == pytest.approx(
+            abs(row["paired_diff"]), abs=5e-4), key
+        assert float(cells[5].replace("−", "-")) == pytest.approx(row["t"], abs=5e-3), key
+        assert float(cells[6]) == pytest.approx(row["p"], abs=5e-3), key
+        assert cells[7] == f"{row['seeds_below_500k']}/10", key
+        assert row["seeds"] == 10, key
+
+    assert "not one of them clears it" in text and "alpha = 0.00833" in text
+    ranking = record["ranking"]
+    assert [r["paradigm"] for r in ranking["500k"]["exp1"]] == ["DTE", "CTDE", "CTE"]
+    assert [r["paradigm"] for r in ranking["3m"]["exp1"]] == ["CTDE", "DTE", "CTE"]
+    assert [r["paradigm"] for r in ranking["500k"]["exp2"]] == ["CTDE-VD", "CTDE-Comm", "CTDE-CAC"]
+    assert [r["paradigm"] for r in ranking["3m"]["exp2"]] == ["CTDE-Comm", "CTDE-CAC", "CTDE-VD"]
+    for experiment, label in (("exp1", "DTE 0.381 > CTDE 0.326 > CTE 0.252"),
+                              ("exp2", "VD 0.367 > Comm 0.331 > CAC 0.282")):
+        assert label in text, experiment
+    assert "| **CTDE 0.429 > DTE 0.365 > CTE 0.159** |" in text
+    assert "| **Comm 0.395 > CAC 0.290 > VD 0.277** |" in text
+
+    curves = record["held_out_curves"]
+    for key, row in curves.items():
+        experiment, paradigm = key.split("|")
+        sequence = " → ".join(f"{row['3m'][fraction]:.3f}"
+                                   for fraction in ("0.25", "0.5", "0.75", "1.0"))
+        # The chapter prints negatives with a real minus sign, so the comparison has to as well.
+        drifts = " | ".join(f"{row['drift'][side]:+.3f}".replace("-", "−") for side in ("500k", "3m"))
+        claim = f"| {experiment} | {paradigm} | {sequence} | {drifts} |"
+
+        assert claim in DOC.read_text(encoding="utf-8"), claim
+
+    assert record["controls"]["budgets"]["3m"]["target_steps"] == [3_000_000]
+    assert record["controls"]["budgets"]["500k"]["target_steps"] == [500_000]
+    assert record["controls"]["half_m_parity_max_abs_delta_vs_committed_study"] <= 5e-5

@@ -1,9 +1,20 @@
 # 9. Reproducibility
 
+> **Runtime update (2026-10-18).** The current training code uses JAX 0.4.38 and an optional Rust/PyO3
+> extension for movement, obstacle correction and projectile collisions. `requirements.txt` now pins JAX;
+> `native/arena_core/` builds the Rust extension with maturin. The `.pt` files from the historical PyTorch
+> study are preserved and converted to non-pickle `.npz` checkpoints for the current runtime. The
+> measurements and environment records below describe the prior PyTorch implementation; the current
+> runtime has passed smoke/update checks but has not yet reproduced or replaced the published study.
+> JAX documents native Windows x86_64 CPU support as experimental and Windows GPU support as unavailable;
+> the verified device in this workspace is CPU. See the [JAX installation table](https://docs.jax.dev/en/latest/installation.html).
+
 ## 9.1 Environment
 
-Requirements are pinned per experiment. Root: `ursina==6.1.2`, `numpy==2.2.6`, `matplotlib==3.10.3`,
-`python-dotenv==1.0.1`, `torch==2.6.0`, `pytest==8.3.5`. `ctde_arena/` adds `mlflow==2.17.2`.
+Current requirements are pinned per experiment. Root: `ursina==6.1.2`, `numpy==2.2.6`,
+`matplotlib==3.10.3`, `python-dotenv==1.0.1`, `jax==0.4.38`, `jaxlib==0.4.38`, and
+`pytest==8.3.5`. `ctde_arena/` adds `mlflow==2.17.2`. Building the Rust extension also requires Rust
+stable and `maturin==1.15.0`.
 
 Two gaps in the declared environment:
 
@@ -15,6 +26,9 @@ Two gaps in the declared environment:
   copying the folder between machines will get a broken interpreter and a confusing error.
 
 ### Verification environment actually used
+
+This is the historical PyTorch environment that produced the published measurements. The JAX/Rust
+runtime is separate and has not produced a replacement study yet.
 
 Every number in this documentation set was produced on:
 
@@ -78,6 +92,9 @@ python -m venv .venv
 .venv/Scripts/activate            # Windows;  source .venv/bin/activate  on POSIX
 pip install -r requirements.txt
 pip install pandas                # only needed by scripts/plot_metrics.py
+pip install maturin==1.15.0
+cd native/arena_core && maturin develop --release   # after installing Rust stable
+cd ../..
 cp .env.example .env              # .env is tracked and identical to .env.example
 ```
 
@@ -108,14 +125,14 @@ of them in the same place.
 
 | Command | Experiment | What it does |
 |---|---|---|
-| `python scripts/train_rl.py --seed S` | 1 | Headless PPO training; bit-for-bit reproducible for a given seed |
+| `python scripts/train_rl.py --seed S` | 1 | Headless JAX PPO training; seeded smoke path verified, full-study replay pending |
 | `python main.py` | 1 | Ursina 3D window, greedy policies loaded from `data/checkpoints/` |
 | `python scripts/plot_metrics.py` | 1 | Reads `data/metrics/summary.json` → `exports/metrics/` |
-| `python -m pytest tests/ -q` | 1 | 125 tests |
-| `cd ctde_arena && python scripts/train_rl.py` | 2 | Same, plus MLflow logging |
+| `python -m pytest tests/ -q` | 1 | 158 passed, 1 skipped (verified 2026-10-18) |
+| `cd ctde_arena && python scripts/train_rl.py` | 2 | Same, plus MLflow scalar and checkpoint-artefact logging |
 | `cd ctde_arena && mlflow ui --backend-store-uri file:./mlruns` | 2 | Tracking UI |
 | `cd ctde_arena && python main.py` | 2 | 3D window for the CTDE variants |
-| `cd ctde_arena && python -m pytest tests/ -q` | 2 | 76 tests |
+| `cd ctde_arena && python -m pytest tests/ -q` | 2 | 78 passed, 1 skipped (verified 2026-10-18) |
 | `cd ctde_arena && docker build -t ctde-arena . && docker run --rm -v ${PWD}/data:/app/data -v ${PWD}/mlruns:/app/mlruns ctde-arena` | 2 | Containerised training |
 | `python scripts/run_experiment.py --seed S --steps N --out DIR` | either | One seeded replicate: train, then greedy held-out evaluation |
 | `python scripts/run_study.py --steps 500000 --seeds 1..10 --jobs 20` | both | Fan replicates out across processes and collect `results/study/` |
@@ -220,6 +237,18 @@ ImportError: cannot import name 'ValueDecompositionCriticNetwork' from 'marl_are
 
 ## 9.4 Test results
 
+Current JAX/Rust verification on 2026-10-18:
+
+```
+$ python -m pytest tests/ -q
+158 passed, 1 skipped in 83.99s
+$ cd ctde_arena && python -m pytest tests/ -q
+78 passed, 1 skipped in 19.46s
+```
+
+Coverage was not remeasured after the port. The following earlier transcript and coverage figures belong
+to the previous implementation.
+
 ```
 $ python -m pytest tests/ -q            # experiment 1
 140 passed, 1 skipped
@@ -234,7 +263,7 @@ commented rendering block of `requirements-measured.lock.txt` has been installed
 the render path is verified by inspection of its output, not by the suite that is quoted above. Runtimes are
 omitted from the transcript because they are dominated by whatever else is on the machine, not by the suites.
 
-Statement coverage over `src/marl_arena`, measured with `coverage run --source=src/marl_arena -m pytest`
+Historical statement coverage over `src/marl_arena`, measured with `coverage run --source=src/marl_arena -m pytest`
 (`pytest-cov` is not installed, and the two suites must still be run separately):
 
 | Tree | Statements | Missing | Coverage |
@@ -256,7 +285,7 @@ statements: `simulation.py` (33), `controllers/rl_controller.py` (15), `config.p
 `controllers/rl_controller.py` (+17) and `rl/actions.py` (+2). `ui/dashboard.py`, which was the single
 largest uncovered file for most of this repository's life, is at 100 % in both trees.
 
-What the 201 tests do **not** cover is catalogued in
+What the 238 current test cases do **not** cover is catalogued in
 [§ Coverage](11_code_audit.md#coverage). The collision solver is now geometrically verified against
 hand-computed values, but no test checks a *metric* against an independent reference — see the note at the
 end of that section on coverage not being correctness.
@@ -294,8 +323,8 @@ being checked on a machine that is not this one.
 POSIX paths, the affected records were regenerated, and run #16 is green on all three jobs — the re-derivation
 that failed on the runner is the one that has since passed on it.
 
-**What CI does not do, and why that is deliberate.** It installs `requirements.txt` (NumPy 2.2.6, Torch
-2.6.0), not `requirements-measured.lock.txt` — the question it answers is whether the code does what its
+**What CI does not do, and why that is deliberate.** It installs `requirements.txt` (NumPy 2.2.6, JAX
+0.4.38), not `requirements-measured.lock.txt` — the question it answers is whether the code does what its
 tests say, and [A-31](11_code_audit.md#the-pinned-environment-does-not-reproduce-the-recorded-runs) measured
 that the environment that would reproduce *the numbers* is not reachable from a CI container without also
 re-running the study. It excludes `ursina`, so `test_render.py`'s capture case skips for the same reason it
@@ -303,6 +332,10 @@ skips on the host (a runner has no libGL, and a half-installed Panda3D would fai
 never trains: the fastest training test in either suite is a 4,000-step update, not a run.
 
 ## 9.5 Cost of a run
+
+The measurements below are retained as records of the earlier PyTorch implementation. The JAX/Rust
+runtime is measured separately in the runtime-update note at the end of this section because JAX's first
+call compiles the update and must be excluded from steady-state throughput.
 
 Measured on this machine (32-core host, RTX 4070 Laptop GPU), CPU only, domain randomisation enabled,
 all three teams training, one process:
@@ -314,18 +347,45 @@ torch.set_num_threads(4) -> 259 steps/s
 CUDA, same loop          -> 150 steps/s
 ```
 
-One thread is fastest and the GPU is the slowest option, because a step is nine batch-1 forwards through
-a 35 k-parameter MLP: the cost is Python and kernel dispatch, not arithmetic. The full profile and the
-implication for a JAX/vectorised-env port are in
+These are historical measurements of the scalar policy path. The current code batches live teammates by
+controller; a paired 1,500-step CPU run reached 599.5 steps/s against 272.4 for the original path, with
+the same 17 matches and the same team totals. The tests and exact workload are recorded in
+[A-44](11_code_audit.md#per-agent-policy-dispatch-was-the-training-bottleneck). The 20-way study figures
+below are still the measurements from before batching; a concurrent campaign has not been re-run.
+The subsequent vectorized nearest-enemy and clear-obstacle paths improved isolated hot-function timings;
+whole-training timings were too noisy to replace the paired 599.5 steps/s measurement.
+
+### Current JAX/Rust runtime sample (2026-10-18)
+
+Measured from the repository root with `python scripts/benchmark_runtime.py --steps 1500
+--warmup-steps 1500 --repeats 2`, CPU backend, seed 42, domain randomisation off, all teams training.
+The script runs both paths in one process, warms each path before timing, and checks match boundaries,
+winners and final parameter hashes. In the first paired 1,500-step sample, Rust reached **410.6 steps/s**
+and the Python fallback **420.9 steps/s**. Both produced the same nine match boundaries and identical
+final JAX weights. This single pair does not show an end-to-end speedup from the Rust extension; at this
+team size, Python/JAX policy work and PPO updates dominate the movement and collision loops. A later pair
+overlapped a separate training process and was excluded. Use the benchmark script on an idle machine for a
+new measurement. The warm-up rates are intentionally not compared: the first route includes JAX's compile
+cost, and the second route reuses the compiled programs.
+
+This sample was slower than the older 599.5 steps/s PyTorch/batched-inference record above. These are not
+a controlled backend comparison: the JAX optimizer and action RNG changed, and only one warmed pair was
+measured here. A JAX/Rust replication campaign is still required before making a training-speed or result
+claim. On this Windows x86_64 host JAX used CPU; the [JAX platform table](https://docs.jax.dev/en/latest/installation.html)
+marks that CPU combination experimental and does not provide Windows GPU support.
+
+For the historical PyTorch runtime, one thread was the selected setting because each model is small and
+each team batch has at most three rows. The original profile and the per-agent dispatch cost are in
 [§ GPU and thread scaling](11_code_audit.md#gpu-and-thread-scaling).
 
 | Budget | Wall time, one process | Notes |
 |---|---:|---|
 | 100,000 steps (historical runs) | ≈ 4.5 min | 463 / 456 matches |
-| 500,000 steps | 90–101 min | one study replicate, **measured under 20-way concurrency** — ≈ 25 min alone |
-| 1,000,000 steps | ≈ 45 min | the superseded 5-seed budget |
-| 3,000,000 steps (code default) | ≈ 2.3 h | |
+| 500,000 steps | 90–101 min | one study replicate, **measured under 20-way concurrency**; ≈ 25 min alone on the previous scalar path |
+| 1,000,000 steps | ≈ 45 min | historical estimate for the superseded 5-seed budget |
+| 3,000,000 steps (code default) | ≈ 1.4 h | rough estimate scaled from the paired batched-path measurement |
 | 500 k × 10 seeds × 2 experiments | **117.5 min total** | 20 processes at once on 32 cores; 31.5 CPU-h training + 4.7 h evaluation |
+| 3 M × 10 seeds × 2 experiments (open-work item 7) | **1251.1 min** | `scripts/run_three_million_campaign.sh`: the committed study's twenty replicates re-trained at the budget `main.py` ships with, 49.1 steps/s per run under twenty-way load against the 85–92 the 500 k study measured. Six times the steps cost 10.6× the wall clock, and the gap is the finding: matches get longer as the policies learn to stay alive, so a step gets more expensive while nothing about the arena changes ([§ 8.13](08_results.md#budget-3m)) |
 | same again as arena v2 | **104.3 min total** | `scripts/run_arena_v2_campaign.sh`; 20 runs, same budget, three arena keys changed ([§ 8.12](08_results.md#arena-v2)) |
 | 500 k × 3 seeds × 2 experiments, one arm | **69–81 min per arm** | `scripts/run_ablation_campaign.sh`; 6 concurrent, so 24–34 min of training per replicate at 243–350 steps/s (against 85–92 steps/s under 20-way load) plus the held-out evaluation. Three arms in series: 3.9 h |
 | Round-robin replay, 6 blocks × 5 seeds, arena-v2 rule | **89 min** | `scripts/run_pool_v2_campaign.sh` phase 1: 18,000 matches, five concurrent runs per block, 17–20 min per wave of 3,000 matches. Evaluation only — the 36 checkpoints already existed |
@@ -338,10 +398,11 @@ implication for a JAX/vectorised-env port are in
 | Re-training the study for optimiser traces, 20 runs × 500 k steps | **134.8 min** | `scripts/run_traces_campaign.sh`: twenty concurrent replicates, the same seeds and budget as `results/study/`, then `analyse_traces.py` over the 60 cells. The reproduction is exact — every checkpoint hash matches the versioned set and every held-out rate matches the published one to 3.3e-05 — which is what lets a negative result about the traces be a statement about the study's own networks |
 | Readout re-measurement, 60 cells × 3 temperatures | **4 h 43 min** | `scripts/run_readout_campaign.sh`: 27,000 held-out matches (150 per cell), two processes at a time — one per tree. The arms are not equal: 246 → 485 → 684 s per cell, i.e. 1.6 → 3.2 → 4.6 s per match, and the cause is the action rule's own compute rather than longer play — the sampled matches are *shorter* (median duration 30.3 → 18.4 s, mean survival 21.6 → 13.9 s). Evaluation only, and the T = 0 arm is the control that makes the other two interpretable |
 
-The measured per-replicate throughput under full 20-way load is 82.6–92.9 steps/s against 368 steps/s for an
-isolated process, so 20 concurrent replicates cost 36.2 CPU-hours and take about as long as four sequential
-ones would. The load does not come from CPU contention — 32 cores for 20 single-threaded processes has
-headroom — but from the shared memory bandwidth of the NumPy hot loop.
+Before batching, measured per-replicate throughput under full 20-way load was 82.6–92.9 steps/s against the
+scalar path's 368 steps/s in isolation, so the published study's twenty replicates cost 36.2 CPU-hours.
+Those are historical study measurements; concurrent throughput has not been measured again after batching.
+The original profile attributed the load to shared memory bandwidth in the NumPy hot loop, with 32 cores
+for 20 single-threaded processes providing headroom.
 
 Parallelism across seeds, not throughput per step, is what makes replication affordable: the runs are
 independent and each wants exactly one core.
@@ -358,11 +419,21 @@ See [§ Unbounded transition retention](11_code_audit.md#unbounded-transition-re
 
 ## 9.6 What is and is not reproducible
 
+The reproduction records in this section document the earlier PyTorch implementation. The current JAX
+runtime is seeded and smoke-tested, but two full same-seed training runs have not yet been
+byte-compared. What [A-45](11_code_audit.md#the-runtime-swap-orphaned-the-committed-checkpoint-archive)
+settled is the part that needed no new study: every committed policy now exists twice, a `.pt` for the
+runtime that produced the tables and a byte-verified `.npz` this one can load, so § 8.10 to § 8.13 are
+replayable again. A-45 measured what that means in practice: replaying one committed `no_dr` block
+through the converted archive reproduced all 1,800 team-matches with **no difference in any recorded
+column**, while the forward pass itself differs by up to 4e-07 on logits -- enough that exact
+reproduction may be claimed for what was sampled and may not be claimed as a property of the runtime.
+
 **Reproducible bit-for-bit from the repository:** every table in [§ Results](08_results.md), because all
 of them are recomputed from committed CSV/JSON files with the commands quoted in each section.
 
-**Reproducible bit-for-bit by re-running:** `scripts/train_rl.py --seed S`, in both trees. This was
-verified, not assumed — two 4,000-step runs at seed 42 and one at seed 43, each into its own
+**Historical PyTorch replay, verified before the port:** `scripts/train_rl.py --seed S`, in both trees.
+The old implementation was checked with two 4,000-step runs at seed 42 and one at seed 43, each into its own
 `ARENA_DATA_DIR`:
 
 ```
@@ -380,12 +451,13 @@ cdet3 log 594052f04bff8d43 | team_1_ctde-cac=c0272c7ac4 team_2_ctde-comm=84dfb63
 Same seed → identical `training_log.json` **and identical checkpoint bytes** in both trees; different seed
 → different, and the slot rotation differs as it must (`42 % 3 = 0`, `43 % 3 = 1`, visible above as the
 paradigm-to-slot mapping changing between the seed-42 and seed-43 rows). `seed_all` in
-`src/marl_arena/config.py` seeds `random`, NumPy's global RNG and Torch, and `RolloutBuffer` now owns an
-explicit `np.random.Generator` instead of calling `np.random.shuffle` on the global stream — which is what
-makes the equality hold rather than merely being likely.
+`src/marl_arena/config.py` then seeded `random`, NumPy's global RNG and Torch, and `RolloutBuffer` owned an
+explicit `np.random.Generator`. The current code seeds its action generator per controller and initializes
+JAX networks with explicit keys; byte-identical full-run replay has not yet been checked for this runtime.
 
-Experiment 2 is reproducible **only with `--no-mlflow`**: an MLflow run id and wall-clock timestamps are
-written into the store, so the log is not byte-stable even when the checkpoints are.
+In the historical implementation, experiment 2 was reproducible **only with `--no-mlflow`**: an MLflow
+run id and wall-clock timestamps were written into the store, so the log was not byte-stable even when
+the checkpoints were.
 
 `ARENA_DATA_DIR` isolates each run's artefacts, so a replicate cannot silently warm-start from another's
 checkpoints, and `run_experiment.py` passes `load_checkpoints=False`.
@@ -396,18 +468,19 @@ checkpoints, and `run_experiment.py` passes `load_checkpoints=False`.
    observation-encoding change, and before `seed_all` existed. Their artefacts are versioned, so every
    number in [§ 8.2](08_results.md#historical-single-seed-runs) can be *recomputed* from them, but the run
    itself cannot be reproduced.
-2. **Any run made through MLflow.** The store records wall-clock timestamps and generates run ids; the
-   training itself is still seed-reproducible with `--no-mlflow`.
+2. **Any run made through MLflow.** The store records wall-clock timestamps and generates run ids, so its
+   run logs are not byte-stable.
 3. **No code version is recorded inside the artefacts.** Checkpoints store `{paradigm, actor, critic}` and
    nothing else; `data/PROVENANCE.json` names the promoted replicate and the study, and Git supplies the
    commit, but a checkpoint file does not carry the hash that produced it.
-4. **The declared pins are not the environment that produced the numbers.** `requirements.txt` pins
-   NumPy 2.2.6 / Torch 2.6.0; the measurements in this document were made on NumPy 1.26.4 / Torch 2.5.1, which
-   is what `requirements-measured.lock.txt` (both trees, the same 34 pins) now records. The lock does not fix
+4. **The historical measured lock differs from current requirements.** The published measurements were
+   made on NumPy 1.26.4 / Torch 2.5.1, which is what `requirements-measured.lock.txt` (both trees, the same
+   34 pins) records. Current requirements pin NumPy 2.2.6 and JAX 0.4.38. The historical lock does not fix
    CUDA/CPU selection, which stays a `.env` value, and [A-31](11_code_audit.md#the-pinned-environment-does-not-reproduce-the-recorded-runs)
    measured that swapping to the declared NumPy changes every saved checkpoint.
-5. **Torch determinism flags are not set.** Not needed at these shapes — the verification above is exact —
-   but a kernel-level change in a future Torch release is not guarded against.
+5. **The JAX port has no full-run replay result yet.** Its action generator and model initialisation are
+   seeded, but changes in compiler, hardware and update batching have not been compared across complete
+   training runs.
 
 **Derived artefacts are recomputable, and that was checked rather than assumed.** Three of the committed
 outputs are pure functions of other committed files, and each was re-derived and byte-compared:
@@ -434,15 +507,18 @@ inclination to replay 4,500 matches.
 
 ## 9.7 Artefact inventory
 
-Every versioned experiment artefact (259 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed, and each hash is of the blob Git stores rather than of the file on disk — a text artefact checked out with CRLF on Windows hashes differently from the same committed bytes on Linux, and a reader on any platform should be able to reproduce this column.
+Every versioned experiment artefact (427 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed, and each hash is of the blob Git stores rather than of the file on disk — a text artefact checked out with CRLF on Windows hashes differently from the same committed bytes on Linux, and a reader on any platform should be able to reproduce this column.
 
 **Promoted replicate.** The artefacts that match the current code. Chosen by `promote_run.py --seed median`, which is the replicate with the least L1 distance to the per-arm study means; `PROVENANCE.json` records the choice and the full run summary behind it.
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
 | `ctde_arena/data/PROVENANCE.json` | 6,372 | `dd239c8294b1cbdbb42d130026627e4b1f2d5e85b1e8c9c55c6a875b05592bfb` |
+| `ctde_arena/data/checkpoints/team_1_ctde-comm.npz` | 289,236 | `d4fb91bf64f3954ebb2534dd636c8cb9de748c8bad16943b686da2920b565c95` |
 | `ctde_arena/data/checkpoints/team_1_ctde-comm.pt` | 313,778 | `cb3fee053d68a7a3cc6e4cadbd3fdfc05a356e5a9542babad143a1aa2eb85ff1` |
+| `ctde_arena/data/checkpoints/team_2_ctde-vd.npz` | 199,531 | `cc96d2a5bf8b947b64f3ff760ef40ec2405897ff0694e87fdf925ec859b512e7` |
 | `ctde_arena/data/checkpoints/team_2_ctde-vd.pt` | 217,330 | `bf261e17c010ee0bb8f69b9d7e9ca1c4214cc9cfe0d8775038379dd71547d5f5` |
+| `ctde_arena/data/checkpoints/team_3_ctde-cac.npz` | 280,666 | `8ec889b87fe509c6c139a93a96f97027e2fee3bba42aeb0288c57d0e3ceab8ef` |
 | `ctde_arena/data/checkpoints/team_3_ctde-cac.pt` | 304,400 | `451b14b4c8aae906c3e7b135f9e814426b268354e8eb222d420b42dcb981cccb` |
 | `ctde_arena/data/exports/comparative_dashboard.png` | 269,089 | `474621e93c7817c93abedc1404cd4461b70d7258609706051e746e867438886e` |
 | `ctde_arena/data/metrics/agent_match_metrics.csv` | 18,418 | `81df004cae74a1217278898ee5dceb8eaa320d4a40508c4e103b5a6814be4281` |
@@ -450,8 +526,11 @@ Every versioned experiment artefact (259 files), with SHA-256 for integrity chec
 | `ctde_arena/data/metrics/team_match_metrics.csv` | 10,988 | `13d568cbd67b0a5a926f56e743b00426e764dc8a9f721d13b4b4c1c4cfdf449a` |
 | `ctde_arena/data/metrics/trajectory_metrics.csv` | 1,184,497 | `8549a5746b2d34cb21e013416d420260d88a1074d0bd5e2ddd2280d38181275d` |
 | `data/PROVENANCE.json` | 6,298 | `5174eaa34a3949d669145c0088f2bdd9106158f93e292d68d626bc8fe50f2727` |
+| `data/checkpoints/team_1_cte.npz` | 297,965 | `2d3ee1bd6a0f04270ac5ad16e3f292c43e241ba0c8b077391fd7bfc8ade3e8ed` |
 | `data/checkpoints/team_1_cte.pt` | 323,170 | `c978273409e60e45b9555d763d65c9ff13ba7774ffaf332ac4eccd11ffe59111` |
+| `data/checkpoints/team_2_dte.npz` | 133,746 | `670ecaa077da12d0b0e24b756ef8dc981cca93f0a774134e08d7cefde3cdc347` |
 | `data/checkpoints/team_2_dte.pt` | 145,762 | `93fc387fbfbd1cb935a271672954675230e1326565ae2680333a4ded4e4e3897` |
+| `data/checkpoints/team_3_ctde.npz` | 280,383 | `400520e13e447d3a7d71ea72e9987fea886d90d32164b105e65723638a928447` |
 | `data/checkpoints/team_3_ctde.pt` | 304,248 | `5a5273f3c73942e8fb0964bbb6a848734c58fee9cf0b52b4986f84cf8f2a4fae` |
 | `data/exports/comparative_dashboard.png` | 272,710 | `d3daf6ac475005675a5411e39173c8ff53d5349ac39fb6c1655e9193753ab783` |
 | `data/metrics/agent_match_metrics.csv` | 16,977 | `3495d7a1da60106cdeb60e3e8f7d50cc76911dc4f9e3bbd4289cc47e0a8aa2ba` |
@@ -526,8 +605,11 @@ Every versioned experiment artefact (259 files), with SHA-256 for integrity chec
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
+| `ctde_arena/data/historical_100k/checkpoints/team_1_ctde-vd.npz` | 197,916 | `0350153c98c5ac7ae1730b53e60621416fe4f8630e3033e50a765a34bec93eea` |
 | `ctde_arena/data/historical_100k/checkpoints/team_1_ctde-vd.pt` | 216,346 | `c0ab135db4674649e16db19e4ab901e4895196e298d891e62487cb1353f4bb24` |
+| `ctde_arena/data/historical_100k/checkpoints/team_2_ctde-cac.npz` | 274,222 | `23f68d440170b04044c8de1dafccdc32ee500c0206fb6c9cc4cf9c41cd6fb5e2` |
 | `ctde_arena/data/historical_100k/checkpoints/team_2_ctde-cac.pt` | 299,324 | `6352a1f04d74165fcfc08e632d5b52ecc69f3346eaa250b35fab4fae3dee29ed` |
+| `ctde_arena/data/historical_100k/checkpoints/team_3_ctde-comm.npz` | 282,455 | `2c465eb6efa5fd2a896b9fda391972b67bcfb2201f2ae16ab230088cffea7b9b` |
 | `ctde_arena/data/historical_100k/checkpoints/team_3_ctde-comm.pt` | 308,194 | `a80855ba555d8579623deb07591983c1fe3cd8c9eef1b5fd346106ae89b461a4` |
 | `ctde_arena/data/historical_100k/checkpoints/training_log.json` | 1,594 | `7b15f63a1136277c561769a779e1f39bf4f6d369e5cd148c0d07ebdc1a3842f7` |
 | `ctde_arena/data/historical_100k/exports/comparative_dashboard.png` | 272,740 | `3d0248bf4c843540393bd36b0c476a0165522419ca08732c6bb88c3f00c4c7c7` |
@@ -546,167 +628,323 @@ Every versioned experiment artefact (259 files), with SHA-256 for integrity chec
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
+| `data/training_replicates/exp1_seed1/team_1_dte.npz` | 133,760 | `a4035d1fb6c5148a220731ba7c3ecb5175d38c5dd876187d1de48eeaa5275b76` |
 | `data/training_replicates/exp1_seed1/team_1_dte.pt` | 145,762 | `e74177b814dbb3dbe2ed2e9f5af67eadb9e94583f3d5b289d025a64532a84a92` |
+| `data/training_replicates/exp1_seed1/team_2_ctde.npz` | 280,269 | `5b497de79f9a21693adf83f68721bb3ddfdcd89d78493cdf1cd9527d2eaa7880` |
 | `data/training_replicates/exp1_seed1/team_2_ctde.pt` | 304,248 | `d46a09bb4b044bb5915c82b454eda3a1c7ff741d30113477f6789c3f7dd6b3ae` |
+| `data/training_replicates/exp1_seed1/team_3_cte.npz` | 298,043 | `15dbb0e4b5beaa9cd42ac37a622e6f2cbf73bfb9e0aff22a2c24167143aae9a3` |
 | `data/training_replicates/exp1_seed1/team_3_cte.pt` | 323,170 | `e7613fa2c40276695a35672016a2d5c170c018164f2ccef10cb8b3a92c82b22d` |
+| `data/training_replicates/exp1_seed10/team_1_dte.npz` | 133,709 | `32e8b5aaba02beabbc3048309a1a746675246e6e8506ec4afdb758d1916b7063` |
 | `data/training_replicates/exp1_seed10/team_1_dte.pt` | 145,762 | `1abf8cc62a757bc4bc61dbec67142a4159fb676eac4f7a856bd3803423715348` |
+| `data/training_replicates/exp1_seed10/team_2_ctde.npz` | 280,505 | `611827fdf8ad42252adecc41fa11bf45813be03a117e64c60ad375867280bc8d` |
 | `data/training_replicates/exp1_seed10/team_2_ctde.pt` | 304,248 | `274e65e176ba5c07b356095b0bb1317bc1a77680df1629bd0344ec3f8b80fc6c` |
+| `data/training_replicates/exp1_seed10/team_3_cte.npz` | 297,943 | `c5dac63af0426dcf1270841bd0990ef4692ca2feb3f033d5a9184ccbbb7f832b` |
 | `data/training_replicates/exp1_seed10/team_3_cte.pt` | 323,170 | `3c9665d812d3719542413a00f5a7dc9da5e4001f41cd8df93599105e824595ca` |
+| `data/training_replicates/exp1_seed2/team_1_ctde.npz` | 280,275 | `d764a5712b181b429c8908598c7b7b0552c406d6b545aeeff8576e0d2d3517f4` |
 | `data/training_replicates/exp1_seed2/team_1_ctde.pt` | 304,248 | `b41e0d05894b970efecb7ecd10fc90a0f8ebc260a7f5f4de845c2b1e95b2f8bc` |
+| `data/training_replicates/exp1_seed2/team_2_cte.npz` | 298,051 | `fc6187577d6439c5562faaa71e3c37ac4ab72a963d7c0a18a4e0fd948455316f` |
 | `data/training_replicates/exp1_seed2/team_2_cte.pt` | 323,170 | `fa5584c0366c673c0b20bbe4958f295b59160eb24144e69fb90a129874f872a7` |
+| `data/training_replicates/exp1_seed2/team_3_dte.npz` | 133,772 | `639ff7f558d50279e270c3f19dc0b43b70572cde8cc8aa89d903157fda090d4b` |
 | `data/training_replicates/exp1_seed2/team_3_dte.pt` | 145,762 | `6cf716c85db237143de4c1ffda5bd0bfff7c0ed3cda43e53878365f4f24285ae` |
+| `data/training_replicates/exp1_seed3/team_1_cte.npz` | 297,969 | `06cc40f9bf87690b5b08811c465c33fc32fcc3af568ec892fd57583a51c1e15a` |
 | `data/training_replicates/exp1_seed3/team_1_cte.pt` | 323,170 | `26bec8463a68eab36e8b8181cfd97f40be8d8e05b258375de62b2a8005e75cf1` |
+| `data/training_replicates/exp1_seed3/team_2_dte.npz` | 133,730 | `db03920b205dbcbcf8ed66ea4e82c2f579f822f51345e5d16a182a4529b0effd` |
 | `data/training_replicates/exp1_seed3/team_2_dte.pt` | 145,762 | `31d610801fcf770282dea3276e8a6a0951277f286e60ceee89c801ef0192bad0` |
+| `data/training_replicates/exp1_seed3/team_3_ctde.npz` | 280,559 | `b61858755987b05fd17a4143a2805844fd675a6ab8775cd82fc61e200fb41ba8` |
 | `data/training_replicates/exp1_seed3/team_3_ctde.pt` | 304,248 | `b01513cf107717860ee511dcf692eacfcc4b7f6aa02f39caa078c44be6367b28` |
+| `data/training_replicates/exp1_seed4/team_1_dte.npz` | 133,716 | `d861bfd852df03ffcfb8a7f91bd3e9b5748c83300b67b548b177d6547b62ae42` |
 | `data/training_replicates/exp1_seed4/team_1_dte.pt` | 145,762 | `c8af14b70143e669c270335cd12db21b1771271c938b2b2493e29c8b3ccc1590` |
+| `data/training_replicates/exp1_seed4/team_2_ctde.npz` | 280,351 | `800edb6032ccdc3b213c094e356ec2199c1bff0403538b3c1c22a4ab491fa44a` |
 | `data/training_replicates/exp1_seed4/team_2_ctde.pt` | 304,248 | `0666cfb5d45545b45b41d76733e850b46bc63378b597eafb9ca5c886368e2718` |
+| `data/training_replicates/exp1_seed4/team_3_cte.npz` | 297,970 | `6335f4141f87b8d697a9c00535700b6467360f84f0074e8731950e921e7540df` |
 | `data/training_replicates/exp1_seed4/team_3_cte.pt` | 323,170 | `e91e83c806d4e368126d572343be1c4e66d5079339a8396116d1c10b6ecf01c7` |
+| `data/training_replicates/exp1_seed5/team_1_ctde.npz` | 280,309 | `fd65e995cd46fe70a2f3fd6bfb4dd6f06c8d6ad812d5df017046333e38fb89ba` |
 | `data/training_replicates/exp1_seed5/team_1_ctde.pt` | 304,248 | `1e278dd3bb5509f1b95a155531232a7d8bfbe3f086eca202e374f8e968273dd7` |
+| `data/training_replicates/exp1_seed5/team_2_cte.npz` | 298,029 | `cc5215da20d0ce9fd65a92f97f7bfe003e53daec538c96ffba8b29cc9b289f14` |
 | `data/training_replicates/exp1_seed5/team_2_cte.pt` | 323,170 | `595a178634ea529c5f55b05ddf6a67e249479d111aa1abdccac3ae63d7977f25` |
+| `data/training_replicates/exp1_seed5/team_3_dte.npz` | 133,784 | `af8cac30d416aa29a7ee5205af07deb326a200368ccac82dc2d4b9d1ebf40d8d` |
 | `data/training_replicates/exp1_seed5/team_3_dte.pt` | 145,762 | `22b72dc327e273c862089228321e797e2d4b116f3d770c201ef1f18bf9e77939` |
+| `data/training_replicates/exp1_seed6/team_1_cte.npz` | 298,134 | `5cb07b6446aff3faf1579b321fe96b66bc9a5dc94e181842338c51da16c233a6` |
 | `data/training_replicates/exp1_seed6/team_1_cte.pt` | 323,170 | `8a02c8963f8a608b316daadda3f4064eacf2955b3b4cc3b4be46d8b88e593b77` |
+| `data/training_replicates/exp1_seed6/team_2_dte.npz` | 133,722 | `4b03dfbdf1bfdda49b16efc7b2fa5573de22468bcd06406025abd04da50f0b16` |
 | `data/training_replicates/exp1_seed6/team_2_dte.pt` | 145,762 | `5e4ea3bf157826833cc577e51fa80623178e94e5cc979260892cc1b5d7bc445f` |
+| `data/training_replicates/exp1_seed6/team_3_ctde.npz` | 280,408 | `253de60c63b074c677c7dcd3e71be7f2fca404cb29f97d870153028f5210f608` |
 | `data/training_replicates/exp1_seed6/team_3_ctde.pt` | 304,248 | `a6b23a421642da04dc4257956615280d28acd885185c7da43e676f3eeb077396` |
+| `data/training_replicates/exp1_seed7/team_1_dte.npz` | 133,764 | `d004eaeddce8f970e1220f9e477b82b2258669a9289b045e95f8b5bed31c3de5` |
 | `data/training_replicates/exp1_seed7/team_1_dte.pt` | 145,762 | `9b72962182b4547d9c0dbd5baa15890b3eb62279534c6c0d437bbbdd6745ab74` |
+| `data/training_replicates/exp1_seed7/team_2_ctde.npz` | 280,411 | `9535ff3814f0e72946756ffa003293853abe0a1c7c2e7b451e2411795b62d97f` |
 | `data/training_replicates/exp1_seed7/team_2_ctde.pt` | 304,248 | `420d02ca60393ef2433e650c6df76aecbcb785c11d6f4b06b3db0764ad8eaa6f` |
+| `data/training_replicates/exp1_seed7/team_3_cte.npz` | 297,959 | `fa83b61cdf61fbff14a986152b06f4278b4ee6cb96c53c3fd48f88852b54db7e` |
 | `data/training_replicates/exp1_seed7/team_3_cte.pt` | 323,170 | `22a6392d8a63319aceacc39857c1636bdb15cb147988cd3fb7aadbaee4b05887` |
+| `data/training_replicates/exp1_seed8/team_1_ctde.npz` | 280,279 | `e49715dd4b8e2b2e3e61fa8bafd0da516970d1611031b487281c3ee253db3351` |
 | `data/training_replicates/exp1_seed8/team_1_ctde.pt` | 304,248 | `65765a1ee0b6976e40674dce1f82576bc20fc2f7e39adc86f1f50a208ec16ddb` |
+| `data/training_replicates/exp1_seed8/team_2_cte.npz` | 298,096 | `8d11b51653abcca4fa82dc1bb28f064f968624ac34d2906ffcbb83136d86bf1c` |
 | `data/training_replicates/exp1_seed8/team_2_cte.pt` | 323,170 | `d3da6724d37a26c763a084c49035dd1357b097299a4305efb3bc3587f2fce3db` |
+| `data/training_replicates/exp1_seed8/team_3_dte.npz` | 133,784 | `e66854bb2b64437313d101ef50a8a66160e9115817301ce55a5ec120107d0d3f` |
 | `data/training_replicates/exp1_seed8/team_3_dte.pt` | 145,762 | `e7a6663165b19c85e7dfcf72259d4dcd2720dd7071dcc7c7258698ab1a2550d1` |
+| `data/training_replicates/exp1_seed9/team_1_cte.npz` | 297,965 | `2d3ee1bd6a0f04270ac5ad16e3f292c43e241ba0c8b077391fd7bfc8ade3e8ed` |
 | `data/training_replicates/exp1_seed9/team_1_cte.pt` | 323,170 | `c978273409e60e45b9555d763d65c9ff13ba7774ffaf332ac4eccd11ffe59111` |
+| `data/training_replicates/exp1_seed9/team_2_dte.npz` | 133,746 | `670ecaa077da12d0b0e24b756ef8dc981cca93f0a774134e08d7cefde3cdc347` |
 | `data/training_replicates/exp1_seed9/team_2_dte.pt` | 145,762 | `93fc387fbfbd1cb935a271672954675230e1326565ae2680333a4ded4e4e3897` |
+| `data/training_replicates/exp1_seed9/team_3_ctde.npz` | 280,383 | `400520e13e447d3a7d71ea72e9987fea886d90d32164b105e65723638a928447` |
 | `data/training_replicates/exp1_seed9/team_3_ctde.pt` | 304,248 | `5a5273f3c73942e8fb0964bbb6a848734c58fee9cf0b52b4986f84cf8f2a4fae` |
+| `data/training_replicates/exp2_seed1/team_1_ctde-cac.npz` | 280,568 | `15eb3fc55514589fc3705f2143991897f790525e0d9f642f96b3d82f88151a61` |
 | `data/training_replicates/exp2_seed1/team_1_ctde-cac.pt` | 304,400 | `7c3eb6de6b1388f1b37eb3c334f8185ffce543829a4db796d907f4ae3498c054` |
+| `data/training_replicates/exp2_seed1/team_2_ctde-comm.npz` | 289,296 | `72de3e21dd18f330731e5be285c93def4471c63908e9a76789cae6338a39b8ef` |
 | `data/training_replicates/exp2_seed1/team_2_ctde-comm.pt` | 313,778 | `baae4dda211f526da971587b58fbba379f1f9b2a06b3530d3310f4d3bda38b2f` |
+| `data/training_replicates/exp2_seed1/team_3_ctde-vd.npz` | 199,471 | `af910f4245e4372233a05933cfadd0c4dc0214a42b28bbc95caaf4f5d1f864aa` |
 | `data/training_replicates/exp2_seed1/team_3_ctde-vd.pt` | 217,330 | `e7d7790c164ee0cbfb6c2346a2f947e4c9ac2b1c976d6ddededb0a0c286d4c8d` |
+| `data/training_replicates/exp2_seed10/team_1_ctde-cac.npz` | 280,386 | `6ea5be85178eb9d6a6341d0a84ba1ab90c8091b8ffafad8048d76c89aa6442d7` |
 | `data/training_replicates/exp2_seed10/team_1_ctde-cac.pt` | 304,400 | `587aba36f719d9a9af3c01fec30866d0fc403682f12b15e2e40cc2e371db577a` |
+| `data/training_replicates/exp2_seed10/team_2_ctde-comm.npz` | 289,271 | `da82fed8365e89b8c3ef0b06e3fe99dee777dbc98866f6fe2bab59fa7bea5f44` |
 | `data/training_replicates/exp2_seed10/team_2_ctde-comm.pt` | 313,778 | `43f12f9a7b62380042640f27a1230f03991ed81c301d4b95bac6b3242a238a15` |
+| `data/training_replicates/exp2_seed10/team_3_ctde-vd.npz` | 199,634 | `1baa4d18188f921406c335c17c2014178e3497a55aa3aa05f2ec7b237b854e4a` |
 | `data/training_replicates/exp2_seed10/team_3_ctde-vd.pt` | 217,330 | `8bef5ccb2d26c2857c9918393004b3daa6de731bb0a4e0061b0f1c86c7309f6c` |
+| `data/training_replicates/exp2_seed2/team_1_ctde-comm.npz` | 289,236 | `d4fb91bf64f3954ebb2534dd636c8cb9de748c8bad16943b686da2920b565c95` |
 | `data/training_replicates/exp2_seed2/team_1_ctde-comm.pt` | 313,778 | `cb3fee053d68a7a3cc6e4cadbd3fdfc05a356e5a9542babad143a1aa2eb85ff1` |
+| `data/training_replicates/exp2_seed2/team_2_ctde-vd.npz` | 199,531 | `cc96d2a5bf8b947b64f3ff760ef40ec2405897ff0694e87fdf925ec859b512e7` |
 | `data/training_replicates/exp2_seed2/team_2_ctde-vd.pt` | 217,330 | `bf261e17c010ee0bb8f69b9d7e9ca1c4214cc9cfe0d8775038379dd71547d5f5` |
+| `data/training_replicates/exp2_seed2/team_3_ctde-cac.npz` | 280,666 | `8ec889b87fe509c6c139a93a96f97027e2fee3bba42aeb0288c57d0e3ceab8ef` |
 | `data/training_replicates/exp2_seed2/team_3_ctde-cac.pt` | 304,400 | `451b14b4c8aae906c3e7b135f9e814426b268354e8eb222d420b42dcb981cccb` |
+| `data/training_replicates/exp2_seed3/team_1_ctde-vd.npz` | 199,533 | `7d33ed284592dbc4abb9ea0f1549bf808fc6dbd95d16ec8fb03bc5753f62754e` |
 | `data/training_replicates/exp2_seed3/team_1_ctde-vd.pt` | 217,330 | `14feaae8a70a214b4eba09ac9cf41d14ef2ea1837e8d8c4bf3dbdc7524950e1a` |
+| `data/training_replicates/exp2_seed3/team_2_ctde-cac.npz` | 280,407 | `e2d512e7a7548ef306437d6659a5c76742902db602e629940d31f2fe14725034` |
 | `data/training_replicates/exp2_seed3/team_2_ctde-cac.pt` | 304,400 | `77c98639e3d2e86d64c1640a266127fd255549e2709007ade734f9562b95682e` |
+| `data/training_replicates/exp2_seed3/team_3_ctde-comm.npz` | 289,332 | `61cf9af6e0f5414a4f01f5bef0979f28df2a916ad2e79483f0b7381df0e5aadf` |
 | `data/training_replicates/exp2_seed3/team_3_ctde-comm.pt` | 313,778 | `d06e8316b86063471a03b28bab4a1c3652b09a80e8666c8202dfcc3d1dab2c70` |
+| `data/training_replicates/exp2_seed4/team_1_ctde-cac.npz` | 280,321 | `d82d0ef839abb4e725f210d2f839eda8383cf07057c627a0275174b9451f3184` |
 | `data/training_replicates/exp2_seed4/team_1_ctde-cac.pt` | 304,400 | `1cd86ec8561ae603768bb1f37baa23484d1599cd96bc7f9668d46b4768948106` |
+| `data/training_replicates/exp2_seed4/team_2_ctde-comm.npz` | 289,305 | `52e8f19b1fba80f5271decf4455af9d9cdcdd9729abec3d94de5a88a78151f01` |
 | `data/training_replicates/exp2_seed4/team_2_ctde-comm.pt` | 313,778 | `1ee645fd0afe4da4a574b92ba72427221778555135ccef12b1729c0de7279136` |
+| `data/training_replicates/exp2_seed4/team_3_ctde-vd.npz` | 199,617 | `883b9772c3c2de901a3b42d8362834e831c4616f71fbc94f77124f3a7d6e547d` |
 | `data/training_replicates/exp2_seed4/team_3_ctde-vd.pt` | 217,330 | `319e3e0beb661142d823dcce8e38c7356c0cc49833aa88b1d0bba307f8f83a9d` |
+| `data/training_replicates/exp2_seed5/team_1_ctde-comm.npz` | 289,353 | `72ada863a3d08ac83cc8ed05ab234d2323c2427b2d7aa0e828848d0d0bc8e72b` |
 | `data/training_replicates/exp2_seed5/team_1_ctde-comm.pt` | 313,778 | `3d9bb400a0694e5deda58bca87e6965c2699760bee62fe3b1dd03c5387be1667` |
+| `data/training_replicates/exp2_seed5/team_2_ctde-vd.npz` | 199,502 | `6517f11487d3773efc9ff7337f362d4f99a1d47294c86e81226d36955910bad3` |
 | `data/training_replicates/exp2_seed5/team_2_ctde-vd.pt` | 217,330 | `c8f3caa5094976f0bffc34aa4c8a0e1d6b5c653cb9ee65fbd5a30b8f345198de` |
+| `data/training_replicates/exp2_seed5/team_3_ctde-cac.npz` | 280,357 | `039d24246395cb1e80c70ef84a81af6b63961d18ec527871430e3cd0c8d96884` |
 | `data/training_replicates/exp2_seed5/team_3_ctde-cac.pt` | 304,400 | `3898cd7a3ae8a1877c08e41a620e49cc5533be420cd0f10a7773147cc12cdca0` |
+| `data/training_replicates/exp2_seed6/team_1_ctde-vd.npz` | 199,431 | `3a2efd9923280786496b9d8076b849afc0a332f9db4afa95d25749cfa76a595c` |
 | `data/training_replicates/exp2_seed6/team_1_ctde-vd.pt` | 217,330 | `fa1ccd9518a7b121b31bcd3ec2c6d2f21a50839a90deb83fe20d9f8631e22aa8` |
+| `data/training_replicates/exp2_seed6/team_2_ctde-cac.npz` | 280,428 | `33376e2b5a5c63a399078a48e2a2ec9e6322a8f2418368a0fd791cb183851cf1` |
 | `data/training_replicates/exp2_seed6/team_2_ctde-cac.pt` | 304,400 | `15331b2abd0aa3312261ecf9cdee069bbff0fcff52119d7047a42c4918f09e08` |
+| `data/training_replicates/exp2_seed6/team_3_ctde-comm.npz` | 289,229 | `6fcdc17ab1048712ea80d3df84cedf83f94bea226dd6011a38e269df122a75d8` |
 | `data/training_replicates/exp2_seed6/team_3_ctde-comm.pt` | 313,778 | `a39b067f11a28d3316f184248d262ce2c9bca044f8287fb4140c19805d051ed6` |
+| `data/training_replicates/exp2_seed7/team_1_ctde-cac.npz` | 280,421 | `05701d0cfae84ae5a84dc10783b5c5adaf9a83ad4199e220e89301e9422dffda` |
 | `data/training_replicates/exp2_seed7/team_1_ctde-cac.pt` | 304,400 | `bcb973516fc3e1141a24dda3243373de730ca6f52476f6227dc7162152506bf1` |
+| `data/training_replicates/exp2_seed7/team_2_ctde-comm.npz` | 289,402 | `3ce224636cd54006da3d8399268ce36cf2990c29d5da0e6808e0db13682dcb5b` |
 | `data/training_replicates/exp2_seed7/team_2_ctde-comm.pt` | 313,778 | `5a22ef5f10fb96b78892ffb58e351876072573fd958f2874d8e7877c1794d14b` |
+| `data/training_replicates/exp2_seed7/team_3_ctde-vd.npz` | 199,607 | `e51b4c5df2ad3e9783aa4e6decba447b334fd8cc92f65ad8c1add8bd8b806da3` |
 | `data/training_replicates/exp2_seed7/team_3_ctde-vd.pt` | 217,330 | `d49f1fdfdd579ea443e6e253df7d814650b736551f51cd8f32a7e980b93f31c7` |
+| `data/training_replicates/exp2_seed8/team_1_ctde-comm.npz` | 289,243 | `e725a9613cb6c185c43a8fb9bf06a09e4ce6b3ea521725b996e43dd229347c6c` |
 | `data/training_replicates/exp2_seed8/team_1_ctde-comm.pt` | 313,778 | `a93f6b1000f5034e7bcd7b5349daf3529b3f63c1f91d14091bdc4b958d0818d8` |
+| `data/training_replicates/exp2_seed8/team_2_ctde-vd.npz` | 199,794 | `ad3821f2b4bdff5e7d501aaa8d67c4294207ab7c5e7cebeabb4ff32578245a5a` |
 | `data/training_replicates/exp2_seed8/team_2_ctde-vd.pt` | 217,330 | `a414c55167c467d3670d54e6987fa5143919a672355d6037e68fa698d591975d` |
+| `data/training_replicates/exp2_seed8/team_3_ctde-cac.npz` | 280,666 | `284f55ebd0fc96ae9e5505367cf6a331e9a1391a5f97be6679a50dcaf3c6580c` |
 | `data/training_replicates/exp2_seed8/team_3_ctde-cac.pt` | 304,400 | `2d0195ccf746bcca740148ab91f0a42e616370a369ede29a074fa5f1eb9bc761` |
+| `data/training_replicates/exp2_seed9/team_1_ctde-vd.npz` | 199,717 | `ff77860fea8117d360e6cf5945f1f62495b7bb926dafcf0a0d2d2317e65a6481` |
 | `data/training_replicates/exp2_seed9/team_1_ctde-vd.pt` | 217,330 | `a1be765533b7a16476aef4a4cbfd53bb347ba62e78159ab3104a104176cb0651` |
+| `data/training_replicates/exp2_seed9/team_2_ctde-cac.npz` | 280,372 | `c8e32d3efc7aa56d805d32983c384553546e5ebec2e5e1793ddbd3c16d0e16c6` |
 | `data/training_replicates/exp2_seed9/team_2_ctde-cac.pt` | 304,400 | `9d5fd224b499af62b0a28de54e5a14ed9db402ebc808f085c939b9629ccd0318` |
+| `data/training_replicates/exp2_seed9/team_3_ctde-comm.npz` | 289,321 | `56ec5b7380833e4bb19335837da15fdaace6c55e93a1eae647b17934a8796339` |
 | `data/training_replicates/exp2_seed9/team_3_ctde-comm.pt` | 313,778 | `6f9355bd19f43e84b5d18519ebc175e26048d00eb5cbb67f0b5a9ed13bcc1760` |
 
 **Ablation checkpoints behind the arm tables.** The three configuration-ablation sets of [§ 8.13](08_results.md#ablations), versioned for the same reason as the round-robin blocks -- the scratch they were trained into is git-ignored -- so an arm can be replayed without retraining it: twenty sets for `no_dr` (seeds 1-10 of both experiments) and six for each capacity arm (seeds 1-3). `MANIFEST.json` beside them records each set's single override, the hidden width read out of its own weights, the arm's seed coverage, and a SHA-256 per file; a `.pt` in this repository stores no capacity metadata, which is the one thing that distinguishes `narrow_64` and `wide_256` from the control.
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
-| `data/campaign_replicates/MANIFEST.json` | 45,531 | `c68f43ed4eb3c58ea3f59b719402577234b4c735db9d98c7f4cd775a2a9f1431` |
+| `data/campaign_replicates/MANIFEST.json` | 45,237 | `01b167874bd78b6a2cb55a44c91a06c4cae5b406eb4e53c134486232f71aab80` |
+| `data/campaign_replicates/narrow_64/exp1_seed1/team_1_dte.npz` | 38,042 | `4c43345e94c8b36b096d34820d6633b7fa5146970608776d50d0e77e6fea7cdb` |
 | `data/campaign_replicates/narrow_64/exp1_seed1/team_1_dte.pt` | 42,082 | `7ad507f6be709f8d6e1b68b5fc3fe08d24fe152d0b88f14f4365b30e1716d92e` |
+| `data/campaign_replicates/narrow_64/exp1_seed1/team_2_ctde.npz` | 82,014 | `9425241a04115c10265473e7805d2603b7713855af534880113ad5373bead76a` |
 | `data/campaign_replicates/narrow_64/exp1_seed1/team_2_ctde.pt` | 89,720 | `ec9e1b3f931f6bbeecbf7400944b9a4da3bbd855a93facb33c516f9a5959f3b5` |
+| `data/campaign_replicates/narrow_64/exp1_seed1/team_3_cte.npz` | 90,638 | `45ac1f4cf94540af80499ec3304e0d33011aeea2aaa5ab228801e296be4a6d6a` |
 | `data/campaign_replicates/narrow_64/exp1_seed1/team_3_cte.pt` | 98,914 | `02f49b03fcd359ec64b1b0fe8e02edc0723fae487bb421705f41c7c8dbe08970` |
+| `data/campaign_replicates/narrow_64/exp1_seed2/team_1_ctde.npz` | 81,998 | `df2646a83e04ba1fc8c1e1093a5bde65c98dd91c3c5c9cea23e66513339a9aaa` |
 | `data/campaign_replicates/narrow_64/exp1_seed2/team_1_ctde.pt` | 89,720 | `c32c300d2ba57e0bb5feada1576adb1b7eafc6ff2b2ac53d44c3f9103a287426` |
+| `data/campaign_replicates/narrow_64/exp1_seed2/team_2_cte.npz` | 90,554 | `12b760939e1342681249a3119a5839d77956fa76c24b2d90130919b9d9d4c375` |
 | `data/campaign_replicates/narrow_64/exp1_seed2/team_2_cte.pt` | 98,914 | `52c43344a1da513ff1dc92ead7d56f8cba30511b60b115c4964aa5c90d009914` |
+| `data/campaign_replicates/narrow_64/exp1_seed2/team_3_dte.npz` | 38,076 | `742b082f384e8329df2ffc860099eddd21411810cbf4557736fac192fc67d439` |
 | `data/campaign_replicates/narrow_64/exp1_seed2/team_3_dte.pt` | 42,082 | `be61390d4e5e5decf56ee9654885e7eaeca6e80aac3aaded40a595db3100fc4b` |
+| `data/campaign_replicates/narrow_64/exp1_seed3/team_1_cte.npz` | 90,544 | `fd4ed6068c1eadf9423e0dec66131bdc24d60a8590fd74cac58a569bf7617fdd` |
 | `data/campaign_replicates/narrow_64/exp1_seed3/team_1_cte.pt` | 98,914 | `770e3e7cf90eac5b5127946b531ee29a7391d2e830dc9accc313e4e2c30cbcef` |
+| `data/campaign_replicates/narrow_64/exp1_seed3/team_2_dte.npz` | 38,014 | `63c388d4ce281a3ae34288b639a392309cbed5c5d9d58ec3c71ec77ee1b23bcc` |
 | `data/campaign_replicates/narrow_64/exp1_seed3/team_2_dte.pt` | 42,082 | `e59b0c10386cc9906b9b044c0f60d3d7935197cbd530ee6760e40efb357d1601` |
+| `data/campaign_replicates/narrow_64/exp1_seed3/team_3_ctde.npz` | 82,092 | `68ea8960f5fbb1046412bf08b46ade147bc8c77cab5f85cebd98dc7fccfd1476` |
 | `data/campaign_replicates/narrow_64/exp1_seed3/team_3_ctde.pt` | 89,720 | `433da5b57ff30f754d515bdae47d992bd82bb2477b123a60d8b01982ffa81a30` |
+| `data/campaign_replicates/narrow_64/exp2_seed1/team_1_ctde-cac.npz` | 82,082 | `2fc9acc0f2201d77e5d62a88d99c58092210dc2dbf8beae8df6530beec3fdfd5` |
 | `data/campaign_replicates/narrow_64/exp2_seed1/team_1_ctde-cac.pt` | 89,872 | `fdef47d77ecb22ff259705ecfc0ac8cf64ed35256c9bb28d5e77cfd68fe99a6b` |
+| `data/campaign_replicates/narrow_64/exp2_seed1/team_2_ctde-comm.npz` | 86,660 | `3bbc7f1be95145d40d6f151ae81006b6d223e38c9ab4fc36226021c356695388` |
 | `data/campaign_replicates/narrow_64/exp2_seed1/team_2_ctde-comm.pt` | 94,898 | `a615b5ff2f9eb1b974d970c4d3fb8d87ddc7c1096eecf90017826b5c5017ef5c` |
+| `data/campaign_replicates/narrow_64/exp2_seed1/team_3_ctde-vd.npz` | 56,680 | `908ba18bee744cd38cb26c25399b901b9ad96918a189490bfa77ccb5b8f025f4` |
 | `data/campaign_replicates/narrow_64/exp2_seed1/team_3_ctde-vd.pt` | 62,450 | `418c4c9f2265299f91c7cabc7f78faae6e2131989fe3f4b19e3dd625a2f91d71` |
+| `data/campaign_replicates/narrow_64/exp2_seed2/team_1_ctde-comm.npz` | 86,652 | `a73ff0ddfcdad817050e4cc3aba434e0e1e09db233b7051b010285a7606ce023` |
 | `data/campaign_replicates/narrow_64/exp2_seed2/team_1_ctde-comm.pt` | 94,898 | `5678d2b4e1c3a3dfc5e214495cc78c0eca6a93ebdd165be75131addf9bf0d84b` |
+| `data/campaign_replicates/narrow_64/exp2_seed2/team_2_ctde-vd.npz` | 56,668 | `d159c985473d50305faa61542cb9be72aed4fe2160190e5ba195fd7e92c63d16` |
 | `data/campaign_replicates/narrow_64/exp2_seed2/team_2_ctde-vd.pt` | 62,450 | `7ac8263c8bd783e6fe6b9e31363d8eeceb61dddc796c9a71e43152e2d8a761a6` |
+| `data/campaign_replicates/narrow_64/exp2_seed2/team_3_ctde-cac.npz` | 82,070 | `364fdd2d6b60eed2ffbf78897393c86043124d82eb8b788644303bd4d27a6020` |
 | `data/campaign_replicates/narrow_64/exp2_seed2/team_3_ctde-cac.pt` | 89,872 | `1f49b23d10e4d03a6efd35f35180cc7e6742039a94be011969a7a86c1ac8336b` |
+| `data/campaign_replicates/narrow_64/exp2_seed3/team_1_ctde-vd.npz` | 56,641 | `e73db06920ff10ac7939fe2a1e78d828dea395a49a88914b708973d0839ac51c` |
 | `data/campaign_replicates/narrow_64/exp2_seed3/team_1_ctde-vd.pt` | 62,450 | `0e3ba7e0cf75416ed4d3c2830d89b1748c01f78837d2fb4bb92045c016996adf` |
+| `data/campaign_replicates/narrow_64/exp2_seed3/team_2_ctde-cac.npz` | 82,055 | `4e05416eece360dc12fde1ae77525f94b56411dbfa7311958bcb6636eef18aa9` |
 | `data/campaign_replicates/narrow_64/exp2_seed3/team_2_ctde-cac.pt` | 89,872 | `557da54109e7f0d3969b5d2c95fd264a7d251efc4015bd1e530522ce2ac4defe` |
+| `data/campaign_replicates/narrow_64/exp2_seed3/team_3_ctde-comm.npz` | 86,693 | `88f27b6c01bcc060c67704d8695c07dcb5e685fb20b025f0a3ced4d828cd50c5` |
 | `data/campaign_replicates/narrow_64/exp2_seed3/team_3_ctde-comm.pt` | 94,898 | `2a02f732c2a8fcf03ad12666742617bcff7f45699f08bd08a925f9e014036ebf` |
+| `data/campaign_replicates/no_dr/exp1_seed1/team_1_dte.npz` | 133,541 | `80a0c8e7c4f9bee6d31bf38a0dda5805e3058f39e24be533014d696f0b608deb` |
 | `data/campaign_replicates/no_dr/exp1_seed1/team_1_dte.pt` | 145,762 | `34ac57fbacba389eb9d8243ed714419a18ed81f9087f2aae241879595e416861` |
+| `data/campaign_replicates/no_dr/exp1_seed1/team_2_ctde.npz` | 280,120 | `3aaa8065fcc8bb45328b59ba52ef7eae9e2aae8e48a6ac588b7acf50e3e26b3c` |
 | `data/campaign_replicates/no_dr/exp1_seed1/team_2_ctde.pt` | 304,248 | `3c557870975f0d2a4b3fb8e0d3b719a4aa26034f7d436799c00f3d3efd3b726c` |
+| `data/campaign_replicates/no_dr/exp1_seed1/team_3_cte.npz` | 297,664 | `e29a90d591272632b7af62c14440a6b89306e2688c779a53db13820e1d5307e9` |
 | `data/campaign_replicates/no_dr/exp1_seed1/team_3_cte.pt` | 323,170 | `e349b6f9c20e2983a89a33115607d00cb0816b26028aa05c6b717e38d91d89e0` |
+| `data/campaign_replicates/no_dr/exp1_seed10/team_1_dte.npz` | 133,588 | `b3d032bce583c2c08aed838f80eaf4558343485df0b23182b010e1308b6a2adc` |
 | `data/campaign_replicates/no_dr/exp1_seed10/team_1_dte.pt` | 145,762 | `2d0f5159a3eed63c308a654cbf14c337cd7c14f873281f57161470a07510b75c` |
+| `data/campaign_replicates/no_dr/exp1_seed10/team_2_ctde.npz` | 279,940 | `502842c05aac239833e974f4da58c2df10a6bfdf5458987f1abe2751e0bf716e` |
 | `data/campaign_replicates/no_dr/exp1_seed10/team_2_ctde.pt` | 304,248 | `e6ff77ce09246966896ddb7f00445e38887ac5c42b7d115c4d0b1373e779754e` |
+| `data/campaign_replicates/no_dr/exp1_seed10/team_3_cte.npz` | 297,081 | `ad783666b47ab649aa389f0d497634c5d533bd84fbe6c615781f4255b3a2ce52` |
 | `data/campaign_replicates/no_dr/exp1_seed10/team_3_cte.pt` | 323,170 | `0ed90b7a85dff91a401997f775ec246d77513421d1b624c384e58f817b2f772e` |
+| `data/campaign_replicates/no_dr/exp1_seed2/team_1_ctde.npz` | 280,140 | `a276d846cfbae2287a48947e0f634a345d7cfb15398031f63370184810c4dacb` |
 | `data/campaign_replicates/no_dr/exp1_seed2/team_1_ctde.pt` | 304,248 | `b0cd2b2128ef62b4d2be90386ed51cad5288d9b602a3d124e3f0dbc6a1101d5b` |
+| `data/campaign_replicates/no_dr/exp1_seed2/team_2_cte.npz` | 297,560 | `ca535c08cceb5e8605fd54fc90b8992cd414959e01e2cf2fb4e37935de529448` |
 | `data/campaign_replicates/no_dr/exp1_seed2/team_2_cte.pt` | 323,170 | `5b79caffd167889ecae76a1d09e0452d5e361dd6dd531d4f89c0259db2c4eebf` |
+| `data/campaign_replicates/no_dr/exp1_seed2/team_3_dte.npz` | 133,638 | `fc8ac4947c989522bf407365bf02b239f900564d9440739d7776135a722d9478` |
 | `data/campaign_replicates/no_dr/exp1_seed2/team_3_dte.pt` | 145,762 | `5b6376c077aaaea762a18f6a68ad71cc262a56c03b6dad735004a4c0a362e9e0` |
+| `data/campaign_replicates/no_dr/exp1_seed3/team_1_cte.npz` | 297,637 | `f95bf8a8c60ea893ea73328437acfdfd2e369e7bbe2a610e05e7343b975a2c6f` |
 | `data/campaign_replicates/no_dr/exp1_seed3/team_1_cte.pt` | 323,170 | `9e0a636f0abf14fe6698522d294a0690c98f38e34b78dc14f32ce50106c413af` |
+| `data/campaign_replicates/no_dr/exp1_seed3/team_2_dte.npz` | 133,608 | `c9e4f539e68d29a4b01c06d2318a89064f9a1e044966083003a879040a418e99` |
 | `data/campaign_replicates/no_dr/exp1_seed3/team_2_dte.pt` | 145,762 | `94d0bce0fa8e04e37274cc66ac81699d0397e67568f00f6d6f06931a38cbcec4` |
+| `data/campaign_replicates/no_dr/exp1_seed3/team_3_ctde.npz` | 279,968 | `3371a78419d4ca92a8a88f5ee143cfc21f8df632123467e802e79440e5c4b751` |
 | `data/campaign_replicates/no_dr/exp1_seed3/team_3_ctde.pt` | 304,248 | `83c0fddb58c6a02776709a992019ff8e87c95b288613793fcdfbc055c4345f59` |
+| `data/campaign_replicates/no_dr/exp1_seed4/team_1_dte.npz` | 133,523 | `05b10fb8a0c7379597cf0199d8eebd8d989b05c11a0d803803bea5a7d0ae155c` |
 | `data/campaign_replicates/no_dr/exp1_seed4/team_1_dte.pt` | 145,762 | `f346d872ff5c975de82b23309beb19d6c857ed467ba701e42a38d39197fe87e2` |
+| `data/campaign_replicates/no_dr/exp1_seed4/team_2_ctde.npz` | 280,047 | `2de406308e60fb50b9b03f6166e26b76d1c135769b296bceb7a9ea2a4fe466eb` |
 | `data/campaign_replicates/no_dr/exp1_seed4/team_2_ctde.pt` | 304,248 | `ce2ee0234b6c37bfa37e86f3c3a9b30171458347f861613fcec6c30d82a5228d` |
+| `data/campaign_replicates/no_dr/exp1_seed4/team_3_cte.npz` | 297,569 | `a512c215d9de62502db2d9484626162033cdeb23e63c40b8ebfec90a98b30f2a` |
 | `data/campaign_replicates/no_dr/exp1_seed4/team_3_cte.pt` | 323,170 | `4018d384ffb24694c0179fd7575202704ced48cba9b3fdc674e69206207db202` |
+| `data/campaign_replicates/no_dr/exp1_seed5/team_1_ctde.npz` | 280,122 | `3aa346acd91a7b1b49ff235f976708bc9dc7f34bc3d79609ad053ce964dc33ab` |
 | `data/campaign_replicates/no_dr/exp1_seed5/team_1_ctde.pt` | 304,248 | `4164ca4617d040b4a966c8017c4c8461f1b3a105f4ae1d10f7b5b59b52885e75` |
+| `data/campaign_replicates/no_dr/exp1_seed5/team_2_cte.npz` | 297,676 | `d948c8e67140c42c9e425a0c5c730deab3b68266b6f4436e13fb949e90326055` |
 | `data/campaign_replicates/no_dr/exp1_seed5/team_2_cte.pt` | 323,170 | `03d22829b748a44e8e0dfbca5cf06337991d8bcba7dd538f7f8b7365b611cdf2` |
+| `data/campaign_replicates/no_dr/exp1_seed5/team_3_dte.npz` | 133,697 | `3c6921326c08418fd4f9b7860e5664aa032d58cd317d3b0262da1b77a3e85695` |
 | `data/campaign_replicates/no_dr/exp1_seed5/team_3_dte.pt` | 145,762 | `94d0328b6c9fea56adb603fada9864824026a1ce72fcb01c0d9db8186f356e02` |
+| `data/campaign_replicates/no_dr/exp1_seed6/team_1_cte.npz` | 297,603 | `5fea9475a8d98e2d0e742ba44fe9e90b23cd1b0bf97fec33a866f9a39c45233a` |
 | `data/campaign_replicates/no_dr/exp1_seed6/team_1_cte.pt` | 323,170 | `aacc86c4bec34c7d7442e38f143f0c843303222df92487db4d16b365b84337f9` |
+| `data/campaign_replicates/no_dr/exp1_seed6/team_2_dte.npz` | 133,542 | `a12288ab3f062f5615a375cdfbbf328e02763744421917b07d6b82e8373aa805` |
 | `data/campaign_replicates/no_dr/exp1_seed6/team_2_dte.pt` | 145,762 | `8867383e3df02d747320a6faa1af523625d23e3d698b62fdbf3a03cf03e37b3c` |
+| `data/campaign_replicates/no_dr/exp1_seed6/team_3_ctde.npz` | 280,144 | `854f81aa5d5c13c6614cf7672686ae0fce3375c16e0598242dc8223a2dc9fd05` |
 | `data/campaign_replicates/no_dr/exp1_seed6/team_3_ctde.pt` | 304,248 | `e50d5983cda9c9977c520345581c26086fcb3d82b76520399cc7a288e26f2ea8` |
+| `data/campaign_replicates/no_dr/exp1_seed7/team_1_dte.npz` | 133,581 | `a231f06df51ba526c418ef8da09c64cf2be974abfe156f41a0c24c8a3203ac06` |
 | `data/campaign_replicates/no_dr/exp1_seed7/team_1_dte.pt` | 145,762 | `93d30270806e93d30b02789a87bb4aa30a41ab75d8599d77e11f0f54dbfe4141` |
+| `data/campaign_replicates/no_dr/exp1_seed7/team_2_ctde.npz` | 280,070 | `1a7485734a406161ddd34a64199fc63ff0343781e7111bbe019be43e434b05f6` |
 | `data/campaign_replicates/no_dr/exp1_seed7/team_2_ctde.pt` | 304,248 | `680705b5e7ac155f9f678d12fe6f270820d7b43d9613691a038ef64941ca856b` |
+| `data/campaign_replicates/no_dr/exp1_seed7/team_3_cte.npz` | 297,582 | `6c1a754e703adf160703067f950ee40806606b56ce2c8255fe195f5f76fb3f1a` |
 | `data/campaign_replicates/no_dr/exp1_seed7/team_3_cte.pt` | 323,170 | `1dba455057b6a0d3a82266e60687c8e00db498ae862bb9d2fc29c92f1191fc74` |
+| `data/campaign_replicates/no_dr/exp1_seed8/team_1_ctde.npz` | 280,009 | `4880943f5c52be49dcad05ce3cba722e887bec7ae6097468780fbc5db8aaf5f5` |
 | `data/campaign_replicates/no_dr/exp1_seed8/team_1_ctde.pt` | 304,248 | `6c0740ad0cfea1103b3fb81442a7fd048d28daee530d5d0ef15cf0b232da49b7` |
+| `data/campaign_replicates/no_dr/exp1_seed8/team_2_cte.npz` | 297,525 | `065fd19cb1c7ed557b445315153a28902dbbb52c75619669996ecd6be4b5f254` |
 | `data/campaign_replicates/no_dr/exp1_seed8/team_2_cte.pt` | 323,170 | `a55ffe06a231fd177cb08cd7c84b2fd24330001e5b1d7abbc28bb84ae8d924db` |
+| `data/campaign_replicates/no_dr/exp1_seed8/team_3_dte.npz` | 133,626 | `d4d97252eb1ad1508d08f92436110750605544f29a83537d3fcf825b69bff2e1` |
 | `data/campaign_replicates/no_dr/exp1_seed8/team_3_dte.pt` | 145,762 | `9a1fa58947538630920c53e9379a5e36ac771a7e996aea37c52736c8d6507aed` |
+| `data/campaign_replicates/no_dr/exp1_seed9/team_1_cte.npz` | 297,422 | `ed54a8eff29cf251c76eec41819204c798e6e97420723b7f16ce3c0eb4fb75db` |
 | `data/campaign_replicates/no_dr/exp1_seed9/team_1_cte.pt` | 323,170 | `7e245e7435ff4342eb9a206fb22f6b4e022e46096ab8bb55ccd5b32646f9feb8` |
+| `data/campaign_replicates/no_dr/exp1_seed9/team_2_dte.npz` | 133,653 | `49670fa56b9ef7d02af8c980bd7330dd8f194d86e59896ec18fac5e66b00eb92` |
 | `data/campaign_replicates/no_dr/exp1_seed9/team_2_dte.pt` | 145,762 | `a676d850181d01749e2c266274780aafd135d2f45b83f2f857d78da37353f59f` |
+| `data/campaign_replicates/no_dr/exp1_seed9/team_3_ctde.npz` | 280,112 | `6d6deb25d659e411844c9e1d0f9bc57693e8e6d67ea5d7fda210a14e5b8d6189` |
 | `data/campaign_replicates/no_dr/exp1_seed9/team_3_ctde.pt` | 304,248 | `a31b189939ab81683692a4fc29659a6e356325e81a02ead85078dd9bb59c8fbf` |
+| `data/campaign_replicates/no_dr/exp2_seed1/team_1_ctde-cac.npz` | 280,110 | `a13dfbfdb55e015a85afa4a69449411c21f1f06c99c8ebeb3246e320650c8fea` |
 | `data/campaign_replicates/no_dr/exp2_seed1/team_1_ctde-cac.pt` | 304,400 | `df5d5cfefc509477ecb7b71191c8bb457afaa7f3c40e6c4e2e66b4a3490c165c` |
+| `data/campaign_replicates/no_dr/exp2_seed1/team_2_ctde-comm.npz` | 288,628 | `e9bd40617dd3b7dc990099558a81dd759871ad0e2d77b7f2366a3987c1eeb822` |
 | `data/campaign_replicates/no_dr/exp2_seed1/team_2_ctde-comm.pt` | 313,778 | `564b544c004dad03765cc03d77507bcfe85242c48dfeb6514e03ca6e433559db` |
+| `data/campaign_replicates/no_dr/exp2_seed1/team_3_ctde-vd.npz` | 199,380 | `4dde7f5a7679f716e9392aba4e07b107c4636e1a2ec1c3c76cc886fd185672c8` |
 | `data/campaign_replicates/no_dr/exp2_seed1/team_3_ctde-vd.pt` | 217,330 | `432d2d0808e08c58e4b81ee0fb0b923f9d23870fb85bf7bda6b9ef315305af9d` |
+| `data/campaign_replicates/no_dr/exp2_seed10/team_1_ctde-cac.npz` | 280,088 | `95d997b034ed363332681ae6b3304e97692b407378372ea9e47074a9f1b5a067` |
 | `data/campaign_replicates/no_dr/exp2_seed10/team_1_ctde-cac.pt` | 304,400 | `fee0226dd6dfc5034c4f37db3da277969be5ba7a84f7f3bfd21a92934a06d23a` |
+| `data/campaign_replicates/no_dr/exp2_seed10/team_2_ctde-comm.npz` | 288,893 | `c3e879f114a5c71ddd2f6b9835a10fc474a238e130bd9f0b62f2738d4fec20a1` |
 | `data/campaign_replicates/no_dr/exp2_seed10/team_2_ctde-comm.pt` | 313,778 | `1754b346759f4fdfcab4b487a4b1546723f332177e8704b8e8fde8ae8943650e` |
+| `data/campaign_replicates/no_dr/exp2_seed10/team_3_ctde-vd.npz` | 199,402 | `022d1ddaf92c4ab9886d41d67ac361b2c233ccc35185e3c8f0186b6a32bf6a2d` |
 | `data/campaign_replicates/no_dr/exp2_seed10/team_3_ctde-vd.pt` | 217,330 | `bb13e97d7a74656234338b66db1d4eff36b9f7871a45a6e68eba30385029abc2` |
+| `data/campaign_replicates/no_dr/exp2_seed2/team_1_ctde-comm.npz` | 288,885 | `773f76f8f4b7a5e00b6b133fcd9b0356505f9a9f9da32b25748cfd259691d7b3` |
 | `data/campaign_replicates/no_dr/exp2_seed2/team_1_ctde-comm.pt` | 313,778 | `0d5c44dd9b6444ce5936aec67d03d08dab3eb098567567065c2ab339c4308685` |
+| `data/campaign_replicates/no_dr/exp2_seed2/team_2_ctde-vd.npz` | 199,446 | `1bdf63771634ab39bb48b81dba45b64930d2804331b79003ad48f35fb051dbb2` |
 | `data/campaign_replicates/no_dr/exp2_seed2/team_2_ctde-vd.pt` | 217,330 | `fa888e1f414b6d126bf02ad2031dd6724b712524e76408a27e41befa9b8fb8b5` |
+| `data/campaign_replicates/no_dr/exp2_seed2/team_3_ctde-cac.npz` | 280,021 | `f08836cbeba5e8ae3f7ed4c8e19607aa37cdcb097f2b4716b66edc9db8ad37ec` |
 | `data/campaign_replicates/no_dr/exp2_seed2/team_3_ctde-cac.pt` | 304,400 | `6b7b7ec27657fd381981c6418d9293560dd5bebe63a615205a1bdf5ece77d586` |
+| `data/campaign_replicates/no_dr/exp2_seed3/team_1_ctde-vd.npz` | 199,668 | `fe5a68b21ab4c03f8f7175c9af26d589bf815bc6bca9075a8138433cd471180c` |
 | `data/campaign_replicates/no_dr/exp2_seed3/team_1_ctde-vd.pt` | 217,330 | `ff1e848b2a9170991dd714da09b5025cc1260eff9fc5a2c00d74e6bb05bd3afc` |
+| `data/campaign_replicates/no_dr/exp2_seed3/team_2_ctde-cac.npz` | 280,036 | `fb9f357fc160db45a34c7e3f22b50cf91fad83ead42aec027e51a8490cc61471` |
 | `data/campaign_replicates/no_dr/exp2_seed3/team_2_ctde-cac.pt` | 304,400 | `a7636e6f9f4054fe437dbebfc6bf6b7b0880c0c2ec9edf6f66eaa989ccbd7349` |
+| `data/campaign_replicates/no_dr/exp2_seed3/team_3_ctde-comm.npz` | 288,692 | `1bcec0d2f2443d748bc215ba466252917cfd6218b1c548a0335f48a4ae4e4283` |
 | `data/campaign_replicates/no_dr/exp2_seed3/team_3_ctde-comm.pt` | 313,778 | `41b245d02ca4f27ab5b631e2676003718bd7bc5613576293119112f425769627` |
+| `data/campaign_replicates/no_dr/exp2_seed4/team_1_ctde-cac.npz` | 279,745 | `9abef1104596f1a6b5c24f58a7e1e54ddb114118c9aea0a152054db5c1190790` |
 | `data/campaign_replicates/no_dr/exp2_seed4/team_1_ctde-cac.pt` | 304,400 | `70bde01fbe0e938db312e757237e0654dd3eae32699cd66f6398ceed35175fd8` |
+| `data/campaign_replicates/no_dr/exp2_seed4/team_2_ctde-comm.npz` | 288,884 | `fb92eb69fb42ca1b8dfbc8cc244e970ddbbed5a6577a2b5143dce3007b2ad213` |
 | `data/campaign_replicates/no_dr/exp2_seed4/team_2_ctde-comm.pt` | 313,778 | `c78579fe46ffbabedb8bc4d8a553232a3965ea3e8f6ec36f9e350e8a89b07bdd` |
+| `data/campaign_replicates/no_dr/exp2_seed4/team_3_ctde-vd.npz` | 199,538 | `5795547282ff0a7f9f934955b0c23dea5c46907ec2d28ffd2a2315666a51e73b` |
 | `data/campaign_replicates/no_dr/exp2_seed4/team_3_ctde-vd.pt` | 217,330 | `2f8be6988743fe07d5c43970b16c410aba771994192aba37e9d529167a49500e` |
+| `data/campaign_replicates/no_dr/exp2_seed5/team_1_ctde-comm.npz` | 288,700 | `938bf7210ab0f854bc3203ffe56b41eca93693cf402356de5102e479aa8b99d6` |
 | `data/campaign_replicates/no_dr/exp2_seed5/team_1_ctde-comm.pt` | 313,778 | `b71dfaab6e517fa668083ebc622c1b4bba6e12a4af23fd400b951a31d4f5f510` |
+| `data/campaign_replicates/no_dr/exp2_seed5/team_2_ctde-vd.npz` | 199,411 | `8c475c51d70379a78191b728a152f559b404c281c338934cbcdf9d0971c2a8e3` |
 | `data/campaign_replicates/no_dr/exp2_seed5/team_2_ctde-vd.pt` | 217,330 | `c54e4d5e4538e8ef98d23bbd67090e25163916d6015683b65278008454e2151b` |
+| `data/campaign_replicates/no_dr/exp2_seed5/team_3_ctde-cac.npz` | 280,119 | `222d67bd02972d6d55ea9c25233084a392b40bd8abb5c58022329e1a77726b27` |
 | `data/campaign_replicates/no_dr/exp2_seed5/team_3_ctde-cac.pt` | 304,400 | `9b6e641d8195207cc49e1a6ddebace03fd09c87bc0daf3ad08a5f8fc254b4c9a` |
+| `data/campaign_replicates/no_dr/exp2_seed6/team_1_ctde-vd.npz` | 199,631 | `8225705f1e9bfe9d0ae373caa81cf89fe62bcb672f7b1340d29e26149413da20` |
 | `data/campaign_replicates/no_dr/exp2_seed6/team_1_ctde-vd.pt` | 217,330 | `8f9f1e4f01285883b0131f5b1444b899960b6bc077ea4fd888e12b6da604d913` |
+| `data/campaign_replicates/no_dr/exp2_seed6/team_2_ctde-cac.npz` | 279,729 | `76da9b9a5c466efff947838085a4b8bd2f30ff84f6e652c965ff35bbb7af955e` |
 | `data/campaign_replicates/no_dr/exp2_seed6/team_2_ctde-cac.pt` | 304,400 | `1b820be4ff6932ec2a2d63e5ecb34d705625978b8b3e4b4fda753603aad2e1e9` |
+| `data/campaign_replicates/no_dr/exp2_seed6/team_3_ctde-comm.npz` | 288,664 | `447c3303d66de7c4b1bb0bbb7c7d179f235655550ecb28ce11605297d9e8d4b2` |
 | `data/campaign_replicates/no_dr/exp2_seed6/team_3_ctde-comm.pt` | 313,778 | `0bcb750d63532324dd9034960b7000a1923a4848640ff0e057a4c3e4067331b6` |
+| `data/campaign_replicates/no_dr/exp2_seed7/team_1_ctde-cac.npz` | 279,956 | `9e8defe32684964d7b9a5b21574f30e46937d2a922c3ee37dd9760e49cafe6fe` |
 | `data/campaign_replicates/no_dr/exp2_seed7/team_1_ctde-cac.pt` | 304,400 | `415f9674cc109b33c980a4f3f1d8d0c9c24521e4313e1e279fbdc6fc1cc76d64` |
+| `data/campaign_replicates/no_dr/exp2_seed7/team_2_ctde-comm.npz` | 288,735 | `4adb202dfa8a0e38f52bd9a3c955434196e9518f294a3b52d4752fde933ee0f3` |
 | `data/campaign_replicates/no_dr/exp2_seed7/team_2_ctde-comm.pt` | 313,778 | `044a301ff94acf4af29b0e070feb3bdf191b3a4bc4d812c5649aa56e66e156ed` |
+| `data/campaign_replicates/no_dr/exp2_seed7/team_3_ctde-vd.npz` | 199,450 | `16464568ae1c9afe788998f546408536cff12e73491e7c2f48159ed321ee0c69` |
 | `data/campaign_replicates/no_dr/exp2_seed7/team_3_ctde-vd.pt` | 217,330 | `291196260ca39255319b12f35df084a2a50c2749fe076beb1a084243701dfdd6` |
+| `data/campaign_replicates/no_dr/exp2_seed8/team_1_ctde-comm.npz` | 288,955 | `25316c04ac66a87b6db39eb7d33d6279afb87cc15e8ab4ca1089f367a0dda150` |
 | `data/campaign_replicates/no_dr/exp2_seed8/team_1_ctde-comm.pt` | 313,778 | `e7764bc917957979c44b293eadfc788dfaa81310f8a3ba26a4455b3beae4a7d7` |
+| `data/campaign_replicates/no_dr/exp2_seed8/team_2_ctde-vd.npz` | 199,137 | `a9ee805c2e8ecb8dc5233bf41bcecdde0b849eb797e98bf0f0711ec7d1f72398` |
 | `data/campaign_replicates/no_dr/exp2_seed8/team_2_ctde-vd.pt` | 217,330 | `f627418fca163af8215a1263b5e3c49d1b4772d8330b23b7b3475d566b38fa5c` |
+| `data/campaign_replicates/no_dr/exp2_seed8/team_3_ctde-cac.npz` | 279,942 | `5d8c26f0fad48f1f77c4ed34cdda34d23ced390ef72d8b5b571cd74bb2bbd89b` |
 | `data/campaign_replicates/no_dr/exp2_seed8/team_3_ctde-cac.pt` | 304,400 | `cc647fe3b9ae5af3e85624f34809b9635c92d31d1fb8d5474720f2a3f2f79be9` |
+| `data/campaign_replicates/no_dr/exp2_seed9/team_1_ctde-vd.npz` | 199,602 | `1c20557d5ebd154055288d81625ccd766eb7c1f38a0bfed347e5df2ca4027580` |
 | `data/campaign_replicates/no_dr/exp2_seed9/team_1_ctde-vd.pt` | 217,330 | `18a6661512a4145d40138009f9fc9b0599675100dca532c764f0724dc642e654` |
+| `data/campaign_replicates/no_dr/exp2_seed9/team_2_ctde-cac.npz` | 280,058 | `a79350cf24277a296dd1b3f7b71b7a7712797e7aace1e2dae53f8d57f72cd43b` |
 | `data/campaign_replicates/no_dr/exp2_seed9/team_2_ctde-cac.pt` | 304,400 | `712fd1f2de85ad2022b2252fb7ae78aa6158986eb2867ef7fda7269c95d78ebd` |
+| `data/campaign_replicates/no_dr/exp2_seed9/team_3_ctde-comm.npz` | 288,101 | `23566471d681f2600877b112e663de94f2b3ffca0784f9fd83bf2614bd6ed447` |
 | `data/campaign_replicates/no_dr/exp2_seed9/team_3_ctde-comm.pt` | 313,778 | `0bd4cc857e4cd1ceb5105fafb61f973dd0baf812226d45803a3cee83abec8967` |
+| `data/campaign_replicates/wide_256/exp1_seed1/team_1_dte.npz` | 508,259 | `9eae088d0e047b3f1007a12e9f981125277e9ba7d3495a916e752fb3358dd133` |
 | `data/campaign_replicates/wide_256/exp1_seed1/team_1_dte.pt` | 549,730 | `4b9fd74f1cfb3b7c01cdecc34f4c568d355f49229cd51cdcfdb4b419439e0805` |
+| `data/campaign_replicates/wide_256/exp1_seed1/team_2_ctde.npz` | 1,042,192 | `468308cb80fc87d5d03d85f0cc8e6a29c69884265022581d4e67025d7d28ac7b` |
 | `data/campaign_replicates/wide_256/exp1_seed1/team_2_ctde.pt` | 1,126,584 | `fd0ba963dddc738a585a75b65f2f6908e4af0e38b1e1c70c22eb676febccfb39` |
+| `data/campaign_replicates/wide_256/exp1_seed1/team_3_cte.npz` | 1,077,647 | `ec88e0389e77003a68c73a48a7e09f9093b266c3593b209660920810fa84c711` |
 | `data/campaign_replicates/wide_256/exp1_seed1/team_3_cte.pt` | 1,164,898 | `c91c63842ad3037827e8371994881cf3a5f93d68ad4cab6ac1f00790baebbc3f` |
+| `data/campaign_replicates/wide_256/exp1_seed2/team_1_ctde.npz` | 1,042,437 | `ee9b3552c8d5f33aa14d9df501c5adb4460c6bc2b44bddfe9c9169cad4359a57` |
 | `data/campaign_replicates/wide_256/exp1_seed2/team_1_ctde.pt` | 1,126,584 | `36cbc432a43b59f324f3044afdcb66e1bd292a92deef5765a6c6e196517df3f9` |
+| `data/campaign_replicates/wide_256/exp1_seed2/team_2_cte.npz` | 1,077,898 | `a883171d47556024aae03b35a42207a5143db70c7dc1a09798163de6d7a10475` |
 | `data/campaign_replicates/wide_256/exp1_seed2/team_2_cte.pt` | 1,164,898 | `dd43339e8215491461cc49d6c1816c1fea74fc77e5d01099f361334a623d5eda` |
+| `data/campaign_replicates/wide_256/exp1_seed2/team_3_dte.npz` | 508,249 | `77b2a40a6afba66b349fec07d965f1150404fe0bccc054d1fa1195537dc4c13a` |
 | `data/campaign_replicates/wide_256/exp1_seed2/team_3_dte.pt` | 549,730 | `48f0bc4071384954c8a887f650dc13a0ffe7272f2f0d82123128b783cb8e85b2` |
+| `data/campaign_replicates/wide_256/exp1_seed3/team_1_cte.npz` | 1,077,955 | `330b50b9cc2d185ea0ed9f4dcd1313243f0843b379b0afc17b87e59ac8f44c50` |
 | `data/campaign_replicates/wide_256/exp1_seed3/team_1_cte.pt` | 1,164,898 | `0d84fa6fa111a6fcc96f19f7f50dc75e7b72873ec9c143e46dee67702d6ca063` |
+| `data/campaign_replicates/wide_256/exp1_seed3/team_2_dte.npz` | 508,211 | `1b2273159fb1604dfb8078b1f16c0149182702435ce9c49e23ad2a086ca29b5f` |
 | `data/campaign_replicates/wide_256/exp1_seed3/team_2_dte.pt` | 549,730 | `625af4a66871cff68616e9a884fcd9f2ec187dc5ea9ca1bd091afc724b0ff7bf` |
+| `data/campaign_replicates/wide_256/exp1_seed3/team_3_ctde.npz` | 1,042,089 | `cf6c79d1c88e03d18cf927a6da15e37c20ea7cfb9fe4b5de2c99fba1c75be360` |
 | `data/campaign_replicates/wide_256/exp1_seed3/team_3_ctde.pt` | 1,126,584 | `471d85bf4ad9a643f34bcbc6ab50d1270bc3fa243a18577eb013ad192cf77527` |
+| `data/campaign_replicates/wide_256/exp2_seed1/team_1_ctde-cac.npz` | 1,042,289 | `3fd7d53f2e62556181f635d0c7f5a9518cf1b7abdd153063bfd294a599226caa` |
 | `data/campaign_replicates/wide_256/exp2_seed1/team_1_ctde-cac.pt` | 1,126,672 | `d80fcfb116f359abfc14fc445b15c5e2223a7b0bb504989e118c55931ae9b74b` |
+| `data/campaign_replicates/wide_256/exp2_seed1/team_2_ctde-comm.npz` | 1,058,597 | `e182604d7c7c27db9a6f6d456d921c8b25ae67f72967b443ad898b90685fe08b` |
 | `data/campaign_replicates/wide_256/exp2_seed1/team_2_ctde-comm.pt` | 1,144,818 | `b2971445bbfeb0f7e109286e8c2b7d6b1942a72cb7b186028e508c8f3ab400bd` |
+| `data/campaign_replicates/wide_256/exp2_seed1/team_3_ctde-vd.npz` | 759,581 | `1d2c8ae19c3bfd6121251511046806beadeb775af04cd4a49766bc158a556674` |
 | `data/campaign_replicates/wide_256/exp2_seed1/team_3_ctde-vd.pt` | 822,002 | `d100fcf1938f44f76ebefb9361430f59c1e28bb36995c91b7655b695dbda1d6e` |
+| `data/campaign_replicates/wide_256/exp2_seed2/team_1_ctde-comm.npz` | 1,058,982 | `e7b2cf74f6c9ccbd0e4694d97d15cf42f60c82e3f4041f9b901e9dca837fd755` |
 | `data/campaign_replicates/wide_256/exp2_seed2/team_1_ctde-comm.pt` | 1,144,818 | `57c1a70dc696cd5e9390d62a092a3fc9f11f9f0a1fe7fcf8979b8c20ed030359` |
+| `data/campaign_replicates/wide_256/exp2_seed2/team_2_ctde-vd.npz` | 759,194 | `cd589bab0efca3a6aa42fdde72c93789278456d8edd2b50fdb6a30289f5dfab6` |
 | `data/campaign_replicates/wide_256/exp2_seed2/team_2_ctde-vd.pt` | 822,002 | `93dcd6dee69344733c676aaa777cb4df727be6c30545a4b112803622394c22b4` |
+| `data/campaign_replicates/wide_256/exp2_seed2/team_3_ctde-cac.npz` | 1,041,960 | `3e44e8b0ac984784810bc09eddac5b70784c3cc0e2d7e8937213c9fdd519ac45` |
 | `data/campaign_replicates/wide_256/exp2_seed2/team_3_ctde-cac.pt` | 1,126,672 | `b81a45c88804f0a80598e59832565e4df1a5357ebea03bdd20b5fa3c546e5cdf` |
+| `data/campaign_replicates/wide_256/exp2_seed3/team_1_ctde-vd.npz` | 759,545 | `d310cc351ccadbbd121f878da100e4a3ef5ef948fd326fbc2a324e9e0d156f4d` |
 | `data/campaign_replicates/wide_256/exp2_seed3/team_1_ctde-vd.pt` | 822,002 | `6ed9b897bcb358daa4a225a83dee13e9b2e3a1dc123a403c0f48cf1c329a1ea4` |
+| `data/campaign_replicates/wide_256/exp2_seed3/team_2_ctde-cac.npz` | 1,041,969 | `fcc9e80efa1c19307349518e2054badf0323bccfb3ff700d773331e3588f26db` |
 | `data/campaign_replicates/wide_256/exp2_seed3/team_2_ctde-cac.pt` | 1,126,672 | `334ae23dbe0196d78181e149be08d1bfaf927108764d4cee1d52176df6819e9c` |
+| `data/campaign_replicates/wide_256/exp2_seed3/team_3_ctde-comm.npz` | 1,058,811 | `d3f778f494cf15037e29f31cbca1019844c67b47d23fe28328825d54e70f3da5` |
 | `data/campaign_replicates/wide_256/exp2_seed3/team_3_ctde-comm.pt` | 1,144,818 | `ea8e5a78869772c416737d1983a51ab8e584553bf3b51183a07eaba57c751dc7` |
 
 **Environment provenance and governance.** The environment every measurement was taken in and the record of what is known about it: the two identical `pip freeze` locks of [§ 9.1](#verification-environment-actually-used), OSV's per-pin answer from [§ 9.10](#dependency-audit), and the MIT grant over the whole repository.
@@ -718,7 +956,7 @@ Every versioned experiment artefact (259 files), with SHA-256 for integrity chec
 | `requirements-measured.lock.txt` | 2,448 | `13a9ead65d70af5c9c42671c50477a8b736b864b790b25e38d61bee78a1f55bd` |
 | `results/dependency_audit.json` | 11,288 | `5de3f482896f88e80460bda28378eca0a48b0f9661d270e6f92b0c8e705ec3dd` |
 
-**Ablation and arena-v2 campaigns.** `run_arena_v2_campaign.sh` and `run_ablation_campaign.sh` output, each aggregated by `run_study.py` from 500 k-step replicates: `no_dr` on seeds 1-10 (extended by `run_no_dr_extension.sh`), the two capacity arms on seeds 1-3, arena v2 on seeds 1-10. Every arm differs from `results/study/` by exactly one configuration key.
+**Ablation and arena-v2 campaigns.** `run_arena_v2_campaign.sh` and `run_ablation_campaign.sh` output, each aggregated by `run_study.py` from 500 k-step replicates: `no_dr` on seeds 1-10 (extended by `run_no_dr_extension.sh`), the two capacity arms on seeds 1-3, arena v2 on seeds 1-10, and `results/study_3m/` -- the same twenty replicates re-trained at the 3 M-step budget `main.py` ships with, which is the one arm whose single key is the budget. Every arm differs from `results/study/` by exactly one configuration key.
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
@@ -728,6 +966,9 @@ Every versioned experiment artefact (259 files), with SHA-256 for integrity chec
 | `results/ablation_no_dr/per_seed_metrics.csv` | 5,208 | `3f6a735c527816947c34b1253742a36accce62e8936a6f589cc1fb5d81307346` |
 | `results/ablation_wide_256/analysis.json` | 3,476 | `a760c1e3b92c53ac0a09158fafd4a27527f76e7e9a5bf1e9f94c71bff66028c0` |
 | `results/ablation_wide_256/per_seed_metrics.csv` | 1,723 | `26c751cf5cd3a70aec4fe0e79ad6eb369a1de3ad18465ef4f16c7d18f9429e80` |
+| `results/study_3m/analysis.json` | 4,193 | `ea0cab2021656a313b355b70226aae4ddedd150c9623cd5ab8bd326a82194f38` |
+| `results/study_3m/budget_analysis.json` | 6,775 | `5eca38fea20e1e45de18fc120be857f118eca1e8f835d7c2f7d244ff0116e317` |
+| `results/study_3m/per_seed_metrics.csv` | 5,315 | `ee6ac0ae4318e8ba0e5b6119cac6232f9b46d0263f60311d93615718db21bdb4` |
 | `results/study_v2/analysis.json` | 4,222 | `44242faee5785f288be1c4eb754ddd38eca0d41d4a00822a966638772425dec8` |
 | `results/study_v2/learning_curves.png` | 70,161 | `a2f19be70612de222a47c329f44730d4de78bb29b909db5e531ea3b3219274a0` |
 | `results/study_v2/per_seed_metrics.csv` | 5,278 | `76e50a118474572b85fcaaab1d39751cdec7ff7c4aec39bad6e32754490618b3` |
@@ -838,6 +1079,11 @@ the export translates them.
 
 ## 9.10 Dependency vulnerabilities <a name="dependency-audit"></a>
 
+The audit and JSON immediately below cover only the historical measured PyTorch lock. The current
+runtime requirements no longer include PyTorch; they use JAX and load `.npz` checkpoints. PyTorch remains
+an optional temporary dependency for converting legacy `.pt` files and for the historical campaign
+archiver.
+
 `scripts/audit_dependencies.py` asks the OSV database about every exact pin in
 `requirements-measured.lock.txt` — the environment the numbers in this document were produced in — and
 writes `results/dependency_audit.json`. It queries OSV directly rather than running `pip audit` because
@@ -858,20 +1104,14 @@ One of those records concerns this repository's own mitigation: `GHSA-53q9-r3pm-
 `scripts/version_campaign_checkpoints.py` does too — but on the pinned torch it is a mitigation with a known
 hole in it.
 
-**Why the pin was not simply raised.** [§ 9.1](#verification-environment-actually-used) measures what changing
-torch costs: the arena geometry and randomisation streams stay bit-identical, while the first PPO update
-differs at 1e-6 and every saved checkpoint differs after 4,000 steps. Moving the measured environment to
-2.6.0 would leave the 36 round-robin checkpoints, the 96 ablation checkpoints and every table in
-[§ Results](08_results.md) describing a configuration no reader can rebuild from the documentation.
-`requirements.txt` — the file for someone who wants a working arena rather than *these* numbers — already
-pins 2.6.0, which is the version the CRITICAL advisory names as fixed.
+**Historical pin decision.** The preceding comparison explained why the old measured environment kept
+PyTorch 2.5.1 while its then-current requirements used 2.6.0. The current runtime removes PyTorch from
+`requirements.txt`; this does not rewrite the provenance of the published results, which remain attached
+to the historical lock and original `.pt` files.
 
-**What keeps the exposure narrow here.** The advisory describes a crafted checkpoint file. Every `.pt` these
-programs load is one this repository trained and committed; there is no service, no upload path, no
-dependency that fetches a model at runtime, and no code path that loads a path supplied by another machine.
-The realistic risk is not that someone exploits a downloaded checkpoint, it is that a committed one is
-*swapped* — which is what the SHA-256 column of [§ 9.7](#97-artefact-inventory) and the hashes in
-`data/campaign_replicates/MANIFEST.json` are for.
+**Current exposure.** The training and inference path reads non-pickle `.npz` checkpoints. Torch's pickle
+loader is confined to `scripts/convert_torch_checkpoints.py` and the historical campaign archiver; those
+tools should only be used with trusted legacy files.
 
 **What would change the decision:** any entry point that accepts a checkpoint path from an untrusted source,
 or shipping the checkpoints as data a client supplies. Either would justify both the torch upgrade and a

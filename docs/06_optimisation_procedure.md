@@ -3,6 +3,13 @@
 Source: `src/marl_arena/rl/ppo.py`, `src/marl_arena/rl/buffer.py`,
 `src/marl_arena/controllers/rl_controller.py::finish_episode`.
 
+The current implementation evaluates the same PPO objective with JAX and compiles each actor/critic
+minibatch update with `jax.jit`; optimizer moments are JAX pytrees and network initialization uses
+explicit JAX keys. The controller samples actions with a seeded NumPy generator to avoid small per-agent
+JAX dispatches on CPU. The reported study tables were produced by the earlier PyTorch runtime. The current
+JAX update path has been smoke-tested for all six paradigms, while the full replication campaign remains
+to be measured.
+
 ## 6.1 Objective
 
 Each team owns one `PPOTrainer` and one Adam optimizer over the concatenation of its actor and critic

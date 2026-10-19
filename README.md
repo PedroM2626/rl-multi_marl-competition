@@ -1,8 +1,10 @@
 # RL Multi MARL Competition
 
 A 3D battle arena with **nine agents — three teams of three** — where each team is trained with PPO
-(PyTorch) under a different multi-agent reinforcement learning architecture. The architectures compete
-against each other inside one engine, so the competitive outcome is itself the measurement.
+using JAX, while Rust handles batched movement and collision checks. The versioned study results were
+produced by the earlier PyTorch runtime; the current JAX/Rust runtime has not yet been used to rerun that
+study. The architectures compete against each other inside one engine, so the competitive outcome is
+itself the measurement.
 
 > **Full technical documentation lives in [`docs/`](docs/README.md)** — system model, MDP
 > formalisation, architectures, optimisation, protocol, results with confidence intervals and power
@@ -39,7 +41,8 @@ Honest summary of what is finished and what is not:
 | Random-play baseline | yes, greedy and uniform modes | yes, greedy and uniform modes |
 | Results committed to Git | yes | yes |
 | Checkpoints committed | yes — newly versioned, and loadable by the current code | yes, re-promoted from the study |
-| Bit-for-bit reproducible training | verified | verified with `--no-mlflow` |
+| Historical PyTorch training replay | verified | verified with `--no-mlflow` |
+| Current JAX/Rust training replay | smoke-verified; not yet remeasured across the study | smoke-verified; not yet remeasured across the study |
 | MLflow tracking | n/a | wired, but only **1 logged point** for the 100k run |
 | Cross-experiment round-robin | 30,000 matches, all six arms on common opponents, 10 checkpoint sets x 5 harness seeds — every replicate either experiment trained (shared, run from `ctde_arena/`) | same |
 | Absolute strength vs random opponents | 4,500 matches over all 10 checkpoint sets — the same population as the round-robin — slot-matched null 0.330 ([§ 8.11](docs/08_results.md#absolute-strength)) | same |
@@ -50,9 +53,10 @@ Honest summary of what is finished and what is not:
 | Study re-measured under a sampled readout | 27,000 held-out matches over the same sixty cells at T = 0 / 0.5 / 1; the T = 0 control is bit-identical to the published study, and experiment 2's first place moves from CTDE-VD to CTDE-Comm ([§ 8.1](docs/08_results.md#readout-re-measured)) | same |
 | Arena-v2 re-measurement | 10 seeds × 500k steps under a decayed alive bonus and draw-on-cap ([§ 8.12](docs/08_results.md#arena-v2)) | same |
 | Configuration ablations | `no_dr` at 10 seeds × both experiments (the control's full replication), `narrow_64` and `wide_256` at 3 ([§ 8.13](docs/08_results.md#ablations)) | same |
-| Dependency audit | 33 of the 34 pins in the measured lock have no known OSV vulnerability; `torch` does, and its one CRITICAL is the `weights_only=True` path — accepted risk, quantified in [§ 9.10](docs/09_reproducibility.md#dependency-audit) | same |
+| Study re-measured at the shipped step budget | the same twenty replicates trained to 3,000,000 steps instead of 500,000: the lead changes hands in **both** experiments (CTDE 0.429 overtakes DTE; CTDE-Comm 0.395 takes first while CTDE-VD falls to last) and no paired comparison clears the corrected bar ([§ 8.13](docs/08_results.md#budget-3m)) | same |
+| Historical dependency audit | The measured PyTorch lock has recorded advisories; the current runtime requirements use JAX and retain the old lock for historical reproduction ([§ 9.10](docs/09_reproducibility.md#dependency-audit)) | same |
 | Gameplay clips of the trained policies | yes (`docs/assets/`) | yes |
-| Tests | 150 (149 passed, 1 skipped), **94 %** statement coverage | 76 (75 passed, 1 skipped), **89 %** coverage |
+| Current tests | 161 passed, 2 skipped, **85 %** statement coverage | 77 passed, 2 skipped, **86 %** coverage |
 | Continuous integration | both suites plus tree parity, documentation links, inventory and pooled/absolute re-derivation, artefact-path portability, campaign-script syntax — green on `ubuntu-latest`, and the re-derivation gate is what caught [A-42](docs/11_code_audit.md#a-committed-artefact-recorded-windows-paths) ([§ 9.4](docs/09_reproducibility.md#continuous-integration)) | same job |
 | Docker | n/a | **never built or run** |
 
@@ -241,8 +245,17 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1      # Windows PowerShell
                                   # source .venv/bin/activate on POSIX
 pip install -r requirements.txt
+pip install maturin==1.15.0
 pip install pandas                # only for scripts/plot_metrics.py; not in requirements.txt
+# Install Rust stable with rustup, then build the native extension:
+cd native/arena_core
+maturin develop --release
+cd ../..
 ```
+
+The Rust extension is optional for source-only use; building it enables the native movement and collision
+path. `ctde_arena/` has the same crate under `native/arena_core/` and uses the same build command from its
+own directory.
 
 `.env` is tracked and identical to `.env.example`; copy the latter if you delete it.
 
@@ -286,11 +299,14 @@ python main.py
 > the slot. The shipped `.env` is set so that `python main.py` loads the promoted policies; a different
 > rotation warns rather than silently demoing random networks. See `data/PROVENANCE.json`.
 
-**Cost.** Measured at 368 env steps/s on CPU with one torch thread per process (more threads and CUDA
-both make it *slower* — see [A-26](docs/11_code_audit.md#gpu-and-thread-scaling)): a 100k-step run is
-≈ 4.5 minutes, a 500k-step replicate is ≈ 25 minutes alone, and the full 20-replicate study cost
-**36.2 CPU-hours but only 117.5 minutes of wall clock** at 20-way concurrency
-([§ 9.5](docs/09_reproducibility.md#95-cost-of-a-run)).
+**Cost.** The older scalar-policy path measured 368 env steps/s on CPU with one Torch thread
+([A-26](docs/11_code_audit.md#gpu-and-thread-scaling)). The current batched path reached 599.5 steps/s in a
+paired 1,500-step training run, about 2.8 minutes per 100k steps or 14 minutes per 500k at that rate
+([A-44](docs/11_code_audit.md#per-agent-policy-dispatch-was-the-training-bottleneck)). The published
+20-replicate study cost **36.2 CPU-hours and 117.5 minutes wall clock** was measured before batching; a new
+20-way campaign has not been timed ([§ 9.5](docs/09_reproducibility.md#95-cost-of-a-run)).
+The newer nearest-enemy and clear-obstacle fast paths reduce their isolated hot-function times, but host
+load made the follow-up whole-training timing inconclusive; see [A-44](docs/11_code_audit.md#per-agent-policy-dispatch-was-the-training-bottleneck).
 
 ## Controls in the 3D view
 
@@ -340,7 +356,7 @@ and a positive value samples the policy's softmax at that temperature
 │   ├── rl/                     # actions, buffer + GAE, networks, ppo
 │   ├── systems/                # match_variant, simulation, metrics, plotting
 │   └── ui/dashboard.py         # in-game overlay text
-├── tests/                      # 150 tests, incl. tree-parity, collision geometry, the round-robin statistics and artefact-path portability
+├── tests/                      # 163 tests, incl. tree-parity, collision geometry, the round-robin statistics, the checkpoint-archive pairing and artefact-path portability
 ├── data/                       # experiment 1: promoted replicate + historical_100k/ + PROVENANCE.json
 ├── results/
 │   ├── study/                  # per_seed_metrics.csv, analysis.json, learning_curves.png
@@ -351,7 +367,7 @@ and a positive value samples the policy's softmax at that temperature
     ├── main.py  Dockerfile  requirements.txt  README.md
     ├── scripts/                # own train_rl.py (adds MLflow); the shared scripts are byte-identical
     ├── src/marl_arena/         # own copy; VD / CAC / Comm networks
-    ├── tests/                  # 69 tests
+    ├── tests/                  # 79 tests
     ├── results/baseline/       # experiment 2's untrained reference
     └── data/                   # promoted replicate, historical_100k/, mlflow_export/, PROVENANCE.json
 ```

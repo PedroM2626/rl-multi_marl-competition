@@ -1,7 +1,7 @@
 """Launch the replicated study across seeds and both experiment trees.
 
-Runs `scripts/run_experiment.py` as one subprocess per (experiment, seed) with torch pinned to a
-single thread, so N runs occupy N cores instead of contending. Collects every `run_summary.json`
+Runs `scripts/run_experiment.py` as one subprocess per (experiment, seed), so N runs occupy N
+cores instead of contending. Collects every `run_summary.json`
 into an aggregated CSV and JSON under `results/study/`.
 
 Usage:

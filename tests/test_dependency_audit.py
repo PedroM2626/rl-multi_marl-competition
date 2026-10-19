@@ -33,14 +33,14 @@ def test_parse_pins_keeps_every_real_pin_and_drops_the_rest(tmp_path: Path) -> N
         "\n"
         "numpy==1.26.4\n"
         "ImageIO==2.37.0\n"
-        "  torch==2.5.1+cu121  \n"
+        "  jax==0.4.38  \n"
         "-e .\n"
-        "--extra-index-url https://download.pytorch.org/whl/cu121\n"
-        "torch @ https://example.invalid/torch.whl\n"
+        "--extra-index-url https://storage.googleapis.com/jax-releases/jax_cuda_releases.html\n"
+        "jax @ https://example.invalid/jax.whl\n"
         "python-dotenv==1.0.1\n",
         encoding="utf-8")
     assert audit.parse_pins(path) == [
-        ("numpy", "1.26.4"), ("imageio", "2.37.0"), ("torch", "2.5.1+cu121"), ("python-dotenv", "1.0.1")]
+        ("numpy", "1.26.4"), ("imageio", "2.37.0"), ("jax", "0.4.38"), ("python-dotenv", "1.0.1")]
 
 
 def test_parse_pins_refuses_to_audit_a_range(tmp_path: Path) -> None:

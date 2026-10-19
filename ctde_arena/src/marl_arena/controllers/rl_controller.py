@@ -4,34 +4,54 @@ import warnings
 from pathlib import Path
 from typing import Dict, Iterable, List
 
-import numpy as np
-import torch
-
 from marl_arena.config import CONFIG
+
+import jax
+import numpy as np
+
 from marl_arena.controllers.base import BaseTeamController, ControllerContext
-from marl_arena.systems.match_variant import paradigm_assignment
+from marl_arena.controllers.batching import decide_many as _decide_many
 from marl_arena.models import AgentSnapshot, StepDecision, TransitionRecord
 from marl_arena.rl.actions import (
     GLOBAL_OBS_DIM,
     LOCAL_OBS_DIM,
     NUM_ACTIONS,
-    action_to_decision,
     load_checkpoint,
     save_checkpoint,
 )
 from marl_arena.rl.buffer import RolloutBuffer, RolloutStep
-from marl_arena.rl.networks import ActorNetwork, CentralizedActorNetwork, CentralizedCriticNetwork, ValueDecompositionCriticNetwork, CommActorNetwork
+from marl_arena.rl.networks import (
+    ActorNetwork,
+    CentralizedActorNetwork,
+    CentralizedCriticNetwork,
+    CommActorNetwork,
+    JAXNetwork,
+    ValueDecompositionCriticNetwork,
+)
 from marl_arena.rl.ppo import PPOStats, PPOTrainer
 from marl_arena.systems.match_variant import paradigm_assignment
 
 
-def resolve_device() -> torch.device:
+def resolve_device():
+    """Resolve the requested JAX device, with CPU as the portable fallback."""
     requested = CONFIG.rl_device.strip().lower()
-    if requested == "cuda" and torch.cuda.is_available():
-        return torch.device("cuda")
-    if requested == "mps" and hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
-        return torch.device("mps")
-    return torch.device("cpu")
+    if requested in {"cuda", "gpu"}:
+        try:
+            devices = jax.devices("gpu")
+            if devices:
+                return devices[0]
+        except RuntimeError:
+            pass
+        warnings.warn("JAX GPU backend is unavailable; using CPU.", RuntimeWarning)
+    elif requested == "tpu":
+        try:
+            devices = jax.devices("tpu")
+            if devices:
+                return devices[0]
+        except RuntimeError:
+            pass
+        warnings.warn("JAX TPU backend is unavailable; using CPU.", RuntimeWarning)
+    return jax.devices("cpu")[0]
 
 
 class RLTeamController(BaseTeamController):
@@ -40,13 +60,14 @@ class RLTeamController(BaseTeamController):
         team_name: str,
         paradigm: str,
         rng_seed: int,
-        device: torch.device,
+        device,
         load_checkpoints: bool = True,
     ) -> None:
         super().__init__(team_name, rng_seed)
         self.paradigm = paradigm
         self.paradigm_name = paradigm
         self.device = device
+        self.action_rng = np.random.default_rng(rng_seed)
         self.buffer = RolloutBuffer(rng=np.random.default_rng(rng_seed))
         self.pending_steps: Dict[str, RolloutStep] = {}
         self.training_enabled = True
@@ -61,76 +82,78 @@ class RLTeamController(BaseTeamController):
             batch_size=CONFIG.rl_batch_size,
             device=device,
         )
-        self.actor: ActorNetwork | CentralizedActorNetwork | None = None
-        self.critic: CentralizedCriticNetwork | None = None
-        self._build_networks()
-        self.trainer.bind_optimizer(self._trainable_parameters())
+        self.actor: JAXNetwork | None = None
+        self.critic: JAXNetwork | None = None
+        self._build_networks(rng_seed)
+        self.trainer.bind_optimizer(self.actor, self.critic)
         if load_checkpoints:
             self._load_if_exists()
 
-    def _build_networks(self) -> None:
+    def _build_networks(self, seed: int) -> None:
         hidden = CONFIG.rl_hidden_dim
         if self.paradigm == "CTDE-VD":
-            self.actor = ActorNetwork(LOCAL_OBS_DIM, NUM_ACTIONS, hidden).to(self.device)
-            # Find the indices of the team's 3 agents in sorted order.
-            if self.team_name == "Team 1":
-                indices = [0, 1, 2]
-            elif self.team_name == "Team 2":
-                indices = [3, 4, 5]
-            else:
-                indices = [6, 7, 8]
-            self.critic = ValueDecompositionCriticNetwork(indices, hidden).to(self.device)
-        elif self.paradigm == "CTDE-CAC":
-            self.actor = ActorNetwork(LOCAL_OBS_DIM, NUM_ACTIONS, hidden).to(self.device)
-            self.critic = CentralizedCriticNetwork(GLOBAL_OBS_DIM, hidden).to(self.device)
+            team_indices = {"Team 1": [0, 1, 2], "Team 2": [3, 4, 5], "Team 3": [6, 7, 8]}
+            self.actor = ActorNetwork(LOCAL_OBS_DIM, NUM_ACTIONS, hidden, seed=seed).to(self.device)
+            self.critic = ValueDecompositionCriticNetwork(
+                team_indices.get(self.team_name, [0, 1, 2]), hidden, seed=seed + 1
+            ).to(self.device)
         elif self.paradigm == "CTDE-Comm":
-            self.actor = CommActorNetwork(LOCAL_OBS_DIM, NUM_ACTIONS, msg_dim=4, hidden_dim=hidden).to(self.device)
-            self.critic = CentralizedCriticNetwork(GLOBAL_OBS_DIM, hidden).to(self.device)
-        else:
-            self.actor = ActorNetwork(LOCAL_OBS_DIM, NUM_ACTIONS, hidden).to(self.device)
-            self.critic = CentralizedCriticNetwork(GLOBAL_OBS_DIM, hidden).to(self.device)
-
-    def _trainable_parameters(self) -> list[torch.nn.Parameter]:
-        params: list[torch.nn.Parameter] = []
-        if self.actor is not None:
-            params.extend(self.actor.parameters())
-        if self.critic is not None:
-            params.extend(self.critic.parameters())
-        return params
+            self.actor = CommActorNetwork(
+                LOCAL_OBS_DIM, NUM_ACTIONS, msg_dim=4, hidden_dim=hidden, seed=seed
+            ).to(self.device)
+            self.critic = CentralizedCriticNetwork(GLOBAL_OBS_DIM, hidden, seed=seed + 1).to(self.device)
+        elif self.paradigm in {"CTDE", "CTDE-CAC"}:
+            self.actor = ActorNetwork(LOCAL_OBS_DIM, NUM_ACTIONS, hidden, seed=seed).to(self.device)
+            self.critic = CentralizedCriticNetwork(GLOBAL_OBS_DIM, hidden, seed=seed + 1).to(self.device)
+        elif self.paradigm == "CTE":
+            self.actor = CentralizedActorNetwork(
+                GLOBAL_OBS_DIM, agent_slot_dim=3, action_dim=NUM_ACTIONS,
+                hidden_dim=hidden, seed=seed,
+            ).to(self.device)
+            self.critic = CentralizedCriticNetwork(GLOBAL_OBS_DIM, hidden, seed=seed + 1).to(self.device)
+        else:  # DTE and defensive fallback
+            self.actor = ActorNetwork(LOCAL_OBS_DIM, NUM_ACTIONS, hidden, seed=seed).to(self.device)
 
     def _checkpoint_path(self, directory: Path | None = None) -> Path:
         root = CONFIG.rl_checkpoint_dir if directory is None else directory
         suffix = self.paradigm.lower()
         slug = self.team_name.lower().replace(" ", "_")
-        return root / f"{slug}_{suffix}.pt"
+        return root / f"{slug}_{suffix}.npz"
 
     def _load_if_exists(self) -> None:
         path = self._checkpoint_path()
         if not path.exists():
-            return
-        payload = load_checkpoint(path, self.device)
-        expected = self.actor.state_dict() if self.actor is not None else {}
-        for key, tensor in payload.get("actor", {}).items():
-            if key in expected and tuple(expected[key].shape) != tuple(tensor.shape):
+            legacy = path.with_suffix(".pt")
+            if legacy.exists():
                 warnings.warn(
-                    f"{path.name} was produced by a different observation encoding "
-                    f"(actor.{key}: {tuple(tensor.shape)} vs {tuple(expected[key].shape)}); "
-                    "training from random initialisation instead. Pass --from-scratch to silence this."
+                    f"Found legacy PyTorch checkpoint {legacy.name}; convert it with "
+                    "scripts/convert_torch_checkpoints.py to use this JAX runtime."
                 )
                 return
+            siblings = sorted(p.name for p in path.parent.glob("*.npz")) if path.parent.is_dir() else []
+            warnings.warn(
+                f"No checkpoint at {path.name}; {self.team_name} ({self.paradigm}) starts from random "
+                f"initialisation. {path.parent} holds {siblings or 'no policies'}."
+            )
+            return
+        payload = load_checkpoint(path)
         if self.actor is not None:
-            self.actor.load_state_dict(payload["actor"])
-        if self.critic is not None and "critic" in payload:
-            self.critic.load_state_dict(payload["critic"])
+            try:
+                self.actor.load_state_dict(payload["actor"])
+                if self.critic is not None and payload.get("critic") is not None:
+                    self.critic.load_state_dict(payload["critic"])
+            except ValueError as exc:
+                warnings.warn(f"Ignoring incompatible checkpoint {path.name}: {exc}")
 
     def load(self, directory: Path) -> None:
-        payload = load_checkpoint(self._checkpoint_path(directory), self.device)
+        payload = load_checkpoint(self._checkpoint_path(directory))
         if self.actor is not None:
             self.actor.load_state_dict(payload["actor"])
-        if self.critic is not None and "critic" in payload:
+        if self.critic is not None and payload.get("critic") is not None:
             self.critic.load_state_dict(payload["critic"])
 
     def save(self, directory: Path) -> None:
+        assert self.actor is not None
         payload: dict[str, object] = {"paradigm": self.paradigm, "actor": self.actor.state_dict()}
         if self.critic is not None:
             payload["critic"] = self.critic.state_dict()
@@ -150,21 +173,19 @@ class RLTeamController(BaseTeamController):
             pending.done = transition.done
             self.buffer.append(pending)
 
-    def _greedy_action(self, logits: torch.Tensor) -> int:
-        return int(torch.argmax(logits, dim=-1).item())
+    def _greedy_action(self, logits) -> int:
+        return int(np.asarray(logits).argmax(axis=-1).reshape(-1)[0])
 
-    def _eval_action(self, logits: torch.Tensor) -> int:
-        """The held-out readout: argmax at `EVAL_TEMPERATURE=0`, otherwise a fixed-temperature sample.
-
-        The default is the readout every published number was measured with, and at that value this is the
-        same `torch.argmax` call. With a positive temperature the draw comes from torch's global generator —
-        the one `config.seed_all` seeds at process start — so a replay is reproducible for a given
-        (seed, temperature) pair, and the arms' comparison is paired on the match streams.
-        """
+    def _eval_action(self, logits) -> int:
+        """Use argmax for the published zero-temperature readout, or a seeded JAX sample."""
         temperature = CONFIG.eval_temperature
+        values = np.asarray(logits, dtype=np.float64)
         if temperature <= 0.0:
-            return self._greedy_action(logits)
-        return int(torch.multinomial(torch.softmax(logits / temperature, dim=-1), num_samples=1).item())
+            return self._greedy_action(values)
+        shifted = values / temperature
+        probabilities = np.exp(shifted - shifted.max())
+        probabilities /= probabilities.sum()
+        return int(self.action_rng.choice(len(probabilities), p=probabilities))
 
     def _register_agent_slots(self, all_agents: Iterable[AgentSnapshot]) -> None:
         allies = sorted(
@@ -174,10 +195,14 @@ class RLTeamController(BaseTeamController):
         for index, agent in enumerate(allies):
             self._agent_slot_map[agent.agent_id] = index
 
+    def get_team_agents(self, agents: Iterable[AgentSnapshot]) -> list[AgentSnapshot]:
+        return [agent for agent in agents if agent.team_name == self.team_name]
+
     def _agent_slot_vector(self, agent_id: str) -> np.ndarray:
         slot_index = self._agent_slot_map.get(agent_id, 0)
-        vector = np.zeros(3, dtype=float)
-        vector[slot_index] = 1.0
+        vector = np.zeros(3, dtype=np.float32)
+        if slot_index < len(vector):
+            vector[slot_index] = 1.0
         return vector
 
     def _record_step(
@@ -209,161 +234,47 @@ class RLTeamController(BaseTeamController):
         all_agents: Iterable[AgentSnapshot],
         context: ControllerContext,
     ) -> StepDecision:
-        self._register_agent_slots(all_agents)
-        agent_list = list(all_agents)
-        scale = context.arena_size * 0.5
-        local_obs = self.build_local_features(agent, all_agents, scale)
+        return self.decide_many([agent], all_agents, context)[agent.agent_id]
 
-        if self.paradigm == "CTDE-VD":
-            assert isinstance(self.actor, ActorNetwork)
-            assert self.critic is not None
-            global_obs = self.build_global_features(all_agents, scale)
-            local_tensor = torch.tensor(local_obs, dtype=torch.float32, device=self.device).unsqueeze(0)
-            global_tensor = torch.tensor(global_obs, dtype=torch.float32, device=self.device).unsqueeze(0)
-            with torch.no_grad():
-                if self.training_enabled:
-                    action_tensor, log_prob, _, _ = self.actor.act(local_tensor)
-                    action_index = int(action_tensor.item())
-                    log_prob_value = float(log_prob.item())
-                    value_estimate = float(self.critic(global_tensor).item())
-                else:
-                    logits, _ = self.actor(local_tensor)
-                    action_index = self._eval_action(logits)
-                    log_prob_value = 0.0
-                    value_estimate = float(self.critic(global_tensor).item())
-            self._record_step(
-                agent.agent_id,
-                action_index,
-                log_prob_value,
-                value_estimate,
-                local_obs,
-                global_obs,
-            )
-            return action_to_decision(self, agent, agent_list, action_index, context.shoot_range)
-
-        if self.paradigm == "CTDE-CAC":
-            assert isinstance(self.actor, ActorNetwork)
-            assert self.critic is not None
-            global_obs = self.build_global_features(all_agents, scale)
-            local_tensor = torch.tensor(local_obs, dtype=torch.float32, device=self.device).unsqueeze(0)
-            global_tensor = torch.tensor(global_obs, dtype=torch.float32, device=self.device).unsqueeze(0)
-            with torch.no_grad():
-                if self.training_enabled:
-                    action_tensor, log_prob, _, _ = self.actor.act(local_tensor)
-                    action_index = int(action_tensor.item())
-                    log_prob_value = float(log_prob.item())
-                    value_estimate = float(self.critic(global_tensor).item())
-                else:
-                    logits, _ = self.actor(local_tensor)
-                    action_index = self._eval_action(logits)
-                    log_prob_value = 0.0
-                    value_estimate = float(self.critic(global_tensor).item())
-            self._record_step(
-                agent.agent_id,
-                action_index,
-                log_prob_value,
-                value_estimate,
-                local_obs,
-                global_obs,
-            )
-            return action_to_decision(self, agent, agent_list, action_index, context.shoot_range)
-
-        if self.paradigm == "CTDE-Comm":
-            assert isinstance(self.actor, CommActorNetwork)
-            assert self.critic is not None
-            global_obs = self.build_global_features(all_agents, scale)
-
-            # Construct team observations
-            team_agents = sorted(self.get_team_agents(all_agents), key=lambda x: x.agent_id)
-            local_obs_list = []
-            for ta in team_agents:
-                if ta.alive:
-                    local_obs_list.append(self.build_local_features(ta, all_agents, scale))
-                else:
-                    local_obs_list.append(np.zeros(LOCAL_OBS_DIM, dtype=float))
-            team_obs = np.concatenate(local_obs_list)
-
-            agent_slot = self._agent_slot_vector(agent.agent_id)
-
-            team_tensor = torch.tensor(team_obs, dtype=torch.float32, device=self.device).unsqueeze(0)
-            slot_tensor = torch.tensor(agent_slot, dtype=torch.float32, device=self.device).unsqueeze(0)
-            global_tensor = torch.tensor(global_obs, dtype=torch.float32, device=self.device).unsqueeze(0)
-
-            with torch.no_grad():
-                if self.training_enabled:
-                    action_tensor, log_prob, _ = self.actor.act(team_tensor, slot_tensor)
-                    action_index = int(action_tensor.item())
-                    log_prob_value = float(log_prob.item())
-                    value_estimate = float(self.critic(global_tensor).item())
-                else:
-                    logits = self.actor(team_tensor, slot_tensor)
-                    action_index = self._eval_action(logits)
-                    log_prob_value = 0.0
-                    value_estimate = float(self.critic(global_tensor).item())
-            self._record_step(
-                agent.agent_id,
-                action_index,
-                log_prob_value,
-                value_estimate,
-                team_obs,
-                global_obs,
-                agent_slot,
-            )
-            return action_to_decision(self, agent, agent_list, action_index, context.shoot_range)
-
-        # Defensive fallback; none of the three CTDE variants configured here reach this branch.
-        assert isinstance(self.actor, ActorNetwork)
-        obs_tensor = torch.tensor(local_obs, dtype=torch.float32, device=self.device).unsqueeze(0)
-        with torch.no_grad():
-            if self.training_enabled:
-                action_tensor, log_prob, _, value = self.actor.act(obs_tensor)
-                action_index = int(action_tensor.item())
-                log_prob_value = float(log_prob.item())
-                value_estimate = float(value.item())
-            else:
-                logits, value = self.actor(obs_tensor)
-                action_index = self._eval_action(logits)
-                log_prob_value = 0.0
-                value_estimate = float(value.item())
-        self._record_step(agent.agent_id, action_index, log_prob_value, value_estimate, local_obs)
-        return action_to_decision(self, agent, agent_list, action_index, context.shoot_range)
+    def decide_many(
+        self,
+        agents: list[AgentSnapshot],
+        all_agents: Iterable[AgentSnapshot],
+        context: ControllerContext,
+    ) -> dict[str, StepDecision]:
+        return _decide_many(self, agents, all_agents, context)
 
     def finish_episode(self) -> PPOStats | None:
+        assert self.actor is not None
         last_value = 0.0
         if self.buffer.steps:
             last_step = self.buffer.steps[-1]
-            if last_step.global_obs is not None and self.critic is not None:
+            if self.critic is not None and last_step.global_obs is not None:
                 last_value = PPOTrainer.bootstrap_value_critic(self.critic, last_step.global_obs, self.device)
+            elif self.critic is None:
+                last_value = PPOTrainer.bootstrap_value_actor(self.actor, last_step.local_obs, self.device)
 
-        stats: PPOStats | None = None
-        if self.paradigm == "CTDE-CAC" and isinstance(self.actor, ActorNetwork) and self.critic is not None:
-            stats = self.trainer.update_ctde(
-                self.actor,
-                self.critic,
-                self.buffer,
-                last_value,
-                CONFIG.rl_gamma,
-                CONFIG.rl_gae_lambda,
+        stats = None
+        if self.critic is None:
+            stats = self.trainer.update_actor_critic(
+                self.actor, self.buffer, last_value, CONFIG.rl_gamma, CONFIG.rl_gae_lambda
             )
-        elif self.paradigm == "CTDE-VD" and isinstance(self.actor, ActorNetwork) and self.critic is not None:
+        elif self.critic.kind == "vd_critic":
             stats = self.trainer.update_ctde_vd(
-                self.actor,
-                self.critic,
-                self.buffer,
-                last_value,
-                CONFIG.rl_gamma,
-                CONFIG.rl_gae_lambda,
+                self.actor, self.critic, self.buffer, last_value, CONFIG.rl_gamma, CONFIG.rl_gae_lambda
             )
-        elif self.paradigm == "CTDE-Comm" and isinstance(self.actor, CommActorNetwork) and self.critic is not None:
+        elif self.actor.kind == "comm_actor":
             stats = self.trainer.update_ctde_comm(
-                self.actor,
-                self.critic,
-                self.buffer,
-                last_value,
-                CONFIG.rl_gamma,
-                CONFIG.rl_gae_lambda,
+                self.actor, self.critic, self.buffer, last_value, CONFIG.rl_gamma, CONFIG.rl_gae_lambda
             )
-
+        elif self.actor.kind == "central_actor":
+            stats = self.trainer.update_cte(
+                self.actor, self.critic, self.buffer, last_value, CONFIG.rl_gamma, CONFIG.rl_gae_lambda
+            )
+        else:
+            stats = self.trainer.update_ctde(
+                self.actor, self.critic, self.buffer, last_value, CONFIG.rl_gamma, CONFIG.rl_gae_lambda
+            )
         self.buffer.clear()
         self.pending_steps.clear()
         return stats
@@ -378,11 +289,7 @@ def build_controllers(
         team_name: RLTeamController(
             team_name, assignment[team_name], seed + offset, device, load_checkpoints
         )
-        for team_name, offset in (
-            ("Team 1", 11),
-            ("Team 2", 23),
-            ("Team 3", 37),
-        )
+        for team_name, offset in (("Team 1", 11), ("Team 2", 23), ("Team 3", 37))
     }
 
 

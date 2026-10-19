@@ -125,10 +125,12 @@ GROUPS = [
         "Ablation and arena-v2 campaigns",
         "`run_arena_v2_campaign.sh` and `run_ablation_campaign.sh` output, each aggregated by "
         "`run_study.py` from 500 k-step replicates: `no_dr` on seeds 1-10 (extended by "
-        "`run_no_dr_extension.sh`), the two capacity arms on seeds 1-3, arena v2 on seeds 1-10. Every arm "
-        "differs from `results/study/` by exactly one configuration key.",
-        ("results/study_v2/", "results/ablation_no_dr/", "results/ablation_narrow_64/",
-         "results/ablation_wide_256/"),
+        "`run_no_dr_extension.sh`), the two capacity arms on seeds 1-3, arena v2 on seeds 1-10, and "
+        "`results/study_3m/` -- the same twenty replicates re-trained at the 3 M-step budget `main.py` "
+        "ships with, which is the one arm whose single key is the budget. Every arm differs from "
+        "`results/study/` by exactly one configuration key.",
+        ("results/study_v2/", "results/study_3m/", "results/ablation_no_dr/",
+         "results/ablation_narrow_64/", "results/ablation_wide_256/"),
     ),
     (
         "Absolute-strength evaluation",

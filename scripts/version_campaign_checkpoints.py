@@ -71,19 +71,42 @@ def copy_verified(source: Path, target: Path) -> str:
     return sha256(target)
 
 
+def policy_files(directory: Path) -> list[Path]:
+    """The three policy files of one set, in the format this directory actually holds.
+
+    `.npz` is the runtime's format since A-44 and the one a reader can load without PyTorch; `.pt` is what
+    the scratch of a run trained before the port still contains, and what the published tables were produced
+    from. Preferring `.npz` means a set copied after a conversion carries the loadable file, and a set that
+    only exists as `.pt` is still versionable.
+    """
+    npz = sorted(directory.glob("*.npz"))
+    return npz or sorted(directory.glob("*.pt"))
+
+
 def actor_shape(path: Path) -> tuple[int | None, int]:
     """(hidden width, parameter count) of the actor stored in this checkpoint.
 
     Every actor MLP in either tree is built by `_mlp`, whose first layer is `Linear(input, hidden)`, so the
     row count of each `*.0.weight` is the hidden width -- `backbone.0` for CTE/DTE/CAC/VD, `msg_net.0` and
     `policy_head.0` for Comm. The widths have to agree or the file is not one width, which the ablations
-    are precisely about: a `.pt` records no capacity metadata, so this is the only place a reader can learn
-    that a policy needs `RL_HIDDEN_DIM=256` instead of the committed 128.
-    """
-    import torch
+    are precisely about: neither checkpoint format records capacity metadata, so this is the only place a
+    reader can learn that a policy needs `RL_HIDDEN_DIM=256` instead of the committed 128.
 
-    payload = torch.load(path, map_location="cpu", weights_only=True)
-    actor = payload.get("actor", {})
+    Both formats store the weights in Torch's `[out, in]` layout -- the JAX loader transposes on the way in
+    (A-45) -- so the width is read the same way from either. The `.pt` branch is the only place this script
+    needs PyTorch, and it is never taken for a converted archive.
+    """
+    if path.suffix == ".pt":
+        import torch
+
+        payload = torch.load(path, map_location="cpu", weights_only=True)
+        actor = {name: tensor for name, tensor in payload.get("actor", {}).items()}
+    else:
+        import numpy as np
+
+        with np.load(path) as stored:
+            prefix = "actor::"
+            actor = {name[len(prefix):]: stored[name] for name in stored.files if name.startswith(prefix)}
     widths = {int(tensor.shape[0]) for name, tensor in actor.items()
               if name.endswith(".0.weight") and hasattr(tensor, "shape") and tensor.ndim == 2}
     parameters = sum(int(tensor.numel()) for tensor in actor.values() if hasattr(tensor, "numel"))
@@ -110,7 +133,7 @@ def completed_seeds(arm: str, experiment: str) -> list[int]:
         name = run_dir.name
         if not name.removeprefix(f"{experiment}_seed").isdigit():
             continue
-        checkpoints = list((run_dir / "checkpoints").glob("*.pt"))
+        checkpoints = policy_files(run_dir / "checkpoints")
         if len(checkpoints) == 3 and (run_dir / "evaluation" / "run_summary.json").is_file():
             seeds.append(int(name.removeprefix(f"{experiment}_seed")))
     return sorted(seeds)
@@ -124,7 +147,7 @@ def versioned_seeds(arm: str, experiment: str) -> list[int]:
     seeds = []
     for run_dir in sorted(root.glob(f"{experiment}_seed*")):
         suffix = run_dir.name.removeprefix(f"{experiment}_seed")
-        if suffix.isdigit() and len(list(run_dir.glob("*.pt"))) == 3:
+        if suffix.isdigit() and len(policy_files(run_dir)) == 3:
             seeds.append(int(suffix))
     return sorted(seeds)
 
@@ -207,7 +230,7 @@ def main() -> None:
             for seed in seeds:
                 run_dir = source_dir(arm, experiment, seed)
                 source = run_dir / "checkpoints"
-                files = sorted(source.glob("*.pt"))
+                files = policy_files(source)
                 if len(files) != 3:
                     raise SystemExit(f"{arm}: expected three checkpoints in {source}, found "
                                      f"{[f.name for f in files]}")
@@ -230,10 +253,13 @@ def main() -> None:
                                          f"differs from {file.relative_to(ROOT)}")
                     shutil.copyfile(file, target)
                     copied += 1
+                # The manifest records the committed bytes: since A-45 a set can hold both the .pt that
+                # produced the published numbers and the .npz this runtime loads, and it is the latter a
+                # reader can actually open.
                 sets[f"{experiment}_seed{seed}"] = {
                     "trained_as": {**overrides},
                     "source_scratch": run_dir.relative_to(ROOT).as_posix(),
-                    **record(run_dir, files),
+                    **record(run_dir, policy_files(destination)),
                 }
         arms[arm] = {"overrides": overrides, "seeds": {k: v for k, v in discovered.items()}, "sets": sets}
 

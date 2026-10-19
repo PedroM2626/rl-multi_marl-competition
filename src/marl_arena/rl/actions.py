@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import numpy as np
-import torch
 
 from marl_arena.models import AgentSnapshot, StepDecision
 
@@ -47,12 +47,32 @@ def action_to_decision(
 
 
 def save_checkpoint(path: Path, payload: dict[str, Any]) -> None:
+    """Write a non-pickle JAX checkpoint; parameters remain in Torch-compatible layer layout."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    torch.save(payload, path)
+    metadata: dict[str, Any] = {}
+    arrays: dict[str, np.ndarray] = {}
+    for key, value in payload.items():
+        if key in {"actor", "critic"} and value is not None:
+            for parameter_name, parameter in value.items():
+                arrays[f"{key}::{parameter_name}"] = np.asarray(parameter)
+        else:
+            metadata[key] = value
+    arrays["__metadata__"] = np.asarray(json.dumps(metadata))
+    with path.open("wb") as handle:
+        np.savez_compressed(handle, **arrays)
 
 
-def load_checkpoint(path: Path, device: torch.device) -> dict[str, Any]:
+def load_checkpoint(path: Path, device: Any = None) -> dict[str, Any]:
     if not path.exists():
         raise FileNotFoundError(f"Checkpoint not found: {path}")
-    # weights_only=True is safe here: save_checkpoint() only writes str keys and tensor state dicts.
-    return torch.load(path, map_location=device, weights_only=True)
+    result: dict[str, Any] = {"actor": {}, "critic": {}}
+    with np.load(path, allow_pickle=False) as saved:
+        result.update(json.loads(str(saved["__metadata__"])))
+        for key in saved.files:
+            if key == "__metadata__":
+                continue
+            group, parameter_name = key.split("::", maxsplit=1)
+            result[group][parameter_name] = saved[key]
+    if not result["critic"]:
+        result["critic"] = None
+    return result

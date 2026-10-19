@@ -69,7 +69,7 @@ def main() -> None:
     for exp1, exp2 in pairs:
         for experiment, seed in (("exp1", exp1), ("exp2", exp2)):
             source = scratch_dir(experiment, seed)
-            files = sorted(source.glob("*.pt"))
+            files = shared.policy_files(source)
             if len(files) != 3:
                 raise SystemExit(f"{experiment}_seed{seed}: expected three checkpoints in {source}, "
                                  f"found {[f.name for f in files]}")

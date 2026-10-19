@@ -8,6 +8,11 @@ from typing import Dict, List
 
 import numpy as np
 
+try:
+    import marl_arena_rust as _arena_native
+except ImportError:  # Source checkouts remain usable before the optional extension is built.
+    _arena_native = None
+
 from marl_arena.config import CONFIG
 from marl_arena.controllers.base import ControllerContext, normalize
 from marl_arena.controllers.rl_controller import build_controllers, finish_rl_episode
@@ -252,16 +257,18 @@ class ArenaSimulation:
     def _clamp_position_to_arena(self, position: np.ndarray) -> np.ndarray:
         half = self.match_variant.arena_size * 0.5 - AGENT_RADIUS
         clamped = position.copy()
-        clamped[0] = float(np.clip(clamped[0], -half, half))
-        clamped[2] = float(np.clip(clamped[2], -half, half))
+        clamped[0] = min(max(float(clamped[0]), -half), half)
+        clamped[2] = min(max(float(clamped[2]), -half), half)
         return clamped
 
     def _position_blocked(self, position: np.ndarray) -> bool:
         for obstacle in self.obstacles:
-            half_size = obstacle.size * 0.5
             dx = abs(position[0] - obstacle.position[0])
             dz = abs(position[2] - obstacle.position[2])
-            if dx <= half_size[0] + AGENT_RADIUS and dz <= half_size[2] + AGENT_RADIUS:
+            if (
+                dx <= obstacle.size[0] * 0.5 + AGENT_RADIUS
+                and dz <= obstacle.size[2] * 0.5 + AGENT_RADIUS
+            ):
                 return True
         return False
 
@@ -300,11 +307,41 @@ class ArenaSimulation:
         return current_position.copy()
 
     def _push_agents_out_of_obstacles(self) -> None:
+        if _arena_native is not None:
+            positions = [tuple(map(float, agent.position)) for agent in self.agents]
+            corrected = _arena_native.push_agents_out(
+                positions,
+                [agent.alive for agent in self.agents],
+                [tuple(map(float, obstacle.position)) for obstacle in self.obstacles],
+                [tuple(map(float, obstacle.size)) for obstacle in self.obstacles],
+                self.match_variant.arena_size,
+                AGENT_RADIUS,
+            )
+            for agent, position in zip(self.agents, corrected, strict=True):
+                agent.position = np.asarray(position, dtype=float)
+            return
+
+        arena_half = self.match_variant.arena_size * 0.5 - AGENT_RADIUS
         for agent in self.agents:
             if not agent.alive:
                 continue
+            # Most agents are already inside the arena and clear of every obstacle. In that
+            # common case _resolve_movement would only clamp to the same coordinates, allocate a
+            # copy, and then scan the obstacles a second time below without moving the agent.
+            position = agent.position
+            if (
+                -arena_half <= position[0] <= arena_half
+                and -arena_half <= position[2] <= arena_half
+                and not self._position_blocked(position)
+            ):
+                continue
             corrected = self._resolve_movement(agent.position, agent.position)
-            if np.allclose(corrected, agent.position):
+            close = all(
+                abs(float(corrected[axis] - agent.position[axis]))
+                <= 1e-8 + 1e-5 * abs(float(agent.position[axis]))
+                for axis in range(3)
+            )
+            if close:
                 for obstacle in self.obstacles:
                     half_size = obstacle.size * 0.5
                     dx = agent.position[0] - obstacle.position[0]
@@ -526,6 +563,13 @@ class ArenaSimulation:
     ) -> None:
         if dt <= 0.0:
             return
+        if _arena_native is not None and self.projectiles:
+            try:
+                self._advance_projectiles_rust(dt, hit_status, scored_status)
+                return
+            except (TypeError, ValueError, OverflowError):
+                # Malformed external projectile states retain the Python path's warnings and cleanup.
+                pass
         remaining_projectiles: List[ProjectileState] = []
         for projectile in self.projectiles:
             try:
@@ -604,6 +648,89 @@ class ArenaSimulation:
                 self._register_projectile_miss(projectile)
         self.projectiles = remaining_projectiles
 
+    def _advance_projectiles_rust(
+        self,
+        dt: float,
+        hit_status: Dict[str, bool],
+        scored_status: Dict[str, bool],
+    ) -> None:
+        projectiles = self.projectiles
+        agent_index = {agent.agent_id: index for index, agent in enumerate(self.agents)}
+        known_teams = list(self.cumulative_metrics)
+        encountered = known_teams + [
+            name for name in [agent.team_name for agent in self.agents]
+            + [projectile.team_name for projectile in projectiles]
+            if name not in known_teams
+        ]
+        team_index = {team_name: index for index, team_name in enumerate(dict.fromkeys(encountered))}
+
+        def team_code(team_name: str) -> int:
+            return team_index[team_name]
+
+        positions = [tuple(map(float, projectile.position)) for projectile in projectiles]
+        velocities = [tuple(map(float, projectile.velocity)) for projectile in projectiles]
+        if any(
+            len(vector) != 3 or not all(math.isfinite(component) for component in vector)
+            for vector in positions + velocities
+        ):
+            raise ValueError("invalid projectile vector")
+
+        result_positions, result_ages, result_distances, survivors, events, _alive_after = (
+            _arena_native.advance_projectiles(
+                positions,
+                velocities,
+                [agent_index.get(projectile.shooter_agent_id, -1) for projectile in projectiles],
+                [team_code(projectile.team_name) for projectile in projectiles],
+                [projectile.age for projectile in projectiles],
+                [projectile.distance_travelled for projectile in projectiles],
+                [projectile.max_distance for projectile in projectiles],
+                [tuple(map(float, agent.position)) for agent in self.agents],
+                [agent.alive for agent in self.agents],
+                [team_code(agent.team_name) for agent in self.agents],
+                [tuple(map(float, obstacle.position)) for obstacle in self.obstacles],
+                [tuple(map(float, obstacle.size)) for obstacle in self.obstacles],
+                dt,
+                self.match_variant.arena_size,
+            )
+        )
+
+        for index, projectile in enumerate(projectiles):
+            projectile.position = np.asarray(result_positions[index], dtype=float)
+            projectile.age = float(result_ages[index])
+            projectile.distance_travelled = float(result_distances[index])
+
+        # Rust applies alive-state changes while processing projectiles in list order. Replaying
+        # the returned events in that same order preserves attribution and reward bookkeeping.
+        for projectile_index, kind, target_index, event_position, _distance in events:
+            projectile = projectiles[projectile_index]
+            point = np.asarray(event_position, dtype=float)
+            if kind == 1:
+                projectile.hit = True
+                projectile.hit_position = point.copy()
+                projectile.position = point.copy()
+                target = self.agents[target_index]
+                self._register_projectile_hit(projectile, target, hit_status, scored_status)
+            elif kind == 2:
+                projectile.obstacle_hit = True
+                projectile.hit_position = point.copy()
+                projectile.position = point.copy()
+                self.pending_obstacle_hits.append(
+                    {"position": point.copy(), "team_name": projectile.team_name, "team_color": projectile.team_color}
+                )
+                self._register_projectile_miss(projectile)
+            elif kind == 3:
+                self._register_projectile_miss(projectile)
+            elif kind == 4:
+                warnings.warn(f"Projectile {projectile.projectile_id} removed: zero velocity.")
+                self._register_projectile_miss(projectile)
+            elif kind == 5:
+                projectile.hit_position = point.copy()
+                self._register_projectile_miss(projectile)
+            else:
+                raise ValueError(f"unknown native projectile event kind: {kind}")
+
+        self.projectiles = [projectiles[index] for index in survivors]
+
     def _record_trajectory(self) -> None:
         team_counts = self.live_team_counts()
         for team_name, team_metrics in self.cumulative_metrics.items():
@@ -656,31 +783,69 @@ class ArenaSimulation:
         hit_status = {agent.agent_id: False for agent in self.agents}
         scored_status = {agent.agent_id: False for agent in self.agents}
 
-        for agent in self.agents:
-            if not agent.alive:
-                continue
-            controller = self.controllers[agent.team_name]
-            decisions[agent.agent_id] = controller.decide(agent.snapshot(), snapshots, context)
+        agents_by_team: Dict[str, List[AgentSnapshot]] = {
+            team_name: [] for team_name in self.controllers
+        }
+        for snapshot in snapshots:
+            if snapshot.alive:
+                agents_by_team[snapshot.team_name].append(snapshot)
 
-        for agent in self.agents:
-            decision = decisions.get(agent.agent_id)
-            if not agent.alive or decision is None:
-                self._apply_jump_and_gravity(agent, dt)
+        for team_name, controller in self.controllers.items():
+            team_agents = agents_by_team[team_name]
+            if len(team_agents) > 1 and hasattr(controller, "decide_many"):
+                decisions.update(controller.decide_many(team_agents, snapshots, context))
                 continue
+            for snapshot in team_agents:
+                decisions[snapshot.agent_id] = controller.decide(snapshot, snapshots, context)
 
-            agent.heading_deg = (
-                agent.heading_deg + decision.turn * self.match_variant.agent_turn_speed * dt
-            ) % 360.0
-            if decision.jump and agent.position[1] <= 1.02:
-                agent.vertical_velocity = self.config.jump_speed
-            forward = self._forward_from_heading(agent.heading_deg)
-            desired_position = (
-                agent.position + forward * decision.move * self.match_variant.agent_move_speed * dt
+        if _arena_native is not None and self.agents:
+            movement = [decisions.get(agent.agent_id) if agent.alive else None for agent in self.agents]
+            moved_positions, moved_headings, moved_vertical = _arena_native.move_agents(
+                [tuple(map(float, agent.position)) for agent in self.agents],
+                [agent.heading_deg for agent in self.agents],
+                [agent.vertical_velocity for agent in self.agents],
+                [agent.alive for agent in self.agents],
+                [decision.move if decision is not None else 0.0 for decision in movement],
+                [decision.turn if decision is not None else 0.0 for decision in movement],
+                [bool(decision.jump) if decision is not None else False for decision in movement],
+                [tuple(map(float, obstacle.position)) for obstacle in self.obstacles],
+                [tuple(map(float, obstacle.size)) for obstacle in self.obstacles],
+                self.match_variant.arena_size,
+                AGENT_RADIUS,
+                self.match_variant.agent_move_speed,
+                self.match_variant.agent_turn_speed,
+                dt,
+                self.config.gravity,
+                self.config.jump_speed,
             )
-            agent.position = self._resolve_movement(agent.position, desired_position)
-            self._apply_jump_and_gravity(agent, dt)
-            if agent.alive:
-                agent.survival_time += dt
+            for agent, position, heading, vertical_velocity, decision in zip(
+                self.agents, moved_positions, moved_headings, moved_vertical, movement, strict=True
+            ):
+                agent.position = np.asarray(position, dtype=float)
+                agent.heading_deg = float(heading)
+                agent.vertical_velocity = float(vertical_velocity)
+                if agent.alive and decision is not None:
+                    agent.survival_time += dt
+        else:
+            for agent in self.agents:
+                decision = decisions.get(agent.agent_id)
+                if not agent.alive or decision is None:
+                    self._apply_jump_and_gravity(agent, dt)
+                    continue
+
+                agent.heading_deg = (
+                    agent.heading_deg + decision.turn * self.match_variant.agent_turn_speed * dt
+                ) % 360.0
+                if decision.jump and agent.position[1] <= 1.02:
+                    agent.vertical_velocity = self.config.jump_speed
+                forward = self._forward_from_heading(agent.heading_deg)
+                desired_position = (
+                    agent.position + forward * decision.move * self.match_variant.agent_move_speed * dt
+                )
+                agent.position = self._resolve_movement(agent.position, desired_position)
+                self._apply_jump_and_gravity(agent, dt)
+                if agent.alive:
+                    agent.survival_time += dt
 
         for agent in self.agents:
             decision = decisions.get(agent.agent_id)

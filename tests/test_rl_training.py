@@ -9,7 +9,7 @@ SRC_DIR = PROJECT_ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-import torch
+import numpy as np
 
 os.environ["RL_TRAIN_TOTAL_STEPS"] = "50"
 os.environ["MATCH_DURATION_SECONDS"] = "5"
@@ -37,7 +37,7 @@ def _flat_params(controller: RLTeamController) -> dict[str, object]:
     weights: dict[str, object] = {}
     for role, module in (("actor", controller.actor), ("critic", controller.critic)):
         if module is not None:
-            weights.update({f"{role}.{k}": v.detach().clone() for k, v in module.state_dict().items()})
+            weights.update({f"{role}.{k}": v.copy() for k, v in module.state_dict().items()})
     return weights
 
 
@@ -59,9 +59,8 @@ def test_match_termination_triggers_a_real_ppo_update(tmp_path: Path) -> None:
                 assert len(controller.buffer) == 0, "rollout buffer was not cleared after the update"
                 after = _flat_params(controller)
                 changed = any(
-                    not torch.equal(before[name][key], value)
+                    not np.array_equal(before[name][key], value)
                     for key, value in after.items()
-                    if isinstance(value, torch.Tensor)
                 )
                 assert changed, f"{name} ({controller.paradigm}) parameters did not move after an update"
             simulation.reset_match()
@@ -89,7 +88,7 @@ def test_rl_controllers_collect_rollouts_and_save(tmp_path: Path) -> None:
     for controller in simulation.controllers.values():
         controller.save(tmp_path)
     for paradigm in ("cte", "dte", "ctde"):
-        matches = list(tmp_path.glob(f"*_{paradigm}.pt"))
+        matches = list(tmp_path.glob(f"*_{paradigm}.npz"))
         assert matches, f"Checkpoint {paradigm} was not saved."
 
 

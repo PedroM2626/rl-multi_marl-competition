@@ -36,10 +36,8 @@ def main() -> None:
     seed_all(seed)
 
     mlflow = None
-    mlflow_pytorch = None
     if not args.no_mlflow:
         import mlflow
-        import mlflow.pytorch
 
         mlflow.set_tracking_uri("file:./mlruns")
         mlflow.set_experiment("CTDE_Comparison_Arena")
@@ -149,14 +147,6 @@ def main() -> None:
             log_entry(final=True)
             mlflow.log_artifacts(str(CONFIG.rl_checkpoint_dir), artifact_path="checkpoints")
 
-            for team_name, controller in simulation.controllers.items():
-                slug = team_name.lower().replace(" ", "_")
-                if controller.actor is not None:
-                    mlflow.pytorch.log_model(
-                        controller.actor,
-                        artifact_path=f"model_{slug}_actor",
-                        registered_model_name=f"CTDE_Arena_{slug.upper()}_Actor",
-                    )
 
     save_rl_checkpoints(simulation.controllers)
     log_path = CONFIG.rl_checkpoint_dir / "training_log.json"

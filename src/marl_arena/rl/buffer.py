@@ -4,7 +4,6 @@ from dataclasses import dataclass, field
 from typing import List
 
 import numpy as np
-import torch
 
 
 @dataclass
@@ -47,36 +46,14 @@ class RolloutBuffer:
         returns = advantages + values[:-1]
         return advantages, returns
 
-    def to_tensors(
-        self,
-        device: torch.device,
-        use_global: bool,
-        use_agent_slot: bool,
-    ) -> dict[str, torch.Tensor]:
-        local_obs = torch.tensor(
-            np.stack([step.local_obs for step in self.steps]),
-            dtype=torch.float32,
-            device=device,
-        )
-        actions = torch.tensor([step.action for step in self.steps], dtype=torch.long, device=device)
-        old_log_probs = torch.tensor([step.log_prob for step in self.steps], dtype=torch.float32, device=device)
-        payload: dict[str, torch.Tensor] = {
-            "local_obs": local_obs,
-            "actions": actions,
-            "old_log_probs": old_log_probs,
+    def to_arrays(self, use_global: bool, use_agent_slot: bool) -> dict[str, np.ndarray]:
+        payload: dict[str, np.ndarray] = {
+            "local_obs": np.stack([step.local_obs for step in self.steps]).astype(np.float32, copy=False),
+            "actions": np.asarray([step.action for step in self.steps], dtype=np.int32),
+            "old_log_probs": np.asarray([step.log_prob for step in self.steps], dtype=np.float32),
         }
         if use_global:
-            global_obs = torch.tensor(
-                np.stack([step.global_obs for step in self.steps]),
-                dtype=torch.float32,
-                device=device,
-            )
-            payload["global_obs"] = global_obs
+            payload["global_obs"] = np.stack([step.global_obs for step in self.steps]).astype(np.float32, copy=False)
         if use_agent_slot:
-            agent_slots = torch.tensor(
-                np.stack([step.agent_slot for step in self.steps]),
-                dtype=torch.float32,
-                device=device,
-            )
-            payload["agent_slots"] = agent_slots
+            payload["agent_slots"] = np.stack([step.agent_slot for step in self.steps]).astype(np.float32, copy=False)
         return payload

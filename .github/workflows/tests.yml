@@ -6,10 +6,12 @@ name: tests
 # Python 3.10.11 / NumPy 1.26.4 / Torch 2.5.1+cu121 (`requirements-measured.lock.txt`), and § 9.1 of the
 # documentation measures what the difference costs: the arena geometry and randomisation streams stay
 # bit-identical, but the first PPO update differs at 1e-6 and every checkpoint differs after 4,000 steps.
-# CI installs `requirements.txt` (NumPy 2.2.6 / Torch 2.6.0 -- and 2.6.0 is the version whose `torch.load`
-# is not covered by CVE-2025-32434, A-37) because the question here is "does the code do what its tests
+# CI installs `requirements.txt` (NumPy 2.2.6 / JAX 0.6.2 since the runtime move in A-44 -- Torch is no
+# longer a runtime dependency, so the CVE-2025-32434 note in A-37 describes the measured environment, not
+# this job) because the question here is "does the code do what its tests
 # say", which is environment-independent for everything except the training hashes. § 9.1's own
-# conclusion is that a *measurement* run must use the lock, and CI is not one.
+# conclusion is that a *measurement* run must use the lock, and CI is not one. A-45 is why the job needs no
+# Torch at all: the capacity width is read from the committed .npz, not from a torch.load of a .pt.
 #
 # `ursina` is excluded from the install, exactly as in the host verification environment docs/09 § 9.4
 # describes. The render test then skips for missing Ursina rather than failing on a runner whose Panda3D
@@ -45,7 +47,7 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install (CPU torch wheel; both committed .env files set RL_DEVICE=cpu)
+      - name: Install (runtime deps from requirements.txt; both committed .env files set RL_DEVICE=cpu)
         run: |
           python -m pip install --upgrade pip
           grep -v '^ursina' "${{ matrix.workdir }}/requirements.txt" > ci-requirements.txt
