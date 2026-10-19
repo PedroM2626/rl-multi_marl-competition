@@ -6,7 +6,8 @@ name: tests
 # Python 3.10.11 / NumPy 1.26.4 / Torch 2.5.1+cu121 (`requirements-measured.lock.txt`), and § 9.1 of the
 # documentation measures what the difference costs: the arena geometry and randomisation streams stay
 # bit-identical, but the first PPO update differs at 1e-6 and every checkpoint differs after 4,000 steps.
-# CI installs `requirements.txt` (NumPy 2.2.6 / JAX 0.6.2 since the runtime move in A-44 -- Torch is no
+# CI installs `requirements.txt` (NumPy 2.2.6 / JAX 0.4.38 since the runtime move in A-44 -- 0.4.38 is the
+# build this host actually runs and the one A-45's runtime measurements were made on -- Torch is no
 # longer a runtime dependency, so the CVE-2025-32434 note in A-37 describes the measured environment, not
 # this job) because the question here is "does the code do what its tests
 # say", which is environment-independent for everything except the training hashes. § 9.1's own
