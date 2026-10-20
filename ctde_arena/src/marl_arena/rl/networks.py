@@ -132,7 +132,14 @@ class JAXNetwork:
         return self
 
     def forward(self, *inputs: Any) -> Any:
-        arrays = tuple(jnp.asarray(item, dtype=jnp.float32) for item in inputs)
+        # A float32 device array is already what jnp.asarray would return; skipping the call for that
+        # case removes per-step host overhead on the inference path without touching any value.
+        arrays = tuple(
+            item
+            if isinstance(item, jax.Array) and item.dtype == jnp.float32
+            else jnp.asarray(item, dtype=jnp.float32)
+            for item in inputs
+        )
         if self.kind == "actor":
             return _actor_forward(self.params, arrays[0])
         if self.kind == "central_actor":

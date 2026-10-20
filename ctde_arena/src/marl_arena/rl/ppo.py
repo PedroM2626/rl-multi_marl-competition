@@ -140,6 +140,7 @@ class PPOTrainer:
         tensors = buffer.to_arrays(use_global=use_global, use_agent_slot=use_slots)
         sample_count = len(buffer)
         stats = None
+        pending_stats: tuple[jax.Array, ...] | None = None
 
         for _ in range(self.ppo_epochs):
             indices = np.arange(sample_count)
@@ -188,8 +189,12 @@ class PPOTrainer:
                 actor.params = params["actor"]
                 if critic is not None:
                     critic.params = params["critic"]
-                values = jax.device_get((policy_loss, value_loss, entropy, approx_kl))
-                stats = PPOStats(*(float(value) for value in values))
+                # The per-minibatch scalars stay unmaterialised until the update finishes: syncing
+                # inside the loop serialised the host against every dispatch, and only the last
+                # minibatch's numbers are ever reported. The synced values are identical.
+                pending_stats = (policy_loss, value_loss, entropy, approx_kl)
+        if pending_stats is not None:
+            stats = PPOStats(*(float(value) for value in jax.device_get(pending_stats)))
         return stats
 
     def update_actor_critic(self, actor: JAXNetwork, buffer: RolloutBuffer, last_value: float, gamma: float, gae_lambda: float) -> PPOStats | None:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
@@ -104,4 +105,82 @@ def test_batched_decisions_and_rollouts_match_scalar_path() -> None:
                     np.testing.assert_array_equal(scalar_row.global_obs, batch_row.global_obs)
                 if scalar_row.agent_slot is not None:
                     np.testing.assert_array_equal(scalar_row.agent_slot, batch_row.agent_slot)
+            controller.set_training(False)
+
+
+def test_partial_team_decisions_match_full_team_rows() -> None:
+    """Live subsets must read out exactly as their rows do inside a full-team batch.
+
+    The inference path pads a team's live rows to a fixed batch of three and slices the
+    logits, values and critic broadcast back on the host. A row's logits depend only on
+    that row, so a call with a subset of the team must reproduce, bit for bit, the same
+    agents' decisions and rollout rows as one call with every teammate live -- including
+    when the extra rows are dead agents rather than padding.
+    """
+    for rotation in range(3):
+        seed_all(61 + rotation)
+        simulation = ArenaSimulation(
+            seed=rotation,
+            domain_randomization=False,
+            load_checkpoints=False,
+            paradigm_rotation=rotation,
+        )
+        snapshots = simulation.build_snapshots()
+        context = ControllerContext(
+            step_index=1,
+            arena_size=simulation.match_variant.arena_size,
+            time_delta=0.1,
+            shoot_range=simulation.match_variant.shoot_range,
+        )
+
+        for controller in simulation.controllers.values():
+            # CTDE-Comm is excluded by construction: its rows carry mean-pooled messages from
+            # live teammates, so no per-row independence invariant exists to assert -- the
+            # zero-filled dead slots in its team observation are the architecture, not padding.
+            if controller.paradigm == "CTDE-Comm":
+                continue
+            roster = [agent for agent in snapshots if agent.team_name == controller.team_name]
+            for live_count in (1, 2):
+                dead = [
+                    agent if index < live_count else replace(agent, alive=False)
+                    for index, agent in enumerate(roster)
+                ]
+                world = [
+                    next((row for row in dead if row.agent_id == agent.agent_id), agent)
+                    for agent in snapshots
+                ]
+                for mode in (False, True):
+                    controller.set_training(mode)
+                    controller.rng.seed(71)
+                    controller.action_rng = np.random.default_rng(71)
+                    partial = controller.decide_many(roster[:live_count], world, context)
+                    partial_rows = dict(controller.pending_steps)
+                    controller.pending_steps.clear()
+
+                    controller.rng.seed(71)
+                    controller.action_rng = np.random.default_rng(71)
+                    full = controller.decide_many(roster, world, context)
+                    full_rows = dict(controller.pending_steps)
+                    controller.pending_steps.clear()
+
+                    assert set(partial) == {agent.agent_id for agent in roster[:live_count]}
+                    for agent in roster[:live_count]:
+                        assert partial[agent.agent_id].move == full[agent.agent_id].move
+                        assert partial[agent.agent_id].turn == full[agent.agent_id].turn
+                        assert partial[agent.agent_id].jump == full[agent.agent_id].jump
+                        assert partial[agent.agent_id].shoot == full[agent.agent_id].shoot
+                        np.testing.assert_array_equal(
+                            partial[agent.agent_id].aim_direction,
+                            full[agent.agent_id].aim_direction,
+                        )
+                        if mode:
+                            row, reference = partial_rows[agent.agent_id], full_rows[agent.agent_id]
+                            assert row.action == reference.action
+                            assert row.log_prob == reference.log_prob
+                            assert row.value == reference.value
+                            np.testing.assert_array_equal(row.local_obs, reference.local_obs)
+                            if reference.global_obs is not None:
+                                np.testing.assert_array_equal(row.global_obs, reference.global_obs)
+                            if reference.agent_slot is not None:
+                                np.testing.assert_array_equal(row.agent_slot, reference.agent_slot)
             controller.set_training(False)

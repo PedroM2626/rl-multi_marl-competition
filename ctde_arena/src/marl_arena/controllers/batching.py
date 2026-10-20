@@ -6,7 +6,6 @@ import math
 from typing import Iterable
 
 import jax
-import jax.numpy as jnp
 import numpy as np
 
 from marl_arena.controllers.base import ControllerContext, normalize
@@ -152,35 +151,33 @@ def decide_many(
         padding = np.zeros((inference_batch - len(rows), rows.shape[1]), dtype=rows.dtype)
         return np.concatenate((rows, padding), axis=0)
 
-    global_tensor = jnp.asarray(global_obs, dtype=jnp.float32)[None, :] if global_obs is not None else None
-    slot_tensor = (
-        jnp.asarray(padded_rows(np.stack(slots)), dtype=jnp.float32) if needs_slots else None
-    )
+    # Everything below feeds JAX with host arrays and pulls results back with a single sync. The eager
+    # device-side slicing, expanding and broadcasting this path used to do were extra dispatches per
+    # step with byte-identical results to the host equivalents, so the host versions win on throughput
+    # without changing a single sampled value: the padded batch shapes the jitted programs see are
+    # unchanged, and slicing/broadcasting float32 rows before or after the transfer is exact.
+    global_rows = np.asarray(global_obs, dtype=np.float32)[None, :] if global_obs is not None else None
+    slot_tensor = padded_rows(np.stack(slots)) if needs_slots else None
 
     if paradigm == "CTE":
-        assert global_tensor is not None and slot_tensor is not None
-        policy_tensor = jnp.broadcast_to(global_tensor, (inference_batch, global_tensor.shape[-1]))
-        logits = controller.actor.forward(policy_tensor, slot_tensor)[:len(agents)]
-        value = controller.critic.forward(global_tensor)
-        values = jnp.broadcast_to(value, (len(agents),))
+        assert global_rows is not None and slot_tensor is not None
+        policy_rows = np.broadcast_to(global_rows, (inference_batch, global_rows.shape[-1]))
+        logits = controller.actor.forward(policy_rows, slot_tensor)
+        values = controller.critic.forward(global_rows)
     elif paradigm == "CTDE-Comm":
-        assert global_tensor is not None and slot_tensor is not None
-        team_tensor = jnp.asarray(padded_rows(np.stack(policy_obs)), dtype=jnp.float32)
-        logits = controller.actor.forward(team_tensor, slot_tensor)[:len(agents)]
-        value = controller.critic.forward(global_tensor)
-        values = jnp.broadcast_to(value, (len(agents),))
+        assert global_rows is not None and slot_tensor is not None
+        team_tensor = padded_rows(np.stack(policy_obs))
+        logits = controller.actor.forward(team_tensor, slot_tensor)
+        values = controller.critic.forward(global_rows)
     else:
-        policy_tensor = jnp.asarray(padded_rows(np.stack(policy_obs)), dtype=jnp.float32)
-        logits, actor_values = controller.actor.forward(policy_tensor)
-        logits, actor_values = logits[:len(agents)], actor_values[:len(agents)]
-        if paradigm == "DTE":
-            values = actor_values
-        else:
-            assert global_tensor is not None
-            value = controller.critic.forward(global_tensor)
-            values = jnp.broadcast_to(value, (len(agents),))
+        policy_tensor = padded_rows(np.stack(policy_obs))
+        logits, values = controller.actor.forward(policy_tensor)
+        if paradigm != "DTE":
+            assert global_rows is not None
+            values = controller.critic.forward(global_rows)
 
-    logits_host = np.asarray(jax.device_get(logits), dtype=np.float64)
+    logits_result, values_result = jax.device_get((logits, values))
+    logits_host = np.asarray(logits_result, dtype=np.float64)[:len(agents)]
     shifted_logits = logits_host - logits_host.max(axis=-1, keepdims=True)
     log_distribution_host = shifted_logits - np.log(
         np.exp(shifted_logits).sum(axis=-1, keepdims=True)
@@ -197,7 +194,10 @@ def decide_many(
         action_rows = [controller._eval_action(logits_host[i]) for i in range(len(agents))]
         log_prob_rows = [0.0] * len(agents)
 
-    value_rows = np.asarray(jax.device_get(values)).tolist()
+    if paradigm == "DTE":
+        value_rows = np.asarray(values_result)[:len(agents)].tolist()
+    else:
+        value_rows = np.broadcast_to(np.asarray(values_result), (len(agents),)).tolist()
 
     decisions: dict[str, StepDecision] = {}
     for index, agent in enumerate(agents):
