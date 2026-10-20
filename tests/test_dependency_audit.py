@@ -64,6 +64,21 @@ def test_the_measured_lock_is_fully_parsable() -> None:
     assert len({name for name, _ in pins}) == len(pins), "a duplicated package would be queried twice"
 
 
+def test_the_runtime_locks_are_fully_parsable() -> None:
+    """The requirements CI installs and the runtime audit records cover must be exact pins.
+
+    A pin that cannot be parsed would make the audit gate fail on a syntax complaint instead of
+    silently skipping a dependency — but only if the file parses at all, which is what is pinned
+    here. Experiment 2's lock is experiment 1's plus mlflow.
+    """
+    root_pins = audit.parse_pins(PROJECT_ROOT / "requirements.txt")
+    ctde_pins = audit.parse_pins(PROJECT_ROOT / "ctde_arena" / "requirements.txt")
+    assert ("jax", "0.4.38") in root_pins
+    assert ("python-dotenv", "1.0.1") in root_pins
+    assert ctde_pins[:-1] == root_pins, "the shared pins must stay identical across the trees"
+    assert ctde_pins[-1] == ("mlflow", "2.17.2"), "experiment 2's own dependency is the tracking store"
+
+
 def test_severity_picks_the_highest_recorded_level() -> None:
     vuln = {"severity": [{"type": "ECOSYSTEM", "score": [{"severity": "MODERATE"}, {"severity": "CRITICAL"}]}]}
     assert audit.severity_of(vuln) == "CRITICAL"

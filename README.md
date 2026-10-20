@@ -8,7 +8,7 @@ itself the measurement.
 
 > **Full technical documentation lives in [`docs/`](docs/README.md)** — system model, MDP
 > formalisation, architectures, optimisation, protocol, results with confidence intervals and power
-> analysis, reproducibility, limitations, and a 42-item code audit. This file is the quick start.
+> analysis, reproducibility, limitations, and a 48-item code audit. This file is the quick start.
 
 ## Documentation
 
@@ -56,7 +56,7 @@ Honest summary of what is finished and what is not:
 | Study re-measured at the shipped step budget | the same twenty replicates trained to 3,000,000 steps instead of 500,000: the lead changes hands in **both** experiments (CTDE 0.429 overtakes DTE; CTDE-Comm 0.395 takes first while CTDE-VD falls to last) and no paired comparison clears the corrected bar ([§ 8.13](docs/08_results.md#budget-3m)) | same |
 | Historical dependency audit | The measured PyTorch lock has recorded advisories; the current runtime requirements use JAX and retain the old lock for historical reproduction ([§ 9.10](docs/09_reproducibility.md#dependency-audit)) | same |
 | Gameplay clips of the trained policies | yes (`docs/assets/`) | yes |
-| Current tests | 166 passed, 1 skipped, **86 %** statement coverage | 78 passed, 1 skipped, **87 %** coverage |
+| Current tests | 168 passed, 1 skipped, **86 %** statement coverage | 79 passed, 1 skipped, **87 %** coverage |
 | Continuous integration | both suites plus tree parity, documentation links, inventory and pooled/absolute re-derivation, artefact-path portability, campaign-script syntax — green on `ubuntu-latest`, and the re-derivation gate is what caught [A-42](docs/11_code_audit.md#a-committed-artefact-recorded-windows-paths) ([§ 9.4](docs/09_reproducibility.md#continuous-integration)) | same job |
 | Docker | n/a | **never built or run** |
 
@@ -299,9 +299,13 @@ python main.py
 > the slot. The shipped `.env` is set so that `python main.py` loads the promoted policies; a different
 > rotation warns rather than silently demoing random networks. See `data/PROVENANCE.json`.
 
-**Cost.** The runtime that trains today is JAX with the optional Rust core, and four warmed repeats of its
+**Cost.** The runtime that trains today is JAX with the optional Rust core. Four warmed repeats of its
 benchmark put the Rust route at **290.8 steps/s** against 254.3 for the Python fallback (about +14 %), on CPU
-([§ 9.5](docs/09_reproducibility.md#runtime-jax-rust-sample)). The PyTorch figures are
+([§ 9.5](docs/09_reproducibility.md#runtime-jax-rust-sample)); profiling then found most of each step's cost
+in the host dispatches around the tiny matmuls, and moving slicing, broadcasting and the PPO syncs to the
+host — verified value-neutral bit for bit — is worth a further **+30 % Rust / +25 % fallback** in paired
+interleaved measurement, and lets four concurrent replicates each train at solo speed
+([§ 9.5 host overhead](docs/09_reproducibility.md#host-dispatch-overhead)). The PyTorch figures are
 historical: 368 steps/s for the scalar path with one Torch thread
 ([A-26](docs/11_code_audit.md#gpu-and-thread-scaling)) and 599.5 steps/s for the batched path in a paired
 1,500-step run ([A-44](docs/11_code_audit.md#per-agent-policy-dispatch-was-the-training-bottleneck)); the port
@@ -310,7 +314,11 @@ has not been shown to beat that second number, and no controlled backend compari
 Running more processes at once is not how a JAX campaign gets cheaper: aggregate throughput peaks at about four
 concurrent replicates and then falls, because each training process here carries ~104 threads (NumPy's BLAS
 pool plus JAX's CPU backend), and the environment caps in `src/marl_arena/config.py` reduce that from 127
-without removing it. The measurement and the control that isolates it are in the section above.
+without removing it. The measurement and the control that isolates it are in the section above. One more
+runtime property a campaign planner needs: under concurrent load the JAX *training update* is not
+bit-deterministic — identical-seed runs can differ by a few float32 ulps
+([A-47](docs/11_code_audit.md#the-jax-training-update-is-not-bit-deterministic-under-concurrent-load)) — so
+byte-frozen checkpoints require running one process at a time.
 
 ## Controls in the 3D view
 
@@ -360,7 +368,7 @@ and a positive value samples the policy's softmax at that temperature
 │   ├── rl/                     # actions, buffer + GAE, networks, ppo
 │   ├── systems/                # match_variant, simulation, metrics, plotting
 │   └── ui/dashboard.py         # in-game overlay text
-├── tests/                      # 163 tests, incl. tree-parity, collision geometry, the round-robin statistics, the checkpoint-archive pairing and artefact-path portability
+├── tests/                      # 169 tests, incl. tree-parity, collision geometry, the round-robin statistics, the checkpoint-archive pairing and artefact-path portability
 ├── data/                       # experiment 1: promoted replicate + historical_100k/ + PROVENANCE.json
 ├── results/
 │   ├── study/                  # per_seed_metrics.csv, analysis.json, learning_curves.png
@@ -371,7 +379,7 @@ and a positive value samples the policy's softmax at that temperature
     ├── main.py  Dockerfile  requirements.txt  README.md
     ├── scripts/                # own train_rl.py (adds MLflow); the shared scripts are byte-identical
     ├── src/marl_arena/         # own copy; VD / CAC / Comm networks
-    ├── tests/                  # 79 tests
+    ├── tests/                  # 80 tests
     ├── results/baseline/       # experiment 2's untrained reference
     └── data/                   # promoted replicate, historical_100k/, mlflow_export/, PROVENANCE.json
 ```

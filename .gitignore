@@ -25,6 +25,9 @@ build/
 
 # Local scratch that must never be mistaken for experiment output
 **/_untrained_scratch/
+# Concurrency-ladder measurement scratch: host-state-dependent timings, not evidence.
+# The versioned paired instrument is scripts/benchmark_runtime.py.
+/scratch-jax-smoke/
 .coverage
 htmlcov/
 

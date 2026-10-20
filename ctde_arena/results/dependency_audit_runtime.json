@@ -1,0 +1,911 @@
+{
+  "generated_utc": "2026-10-20T20:55:36+00:00",
+  "source": "requirements.txt",
+  "database": "OSV (api.osv.dev), queried per exact pin",
+  "pins_queried": 9,
+  "pins_with_no_known_vulnerability": 6,
+  "vulnerable_pins": 3,
+  "advisories": [
+    "python-dotenv==1.0.1: GHSA-mf9w-mj56-hr94 (MODERATE)",
+    "python-dotenv==1.0.1: PYSEC-2026-2270 (UNSPECIFIED)",
+    "pytest==8.3.5: GHSA-6w46-j5rx-g56g (MODERATE)",
+    "pytest==8.3.5: PYSEC-2026-1845 (UNSPECIFIED)",
+    "mlflow==2.17.2: GHSA-2cm6-r77w-6g96 (HIGH)",
+    "mlflow==2.17.2: GHSA-42h5-h8qh-vv9v (HIGH)",
+    "mlflow==2.17.2: GHSA-46r5-x6jq-v8g6 (MODERATE)",
+    "mlflow==2.17.2: GHSA-49m6-vrr9-2cqm (MODERATE)",
+    "mlflow==2.17.2: GHSA-4rj2-9gcx-5qhx (LOW)",
+    "mlflow==2.17.2: GHSA-4x5p-f36r-mxxr (HIGH)",
+    "mlflow==2.17.2: GHSA-5cvj-7rg6-jggj (HIGH)",
+    "mlflow==2.17.2: GHSA-5qmp-p3c4-72qj (LOW)",
+    "mlflow==2.17.2: GHSA-65h7-c7c4-mghx (HIGH)",
+    "mlflow==2.17.2: GHSA-6xj8-rrqx-r4cv (HIGH)",
+    "mlflow==2.17.2: GHSA-75cm-x2w3-8mgf (HIGH)",
+    "mlflow==2.17.2: GHSA-7qhf-v65m-g5f3 (CRITICAL)",
+    "mlflow==2.17.2: GHSA-8c7q-86fq-vvmh (CRITICAL)",
+    "mlflow==2.17.2: GHSA-969w-gqqr-g6j3 (MODERATE)",
+    "mlflow==2.17.2: GHSA-f2m9-wcf4-cwwx (HIGH)",
+    "mlflow==2.17.2: GHSA-fh64-r2vc-xvhr (MODERATE)",
+    "mlflow==2.17.2: GHSA-fhff-qmm8-h2fp (HIGH)",
+    "mlflow==2.17.2: GHSA-g35p-px32-whv6 (CRITICAL)",
+    "mlflow==2.17.2: GHSA-g6pg-52vf-843h (HIGH)",
+    "mlflow==2.17.2: GHSA-gq3w-7jj3-x7gr (CRITICAL)",
+    "mlflow==2.17.2: GHSA-gqvg-gmmx-x4hm (HIGH)",
+    "mlflow==2.17.2: GHSA-pgqp-8h46-6x4j (HIGH)",
+    "mlflow==2.17.2: GHSA-q2r8-vmq7-fpx2 (HIGH)",
+    "mlflow==2.17.2: GHSA-r23q-823p-vmf7 (CRITICAL)",
+    "mlflow==2.17.2: GHSA-r5m9-wm49-959f (MODERATE)",
+    "mlflow==2.17.2: GHSA-rvhj-8chj-8v3c (CRITICAL)",
+    "mlflow==2.17.2: GHSA-vhcx-3pq2-4fvc (CRITICAL)",
+    "mlflow==2.17.2: GHSA-w5xq-c4pf-ghq7 (MODERATE)",
+    "mlflow==2.17.2: GHSA-wf7f-8fxf-xfxc (HIGH)",
+    "mlflow==2.17.2: GHSA-wxj7-3fx5-pp9m (MODERATE)",
+    "mlflow==2.17.2: GHSA-xch3-2f9x-wh9f (HIGH)",
+    "mlflow==2.17.2: PYSEC-2025-17 (UNSPECIFIED)",
+    "mlflow==2.17.2: PYSEC-2025-52 (UNSPECIFIED)",
+    "mlflow==2.17.2: PYSEC-2026-1637 (UNSPECIFIED)",
+    "mlflow==2.17.2: PYSEC-2026-1639 (UNSPECIFIED)",
+    "mlflow==2.17.2: PYSEC-2026-1640 (UNSPECIFIED)",
+    "mlflow==2.17.2: PYSEC-2026-1642 (UNSPECIFIED)",
+    "mlflow==2.17.2: PYSEC-2026-1646 (UNSPECIFIED)",
+    "mlflow==2.17.2: PYSEC-2026-1656 (UNSPECIFIED)",
+    "mlflow==2.17.2: PYSEC-2026-1660 (UNSPECIFIED)",
+    "mlflow==2.17.2: PYSEC-2026-195 (UNSPECIFIED)",
+    "mlflow==2.17.2: PYSEC-2026-2219 (UNSPECIFIED)",
+    "mlflow==2.17.2: PYSEC-2026-2220 (UNSPECIFIED)",
+    "mlflow==2.17.2: PYSEC-2026-2221 (UNSPECIFIED)",
+    "mlflow==2.17.2: PYSEC-2026-2222 (UNSPECIFIED)",
+    "mlflow==2.17.2: PYSEC-2026-2654 (UNSPECIFIED)",
+    "mlflow==2.17.2: PYSEC-2026-2655 (UNSPECIFIED)",
+    "mlflow==2.17.2: PYSEC-2026-2656 (UNSPECIFIED)",
+    "mlflow==2.17.2: PYSEC-2026-2657 (UNSPECIFIED)",
+    "mlflow==2.17.2: PYSEC-2026-2658 (UNSPECIFIED)",
+    "mlflow==2.17.2: PYSEC-2026-2659 (UNSPECIFIED)",
+    "mlflow==2.17.2: PYSEC-2026-2660 (UNSPECIFIED)",
+    "mlflow==2.17.2: PYSEC-2026-2661 (UNSPECIFIED)",
+    "mlflow==2.17.2: PYSEC-2026-3686 (UNSPECIFIED)",
+    "mlflow==2.17.2: PYSEC-2026-3687 (UNSPECIFIED)",
+    "mlflow==2.17.2: PYSEC-2026-419 (UNSPECIFIED)",
+    "mlflow==2.17.2: PYSEC-2026-421 (UNSPECIFIED)",
+    "mlflow==2.17.2: PYSEC-2026-423 (UNSPECIFIED)",
+    "mlflow==2.17.2: PYSEC-2026-424 (UNSPECIFIED)",
+    "mlflow==2.17.2: PYSEC-2026-425 (UNSPECIFIED)",
+    "mlflow==2.17.2: PYSEC-2026-93 (UNSPECIFIED)",
+    "mlflow==2.17.2: PYSEC-2026-94 (UNSPECIFIED)"
+  ],
+  "packages": [
+    {
+      "package": "ursina",
+      "version": "6.1.2",
+      "vulnerabilities": []
+    },
+    {
+      "package": "numpy",
+      "version": "2.2.6",
+      "vulnerabilities": []
+    },
+    {
+      "package": "matplotlib",
+      "version": "3.10.3",
+      "vulnerabilities": []
+    },
+    {
+      "package": "pandas",
+      "version": "2.3.3",
+      "vulnerabilities": []
+    },
+    {
+      "package": "python-dotenv",
+      "version": "1.0.1",
+      "vulnerabilities": [
+        "GHSA-mf9w-mj56-hr94",
+        "PYSEC-2026-2270"
+      ],
+      "details": [
+        {
+          "id": "GHSA-mf9w-mj56-hr94",
+          "aliases": [
+            "CVE-2026-28684"
+          ],
+          "summary": "python-dotenv: Symlink following in set_key allows arbitrary file overwrite via cross-device rename fallback",
+          "severity": "MODERATE",
+          "fixed_in": [
+            "1.2.2"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-2270",
+          "aliases": [
+            "CVE-2026-28684"
+          ],
+          "summary": "",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "1.2.2"
+          ]
+        }
+      ]
+    },
+    {
+      "package": "jax",
+      "version": "0.4.38",
+      "vulnerabilities": []
+    },
+    {
+      "package": "jaxlib",
+      "version": "0.4.38",
+      "vulnerabilities": []
+    },
+    {
+      "package": "pytest",
+      "version": "8.3.5",
+      "vulnerabilities": [
+        "GHSA-6w46-j5rx-g56g",
+        "PYSEC-2026-1845"
+      ],
+      "details": [
+        {
+          "id": "GHSA-6w46-j5rx-g56g",
+          "aliases": [
+            "CVE-2025-71176"
+          ],
+          "summary": "pytest has vulnerable tmpdir handling",
+          "severity": "MODERATE",
+          "fixed_in": [
+            "9.0.3"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-1845",
+          "aliases": [
+            "CVE-2025-71176"
+          ],
+          "summary": "pytest has vulnerable tmpdir handling",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "9.0.3"
+          ]
+        }
+      ]
+    },
+    {
+      "package": "mlflow",
+      "version": "2.17.2",
+      "vulnerabilities": [
+        "GHSA-2cm6-r77w-6g96",
+        "GHSA-42h5-h8qh-vv9v",
+        "GHSA-46r5-x6jq-v8g6",
+        "GHSA-49m6-vrr9-2cqm",
+        "GHSA-4rj2-9gcx-5qhx",
+        "GHSA-4x5p-f36r-mxxr",
+        "GHSA-5cvj-7rg6-jggj",
+        "GHSA-5qmp-p3c4-72qj",
+        "GHSA-65h7-c7c4-mghx",
+        "GHSA-6xj8-rrqx-r4cv",
+        "GHSA-75cm-x2w3-8mgf",
+        "GHSA-7qhf-v65m-g5f3",
+        "GHSA-8c7q-86fq-vvmh",
+        "GHSA-969w-gqqr-g6j3",
+        "GHSA-f2m9-wcf4-cwwx",
+        "GHSA-fh64-r2vc-xvhr",
+        "GHSA-fhff-qmm8-h2fp",
+        "GHSA-g35p-px32-whv6",
+        "GHSA-g6pg-52vf-843h",
+        "GHSA-gq3w-7jj3-x7gr",
+        "GHSA-gqvg-gmmx-x4hm",
+        "GHSA-pgqp-8h46-6x4j",
+        "GHSA-q2r8-vmq7-fpx2",
+        "GHSA-r23q-823p-vmf7",
+        "GHSA-r5m9-wm49-959f",
+        "GHSA-rvhj-8chj-8v3c",
+        "GHSA-vhcx-3pq2-4fvc",
+        "GHSA-w5xq-c4pf-ghq7",
+        "GHSA-wf7f-8fxf-xfxc",
+        "GHSA-wxj7-3fx5-pp9m",
+        "GHSA-xch3-2f9x-wh9f",
+        "PYSEC-2025-17",
+        "PYSEC-2025-52",
+        "PYSEC-2026-1637",
+        "PYSEC-2026-1639",
+        "PYSEC-2026-1640",
+        "PYSEC-2026-1642",
+        "PYSEC-2026-1646",
+        "PYSEC-2026-1656",
+        "PYSEC-2026-1660",
+        "PYSEC-2026-195",
+        "PYSEC-2026-2219",
+        "PYSEC-2026-2220",
+        "PYSEC-2026-2221",
+        "PYSEC-2026-2222",
+        "PYSEC-2026-2654",
+        "PYSEC-2026-2655",
+        "PYSEC-2026-2656",
+        "PYSEC-2026-2657",
+        "PYSEC-2026-2658",
+        "PYSEC-2026-2659",
+        "PYSEC-2026-2660",
+        "PYSEC-2026-2661",
+        "PYSEC-2026-3686",
+        "PYSEC-2026-3687",
+        "PYSEC-2026-419",
+        "PYSEC-2026-421",
+        "PYSEC-2026-423",
+        "PYSEC-2026-424",
+        "PYSEC-2026-425",
+        "PYSEC-2026-93",
+        "PYSEC-2026-94"
+      ],
+      "details": [
+        {
+          "id": "GHSA-2cm6-r77w-6g96",
+          "aliases": [
+            "CVE-2026-8147"
+          ],
+          "summary": "MLflow: trace API endpoints lack proper authorization validators",
+          "severity": "HIGH",
+          "fixed_in": [
+            "3.13.0rc0"
+          ]
+        },
+        {
+          "id": "GHSA-42h5-h8qh-vv9v",
+          "aliases": [
+            "CVE-2026-2614"
+          ],
+          "summary": "MLflow allows an unauthenticated remote attacker to read arbitrary files from the server's filesystem",
+          "severity": "HIGH",
+          "fixed_in": [
+            "3.10.0"
+          ]
+        },
+        {
+          "id": "GHSA-46r5-x6jq-v8g6",
+          "aliases": [
+            "CVE-2026-33866"
+          ],
+          "summary": "MLflow is vulnerable to an authorization bypass affecting the AJAX endpoint",
+          "severity": "MODERATE",
+          "fixed_in": [
+            "3.11.0rc0"
+          ]
+        },
+        {
+          "id": "GHSA-49m6-vrr9-2cqm",
+          "aliases": [
+            "CVE-2025-0453"
+          ],
+          "summary": "MLflow Uncontrolled Resource Consumption vulnerability",
+          "severity": "MODERATE",
+          "fixed_in": []
+        },
+        {
+          "id": "GHSA-4rj2-9gcx-5qhx",
+          "aliases": [
+            "CVE-2025-1474"
+          ],
+          "summary": "MLflow has Weak Password Requirements",
+          "severity": "LOW",
+          "fixed_in": [
+            "2.19.0"
+          ]
+        },
+        {
+          "id": "GHSA-4x5p-f36r-mxxr",
+          "aliases": [
+            "CVE-2025-10279"
+          ],
+          "summary": "mlflow Creates of Temporary File in Directory with Insecure Permissions",
+          "severity": "HIGH",
+          "fixed_in": [
+            "3.4.0rc0"
+          ]
+        },
+        {
+          "id": "GHSA-5cvj-7rg6-jggj",
+          "aliases": [
+            "CVE-2025-11201"
+          ],
+          "summary": "MLflow Tracking Server Model Creation Directory Traversal Remote Code Execution Vulnerability",
+          "severity": "HIGH",
+          "fixed_in": [
+            "2.22.4",
+            "3.0.0"
+          ]
+        },
+        {
+          "id": "GHSA-5qmp-p3c4-72qj",
+          "aliases": [
+            "CVE-2026-10803"
+          ],
+          "summary": "MLflow: Deterministic sampling in dataset digest enables predictable collisions",
+          "severity": "LOW",
+          "fixed_in": [
+            "3.10.1"
+          ]
+        },
+        {
+          "id": "GHSA-65h7-c7c4-mghx",
+          "aliases": [
+            "CVE-2026-2393"
+          ],
+          "summary": "MLflow Has a Server-Side Request Forgery (SSRF) Vulnerability",
+          "severity": "HIGH",
+          "fixed_in": [
+            "3.9.0"
+          ]
+        },
+        {
+          "id": "GHSA-6xj8-rrqx-r4cv",
+          "aliases": [
+            "CVE-2025-11200"
+          ],
+          "summary": "MLflow Weak Password Requirements Authentication Bypass Vulnerability",
+          "severity": "HIGH",
+          "fixed_in": [
+            "2.22.0rc0"
+          ]
+        },
+        {
+          "id": "GHSA-75cm-x2w3-8mgf",
+          "aliases": [
+            "CVE-2026-2652"
+          ],
+          "summary": "MLflow: unauthenticated access to certain FastAPI routes",
+          "severity": "HIGH",
+          "fixed_in": [
+            "3.11.0"
+          ]
+        },
+        {
+          "id": "GHSA-7qhf-v65m-g5f3",
+          "aliases": [
+            "CVE-2026-0545"
+          ],
+          "summary": "mlflow: FastAPI job endpoints under `/ajax-api/3.0/jobs/*` are not protected by authentication or authorization",
+          "severity": "CRITICAL",
+          "fixed_in": []
+        },
+        {
+          "id": "GHSA-8c7q-86fq-vvmh",
+          "aliases": [
+            "CVE-2026-2651"
+          ],
+          "summary": "MLflow allows unauthorized access to multipart upload endpoints when the `--serve-artifacts` mode is enabled",
+          "severity": "CRITICAL",
+          "fixed_in": [
+            "3.10.0"
+          ]
+        },
+        {
+          "id": "GHSA-969w-gqqr-g6j3",
+          "aliases": [
+            "CVE-2025-1473"
+          ],
+          "summary": "MLflow Cross-Site Request Forgery (CSRF) vulnerability",
+          "severity": "MODERATE",
+          "fixed_in": [
+            "2.20.3"
+          ]
+        },
+        {
+          "id": "GHSA-f2m9-wcf4-cwwx",
+          "aliases": [
+            "CVE-2026-4137"
+          ],
+          "summary": "MLFlow Creates a Temporary File With Insecure Permissions ",
+          "severity": "HIGH",
+          "fixed_in": [
+            "3.11.0"
+          ]
+        },
+        {
+          "id": "GHSA-fh64-r2vc-xvhr",
+          "aliases": [
+            "CVE-2026-33865"
+          ],
+          "summary": "MLflow is vulnerable to Stored Cross-Site Scripting (XSS) caused by unsafe parsing of YAML-based MLmodel artifacts in its web interface",
+          "severity": "MODERATE",
+          "fixed_in": [
+            "3.11.1"
+          ]
+        },
+        {
+          "id": "GHSA-fhff-qmm8-h2fp",
+          "aliases": [
+            "CVE-2025-15031"
+          ],
+          "summary": "Arbitrary file write via tar traversal in mlflow",
+          "severity": "HIGH",
+          "fixed_in": [
+            "3.9.0rc0"
+          ]
+        },
+        {
+          "id": "GHSA-g35p-px32-whv6",
+          "aliases": [
+            "CVE-2026-4035"
+          ],
+          "summary": "MLflow: Environment variable injection in AI Gateway secrets enables server-side credential exfiltration",
+          "severity": "CRITICAL",
+          "fixed_in": [
+            "3.11.0"
+          ]
+        },
+        {
+          "id": "GHSA-g6pg-52vf-843h",
+          "aliases": [
+            "CVE-2025-15381"
+          ],
+          "summary": "MLFlow allows Tracing + Assessments Access",
+          "severity": "HIGH",
+          "fixed_in": []
+        },
+        {
+          "id": "GHSA-gq3w-7jj3-x7gr",
+          "aliases": [
+            "CVE-2026-2635"
+          ],
+          "summary": "MLflow Use of Default Password Authentication Bypass Vulnerability",
+          "severity": "CRITICAL",
+          "fixed_in": [
+            "3.8.0rc0"
+          ]
+        },
+        {
+          "id": "GHSA-gqvg-gmmx-x4hm",
+          "aliases": [],
+          "summary": "MLFLOW_ALLOW_PICKLE_DESERIALIZATION=False safety control bypassed by mlflow.statsmodels flavor \u2014 RCE via crafted model artifact",
+          "severity": "HIGH",
+          "fixed_in": [
+            "3.15.0"
+          ]
+        },
+        {
+          "id": "GHSA-pgqp-8h46-6x4j",
+          "aliases": [
+            "CVE-2025-14279"
+          ],
+          "summary": "MLFlow is vulnerable to DNS rebinding attacks due to a lack of Origin header validation",
+          "severity": "HIGH",
+          "fixed_in": [
+            "3.5.0"
+          ]
+        },
+        {
+          "id": "GHSA-q2r8-vmq7-fpx2",
+          "aliases": [
+            "CVE-2026-2033"
+          ],
+          "summary": "MLflow Tracking Server Artifact Handler Directory Traversal Remote Code Execution Vulnerability",
+          "severity": "HIGH",
+          "fixed_in": [
+            "3.8.0rc0"
+          ]
+        },
+        {
+          "id": "GHSA-r23q-823p-vmf7",
+          "aliases": [
+            "CVE-2025-15379"
+          ],
+          "summary": "MLflow Command Injection vulnerability",
+          "severity": "CRITICAL",
+          "fixed_in": [
+            "3.8.1"
+          ]
+        },
+        {
+          "id": "GHSA-r5m9-wm49-959f",
+          "aliases": [
+            "CVE-2026-3198"
+          ],
+          "summary": "MLflow: Any authenticated user can enumerate all gateway secrets, endpoints, and model definitions",
+          "severity": "MODERATE",
+          "fixed_in": [
+            "3.11.0rc0"
+          ]
+        },
+        {
+          "id": "GHSA-rvhj-8chj-8v3c",
+          "aliases": [
+            "CVE-2026-0596"
+          ],
+          "summary": "Mlflow: Command Injection when serving models with enable_mlserver=True",
+          "severity": "CRITICAL",
+          "fixed_in": [
+            "3.9.0"
+          ]
+        },
+        {
+          "id": "GHSA-vhcx-3pq2-4fvc",
+          "aliases": [
+            "CVE-2025-15036"
+          ],
+          "summary": "MLFlow path traversal vulnerability",
+          "severity": "CRITICAL",
+          "fixed_in": [
+            "3.9.0rc0"
+          ]
+        },
+        {
+          "id": "GHSA-w5xq-c4pf-ghq7",
+          "aliases": [
+            "CVE-2026-2734"
+          ],
+          "summary": "MLflow authenticated users can enumerate any registered model versions due to lack of per-model permissions checks",
+          "severity": "MODERATE",
+          "fixed_in": [
+            "3.10.0"
+          ]
+        },
+        {
+          "id": "GHSA-wf7f-8fxf-xfxc",
+          "aliases": [
+            "CVE-2024-37059"
+          ],
+          "summary": "MLFlow unsafe deserialization",
+          "severity": "HIGH",
+          "fixed_in": []
+        },
+        {
+          "id": "GHSA-wxj7-3fx5-pp9m",
+          "aliases": [
+            "CVE-2025-52967"
+          ],
+          "summary": "MLFlow SSRF via gateway_proxy_handler",
+          "severity": "MODERATE",
+          "fixed_in": [
+            "2.22.2",
+            "3.1.0"
+          ]
+        },
+        {
+          "id": "GHSA-xch3-2f9x-wh9f",
+          "aliases": [
+            "CVE-2025-14287"
+          ],
+          "summary": "MLflow has a command injection in mlflow/sagemaker/__init__.py",
+          "severity": "HIGH",
+          "fixed_in": [
+            "3.8.0rc0"
+          ]
+        },
+        {
+          "id": "PYSEC-2025-17",
+          "aliases": [
+            "CVE-2025-1474"
+          ],
+          "summary": "",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "149c9e18aa219bc47e86b432e130e467a36f4a17",
+            "2.19.0"
+          ]
+        },
+        {
+          "id": "PYSEC-2025-52",
+          "aliases": [
+            "CVE-2025-52967"
+          ],
+          "summary": "",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "3.1.0",
+            "39a419b4ec8fd11b59b3e50ab397042a490f2324"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-1637",
+          "aliases": [
+            "CVE-2025-0453"
+          ],
+          "summary": "MLflow Uncontrolled Resource Consumption vulnerability",
+          "severity": "UNSPECIFIED",
+          "fixed_in": []
+        },
+        {
+          "id": "PYSEC-2026-1639",
+          "aliases": [
+            "CVE-2025-10279"
+          ],
+          "summary": "mlflow Creates of Temporary File in Directory with Insecure Permissions",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "3.4.0rc0"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-1640",
+          "aliases": [
+            "CVE-2025-11201"
+          ],
+          "summary": "MLflow Tracking Server Model Creation Directory Traversal Remote Code Execution Vulnerability",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "2.22.4",
+            "3.0.0"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-1642",
+          "aliases": [
+            "CVE-2025-11200"
+          ],
+          "summary": "MLflow Weak Password Requirements Authentication Bypass Vulnerability",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "2.22.0rc0"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-1646",
+          "aliases": [
+            "CVE-2025-1473"
+          ],
+          "summary": "MLflow Cross-Site Request Forgery (CSRF) vulnerability",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "2.20.3"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-1656",
+          "aliases": [
+            "CVE-2025-14279"
+          ],
+          "summary": "MLFlow is vulnerable to DNS rebinding attacks due to a lack of Origin header validation",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "3.5.0"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-1660",
+          "aliases": [
+            "CVE-2024-37059"
+          ],
+          "summary": "MLFlow unsafe deserialization",
+          "severity": "UNSPECIFIED",
+          "fixed_in": []
+        },
+        {
+          "id": "PYSEC-2026-195",
+          "aliases": [
+            "CVE-2026-10803"
+          ],
+          "summary": "",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "3.10.1"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-2219",
+          "aliases": [
+            "CVE-2026-2393"
+          ],
+          "summary": "",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "3.9.0"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-2220",
+          "aliases": [
+            "CVE-2026-2651"
+          ],
+          "summary": "",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "3.11.0rc0"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-2221",
+          "aliases": [
+            "CVE-2026-2652"
+          ],
+          "summary": "",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "3.10.0"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-2222",
+          "aliases": [
+            "CVE-2026-4035"
+          ],
+          "summary": "",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "3.11.0"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-2654",
+          "aliases": [
+            "CVE-2026-2614"
+          ],
+          "summary": "MLflow allows an unauthenticated remote attacker to read arbitrary files from the server's filesystem",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "3.10.0"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-2655",
+          "aliases": [
+            "CVE-2026-4137"
+          ],
+          "summary": "MLFlow Creates a Temporary File With Insecure Permissions ",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "3.11.0"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-2656",
+          "aliases": [
+            "CVE-2025-15031"
+          ],
+          "summary": "Arbitrary file write via tar traversal in mlflow",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "3.9.0rc0"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-2657",
+          "aliases": [
+            "CVE-2025-15381"
+          ],
+          "summary": "MLFlow allows Tracing + Assessments Access",
+          "severity": "UNSPECIFIED",
+          "fixed_in": []
+        },
+        {
+          "id": "PYSEC-2026-2658",
+          "aliases": [
+            "CVE-2026-2033"
+          ],
+          "summary": "MLflow Tracking Server Artifact Handler Directory Traversal Remote Code Execution Vulnerability",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "3.8.0rc0"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-2659",
+          "aliases": [
+            "CVE-2026-3198"
+          ],
+          "summary": "MLflow: Any authenticated user can enumerate all gateway secrets, endpoints, and model definitions",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "3.11.0rc0"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-2660",
+          "aliases": [
+            "CVE-2026-2734"
+          ],
+          "summary": "MLflow authenticated users can enumerate any registered model versions due to lack of per-model permissions checks",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "3.10.0"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-2661",
+          "aliases": [
+            "CVE-2025-14287"
+          ],
+          "summary": "MLflow has a command injection in mlflow/sagemaker/__init__.py",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "3.8.0rc0"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-3686",
+          "aliases": [
+            "CVE-2026-8147"
+          ],
+          "summary": "MLflow: trace API endpoints lack proper authorization validators",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "3.13.0rc0"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-3687",
+          "aliases": [
+            "CVE-2026-64849"
+          ],
+          "summary": "MLflow: Unauthenticated full-read SSRF in webhook delivery: _validate_webhook_url bypassed via unvalidated HTTP redirects (and DNS rebinding)",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "3.15.0"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-419",
+          "aliases": [
+            "CVE-2026-0545"
+          ],
+          "summary": "mlflow: FastAPI job endpoints under `/ajax-api/3.0/jobs/*` are not protected by authentication or authorization",
+          "severity": "UNSPECIFIED",
+          "fixed_in": []
+        },
+        {
+          "id": "PYSEC-2026-421",
+          "aliases": [
+            "CVE-2026-2635"
+          ],
+          "summary": "MLflow Use of Default Password Authentication Bypass Vulnerability",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "3.8.0rc0"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-423",
+          "aliases": [
+            "CVE-2025-15379"
+          ],
+          "summary": "MLflow Command Injection vulnerability",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "3.8.1"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-424",
+          "aliases": [
+            "CVE-2026-0596"
+          ],
+          "summary": "Mlflow: Command Injection when serving models with enable_mlserver=True",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "3.9.0"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-425",
+          "aliases": [
+            "CVE-2025-15036"
+          ],
+          "summary": "MLFlow path traversal vulnerability",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "3.9.0rc0"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-93",
+          "aliases": [
+            "CVE-2026-33865"
+          ],
+          "summary": "",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "3.11.0rc0"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-94",
+          "aliases": [
+            "CVE-2026-33866"
+          ],
+          "summary": "",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "3.11.0rc0"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -128,11 +128,11 @@ of them in the same place.
 | `python scripts/train_rl.py --seed S` | 1 | Headless JAX PPO training; seeded smoke path verified, full-study replay pending |
 | `python main.py` | 1 | Ursina 3D window, greedy policies loaded from `data/checkpoints/` |
 | `python scripts/plot_metrics.py` | 1 | Reads `data/metrics/summary.json` → `exports/metrics/` |
-| `python -m pytest tests/ -q` | 1 | 158 passed, 1 skipped (verified 2026-10-18) |
+| `python -m pytest tests/ -q` | 1 | 168 passed, 1 skipped (verified 2026-10-20) |
 | `cd ctde_arena && python scripts/train_rl.py` | 2 | Same, plus MLflow scalar and checkpoint-artefact logging |
 | `cd ctde_arena && mlflow ui --backend-store-uri file:./mlruns` | 2 | Tracking UI |
 | `cd ctde_arena && python main.py` | 2 | 3D window for the CTDE variants |
-| `cd ctde_arena && python -m pytest tests/ -q` | 2 | 78 passed, 1 skipped (verified 2026-10-18) |
+| `cd ctde_arena && python -m pytest tests/ -q` | 2 | 79 passed, 1 skipped (verified 2026-10-20) |
 | `cd ctde_arena && docker build -t ctde-arena . && docker run --rm -v ${PWD}/data:/app/data -v ${PWD}/mlruns:/app/mlruns ctde-arena` | 2 | Containerised training |
 | `python scripts/run_experiment.py --seed S --steps N --out DIR` | either | One seeded replicate: train, then greedy held-out evaluation |
 | `python scripts/run_study.py --steps 500000 --seeds 1..10 --jobs 20` | both | Fan replicates out across processes and collect `results/study/` |
@@ -237,13 +237,13 @@ ImportError: cannot import name 'ValueDecompositionCriticNetwork' from 'marl_are
 
 ## 9.4 Test results
 
-Current JAX/Rust verification on 2026-10-18, re-run the same evening after A-45:
+Current JAX/Rust verification on 2026-10-20, after A-46 moved the per-step eager device ops to the host:
 
 ```
 $ python -m pytest tests/ -q
-166 passed, 1 skipped in 40.03s
+168 passed, 1 skipped in 265.43s
 $ cd ctde_arena && python -m pytest tests/ -q
-78 passed, 1 skipped in 12.74s
+79 passed, 1 skipped in 23.85s
 ```
 
 Three consecutive runs of each suite returned those totals unchanged. One earlier run of the root suite failed
@@ -270,8 +270,8 @@ previous implementation recorded:
 
 | Tree | Statements | Missing | Coverage | Runtime measured |
 |---|---:|---:|---:|---|
-| Experiment 1 | 1,854 | 263 | **86 %** | JAX/Rust |
-| Experiment 2 (`ctde_arena/`) | 1,854 | 240 | **87 %** | JAX/Rust |
+| Experiment 1 | 1,853 | 262 | **86 %** | JAX/Rust |
+| Experiment 2 (`ctde_arena/`) | 1,853 | 239 | **87 %** | JAX/Rust |
 | Experiment 1 | 1,548 | 91 | 94 % | PyTorch, historical |
 | Experiment 2 (`ctde_arena/`) | 1,660 | 187 | 89 % | PyTorch, historical |
 
@@ -426,6 +426,60 @@ the [JAX platform table](https://docs.jax.dev/en/latest/installation.html) marks
 experimental and provides no Windows GPU support, so this machine's discrete GPU is not a lever the runtime can
 pull without changing operating system.
 
+### The step's own host overhead (2026-10-20) <a name="host-dispatch-overhead"></a>
+
+The 2026-10-18 sample above measures the whole step; a profile of where the step's wall clock goes found that
+most of the JAX cost was not the small matmuls but the *host dispatches around them*. One `decide_many` call —
+2.4 of them run per environment step on average — paid for: an eager `jnp.asarray(...)[None, :]` expand of the
+global row, an eager `jnp.broadcast_to` of the critic's value (and for CTE of the policy rows), two eager
+device-side slices `[:len(agents)]` of the actor outputs, and **two** `jax.device_get` syncs (logits, then
+values). The PPO update paid a `jax.device_get` of its four scalars **per minibatch**, serialising the host
+against every one of the ~12 dispatches an update makes. The fixes change no value the networks ever see:
+
+* slicing, expanding and broadcasting moved to the host — a float32 row copied before or after the device
+  transfer is the same bytes, and the padded batch shapes the jitted programs receive are unchanged;
+* the two syncs became one `jax.device_get((logits, values))`;
+* the per-minibatch PPO syncs were deferred to the end of the update — only the last minibatch's numbers are
+  ever reported, and they are the same numbers (`src/marl_arena/rl/ppo.py`);
+* `JAXNetwork.forward` no longer re-wraps inputs that are already float32 device arrays.
+
+**Verification, bit for bit.** The pre-change and post-change sources were run as paired, same-seed training
+windows. Experiment 1, 8,000 steps from scratch: match boundaries, winners, per-match reward sums and all
+three teams' final parameter digests were **equal**. Experiment 2, the same window: every PPO update's
+per-leaf parameter digests were equal across all 46 updates, and a first-update parameter dump matched
+exactly. `exact_outcome_and_weight_parity` stayed true in every benchmark run before and after. The one
+caveat this verification surfaced is not about the change: under concurrent load the *pre-change* runtime
+itself is not bit-frozen — [A-47](11_code_audit.md#the-jax-training-update-is-not-bit-deterministic-under-concurrent-load)
+records four identical-seed processes producing two weight sets that differ by ≤ 3e-08 after the first
+update, and the same flip appearing under the post-change code at higher load. Solo, both runtimes were
+byte-stable in every run.
+
+**Measurement, interleaved.** Because this host's background state moves absolute rates by ±10 % between
+sessions (the 2026-10-18 note measured the same effect), the pre- and post-change sources were benchmarked
+alternately in one session with the committed protocol (`--steps 2000 --warmup-steps 2000 --repeats 4`):
+
+| Protocol run, in order | Rust/PyO3 median steps/s | Python fallback median steps/s |
+|---|---:|---:|
+| pre-change source | 223.1 | 213.0 |
+| **post-change source** | **298.2** | **262.8** |
+| pre-change source | 224.5 | 206.5 |
+| **post-change source** | **291.4** | **263.2** |
+
+The paired medians put the change at **+30 % on the Rust route and +25 % on the fallback** (298.2/223.1 and
+291.4/224.5; 262.8/213.0 and 263.2/206.5). Two days earlier the same instrument had measured the pre-change
+Rust route at 290.8 on an idle host, so the absolute level of any one session is not the claim — the
+interleaved ratio is.
+
+**Concurrency re-measured.** The scaling ladder above was re-run twice with the post-change source (steady
+2,000-step windows, Rust core). The two ladders disagree everywhere except at the depth the guidance
+already recommends: at N=4 both measured **347–370 steps/s per process — solo speed — for an aggregate of
+≈ 1,400–1,470**, where the committed ladder measured 196.3 and 785.4. At N=1, N=2 and N=8 the two ladders
+differ by up to 80 % between waves run minutes apart (per-process 121–217 at N=8), so those cells are host
+state, not code, and the committed table is left as the record of the pre-change instrument. The queue-four-deep
+guidance survives — both ladders put N=4 at or near the aggregate peak with a quarter of the threads of N=16 —
+and its economics improved: a four-deep queue of post-change replicates delivers ≈ 1.8× the pre-change
+aggregate at that depth.
+
 For the historical PyTorch runtime, one thread was the selected setting because each model is small and
 each team batch has at most three rows. The original profile and the per-agent dispatch cost are in
 [§ GPU and thread scaling](11_code_audit.md#gpu-and-thread-scaling).
@@ -472,13 +526,20 @@ See [§ Unbounded transition retention](11_code_audit.md#unbounded-transition-re
 ## 9.6 What is and is not reproducible
 
 The reproduction records in this section document the earlier PyTorch implementation. The current JAX
-runtime is seeded and smoke-tested, but two full same-seed training runs have not yet been
-byte-compared. What [A-45](11_code_audit.md#the-runtime-swap-orphaned-the-committed-checkpoint-archive)
+runtime is seeded and smoke-tested, and same-seed training windows have now been byte-compared — the
+2026-10-20 host-overhead change was verified by running the pre- and post-change sources over identical
+8,000-step windows and finding equal match boundaries, winners and final parameter digests in both
+experiment trees ([§ 9.5](#host-dispatch-overhead)). What that comparison also found is a limit the runtime
+has independently of that change: under concurrent load the PPO update is not bit-deterministic
+([A-47](11_code_audit.md#the-jax-training-update-is-not-bit-deterministic-under-concurrent-load)), so
+byte-identity is a property of *solo* runs on this instrument and may not be promised for a concurrent JAX
+campaign. What [A-45](11_code_audit.md#the-runtime-swap-orphaned-the-committed-checkpoint-archive)
 settled is the part that needed no new study: every committed policy now exists twice, a `.pt` for the
 runtime that produced the tables and a byte-verified `.npz` this one can load, so § 8.10 to § 8.13 are
 replayable again. A-45 measured what that means in practice: replaying one committed `no_dr` block
 through the converted archive reproduced all 1,800 team-matches with **no difference in any recorded
-column**, while the forward pass itself differs by up to 4e-07 on logits -- enough that exact
+column**, while the forward pass itself differs by up to 4e-07 on logits (`scripts/parity_probe.py` is the
+instrument behind that figure) -- enough that exact
 reproduction may be claimed for what was sampled and may not be claimed as a property of the runtime.
 
 **Reproducible bit-for-bit from the repository:** every table in [§ Results](08_results.md), because all
@@ -559,7 +620,7 @@ inclination to replay 4,500 matches.
 
 ## 9.7 Artefact inventory
 
-Every versioned experiment artefact (427 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed, and each hash is of the blob Git stores rather than of the file on disk — a text artefact checked out with CRLF on Windows hashes differently from the same committed bytes on Linux, and a reader on any platform should be able to reproduce this column.
+Every versioned experiment artefact (429 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed, and each hash is of the blob Git stores rather than of the file on disk — a text artefact checked out with CRLF on Windows hashes differently from the same committed bytes on Linux, and a reader on any platform should be able to reproduce this column.
 
 **Promoted replicate.** The artefacts that match the current code. Chosen by `promote_run.py --seed median`, which is the replicate with the least L1 distance to the per-arm study means; `PROVENANCE.json` records the choice and the full run summary behind it.
 
@@ -999,14 +1060,16 @@ Every versioned experiment artefact (427 files), with SHA-256 for integrity chec
 | `data/campaign_replicates/wide_256/exp2_seed3/team_3_ctde-comm.npz` | 1,058,811 | `d3f778f494cf15037e29f31cbca1019844c67b47d23fe28328825d54e70f3da5` |
 | `data/campaign_replicates/wide_256/exp2_seed3/team_3_ctde-comm.pt` | 1,144,818 | `ea8e5a78869772c416737d1983a51ab8e584553bf3b51183a07eaba57c751dc7` |
 
-**Environment provenance and governance.** The environment every measurement was taken in and the record of what is known about it: the two identical `pip freeze` locks of [§ 9.1](#verification-environment-actually-used), OSV's per-pin answer from [§ 9.10](#dependency-audit), and the MIT grant over the whole repository.
+**Environment provenance and governance.** The environment every measurement was taken in and the record of what is known about it: the two identical `pip freeze` locks of [§ 9.1](#verification-environment-actually-used), OSV's per-pin answer from [§ 9.10](#dependency-audit) -- for the measured lock and, since A-48, for each tree's runtime `requirements.txt` as well -- and the MIT grant over the whole repository.
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
 | `LICENSE` | 1,075 | `fd4599d12f7345289a2684a68d852eac9e0e7a68f0ed17298ebfe502c11f95f6` |
 | `ctde_arena/requirements-measured.lock.txt` | 2,448 | `13a9ead65d70af5c9c42671c50477a8b736b864b790b25e38d61bee78a1f55bd` |
+| `ctde_arena/results/dependency_audit_runtime.json` | 26,325 | `e41954218c9b0d5cae4bcedeb323a9e8f9d8dc27f8b053cc48e96d99f4a5f999` |
 | `requirements-measured.lock.txt` | 2,448 | `13a9ead65d70af5c9c42671c50477a8b736b864b790b25e38d61bee78a1f55bd` |
 | `results/dependency_audit.json` | 11,288 | `5de3f482896f88e80460bda28378eca0a48b0f9661d270e6f92b0c8e705ec3dd` |
+| `results/dependency_audit_runtime.json` | 2,576 | `ebc150645d08deaa166874c6005d381a06167c32e10360da1880d2829af6413d` |
 
 **Ablation and arena-v2 campaigns.** `run_arena_v2_campaign.sh` and `run_ablation_campaign.sh` output, each aggregated by `run_study.py` from 500 k-step replicates: `no_dr` on seeds 1-10 (extended by `run_no_dr_extension.sh`), the two capacity arms on seeds 1-3, arena v2 on seeds 1-10, and `results/study_3m/` -- the same twenty replicates re-trained at the 3 M-step budget `main.py` ships with, which is the one arm whose single key is the budget. Every arm differs from `results/study/` by exactly one configuration key.
 
@@ -1168,6 +1231,48 @@ tools should only be used with trusted legacy files.
 **What would change the decision:** any entry point that accepts a checkpoint path from an untrusted source,
 or shipping the checkpoints as data a client supplies. Either would justify both the torch upgrade and a
 fresh measurement campaign, whose cost § 9.1 quantifies.
+
+### The runtime locks, audited (2026-10-20) <a name="runtime-dependency-audit"></a>
+
+Everything above is about `requirements-measured.lock.txt` — the environment that produced the published
+numbers. The environments that *run* the code today are `requirements.txt` in each tree, and until now no
+record said what OSV knows about them; the audit script always took the measured lock as its default and
+nothing gated the runtime pins at all. Both are now recorded and CI-gated the same way the measured lock is
+(`results/dependency_audit_runtime.json` in each tree, re-verified on every push), so a pin can no longer
+change — or acquire a known advisory nobody has read — without the gate noticing the record is stale.
+
+| Lock | Pins | Clean | With advisories |
+|---|---:|---:|---|
+| `requirements.txt` (experiment 1) | 8 | 6 | `python-dotenv==1.0.1`, `pytest==8.3.5` |
+| `ctde_arena/requirements.txt` (experiment 2) | 9 | 6 | the same two, plus `mlflow==2.17.2` |
+
+The applicability of each, and the decision:
+
+* **`python-dotenv==1.0.1`** — `GHSA-mf9w-mj56-hr94` / CVE-2026-28684, MODERATE: `set_key()` and
+  `unset_key()` follow symlinks when rewriting `.env` files, allowing a local attacker to overwrite
+  arbitrary files. This repository never calls either function — `git grep` finds no `set_key` or
+  `unset_key` anywhere — it only reads, via `load_dotenv(ROOT_DIR / ".env")`, and that file is tracked and
+  identical to `.env.example`. The advisory's code path does not exist here. Fixed in 1.2.2.
+* **`pytest==8.3.5`** — `GHSA-6w46-j5rx-g56g` / CVE-2025-71176, MODERATE: pytest through 9.0.2 relies on
+  `/tmp/pytest-of-{user}` directories on UNIX, allowing a hostile local user to interfere with test runs.
+  A development tool on developer machines and ephemeral CI runners, where the local-user threat model is
+  empty; no repository artefact is produced by pytest in production. Fixed in 9.0.3.
+* **`mlflow==2.17.2`** — 58 OSV records: 7 CRITICAL, 15 HIGH, 7 MODERATE, 2 LOW and 31 unspecified,
+  aliasing the tracking-server advisory family (path traversal to arbitrary file read/write, SSRF and
+  deserialization reachable through the REST API), fixed across 2.19.0–2.22.4. The attack surface those
+  records describe is a *network-reachable tracking server*. This repository never starts one: experiment
+  2's training logs to a local file store (`mlflow.set_tracking_uri("file:./mlruns")`, or `--no-mlflow`,
+  which is what the historical verification used), and the only server the documentation ever tells a
+  reader to run is `mlflow ui` against that local store — a loopback browser session, not a service. The
+  decision that follows: the pin stays, because the version is what the tracked MLflow artefacts were
+  produced with and no workflow here reaches the vulnerable surface. **What would change it:** exposing
+  `mlflow ui` beyond loopback, pointing `set_tracking_uri` at a remote server, or any entry point that
+  accepts a tracking URI from outside the repository.
+
+The pins are not upgraded: A-37 set the precedent that an environment pin is part of a measurement's
+provenance, and each upgrade would be a change nobody has re-verified the suites or the throughput sample
+on. The records above are what lets that decision be made with the advisories in view rather than in
+ignorance of them.
 
 ```bash
 python scripts/audit_dependencies.py                 # needs network; writes nothing if OSV is unreachable

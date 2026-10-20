@@ -65,6 +65,9 @@ Every finding below was open at some point; the status column is the current sta
 | [A-43](#an-arm-was-extended-and-the-versioning-step-silently-versioned-none-of-it) | MED · FIXED | A hard-coded seed list meant the `no_dr` arm's seven new runs were never copied into `data/campaign_replicates/`, and the replay's scratch fallback let the campaign carry on regardless — a pool whose weights would not be in the repository |
 | [A-44](#per-agent-policy-dispatch-was-the-training-bottleneck) | MED · FIXED | Each teammate repeated a batch-one PyTorch pass and shared feature work; batching more than doubled measured single-process throughput |
 | [A-45](#the-runtime-swap-orphaned-the-committed-checkpoint-archive) | MED · FIXED | The runtime move to JAX left 165 committed `.pt` policies that nothing could load and took Torch out of the dependencies two tools still needed; the archive now has byte-verified `.npz` twins, a gate, and a resolution rule that says what to run |
+| [A-46](#eager-device-ops-and-per-minibatch-syncs-were-the-jax-steps-own-overhead) | MED · FIXED | The batched JAX step still paid five eager device dispatches and two syncs per team per step, and the PPO update synced its scalars per minibatch; moving them to the host is value-neutral and worth +30 % measured |
+| [A-47](#the-jax-training-update-is-not-bit-deterministic-under-concurrent-load) | LOW · ACCEPTED RISK | Under concurrent load, identical-seed JAX training runs can differ by a few float32 ulps after the first update; solo runs are byte-stable, and no published number depends on concurrent JAX training |
+| [A-48](#the-runtime-that-replaced-the-measured-lock-was-never-dependency-audited) | LOW · FIXED | Nothing recorded what OSV knows about the *runtime* requirements — only the measured lock was audited; both trees' runtime locks are now queried, committed and CI-gated, and mlflow 2.17.2's 58 records are assessed against what this repository actually runs |
 
 ---
 
@@ -1179,7 +1182,9 @@ checked by downloading the wheel rather than by assuming it.
 **What the conversion does and does not preserve.** The stored arrays are identical: the `.npz` holds exactly
 the tensors of the `.pt`, in Torch's `[out, in]` layout, which is the layout `JAXNetwork.load_state_dict`
 expects. The *forward pass* is not bit-identical, because multiplying a batch reassociates the sum. Measured
-on one fixed observation, three actor shapes, Torch logits against the converted JAX policy:
+with `scripts/parity_probe.py` (committed as this instrument, after living unreferenced as a root-level
+`parity_probe_tmp.py`) on one fixed observation, three actor shapes, Torch logits against the converted JAX
+policy:
 
 | Checkpoint (network) | max &#124;Δ logit&#124; |
 |---|---:|
@@ -1413,3 +1418,118 @@ cut a training process from 127 threads to 104, which is not the same as making 
 flag that would is rejected by this jaxlib. Campaign widths of twelve and twenty were chosen when one thread
 per process was enforced by `torch.set_num_threads(1)`; under JAX the measured optimum on this host is about
 four, and that is a scheduling fact about the queue rather than a result about the arena.
+
+Three entries below post-date this note. A-46 is the throughput finding the port's own step was carrying:
+the batched path still dispatched five eager device ops and two syncs per team per step, and the PPO update
+synced per minibatch. A-47 is the reproducibility limit the verification for A-46 could not help finding:
+the JAX training update is not bit-deterministic under concurrent load. A-48 is the dependency-audit gap of
+the same swap: the runtime requirements that replaced the measured lock had no OSV record and no gate.
+
+## Eager device ops and per-minibatch syncs were the JAX step's own overhead
+
+**A-46 · MED · FIXED**
+
+A profile of the post-A-45 step attributed most of its wall clock to host dispatch rather than to the small
+matmuls the dispatches carry. Per `decide_many` call — 2.4 calls per environment step on average — the
+inference path executed as *eager, individually dispatched* device ops: a `jnp.asarray(...)[None, :]` expand
+of the global row, an eager `jnp.broadcast_to` of the critic value (and, for CTE, of the policy rows), two
+`[:len(agents)]` gathers of the actor outputs, and two separate `jax.device_get` syncs. The PPO update then
+called `jax.device_get` on its four scalars **once per minibatch** — roughly twelve forced host/device
+round-trips per update, per team, per match — although only the last minibatch's numbers are ever reported.
+
+The fix keeps every value the networks see unchanged and moves the work around it:
+
+* slices, expands and broadcasts happen on the host (`src/marl_arena/controllers/batching.py`) — a float32
+  row is the same bytes before or after the device transfer, and the jitted programs still receive the same
+  padded batch shapes they were compiled for;
+* one combined `jax.device_get((logits, values))` replaces the two syncs;
+* the PPO update materialises its scalars once, after the epoch loop
+  (`src/marl_arena/rl/ppo.py`);
+* `JAXNetwork.forward` stops re-wrapping arguments that are already float32 device arrays.
+
+**Verification.** The change was gated by equality, not by "close enough". Paired same-seed 8,000-step
+training windows were run on the pre-change and post-change sources in both trees: match boundaries,
+winners, per-match reward sums and every team's final parameter digest were equal in experiment 1, and
+per-leaf digests of all 46 PPO updates were equal in experiment 2, as was a full first-update parameter
+dump. The `exact_outcome_and_weight_parity` gate of `scripts/benchmark_runtime.py` held in every run before
+and after. `tests/test_policy_batching.py` gained a partial-team case: the decisions and rollout rows of a
+one- or two-agent live subset must be *exactly* the same agents' rows inside a full-team batch — the
+invariant the host-side slicing and broadcasting relies on, exercised with dead teammates in the roster
+rather than padding. The verification also found [A-47](#the-jax-training-update-is-not-bit-deterministic-under-concurrent-load).
+
+**Measurement.** Interleaving pre- and post-change benchmark runs in one session (the host's background
+state moves absolute rates by ±10 % between sessions, so pairing is the only honest instrument) gave
+Rust-route medians of 223.1 and 224.5 against **298.2 and 291.4** steps/s, and fallback medians of 213.0 and
+206.5 against **262.8 and 263.2**: **+30 % and +25 %**. The concurrency ladder was re-run twice: its N=1,
+N=2 and N=8 cells move with host state between waves minutes apart, but both ladders agree that at N=4 each
+process now trains at solo speed (347–370 steps/s, aggregate ≈ 1,400–1,470) where the pre-change ladder
+measured 196.3 per process (785.4 aggregate) — the queue-four-deep guidance stands, with ≈ 1.8× the
+aggregate at that depth. The numbers and their caveats are in
+[§ 9.5](09_reproducibility.md#host-dispatch-overhead).
+
+## The JAX training update is not bit-deterministic under concurrent load
+
+**A-47 · LOW · ACCEPTED RISK**
+
+The A-46 verification ran four identical-seed training processes concurrently to stress the change. The
+pre-change source produced **two different weight sets** from the four: three runs agreed, one differed in
+11 of 54 parameter leaves by at most **2.98e-08** — a few float32 ulps — after the *first* PPO update, with
+match boundaries, winners and per-match rewards identical, i.e. with the divergence too small to flip any
+sampled action in the window. The post-change source was stable in that batch and matched the pre-change
+majority exactly, but a later eight-way batch produced a single camp that matched the *other* pre-change
+camp — so the instability is a property of the runtime under concurrent load, not of either code path, and
+the change only perturbs when it lands.
+
+What is and is not implicated:
+
+* **Solo runs are byte-stable.** Every single-process run in this work — old and new source, both trees —
+  reproduced its own hashes exactly. A pure-JAX control with no arena code (eight concurrent processes
+  running the same PPO-shaped update body) also agreed bit-for-bit across all eight, so the flip needs
+  this workload's shape, not just JAX.
+* **The flip lives in the training update, not the inference forward.** Across every stress run the
+  trajectories stayed identical (boundaries, winners, rewards), which pins the divergence to the
+  update's execution; evaluation/replay campaigns do not run PPO updates and were never observed to drift.
+* **No published number is affected.** Every table in chapter 8 was produced by the PyTorch runtime or by
+  replaying committed checkpoints; the byte-identity campaigns the documentation cites (the optimiser-trace
+  re-training's 60/60 hash match) pre-date the port. The finding constrains what a *future* concurrent JAX
+  campaign may promise: statistical equivalence, not byte-identity.
+
+Accepted rather than fixed: the flag that would force single-threaded XLA execution is rejected by this
+jaxlib (recorded in [§ 9.5](09_reproducibility.md#runtime-jax-rust-sample)), and the mechanism is not
+isolable from JAX's side of the boundary. A campaign that needs bit-frozen checkpoints must run one
+training process at a time, and accept the wall-clock cost that implies.
+
+## The runtime that replaced the measured lock was never dependency-audited
+
+**A-48 · LOW · FIXED**
+
+`scripts/audit_dependencies.py` existed, and the CI gate it backs existed, but both were wired to exactly one
+input: `requirements-measured.lock.txt`, the historical PyTorch environment. The JAX requirements that every
+run, test and CI job actually installs today — `requirements.txt` in each tree — had no record and no gate,
+so a pin could change (or acquire a known advisory nobody had read) without anything noticing. The gap was
+found by running the existing script with the input it had always accepted and never been given:
+`--requirements requirements.txt --print-only`.
+
+**What OSV knows about the runtime pins** (recorded 2026-10-20 in `results/dependency_audit_runtime.json`
+per tree, now committed and verified by CI on every push alongside the measured lock's record):
+
+* experiment 1, 8 pins, 6 clean — `python-dotenv==1.0.1` carries `GHSA-mf9w-mj56-hr94` / CVE-2026-28684
+  (MODERATE: `set_key`/`unset_key` follow symlinks when rewriting `.env`; this repository calls neither —
+  it only reads, via `load_dotenv`, over a tracked file), and `pytest==8.3.5` carries
+  `GHSA-6w46-j5rx-g56g` / CVE-2025-71176 (MODERATE: the `/tmp/pytest-of-{user}` pattern on UNIX; a dev
+  tool on developer machines and ephemeral runners).
+* experiment 2 adds `mlflow==2.17.2`, which carries **58 OSV records** — 7 CRITICAL, 15 HIGH, 7 MODERATE,
+  2 LOW, 31 unspecified — the tracking-server advisory family (path traversal to arbitrary file
+  read/write, SSRF, deserialization through the REST API), fixed across 2.19.0–2.22.4. The surface those
+  records describe is a network-reachable tracking server; this repository never starts one. Training logs
+  to a local file store (`file:./mlruns`, or `--no-mlflow`), and the only server any documentation names is
+  `mlflow ui` against that local store — loopback browsing, not a service.
+
+**Fixed** by recording both runtime locks and gating them the way the measured lock is gated: the CI job now
+runs `--verify-record` against each tree's `results/dependency_audit_runtime.json`, so the record must cover
+exactly the committed pins. The pins themselves are not upgraded — A-37's precedent applies: an environment
+pin is part of a measurement's provenance, and each upgrade is a change nobody has re-verified the suites or
+the throughput sample on. The reasoning per advisory, and the conditions that would reverse each decision,
+are in [§ 9.10](09_reproducibility.md#runtime-dependency-audit). The assessments, not the pins, are what
+this entry adds: the exposures were always there, but until the record existed no reader could be expected
+to know which of them this repository's workflows can actually reach.

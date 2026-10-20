@@ -125,3 +125,8 @@ jobs:
 
       - name: Every pin of the measured lock is covered by the recorded audit
         run: python scripts/audit_dependencies.py --verify-record results/dependency_audit.json
+
+      - name: Every pin of the runtime requirements is covered by the recorded audit
+        run: |
+          python scripts/audit_dependencies.py --requirements requirements.txt --verify-record results/dependency_audit_runtime.json
+          python scripts/audit_dependencies.py --requirements ctde_arena/requirements.txt --verify-record ctde_arena/results/dependency_audit_runtime.json

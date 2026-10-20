@@ -1,0 +1,110 @@
+{
+  "generated_utc": "2026-10-20T20:54:49+00:00",
+  "source": "requirements.txt",
+  "database": "OSV (api.osv.dev), queried per exact pin",
+  "pins_queried": 8,
+  "pins_with_no_known_vulnerability": 6,
+  "vulnerable_pins": 2,
+  "advisories": [
+    "python-dotenv==1.0.1: GHSA-mf9w-mj56-hr94 (MODERATE)",
+    "python-dotenv==1.0.1: PYSEC-2026-2270 (UNSPECIFIED)",
+    "pytest==8.3.5: GHSA-6w46-j5rx-g56g (MODERATE)",
+    "pytest==8.3.5: PYSEC-2026-1845 (UNSPECIFIED)"
+  ],
+  "packages": [
+    {
+      "package": "ursina",
+      "version": "6.1.2",
+      "vulnerabilities": []
+    },
+    {
+      "package": "numpy",
+      "version": "2.2.6",
+      "vulnerabilities": []
+    },
+    {
+      "package": "matplotlib",
+      "version": "3.10.3",
+      "vulnerabilities": []
+    },
+    {
+      "package": "pandas",
+      "version": "2.3.3",
+      "vulnerabilities": []
+    },
+    {
+      "package": "python-dotenv",
+      "version": "1.0.1",
+      "vulnerabilities": [
+        "GHSA-mf9w-mj56-hr94",
+        "PYSEC-2026-2270"
+      ],
+      "details": [
+        {
+          "id": "GHSA-mf9w-mj56-hr94",
+          "aliases": [
+            "CVE-2026-28684"
+          ],
+          "summary": "python-dotenv: Symlink following in set_key allows arbitrary file overwrite via cross-device rename fallback",
+          "severity": "MODERATE",
+          "fixed_in": [
+            "1.2.2"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-2270",
+          "aliases": [
+            "CVE-2026-28684"
+          ],
+          "summary": "",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "1.2.2"
+          ]
+        }
+      ]
+    },
+    {
+      "package": "jax",
+      "version": "0.4.38",
+      "vulnerabilities": []
+    },
+    {
+      "package": "jaxlib",
+      "version": "0.4.38",
+      "vulnerabilities": []
+    },
+    {
+      "package": "pytest",
+      "version": "8.3.5",
+      "vulnerabilities": [
+        "GHSA-6w46-j5rx-g56g",
+        "PYSEC-2026-1845"
+      ],
+      "details": [
+        {
+          "id": "GHSA-6w46-j5rx-g56g",
+          "aliases": [
+            "CVE-2025-71176"
+          ],
+          "summary": "pytest has vulnerable tmpdir handling",
+          "severity": "MODERATE",
+          "fixed_in": [
+            "9.0.3"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-1845",
+          "aliases": [
+            "CVE-2025-71176"
+          ],
+          "summary": "pytest has vulnerable tmpdir handling",
+          "severity": "UNSPECIFIED",
+          "fixed_in": [
+            "9.0.3"
+          ]
+        }
+      ]
+    }
+  ]
+}

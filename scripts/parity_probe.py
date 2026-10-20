@@ -1,8 +1,10 @@
-"""Throwaway parity probe: does a converted .npz load as the same policy as the .pt it came from?
+"""Parity probe: does a converted .npz load as the same policy as the .pt it came from?
 
 Run once with --kind torch against the reference worktree, once with --kind jax against the ported tree;
 both print the logits of one fixed observation, and the diff between the two outputs is the number the
-documentation has to state.
+documentation has to state. This is the instrument behind the max-|Δ logit| table in A-45
+(docs/11_code_audit.md#the-runtime-swap-orphaned-the-committed-checkpoint-archive) and the 4e-07 figure
+§ 9.6 quotes; it was renamed from a root-level `parity_probe_tmp.py` that nothing referenced.
 """
 
 from __future__ import annotations

@@ -117,9 +117,11 @@ GROUPS = [
         "Environment provenance and governance",
         "The environment every measurement was taken in and the record of what is known about it: the two "
         "identical `pip freeze` locks of [§ 9.1](#verification-environment-actually-used), OSV's per-pin "
-        "answer from [§ 9.10](#dependency-audit), and the MIT grant over the whole repository.",
+        "answer from [§ 9.10](#dependency-audit) -- for the measured lock and, since A-48, for each tree's "
+        "runtime `requirements.txt` as well -- and the MIT grant over the whole repository.",
         ("requirements-measured.lock.txt", "ctde_arena/requirements-measured.lock.txt",
-         "results/dependency_audit.json", "LICENSE"),
+         "results/dependency_audit.json", "results/dependency_audit_runtime.json",
+         "ctde_arena/results/dependency_audit_runtime.json", "LICENSE"),
     ),
     (
         "Ablation and arena-v2 campaigns",
