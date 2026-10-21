@@ -72,8 +72,13 @@ def evaluate(matches: int, seed: int) -> dict[str, object]:
             stats["hits"] += row["shots_hit"]
             stats["misses"] += row["shots_missed"]
             stats["matches"] += 1
-            rows.append({k: row[k] for k in ("match_index", "team_name", "paradigm", "winner",
-                                             "eliminations", "mean_survival_time", "shot_accuracy")})
+            # duration_seconds closes the gap audit item 8 opened: without it, a study's held-out win
+            # rates cannot be split into the wipeout and timeout regimes the matches were decided by,
+            # and the regime mix has to be guessed from medians. The round (2 dp) matches the
+            # round-robin rows, and scripts/eval_regimes.py writes the same column when replaying.
+            rows.append({**{k: row[k] for k in ("match_index", "team_name", "paradigm", "winner",
+                                                "eliminations", "mean_survival_time", "shot_accuracy")},
+                         "duration_seconds": round(result.duration_seconds, 2)})
         sim.reset_match()
 
     summary = {}

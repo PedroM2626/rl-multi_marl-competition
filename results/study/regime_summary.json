@@ -1,0 +1,135 @@
+{
+  "instrument": "eval_regimes over the versioned study replicates",
+  "readout": "argmax",
+  "checkpoint_set": "versioned",
+  "protocol": {
+    "matches_per_replicate": 150,
+    "seed_offset": 9000,
+    "domain_randomization": false,
+    "training_mode": false,
+    "hidden_dim": 128,
+    "eval_temperature": 0.0,
+    "arena": {
+      "alive_bonus": 0.015,
+      "alive_decay_half_life_s": 0.0,
+      "cap_awards_win": true,
+      "match_duration_seconds": 90.0
+    }
+  },
+  "experiments": [
+    "exp1",
+    "exp2"
+  ],
+  "replicates": 20,
+  "match_rows": 9000,
+  "wall_seconds_by_part": [
+    805.5,
+    890.9
+  ],
+  "replayed_win_rates": {
+    "exp1_seed1": {
+      "Team 1": 0.1533,
+      "Team 2": 0.6067,
+      "Team 3": 0.2067
+    },
+    "exp1_seed2": {
+      "Team 1": 0.22,
+      "Team 2": 0.24,
+      "Team 3": 0.5267
+    },
+    "exp1_seed3": {
+      "Team 1": 0.1067,
+      "Team 2": 0.28,
+      "Team 3": 0.6067
+    },
+    "exp1_seed4": {
+      "Team 1": 0.1867,
+      "Team 2": 0.28,
+      "Team 3": 0.5333
+    },
+    "exp1_seed5": {
+      "Team 1": 0.24,
+      "Team 2": 0.22,
+      "Team 3": 0.52
+    },
+    "exp1_seed6": {
+      "Team 1": 0.2133,
+      "Team 2": 0.76,
+      "Team 3": 0.0
+    },
+    "exp1_seed7": {
+      "Team 1": 0.18,
+      "Team 2": 0.4,
+      "Team 3": 0.4
+    },
+    "exp1_seed8": {
+      "Team 1": 0.18,
+      "Team 2": 0.1733,
+      "Team 3": 0.4
+    },
+    "exp1_seed9": {
+      "Team 1": 0.2267,
+      "Team 2": 0.4067,
+      "Team 3": 0.3467
+    },
+    "exp1_seed10": {
+      "Team 1": 0.38,
+      "Team 2": 0.3667,
+      "Team 3": 0.22
+    },
+    "exp2_seed1": {
+      "Team 1": 0.34,
+      "Team 2": 0.2533,
+      "Team 3": 0.3867
+    },
+    "exp2_seed2": {
+      "Team 1": 0.2533,
+      "Team 2": 0.3667,
+      "Team 3": 0.3333
+    },
+    "exp2_seed3": {
+      "Team 1": 0.1533,
+      "Team 2": 0.28,
+      "Team 3": 0.5533
+    },
+    "exp2_seed4": {
+      "Team 1": 0.2333,
+      "Team 2": 0.16,
+      "Team 3": 0.54
+    },
+    "exp2_seed5": {
+      "Team 1": 0.1533,
+      "Team 2": 0.22,
+      "Team 3": 0.62
+    },
+    "exp2_seed6": {
+      "Team 1": 0.1533,
+      "Team 2": 0.0667,
+      "Team 3": 0.7667
+    },
+    "exp2_seed7": {
+      "Team 1": 0.0467,
+      "Team 2": 0.58,
+      "Team 3": 0.3733
+    },
+    "exp2_seed8": {
+      "Team 1": 0.1933,
+      "Team 2": 0.2733,
+      "Team 3": 0.52
+    },
+    "exp2_seed9": {
+      "Team 1": 0.6133,
+      "Team 2": 0.1867,
+      "Team 3": 0.1867
+    },
+    "exp2_seed10": {
+      "Team 1": 0.2067,
+      "Team 2": 0.1933,
+      "Team 3": 0.5867
+    }
+  },
+  "parts": [
+    "results/study/parts/exp1_regimes",
+    "ctde_arena/results/study/parts/exp2_regimes"
+  ]
+}

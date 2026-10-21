@@ -1,0 +1,266 @@
+{
+  "generated_utc": "2026-10-21T01:44:25+00:00",
+  "instrument": "report_regimes.py over eval_regimes' replay of the study's held-out protocol",
+  "source_rows": "results/study/eval_match_regimes.csv",
+  "control": {
+    "statement": "every replayed cell's win rate compared with the published per_seed_metrics.csv",
+    "cells": 60,
+    "cells_exact": 52,
+    "matches_per_replicate": 150,
+    "max_replayed_vs_published_wins": 2.0,
+    "cells_that_differ": {
+      "exp2_seed4|Team 1": 2.0,
+      "exp1_seed5|Team 3": 2.0,
+      "exp1_seed5|Team 2": 2.0,
+      "exp2_seed4|Team 2": 2.0,
+      "exp1_seed5|Team 1": 1.01,
+      "exp1_seed7|Team 2": 1.01,
+      "exp1_seed7|Team 3": 1.01,
+      "exp2_seed4|Team 3": 1.0
+    },
+    "why": "the current runtime's forward pass differs from the PyTorch-era record by up to 4e-07 on logits (A-45); where two actions are near-tied that flips an argmax, which moves a cell by whole matches. Concurrency is not the cause: solo re-runs of every deviating replicate reproduced the replayed values exactly."
+  },
+  "regime_rule": {
+    "draw": "no team won",
+    "timeout": "duration >= 90.0 - 0.5s",
+    "wipeout": "everything else"
+  },
+  "cap_seconds": 90.0,
+  "matches": {
+    "total": 3000,
+    "outcomes": {
+      "exp1": {
+        "wipeout": 869,
+        "timeout": 568,
+        "draw": 63
+      },
+      "exp2": {
+        "wipeout": 833,
+        "timeout": 636,
+        "draw": 31
+      }
+    }
+  },
+  "per_replicate": {
+    "exp1_seed6": {
+      "wipeout": 29,
+      "timeout": 117,
+      "draw": 4
+    },
+    "exp2_seed4": {
+      "wipeout": 31,
+      "timeout": 109,
+      "draw": 10
+    },
+    "exp2_seed2": {
+      "wipeout": 51,
+      "timeout": 92,
+      "draw": 7
+    },
+    "exp1_seed8": {
+      "wipeout": 23,
+      "timeout": 90,
+      "draw": 37
+    },
+    "exp2_seed9": {
+      "wipeout": 58,
+      "timeout": 90,
+      "draw": 2
+    },
+    "exp2_seed8": {
+      "wipeout": 79,
+      "timeout": 69,
+      "draw": 2
+    },
+    "exp2_seed10": {
+      "wipeout": 83,
+      "timeout": 65,
+      "draw": 2
+    },
+    "exp1_seed2": {
+      "wipeout": 84,
+      "timeout": 64,
+      "draw": 2
+    },
+    "exp1_seed4": {
+      "wipeout": 89,
+      "timeout": 61,
+      "draw": 0
+    },
+    "exp2_seed3": {
+      "wipeout": 92,
+      "timeout": 56,
+      "draw": 2
+    },
+    "exp1_seed3": {
+      "wipeout": 95,
+      "timeout": 54,
+      "draw": 1
+    },
+    "exp1_seed5": {
+      "wipeout": 94,
+      "timeout": 53,
+      "draw": 3
+    },
+    "exp2_seed1": {
+      "wipeout": 98,
+      "timeout": 49,
+      "draw": 3
+    },
+    "exp2_seed6": {
+      "wipeout": 104,
+      "timeout": 44,
+      "draw": 2
+    },
+    "exp1_seed9": {
+      "wipeout": 104,
+      "timeout": 43,
+      "draw": 3
+    },
+    "exp2_seed5": {
+      "wipeout": 108,
+      "timeout": 41,
+      "draw": 1
+    },
+    "exp1_seed7": {
+      "wipeout": 112,
+      "timeout": 35,
+      "draw": 3
+    },
+    "exp1_seed10": {
+      "wipeout": 114,
+      "timeout": 31,
+      "draw": 5
+    },
+    "exp2_seed7": {
+      "wipeout": 129,
+      "timeout": 21,
+      "draw": 0
+    },
+    "exp1_seed1": {
+      "wipeout": 125,
+      "timeout": 20,
+      "draw": 5
+    }
+  },
+  "win_rate_by_regime": {
+    "exp1": {
+      "CTDE": {
+        "matches": {
+          "wipeout": 869,
+          "timeout": 568,
+          "draw": 63
+        },
+        "wins": {
+          "wipeout": 345,
+          "timeout": 142,
+          "draw": 0
+        },
+        "win_rate": {
+          "wipeout": 0.397,
+          "timeout": 0.25,
+          "draw": 0.0
+        },
+        "pooled_win_rate": 0.3247,
+        "wipeout_minus_timeout": 0.147
+      },
+      "CTE": {
+        "matches": {
+          "wipeout": 869,
+          "timeout": 568,
+          "draw": 63
+        },
+        "wins": {
+          "wipeout": 244,
+          "timeout": 137,
+          "draw": 0
+        },
+        "win_rate": {
+          "wipeout": 0.2808,
+          "timeout": 0.2412,
+          "draw": 0.0
+        },
+        "pooled_win_rate": 0.254,
+        "wipeout_minus_timeout": 0.0396
+      },
+      "DTE": {
+        "matches": {
+          "wipeout": 869,
+          "timeout": 568,
+          "draw": 63
+        },
+        "wins": {
+          "wipeout": 280,
+          "timeout": 289,
+          "draw": 0
+        },
+        "win_rate": {
+          "wipeout": 0.3222,
+          "timeout": 0.5088,
+          "draw": 0.0
+        },
+        "pooled_win_rate": 0.3793,
+        "wipeout_minus_timeout": -0.1866
+      }
+    },
+    "exp2": {
+      "CTDE-CAC": {
+        "matches": {
+          "wipeout": 833,
+          "timeout": 636,
+          "draw": 31
+        },
+        "wins": {
+          "wipeout": 237,
+          "timeout": 188,
+          "draw": 0
+        },
+        "win_rate": {
+          "wipeout": 0.2845,
+          "timeout": 0.2956,
+          "draw": 0.0
+        },
+        "pooled_win_rate": 0.2833,
+        "wipeout_minus_timeout": -0.0111
+      },
+      "CTDE-Comm": {
+        "matches": {
+          "wipeout": 833,
+          "timeout": 636,
+          "draw": 31
+        },
+        "wins": {
+          "wipeout": 313,
+          "timeout": 181,
+          "draw": 0
+        },
+        "win_rate": {
+          "wipeout": 0.3758,
+          "timeout": 0.2846,
+          "draw": 0.0
+        },
+        "pooled_win_rate": 0.3293,
+        "wipeout_minus_timeout": 0.0912
+      },
+      "CTDE-VD": {
+        "matches": {
+          "wipeout": 833,
+          "timeout": 636,
+          "draw": 31
+        },
+        "wins": {
+          "wipeout": 283,
+          "timeout": 267,
+          "draw": 0
+        },
+        "win_rate": {
+          "wipeout": 0.3397,
+          "timeout": 0.4198,
+          "draw": 0.0
+        },
+        "pooled_win_rate": 0.3667,
+        "wipeout_minus_timeout": -0.0801
+      }
+    }
+  }
+}

@@ -32,7 +32,7 @@ used to rerun that study.
 | Current JAX/Rust replay | smoke-verified; full same-seed replay check pending |
 | License | MIT — [`LICENSE`](../LICENSE) at the repository root covers this tree as well as experiment 1 |
 | MLflow curves | **1 logged point** for the 100k run — see [A-9](../docs/11_code_audit.md#mlflow-cadence) |
-| Current tests | 79 passed, 1 skipped, **87 %** statement coverage |
+| Current tests | 82 passed, 1 skipped, **87 %** statement coverage |
 | Cross-experiment round-robin | hosted here, since this tree's package is the superset holding all six architectures |
 | Absolute strength vs random opponents | `results/absolute_ten/` at the repository root (ten checkpoint sets — every replicate either experiment trained), from `scripts/run_absolute_eval.py`; `results/absolute_six/` is its six-set predecessor, `results/absolute_blocks/` and `results/absolute/` are the three-set and promoted-set predecessors, kept because [§ 8.11](../docs/08_results.md#absolute-strength) quotes their history ([§ 8.11](../docs/08_results.md#absolute-strength)) |
 | Docker image | **never built or run** — unverified configuration |
@@ -329,7 +329,7 @@ The values that matter most here:
 
 ```bash
 cd ctde_arena
-python -m pytest tests/ -q        # 79 passed, 1 skipped; 87 % statement coverage after the 
+python -m pytest tests/ -q        # 82 passed, 1 skipped; 87 % statement coverage after the 
 port
 ```
 

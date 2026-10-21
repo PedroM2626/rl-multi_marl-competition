@@ -70,6 +70,24 @@ def test_the_readout_harness_repeats_the_study_protocol_line_for_line() -> None:
     assert not absent_in_study, f"the checklist cites something run_experiment.py no longer does: {absent_in_study}"
 
 
+def test_the_regime_harness_repeats_the_study_protocol_line_for_line() -> None:
+    """`scripts/eval_regimes.py` replays the study's held-out stream with a recorder switched on, so its
+    body is the protocol too -- and it must additionally record what the study did not: the duration of
+    every match, without which no win rate can be split into the two regimes item 8 names."""
+    regimes = _source("eval_regimes.py")
+    missing = [line for line in PROTOCOL if line not in regimes]
+    assert not missing, f"eval_regimes.py no longer performs: {missing}"
+    assert '"duration_seconds": round(result.duration_seconds, 2)' in regimes, \
+        "the regime replay must record the per-match duration the study's evaluation never wrote"
+    assert 'durations.append(result.duration_seconds)' in regimes
+
+
+def test_the_regime_seed_offset_is_the_study_s() -> None:
+    regimes = _source("eval_regimes.py")
+    assert 'default=9000' in regimes, "the offset must default to the study's, not to something new"
+    assert "evaluate(args.matches, seed + args.seed_offset)" in regimes
+
+
 def test_the_seed_offset_is_the_study_s() -> None:
     """`evaluate(args.eval_matches, args.seed + 9000)` is the published held-out stream."""
     assert "args.seed + 9000" in _source("run_experiment.py")
@@ -165,5 +183,14 @@ def test_the_readout_files_are_identical_in_both_trees() -> None:
     other_root = PROJECT_ROOT.parent if PROJECT_ROOT.name == "ctde_arena" else PROJECT_ROOT / "ctde_arena"
     here = PROJECT_ROOT / "scripts" / "eval_readout.py"
     there = other_root / "scripts" / "eval_readout.py"
+    assert here.is_file() and there.is_file(), f"{there} is missing"
+    assert here.read_bytes() == there.read_bytes(), f"{here} and {there} differ; they are parity files"
+
+
+def test_the_regime_files_are_identical_in_both_trees() -> None:
+    """The regime replay is the same parity arrangement: both trees run one copy of the instrument."""
+    other_root = PROJECT_ROOT.parent if PROJECT_ROOT.name == "ctde_arena" else PROJECT_ROOT / "ctde_arena"
+    here = PROJECT_ROOT / "scripts" / "eval_regimes.py"
+    there = other_root / "scripts" / "eval_regimes.py"
     assert here.is_file() and there.is_file(), f"{there} is missing"
     assert here.read_bytes() == there.read_bytes(), f"{here} and {there} differ; they are parity files"

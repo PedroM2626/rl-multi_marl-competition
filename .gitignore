@@ -49,6 +49,11 @@ mlruns/
 # tracked evidence while the first one is ignored.
 **/data/runs*/
 
+# Regime-replay campaign parts: one tree's rows before the merge into
+# results/study/eval_match_regimes.csv, which is the committed record those parts duplicate.
+/results/study/parts/
+/ctde_arena/results/study/parts/
+
 # Round-robin run directories. One directory per (training block, harness seed); the pooled CSVs under
 # results/cross_arena/ are those same team-matches with the two replication columns joined on, so the split
 # copies are reproducible scratch rather than evidence.

@@ -222,6 +222,11 @@ same checkpoints, the same `seed + 9000` stream, the same 150 matches, argmax as
 `results/study/` on **every cell to the last decimal**: paired difference +0.000, *p* = 1.000, and every
 behavioural column (survival, eliminations, shots, accuracy) identical. Re-measurement noise is therefore
 zero on this instrument, and any difference in the two sampled arms is the action rule and nothing else.
+That control predates the runtime swap — the scratch runs it replayed are `.pt` files only the
+PyTorch-era code could read — and the current runtime does not inherit its exactness: replaying the same
+protocol over the versioned checkpoints flips 5 of 9,000 near-tied argmax decisions (52 of 60 cells exact,
+worst 2/150), the [A-45](11_code_audit.md#the-runtime-swap-orphaned-the-committed-checkpoint-archive)
+drift at its predicted rate, as the two-regimes control in [§ 8.1](#two-regimes) measures.
 The campaign read the study's own scratch runs (`checkpoint_set: scratch` in each arm's `summary.json`), and
 all sixty of those checkpoints have a byte-identical twin under `data/training_replicates/`, so
 `--checkpoint-set versioned` reproduces the same numbers from a clone rather than only from this machine.
@@ -316,17 +321,61 @@ longer is).
 
 ### Two regimes: wipeouts and timeouts <a name="two-regimes"></a>
 
-Held-out median match duration is bimodal across replicates, not noisy around a mean:
+Held-out matches are decided one of two ways, and which one a replicate plays is a property of the
+replicate, not of the arm. Across the study's 3,000 held-out matches, **57.9 %** of experiment 1's and
+**55.5 %** of experiment 2's end by elimination; **37.9 % / 42.4 %** run to the 90 s clock; **4.2 % / 2.1 %**
+are draws. Five of the twenty replicates are clock-dominated — most of their matches answer "who is most
+alive at the buzzer" rather than "who wins a fight":
 
-| Regime | Replicates | Held-out median duration |
-|---|---:|---|
-| Matches end in a wipeout | 15 of 20 | 6.9 – 20.4 s |
-| Matches run to the 90 s cap | 5 of 20 | 90.1 s (exp 1 seeds 6, 8; exp 2 seeds 2, 4, 9) |
+| Replicate | Wipeout | Timeout | Draw |
+|---|---:|---:|---:|
+| exp1_seed6 | 29 | 117 | 4 |
+| exp2_seed4 | 31 | 109 | 10 |
+| exp2_seed2 | 51 | 92 | 7 |
+| exp1_seed8 | 23 | 90 | 37 |
+| exp2_seed9 | 58 | 90 | 2 |
+| the other fifteen | 79–129 | 20–69 | 0–5 |
 
-Draws — every team alive with equal eliminations at the cap, under the [A-10](11_code_audit.md) tie-break —
-occur in 62/1500 (4.1 %) of exp-1 held-out matches and 30/1500 (2.0 %) of exp-2 matches. Seed 6 is the same
-replicate that produced the CTDE collapse: with one team not shooting, the other two spray (325 and 372
-shots per match at 0.5–0.8 % accuracy), nobody dies, and matches end on the clock rather than on a kill.
+The per-match counts did not exist until audit item 8 was closed: the study's own runs recorded each
+match's team rows but never its duration, so the split is measured by replaying the study's held-out
+protocol — same checkpoints, same `seed + 9000` stream, same 150 matches, argmax as published — over the
+versioned replicates (`scripts/run_regime_split.sh`, 14.9 min of evaluation,
+[§ 9.5](09_reproducibility.md#95-cost-of-a-run)). The replay reproduces the published win rates on **52 of
+60 cells**; the worst cell differs by **2 wins of 150** (three replicates, 1–2 near-tied matches each),
+which is the [A-45](11_code_audit.md#the-runtime-swap-orphaned-the-committed-checkpoint-archive)
+forward-pass drift (≤ 4e-07 on logits) flipping argmax decisions where two actions are nearly tied — the
+mechanism § 9.6 said to expect, now observed at 5 flips per 9,000 matches. `run_experiment.py` records the
+duration per match from now on, so no future study needs a replay to answer this.
+
+**Win rate by how the match was decided** (a rate in the draw column counts a non-win — no team won those
+matches; pooled is the headline number the rest of this chapter quotes):
+
+| Exp. 1 | wipeout | timeout | draw | pooled | wipeout − timeout |
+|---|---:|---:|---:|---:|---:|
+| **CTDE** | **0.397** (869) | 0.250 (568) | 0.000 (63) | 0.325 | +0.147 |
+| CTE | 0.281 (869) | 0.241 (568) | 0.000 (63) | 0.254 | +0.040 |
+| **DTE** | 0.322 (869) | **0.509** (568) | 0.000 (63) | **0.379** | −0.187 |
+
+| Exp. 2 | wipeout | timeout | draw | pooled | wipeout − timeout |
+|---|---:|---:|---:|---:|---:|
+| CTDE-CAC | 0.285 (833) | 0.296 (636) | 0.000 (31) | 0.283 | −0.011 |
+| **CTDE-Comm** | **0.376** (833) | 0.285 (636) | 0.000 (31) | 0.329 | +0.091 |
+| **CTDE-VD** | 0.340 (833) | **0.420** (636) | 0.000 (31) | **0.367** | −0.080 |
+
+**The pooled order is the timeout order, in both experiments.** Experiment 1's headline winner DTE holds
+the best regime rate in the whole study — 0.509 at the clock — and is second in the wipes; remove the
+clock and **CTDE leads the fights** (0.397 against DTE's 0.322), the opposite of the published ordering.
+Experiment 2 repeats the shape: VD's pooled lead is its 0.420 survival rate, while **Comm wins the wipes**
+(0.376 against 0.340) — and Comm is also the arm the common-pool round-robin ranked first
+([§ 8.10](#cross-arena)). But the round-robin's own pooled order followed its **wipeout** order, the
+opposite of this one, with a clock share (38.2 % of its matches) no different from the study's — so which
+order "pooled" follows is not a function of the regime mix alone, which is a further reason the
+between-arm differences in this chapter cannot be read as architecture effects.
+
+Draws occur in 62/1500 (4.1 %) of exp-1 held-out matches and 30/1500 (2.0 %) of exp-2 in the published
+record — the replay counts 63 and 31, one more each, the drift again. Seed 6 is the same replicate that
+produced the CTDE collapse: with one team not shooting, the other two spray (325 and 372 shots per match
+at 0.5–0.8 % accuracy), nobody dies, and 117 of its 150 matches end on the clock rather than on a kill.
 Win rates measured in that regime are answering "who is most alive after 90 s", which is a different
 question from "who wins a fight" — a further reason not to read the exp-1 ordering as a result.
 
@@ -686,8 +735,8 @@ eight. The script therefore offers `--policy greedy` (what the harness actually 
 
 | | Uniform random | Greedy, untrained | Trained (study mean) |
 |---|---:|---:|---:|
-| Ended by wipeout | **97.0 %** | 35.7 % | mixed — [§ 8.1](#two-regimes) |
-| Hit the 90 s cap / drawn | 2.0 % / 1.0 % | 43.0 % / 21.3 % | 4.1 % drawn |
+| Ended by wipeout | **97.0 %** | 35.7 % | 57.9 % — [§ 8.1](#two-regimes) |
+| Hit the 90 s cap / drawn | 2.0 % / 1.0 % | 43.0 % / 21.3 % | 37.9 % / 4.2 % |
 | Median match duration | 12.6 s | 90.1 s | 6.9 – 90.1 s |
 | Survival CTE / DTE / CTDE | 9.4 / 8.1 / 10.3 s | 40.7 / 48.8 / 60.4 s | 22.7 / 25.0 / 18.4 s |
 | Shots/match | 43.5 / 37.5 / 43.4 | **4.6 / 6.8 / 82.1** | 121.7 / 105.2 / 101.2 |
@@ -698,8 +747,8 @@ eight. The script therefore offers `--policy greedy` (what the harness actually 
 
 | | Greedy, untrained | Trained (study mean) |
 |---|---:|---:|
-| Ended by wipeout | **2.0 %** | mixed — [§ 8.1](#two-regimes) |
-| Hit the 90 s cap / drawn | 56.7 % / **41.3 %** | 2.0 % drawn |
+| Ended by wipeout | **2.0 %** | 55.5 % — [§ 8.1](#two-regimes) |
+| Hit the 90 s cap / drawn | 56.7 % / **41.3 %** | 42.4 % / 2.1 % |
 | Median match duration | 90.1 s | 6.9 – 90.1 s |
 | Survival VD / CAC / Comm | 83.3 / 63.6 / 84.9 s | 23.1 / 21.5 / 19.2 s |
 | Shots/match | 358.2 / 88.2 / 397.9 | 92.8 / 112.3 / 111.6 |

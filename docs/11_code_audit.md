@@ -1224,8 +1224,10 @@ states which of the two a reader can rebuild.
 
 ## Open work: suggested measurements
 
-Items 1–3 were the original list and are done; 6 is done; 7 was deliberately not done; 11, 12, 13 and 14 are
-done — 13 by re-training the `no_dr` arm to ten seeds and 14 by the optimiser-trace campaign that item 4 had
+Items 1–3 were the original list and are done; 6 is done; 7 was deliberately not done and then measured;
+8, 11, 12, 13 and 14 are
+done — 8 by replaying the study's held-out matches with the per-match recorder the original runs never had,
+13 by re-training the `no_dr` arm to ten seeds and 14 by the optimiser-trace campaign that item 4 had
 been waiting on since the first audit. Only the two capacity arms remain at lower replication than the
 headline pool, and that is now a stated limit rather than an open task.
 
@@ -1271,13 +1273,44 @@ headline pool, and that is now a stated limit rather than an open task.
    moves the ranking further than the architecture differences do at any single budget -- which is the same
    conclusion [docs/10 § 10.2](10_threats_to_validity.md) reaches about configuration, one level up. The
    section is [§ 8.13's fourth arm](08_results.md#budget-3m).
-8. **Partly done:** separate the two match regimes. A quarter of replicates decide matches on the 90 s clock
+8. **Closed:** separate the two match regimes. A quarter of replicates decide matches on the 90 s clock
    rather than on eliminations ([§ 8.1](08_results.md#two-regimes)), so any pooled win rate mixes "who wins a
-   fight" with "who is most alive at the buzzer". The round-robin now reports the regimes side by side
-   ([§ 8.10](08_results.md#cross-arena)) and the pooled order turns out to be the wipeout order; the study
-   tables in [§ 8.1](08_results.md#replicated-study) still pool them, and the termination rule is unchanged
-   — although `TERMINATION_CAP_AWARDS_WIN=false` now exists so a campaign can change it
-   ([A-34](#the-termination-and-reward-knobs-are-configurable)).
+   fight" with "who is most alive at the buzzer". The round-robin half was done first: it reports the
+   regimes side by side ([§ 8.10](08_results.md#cross-arena)) and its pooled order turned out to be the
+   wipeout order. The study's half could not be done the same way, because the study's runs recorded each
+   match's team rows without its duration — the classification has to be *replayed*, not recalculated, and
+   anything claiming "the data is already on disk" had not checked what the recorder wrote. The replay is
+   now the committed instrument: `scripts/eval_regimes.py` re-runs the study's own held-out protocol
+   (protocol pinned line-for-line by the extended `tests/test_readout_parity.py`) over the versioned
+   replicates with the duration per match recorded, `run_regime_split.sh` plays both trees in 14.9 min, and
+   `report_regimes.py` derives the split behind the published-win-rate control. **The answer changed the
+   headline's reading in both experiments:** 37.9 % / 42.4 % of the study's held-out matches run to the
+   clock, five replicates are clock-dominated (up to 117 of 150), and the pooled order is the *timeout*
+   order — DTE's exp-1 lead is a 0.509 survival rate while CTDE wins the fights (0.397), and VD's exp-2
+   lead is a 0.420 survival rate while Comm wins the wipes (0.376) — the opposite residue from the
+   round-robin, with a similar clock share, so which order "pooled" follows is not a function of the
+   regime mix alone ([§ 8.1](08_results.md#two-regimes)). The control is itself a finding: the current
+   runtime reproduces the published win rates on **52 of 60 cells**, worst cell **2 wins of 150** — the
+   A-45 forward-pass drift flipping near-tied argmax decisions at 5 flips per 9,000 matches, reproduced
+   exactly by solo re-runs of every deviating replicate, so it is drift and not concurrency. That also
+   dates the readout campaign's "T = 0 control bit-identical" claim: its scratch checkpoints are `.pt`
+   files only the PyTorch-era code could read, so that exactness belonged to the old runtime, and § 8.1
+   now says so where it made the claim. `run_experiment.py` records `duration_seconds` per match from now
+   on, so no future study needs a replay for this question.
+
+   Getting there exposed two defects, both fixed. `eval_readout.py --checkpoint-set versioned` resolved
+   the replicates against the *evaluating* tree, so from `ctde_arena/` it silently skipped every
+   experiment-2 replicate — the clone-runnable path its own docstring advertised; both instruments now
+   resolve the repository root, as `run_cross_arena.py` always did. And the committed campaign scripts
+   prefer `.venv-check/Scripts/python.exe`, which on this machine holds the **jax 0.6.2 build without the
+   Rust extension that [A-45](#the-runtime-swap-orphaned-the-committed-checkpoint-archive) explicitly
+   retired** — a campaign launched that way would measure on a runtime no number in this document
+   describes (and, as it happens, 0.6.2 reproduces the PyTorch-era record on the knife-edge matches
+   where 0.4.38 flips — a coincidence of rounding, not a reason to run on it). `run_regime_split.sh`
+   pins the repository runtime and refuses any other interpreter; the older campaign scripts keep their
+   historical resolution, and re-running one of them today would need that same pin checked first.
+   The termination rule itself is unchanged — `TERMINATION_CAP_AWARDS_WIN=false` exists so a campaign can
+   change it ([A-34](#the-termination-and-reward-knobs-are-configurable)).
 9. **Superseded twice, and the second correction is measured.** The seed-6 arm was first described as a
    never-fires reward basin. That is wrong: during training it *led its own match* on eliminations
    (2.68/match) and accuracy (10.4 %), while the greedy readout produces 3.8 shots and 0.000 wins. The

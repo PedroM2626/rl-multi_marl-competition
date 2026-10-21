@@ -128,11 +128,11 @@ of them in the same place.
 | `python scripts/train_rl.py --seed S` | 1 | Headless JAX PPO training; seeded smoke path verified, full-study replay pending |
 | `python main.py` | 1 | Ursina 3D window, greedy policies loaded from `data/checkpoints/` |
 | `python scripts/plot_metrics.py` | 1 | Reads `data/metrics/summary.json` → `exports/metrics/` |
-| `python -m pytest tests/ -q` | 1 | 168 passed, 1 skipped (verified 2026-10-20) |
+| `python -m pytest tests/ -q` | 1 | 175 passed, 1 skipped (verified 2026-10-20) |
 | `cd ctde_arena && python scripts/train_rl.py` | 2 | Same, plus MLflow scalar and checkpoint-artefact logging |
 | `cd ctde_arena && mlflow ui --backend-store-uri file:./mlruns` | 2 | Tracking UI |
 | `cd ctde_arena && python main.py` | 2 | 3D window for the CTDE variants |
-| `cd ctde_arena && python -m pytest tests/ -q` | 2 | 79 passed, 1 skipped (verified 2026-10-20) |
+| `cd ctde_arena && python -m pytest tests/ -q` | 2 | 82 passed, 1 skipped (verified 2026-10-20) |
 | `cd ctde_arena && docker build -t ctde-arena . && docker run --rm -v ${PWD}/data:/app/data -v ${PWD}/mlruns:/app/mlruns ctde-arena` | 2 | Containerised training |
 | `python scripts/run_experiment.py --seed S --steps N --out DIR` | either | One seeded replicate: train, then greedy held-out evaluation |
 | `python scripts/run_study.py --steps 500000 --seeds 1..10 --jobs 20` | both | Fan replicates out across processes and collect `results/study/` |
@@ -156,6 +156,9 @@ of them in the same place.
 | `bash scripts/run_pool_v2_ten_block.sh` | both | The same extension for the arena-v2 arm: four more blocks under the exported v2 keys, re-pooled into `results/cross_arena/v2_blocks.csv` at ten blocks, so § 8.12's rule control is measured against the headline pool's population rather than a six-block subset. Chained behind the readout campaign, and its merge refuses anything that is not `10 training blocks x 5 harness seeds` |
 | `bash scripts/run_capacity_pool_campaign.sh` | both | Play the two capacity arms (`narrow_64`, `wide_256`) on the common opponent pool — 3 blocks × 5 streams each, the most those arms can give. `RL_HIDDEN_DIM` is read out of `MANIFEST.json` per arm rather than typed, because the round-robin's capacity guard is what stops one arm's weights being played at another's width. Chained behind the v2 extension |
 | `python scripts/eval_readout.py --temperature 1 --seeds 1,…,10 --matches 150` | either tree, on its own replicates | Re-evaluate existing checkpoints under the sampled readout (`--temperature 0` replays the published argmax as the control), writing `per_seed_metrics.csv` in the study schema so `report_study.py --results-dir … --compare-to results/study` pairs it against the published numbers |
+| `python scripts/eval_regimes.py --seeds 1,…,10 --matches 150` | either tree, on its own replicates | Replay the study's held-out protocol over the **versioned** replicates, recording one row per team per match *including* the duration the original runs never wrote |
+| `bash scripts/run_regime_split.sh` | root | Both trees' regime replays in parallel, the 9,000-row merge into `results/study/eval_match_regimes.csv`, then the report |
+| `python scripts/report_regimes.py` | root | The by-regime win-rate split of [§ 8.1](08_results.md#two-regimes), gated by the published-win-rate control (52/60 cells exact, worst 2/150 under the current runtime); writes `results/study/regime_split.json` |
 | `bash scripts/run_readout_campaign.sh` | both | Queue all three readout arms (T = 0, 0.5, 1) over both experiments' ten seeds each, merge the per-tree parts, and report each arm against `results/study/`; chained behind the pool campaigns so no cost figure in § 9.5 is measured under two campaigns at once |
 | `python scripts/run_absolute_eval.py --matches 150 --seeds 1,2,3` | run from `ctde_arena/` | Absolute strength on the promoted checkpoints: each trained policy against two uniform-random controllers, trained slot rotated |
 | `python scripts/run_absolute_eval.py --blocks 1:7,10:5,9:2 --matches 50 --seeds 1,2,3 --out results/absolute_blocks --null-json results/baseline/random_baseline_uniform.json --compare-pool results/cross_arena/blocks.json` | run from `ctde_arena/` | The same over three training blocks, with the slot-matched null and the agreement with the peer pool; `--campaign <arm>` takes the ablation sets instead, behind the same capacity guard |
@@ -241,9 +244,9 @@ Current JAX/Rust verification on 2026-10-20, after A-46 moved the per-step eager
 
 ```
 $ python -m pytest tests/ -q
-168 passed, 1 skipped in 265.43s
+175 passed, 1 skipped in 329.97s
 $ cd ctde_arena && python -m pytest tests/ -q
-79 passed, 1 skipped in 23.85s
+82 passed, 1 skipped in 129.46s
 ```
 
 Three consecutive runs of each suite returned those totals unchanged. One earlier run of the root suite failed
@@ -503,6 +506,7 @@ each team batch has at most three rows. The original profile and the per-agent d
 | Capacity arms on the common pool, 2 × 3 blocks × 5 seeds | **1 h 59 min** | `scripts/run_capacity_pool_campaign.sh`: 18,000 matches, 15 runs per arm, five concurrent. The two arms are not comparable in cost even though they play the same number of matches — `narrow_64` took 35 min (9–14 min per wave) and `wide_256` 94 min (25–35 min per wave) on the same machine an hour apart, which is the network width showing up in the evaluation harness rather than in the result. Both ran at the rate the afternoon probe measured, so unlike the row above this is a machine cost |
 | Re-training the study for optimiser traces, 20 runs × 500 k steps | **134.8 min** | `scripts/run_traces_campaign.sh`: twenty concurrent replicates, the same seeds and budget as `results/study/`, then `analyse_traces.py` over the 60 cells. The reproduction is exact — every checkpoint hash matches the versioned set and every held-out rate matches the published one to 3.3e-05 — which is what lets a negative result about the traces be a statement about the study's own networks |
 | Readout re-measurement, 60 cells × 3 temperatures | **4 h 43 min** | `scripts/run_readout_campaign.sh`: 27,000 held-out matches (150 per cell), two processes at a time — one per tree. The arms are not equal: 246 → 485 → 684 s per cell, i.e. 1.6 → 3.2 → 4.6 s per match, and the cause is the action rule's own compute rather than longer play — the sampled matches are *shorter* (median duration 30.3 → 18.4 s, mean survival 21.6 → 13.9 s). Evaluation only, and the T = 0 arm is the control that makes the other two interpretable |
+| Regime replay, 20 replicates × 150 held-out matches | **14.9 min** | `scripts/run_regime_split.sh`: 3,000 matches (9,000 team-rows), two processes — one per tree (805.5 s and 890.9 s), evaluation only, over the versioned replicates. Closes audit item 8: the per-match durations the study never recorded, replayed under its own protocol; the current runtime reproduces the published win rates on 52 of 60 cells, worst 2/150 ([§ 8.1](08_results.md#two-regimes)). The readout campaign's T = 0 arm played the same 9,000 team-match volume in 82 min — on a machine five round-robin runs were already loaded onto, before the A-46 host-dispatch cut — so the two figures are not a controlled pair |
 
 Before batching, measured per-replicate throughput under full 20-way load was 82.6–92.9 steps/s against the
 scalar path's 368 steps/s in isolation, so the published study's twenty replicates cost 36.2 CPU-hours.
@@ -620,7 +624,7 @@ inclination to replay 4,500 matches.
 
 ## 9.7 Artefact inventory
 
-Every versioned experiment artefact (429 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed, and each hash is of the blob Git stores rather than of the file on disk — a text artefact checked out with CRLF on Windows hashes differently from the same committed bytes on Linux, and a reader on any platform should be able to reproduce this column.
+Every versioned experiment artefact (432 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed, and each hash is of the blob Git stores rather than of the file on disk — a text artefact checked out with CRLF on Windows hashes differently from the same committed bytes on Linux, and a reader on any platform should be able to reproduce this column.
 
 **Promoted replicate.** The artefacts that match the current code. Chosen by `promote_run.py --seed median`, which is the replicate with the least L1 distance to the per-arm study means; `PROVENANCE.json` records the choice and the full run summary behind it.
 
@@ -672,8 +676,11 @@ Every versioned experiment artefact (429 files), with SHA-256 for integrity chec
 | `results/cross_arena/wide_256_blocks.csv` | 2,626,611 | `a4cf32ed064c04e5789222ec13dcf55420a5289c2f0b38f4a2936da90f794375` |
 | `results/cross_arena/wide_256_blocks.json` | 16,659 | `9e25a582e234ebbe41ff12b1025d1f8af7b068acf1845ab047f0ad6b0eb1a7c5` |
 | `results/study/analysis.json` | 4,226 | `0761e5fa08f9be1cbee21f515b28eb17ad48e65b7207868bc161ce933f87527b` |
+| `results/study/eval_match_regimes.csv` | 589,145 | `235eef5a14766b04d1abc739602caa1ae9b145761393961689aac03805d29ff7` |
 | `results/study/learning_curves.png` | 137,532 | `1915d48d117e8a96730b3659e0259e5ad6446c0fb7103d0642a6a5e7bd601cbe` |
 | `results/study/per_seed_metrics.csv` | 5,226 | `a69098a4e88eef37c1291f73b1cb2526f0d31a98c0c2c6f0da27af0263b30d17` |
+| `results/study/regime_split.json` | 5,777 | `ef7cb800f4a2f9aea949550e593eb443c60eacd74175b0ab27273bff4ba73638` |
+| `results/study/regime_summary.json` | 2,666 | `6aacb485dd644a4b0a35046f7f345f4c8463b2d4285bf12edd444a8844862608` |
 
 **Optimiser traces and the analysis of them.** `results/trace_analysis.json`: the KL, entropy and value-loss traces of the re-trained twenty replicates joined to the published per-replicate reads, with the two controls the analysis rests on recorded alongside it — every produced checkpoint hash-matches `data/training_replicates/`, and the re-trained held-out rates match `results/study/` to 3.3e-05. The per-run `training_log.json` files themselves are git-ignored scratch under `data/runs_traces/`; this is the derived summary, reproducible with `scripts/analyse_traces.py` from a machine that has re-run the campaign.
 

@@ -56,7 +56,7 @@ Honest summary of what is finished and what is not:
 | Study re-measured at the shipped step budget | the same twenty replicates trained to 3,000,000 steps instead of 500,000: the lead changes hands in **both** experiments (CTDE 0.429 overtakes DTE; CTDE-Comm 0.395 takes first while CTDE-VD falls to last) and no paired comparison clears the corrected bar ([§ 8.13](docs/08_results.md#budget-3m)) | same |
 | Historical dependency audit | The measured PyTorch lock has recorded advisories; the current runtime requirements use JAX and retain the old lock for historical reproduction ([§ 9.10](docs/09_reproducibility.md#dependency-audit)) | same |
 | Gameplay clips of the trained policies | yes (`docs/assets/`) | yes |
-| Current tests | 168 passed, 1 skipped, **86 %** statement coverage | 79 passed, 1 skipped, **87 %** coverage |
+| Current tests | 175 passed, 1 skipped, **86 %** statement coverage | 82 passed, 1 skipped, **87 %** coverage |
 | Continuous integration | both suites plus tree parity, documentation links, inventory and pooled/absolute re-derivation, artefact-path portability, campaign-script syntax — green on `ubuntu-latest`, and the re-derivation gate is what caught [A-42](docs/11_code_audit.md#a-committed-artefact-recorded-windows-paths) ([§ 9.4](docs/09_reproducibility.md#continuous-integration)) | same job |
 | Docker | n/a | **never built or run** |
 
@@ -192,9 +192,13 @@ is evaluation against fixed opponents rather than argmax. Pooled over all 60 arm
   0.122–0.218 greedy). The
   readout controls which architecture appears best; the instability belongs to training
   ([§ 8.1 Readout re-measured](docs/08_results.md#readout-re-measured)).
-* **A quarter of replicates are not measuring fighting.** Five of twenty end most matches on the 90 s
-  clock, where winning means "most alive at the buzzer"
-  ([§ 8.1](docs/08_results.md#two-regimes)).
+* **Two of every five held-out matches are not measuring fighting.** 37.9 % (exp 1) and 42.4 % (exp 2) of
+  the study's held-out matches run to the 90 s clock, and five of twenty replicates are clock-dominated —
+  up to 117 of 150 matches. Separated by regime, **the pooled order is the timeout order in both
+  experiments**: DTE's and VD's headline leads are survival rates (0.509 and 0.420 at the clock) while the
+  fight winners are CTDE (0.397 vs DTE's 0.322) and Comm (0.376 vs VD's 0.340) — and Comm is also the arm
+  the common-pool round-robin ranked first, whose pooled order followed its *wipeout* order, the opposite
+  residue with a similar clock share ([§ 8.1](docs/08_results.md#two-regimes)).
 * **One configuration key moves the outcome more than the paradigm does — and three seeds got its sign
   wrong.** Turning domain randomisation off shifts a paradigm's held-out win rate by up to **0.161**, paired
   on the study's full ten seeds, while the whole between-paradigm spread of the ten-seed study is 0.085–0.129.
@@ -368,7 +372,7 @@ and a positive value samples the policy's softmax at that temperature
 │   ├── rl/                     # actions, buffer + GAE, networks, ppo
 │   ├── systems/                # match_variant, simulation, metrics, plotting
 │   └── ui/dashboard.py         # in-game overlay text
-├── tests/                      # 169 tests, incl. tree-parity, collision geometry, the round-robin statistics, the checkpoint-archive pairing and artefact-path portability
+├── tests/                      # 176 tests, incl. tree-parity, collision geometry, the round-robin statistics, the checkpoint-archive pairing and artefact-path portability
 ├── data/                       # experiment 1: promoted replicate + historical_100k/ + PROVENANCE.json
 ├── results/
 │   ├── study/                  # per_seed_metrics.csv, analysis.json, learning_curves.png
@@ -379,7 +383,7 @@ and a positive value samples the policy's softmax at that temperature
     ├── main.py  Dockerfile  requirements.txt  README.md
     ├── scripts/                # own train_rl.py (adds MLflow); the shared scripts are byte-identical
     ├── src/marl_arena/         # own copy; VD / CAC / Comm networks
-    ├── tests/                  # 80 tests
+    ├── tests/                  # 83 tests
     ├── results/baseline/       # experiment 2's untrained reference
     └── data/                   # promoted replicate, historical_100k/, mlflow_export/, PROVENANCE.json
 ```

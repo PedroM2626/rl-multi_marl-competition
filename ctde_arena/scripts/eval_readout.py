@@ -124,6 +124,18 @@ def evaluate(matches: int, seed: int) -> dict:
 PARADIGMS = {"exp1": ("CTE", "DTE", "CTDE"), "exp2": ("CTDE-VD", "CTDE-CAC", "CTDE-Comm")}
 
 
+def versioned_replicates_root() -> Path:
+    """The study's versioned blocks live once, at the repository root, whichever tree evaluates them.
+
+    `data/training_replicates/` holds all twenty replicates -- both experiments -- so ctde_arena reaches
+    it through its parent, the same resolution `run_cross_arena.py` uses for the blocks it plays. Resolving
+    against the evaluating tree instead silently skipped every replicate of experiment 2 from ctde_arena,
+    which is the defect this helper exists to not reintroduce; the readout campaign never hit it because
+    it played the scratch runs, but `--checkpoint-set versioned` is the clone-runnable path.
+    """
+    return (ROOT.parent if ROOT.name == "ctde_arena" else ROOT) / "data" / "training_replicates"
+
+
 def paradigms_from_files(experiment: str, files: list[Path]) -> dict[str, str]:
     """`team_2_ctde-vd.npz` -> {"Team 2": "CTDE-VD"}: the versioned sets carry no run summary.
 
@@ -173,7 +185,7 @@ def main() -> None:
                              f"not from {ROOT.name}/")
         for seed in (int(s) for s in args.seeds.split(",")):
             if args.checkpoint_set == "versioned":
-                directory = ROOT / "data" / "training_replicates" / f"{experiment}_seed{seed}"
+                directory = versioned_replicates_root() / f"{experiment}_seed{seed}"
                 checkpoints = directory
             else:
                 directory = runs_dir / f"{experiment}_seed{seed}"

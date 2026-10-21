@@ -43,6 +43,7 @@ IDENTICAL = [
     "scripts/render_trailer.py",
     "scripts/run_experiment.py",
     "scripts/eval_readout.py",
+    "scripts/eval_regimes.py",
     "scripts/convert_torch_checkpoints.py",
     "scripts/benchmark_runtime.py",
     "tests/test_collision.py",
