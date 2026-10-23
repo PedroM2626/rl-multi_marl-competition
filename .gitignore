@@ -35,6 +35,10 @@ htmlcov/
 # The logged points are exported to ctde_arena/data/mlflow_export/ instead.
 mlruns/
 
+# Demo runs write here (main.py), not into the versioned data/metrics/ tree. The demo is the README's
+# "just look at it" command; a stray match must never become part of the evidence base.
+**/data/demo/
+
 # Orphaned history from CSV schema rotations (MetricsStore._rotate_csv_if_schema_changed).
 # These are pre-rename or pre-schema-change copies; the live files beside them are versioned.
 **/data/metrics/*.legacy*.csv

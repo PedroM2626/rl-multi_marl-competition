@@ -14,8 +14,7 @@ set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 TMP="${TEMP:-/tmp}"
 
-PY="$ROOT/.venv-check/Scripts/python.exe"
-[ -x "$PY" ] || PY="$ROOT/.venv/Scripts/python.exe"
+source "$ROOT/scripts/_runtime.sh"
 
 BLOCKS="1:7,10:5,2:1,3:3,4:4,5:6,6:8,7:9,8:10,9:2"
 

@@ -14,8 +14,7 @@ set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-PY="$ROOT/.venv-check/Scripts/python.exe"
-[ -x "$PY" ] || PY="$ROOT/.venv/Scripts/python.exe"
+source "$ROOT/scripts/_runtime.sh"
 TMP="${TEMP:-/tmp}"
 
 PAIRS=("5 6" "6 8" "7 9" "8 10")

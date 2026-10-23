@@ -56,9 +56,9 @@ Honest summary of what is finished and what is not:
 | Study re-measured at the shipped step budget | the same twenty replicates trained to 3,000,000 steps instead of 500,000: the lead changes hands in **both** experiments (CTDE 0.429 overtakes DTE; CTDE-Comm 0.395 takes first while CTDE-VD falls to last) and no paired comparison clears the corrected bar ([§ 8.13](docs/08_results.md#budget-3m)) | same |
 | Historical dependency audit | The measured PyTorch lock has recorded advisories; the current runtime requirements use JAX and retain the old lock for historical reproduction ([§ 9.10](docs/09_reproducibility.md#dependency-audit)) | same |
 | Gameplay clips of the trained policies | yes (`docs/assets/`) | yes |
-| Current tests | 175 passed, 1 skipped, **86 %** statement coverage | 82 passed, 1 skipped, **87 %** coverage |
-| Continuous integration | both suites plus tree parity, documentation links, inventory and pooled/absolute re-derivation, artefact-path portability, campaign-script syntax — green on `ubuntu-latest`, and the re-derivation gate is what caught [A-42](docs/11_code_audit.md#a-committed-artefact-recorded-windows-paths) ([§ 9.4](docs/09_reproducibility.md#continuous-integration)) | same job |
-| Docker | n/a | **never built or run** |
+| Current tests | 187 passed, 1 skipped, **86 %** statements / **84 %** branches | 90 passed, 1 skipped, **88 %** statements / **86 %** branches |
+| Continuous integration | both suites on Ubuntu (Python 3.10 and 3.11) and Windows, a Rust parity job that cannot skip, a Docker build, tree parity, documentation links, inventory and pooled/absolute re-derivation, artefact-path portability, campaign-script syntax — and the re-derivation gate is what caught [A-42](docs/11_code_audit.md#a-committed-artefact-recorded-windows-paths) ([§ 9.4](docs/09_reproducibility.md#continuous-integration)) | same jobs |
+| Docker | n/a | built and import-smoke-tested in CI; **no end-to-end training run recorded** |
 
 Six defects documented in the audit were **fixed** during this work, and each changed what the results
 mean:
@@ -85,8 +85,8 @@ Still open, and load-bearing for how the results may be read: the study is **und
 margin** (~47 to ~939 replicates, [§ 8.1](docs/08_results.md#power-analysis)), a quarter of replicates
 decide matches on the 90 s clock rather than by eliminations
 ([§ 8.1](docs/08_results.md#two-regimes)), one replicate in sixty reads out as a never-fires policy
-([§ 8.1](docs/08_results.md#leave-one-out)), `ui/dashboard.py` is untested, and the `ctde_arena/` Docker
-image has never been built.
+([§ 8.1](docs/08_results.md#leave-one-out)), and the `ctde_arena/` Docker image is built and
+import-smoke-tested in CI but has no end-to-end training run recorded.
 
 ## The two experiments
 
@@ -250,7 +250,6 @@ python -m venv .venv
                                   # source .venv/bin/activate on POSIX
 pip install -r requirements.txt
 pip install maturin==1.15.0
-pip install pandas                # only for scripts/plot_metrics.py; not in requirements.txt
 # Install Rust stable with rustup, then build the native extension:
 cd native/arena_core
 maturin develop --release
@@ -339,7 +338,7 @@ Note: `RL_TRAIN_TOTAL_STEPS` is **1,000,000** in both committed `.env` files, wh
 the variable is absent is 3,000,000 — the file, not the default, is what sets the budget of a bare
 `python scripts/train_rl.py` run ([§ 6.7](docs/06_optimisation_procedure.md#67-hyperparameters-as-trained));
 `RANDOM_SEED` is deliberately different per tree (9 and 2) because it also selects the paradigm-to-slot
-rotation that the shipped checkpoints need. Of the 49 keys the committed `.env` files list, only these two
+rotation that the shipped checkpoints need. Of the 47 keys the committed `.env` files list, only these two
 differ from the code defaults. `RESPAWN_ENABLED` was removed rather than left inert
 ([A-16](docs/11_code_audit.md#dead-configuration)). The six reward and termination keys
 (`REWARD_ALIVE_BONUS`, `REWARD_ALIVE_DECAY_HALF_LIFE_S`, `REWARD_KILL`, `REWARD_DEATH`, `REWARD_HIT`,
@@ -372,7 +371,7 @@ and a positive value samples the policy's softmax at that temperature
 │   ├── rl/                     # actions, buffer + GAE, networks, ppo
 │   ├── systems/                # match_variant, simulation, metrics, plotting
 │   └── ui/dashboard.py         # in-game overlay text
-├── tests/                      # 176 tests, incl. tree-parity, collision geometry, the round-robin statistics, the checkpoint-archive pairing and artefact-path portability
+├── tests/                      # 188 tests, incl. tree-parity, collision geometry, the round-robin statistics, the checkpoint-archive pairing and artefact-path portability
 ├── data/                       # experiment 1: promoted replicate + historical_100k/ + PROVENANCE.json
 ├── results/
 │   ├── study/                  # per_seed_metrics.csv, analysis.json, learning_curves.png
@@ -383,7 +382,7 @@ and a positive value samples the policy's softmax at that temperature
     ├── main.py  Dockerfile  requirements.txt  README.md
     ├── scripts/                # own train_rl.py (adds MLflow); the shared scripts are byte-identical
     ├── src/marl_arena/         # own copy; VD / CAC / Comm networks
-    ├── tests/                  # 83 tests
+    ├── tests/                  # 91 tests
     ├── results/baseline/       # experiment 2's untrained reference
     └── data/                   # promoted replicate, historical_100k/, mlflow_export/, PROVENANCE.json
 ```
@@ -406,6 +405,7 @@ Both trees ship the same layout; `exp. 1` and `exp. 2` below mean "in each tree'
 | `results/study/` | the 20-replicate study's aggregate CSV, JSON and figure | yes |
 | `results/baseline/` | the untrained reference points, greedy and uniform | yes |
 | `data/runs/` | per-replicate scratch (checkpoints, per-step CSVs, `evaluation/run_summary.json`) | **no** — see [§ 9.8](docs/09_reproducibility.md#the-versioning-asymmetry) |
+| `data/demo/` | what `python main.py` records when a demo match ends; never study evidence | **no** — git-ignored |
 
 A replicate produced by `run_experiment.py` writes its training record to `evaluation/run_summary.json`
 rather than a `training_log.json`, so the promoted directory carries checkpoints only; the run summary is
@@ -422,9 +422,10 @@ docker build -t ctde-arena .
 docker run --rm -v ${PWD}/data:/app/data -v ${PWD}/mlruns:/app/mlruns ctde-arena
 ```
 
-The image installs OpenGL/X11 libraries but defaults to headless training. **It has never been built or
-run** — this is a known, accepted gap, not an oversight; every number in the documentation was produced on
-the host. Treat the Dockerfile as unverified configuration.
+The image installs OpenGL/X11 libraries but defaults to headless training. CI now builds it and imports
+the engine inside the container; **no end-to-end training run inside the image has been recorded**, and
+every number in the documentation was produced on the host. Treat the Dockerfile's training path as
+unverified until such a run is committed.
 
 ## License
 

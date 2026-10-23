@@ -1,23 +1,28 @@
 name: tests
 
-# Both experiment trees, the documentation gates, and the recomputable artefacts.
+# Both experiment trees, the documentation gates, the recomputable artefacts, the Rust extension and the
+# Docker image.
 #
 # WHAT THIS IS NOT: a reproduction of the measured environment. The numbers in docs/ were produced on
-# Python 3.10.11 / NumPy 1.26.4 / Torch 2.5.1+cu121 (`requirements-measured.lock.txt`), and § 9.1 of the
+# Python 3.10.11 / NumPy 1.26.4 / Torch 2.5.1+cu121 (requirements-measured.lock.txt), and § 9.1 of the
 # documentation measures what the difference costs: the arena geometry and randomisation streams stay
 # bit-identical, but the first PPO update differs at 1e-6 and every checkpoint differs after 4,000 steps.
-# CI installs `requirements.txt` (NumPy 2.2.6 / JAX 0.4.38 since the runtime move in A-44 -- 0.4.38 is the
+# CI installs requirements.txt (NumPy 2.2.6 / JAX 0.4.38 since the runtime move in A-44 -- 0.4.38 is the
 # build this host actually runs and the one A-45's runtime measurements were made on -- Torch is no
 # longer a runtime dependency, so the CVE-2025-32434 note in A-37 describes the measured environment, not
-# this job) because the question here is "does the code do what its tests
-# say", which is environment-independent for everything except the training hashes. § 9.1's own
-# conclusion is that a *measurement* run must use the lock, and CI is not one. A-45 is why the job needs no
-# Torch at all: the capacity width is read from the committed .npz, not from a torch.load of a .pt.
+# this job) because the question here is "does the code do what its tests say", which is
+# environment-independent for everything except the training hashes. § 9.1's own conclusion is that a
+# *measurement* run must use the lock, and CI is not one. A-45 is why the job needs no Torch at all: the
+# capacity width is read from the committed .npz, not from a torch.load of a .pt.
 #
 # `ursina` is excluded from the install, exactly as in the host verification environment docs/09 § 9.4
 # describes. The render test then skips for missing Ursina rather than failing on a runner whose Panda3D
 # has no libGL; the pure-Python half of that file -- clip provenance and caption band content, which is
 # where a mislabelled artefact would be caught -- still runs everywhere.
+#
+# The native job is not optional: test_native_parity.py skips when the extension is absent, so without a
+# job that builds it the Rust path would never be exercised in CI. The Docker job builds the image the
+# README used to describe as never built.
 
 on:
   push:
@@ -26,21 +31,100 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   MPLBACKEND: Agg
 
 jobs:
   suites:
-    name: suite (${{ matrix.tree }})
+    name: suite (${{ matrix.tree.name }}, py${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - tree: experiment 1, the root tree
+        python-version: ["3.10", "3.11"]
+        tree:
+          - name: experiment 1, the root tree
             workdir: .
-          - tree: experiment 2, ctde_arena
+          - name: experiment 2, ctde_arena
             workdir: ctde_arena
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install (runtime deps from requirements.txt; both committed .env files set RL_DEVICE=cpu)
+        run: |
+          python -m pip install --upgrade pip
+          grep -v '^ursina' "${{ matrix.tree.workdir }}/requirements.txt" > ci-requirements.txt
+          pip install -r ci-requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
+          pip install coverage==7.16.2   # the measured environment's version, not a dependency of anything
+
+      - name: Suite
+        working-directory: ${{ matrix.tree.workdir }}
+        run: python -m pytest tests/ -q
+
+      - name: Statement and branch coverage of the engine
+        working-directory: ${{ matrix.tree.workdir }}
+        run: |
+          python -m coverage run --branch --source=src/marl_arena -m pytest tests/ -q
+          python -m coverage report --fail-under=83
+
+  rust:
+    name: native extension parity
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install the Python runtime and the extension
+        run: |
+          python -m pip install --upgrade pip
+          grep -v '^ursina' requirements.txt > ci-requirements.txt
+          pip install -r ci-requirements.txt
+          pip install maturin==1.15.0
+          pip install --no-build-isolation ./native/arena_core
+
+      - name: The extension is present, and the parity test is not skipped
+        run: |
+          python - <<'PY'
+          import sys
+          sys.path.insert(0, "src")
+          from marl_arena.systems import simulation
+          assert simulation._arena_native is not None, "the Rust extension did not import"
+          print("native extension:", simulation._arena_native.__file__)
+          PY
+          python -m pytest tests/test_native_parity.py -q
+
+  docker:
+    name: docker image builds
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the ctde_arena image
+        run: docker build -t ctde-arena ctde_arena
+
+      - name: The image imports the engine
+        run: docker run --rm ctde-arena python -c "import marl_arena, numpy, jax; print(marl_arena.__file__)"
+
+  windows:
+    name: suite (windows, py3.11)
+    runs-on: windows-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
@@ -48,26 +132,20 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install (runtime deps from requirements.txt; both committed .env files set RL_DEVICE=cpu)
+      - name: Install
+        shell: pwsh
         run: |
           python -m pip install --upgrade pip
-          grep -v '^ursina' "${{ matrix.workdir }}/requirements.txt" > ci-requirements.txt
-          pip install -r ci-requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
-          pip install coverage==7.16.2   # the measured environment's version, not a dependency of anything
+          python -c "from pathlib import Path; p=Path('requirements.txt'); Path('ci-requirements.txt').write_text('\n'.join(l for l in p.read_text(encoding='utf-8').splitlines() if not l.startswith('ursina')), encoding='utf-8')"
+          pip install -r ci-requirements.txt
 
       - name: Suite
-        working-directory: ${{ matrix.workdir }}
         run: python -m pytest tests/ -q
-
-      - name: Statement coverage of the engine
-        working-directory: ${{ matrix.workdir }}
-        run: |
-          python -m coverage run --source=src/marl_arena -m pytest tests/ -q
-          python -m coverage report | tail -1
 
   artefacts:
     name: documentation and derived-artefact gates
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 

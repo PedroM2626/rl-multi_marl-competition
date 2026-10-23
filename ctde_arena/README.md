@@ -32,10 +32,10 @@ used to rerun that study.
 | Current JAX/Rust replay | smoke-verified; full same-seed replay check pending |
 | License | MIT — [`LICENSE`](../LICENSE) at the repository root covers this tree as well as experiment 1 |
 | MLflow curves | **1 logged point** for the 100k run — see [A-9](../docs/11_code_audit.md#mlflow-cadence) |
-| Current tests | 82 passed, 1 skipped, **87 %** statement coverage |
+| Current tests | 90 passed, 1 skipped, **88 %** statements / **86 %** branches |
 | Cross-experiment round-robin | hosted here, since this tree's package is the superset holding all six architectures |
 | Absolute strength vs random opponents | `results/absolute_ten/` at the repository root (ten checkpoint sets — every replicate either experiment trained), from `scripts/run_absolute_eval.py`; `results/absolute_six/` is its six-set predecessor, `results/absolute_blocks/` and `results/absolute/` are the three-set and promoted-set predecessors, kept because [§ 8.11](../docs/08_results.md#absolute-strength) quotes their history ([§ 8.11](../docs/08_results.md#absolute-strength)) |
-| Docker image | **never built or run** — unverified configuration |
+| Docker image | built and import-smoke-tested in CI; no end-to-end training run recorded |
 
 Read [Results](../docs/08_results.md) and [Threats to validity](../docs/10_threats_to_validity.md)
 before quoting any number from here. Everything in the "historical" tables is superseded by the replicated
@@ -101,7 +101,6 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 pip install maturin==1.15.0
-pip install pandas                # only for scripts/plot_metrics.py
 # Install Rust stable with rustup, then build the native extension:
 cd native/arena_core
 maturin develop --release
@@ -329,7 +328,7 @@ The values that matter most here:
 
 ```bash
 cd ctde_arena
-python -m pytest tests/ -q        # 82 passed, 1 skipped; 87 % statement coverage after the 
+python -m pytest tests/ -q        # 90 passed, 1 skipped; 88 % statements / 86 % branches after the
 port
 ```
 

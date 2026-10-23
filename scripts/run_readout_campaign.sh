@@ -19,8 +19,7 @@
 # do not change an answer, they make every cost figure in docs/09 section 9.5 wrong for both.
 set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-PY="$ROOT/.venv-check/Scripts/python.exe"
-[ -x "$PY" ] || PY="$ROOT/.venv/Scripts/python.exe"
+source "$ROOT/scripts/_runtime.sh"
 TMP="${TEMP:-/tmp}"
 
 while [ ! -f /tmp/blocks10.flag ]; do sleep 180; done

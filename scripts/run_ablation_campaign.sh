@@ -10,13 +10,13 @@
 # this comment claimed experiment 1 only, which is not what ran; the results in
 # [docs/08 section 8.13](../docs/08_results.md) are the wider ones.
 set -u
-cd "$(dirname "$0")/.."
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+source "$ROOT/scripts/_runtime.sh"
 
 while [ ! -f /tmp/study_v2.flag ]; do sleep 120; done
 echo "arena v2 study complete; starting ablations at $(date -Is)"
-
-PY=.venv-check/Scripts/python.exe
-[ -x "$PY" ] || PY=.venv/Scripts/python.exe
 
 run_arm() {
   local name="$1"; shift

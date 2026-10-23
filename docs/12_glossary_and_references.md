@@ -13,8 +13,8 @@
 | **Variant** | One geometry/physics configuration. Fixed for evaluation, sampled per match during training. |
 | **Waypoint action** | The 8-element discrete action: one of four target roles × a shoot bit. Movement and aiming are executed by a hand-written controller on top of it. |
 | **Slot vector** | One-hot encoding of which of a team's three agents is acting, used by CTE and CTDE-Comm. |
-| **Global observation** | The 36-float concatenation of per-agent \([p_x, p_z, \theta/180, \mathbb{1}_{\text{alive}}]\) for all nine agents. |
-| **Local observation** | The 8-float per-agent vector of [§ 4.1](04_mdp_formalisation.md#41-local-observation-o_i). |
+| **Global observation** | The 45-float concatenation of per-agent \([p_x, p_z, \sin\theta, \cos\theta, \mathbb{1}_{\text{alive}}]\) for all nine agents. |
+| **Local observation** | The 9-float per-agent vector of [§ 4.1](04_mdp_formalisation.md#41-local-observation-o_i). |
 | **Wipeout** | A match ending because at most one team has living agents. |
 | **Timeout match** | One that reaches the 90 s clock with more than one team alive. Under the committed rule the most-alive team is awarded the win; under arena v2 it is a draw ([§ 8.12](08_results.md#arena-v2)). |
 | **Training block** | One experiment-1 replicate paired with one experiment-2 replicate, giving one checkpoint per architecture. The round-robin is played over all ten the study produced; spread across blocks is training variance, spread across harness seeds is evaluation variance. |

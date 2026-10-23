@@ -161,12 +161,13 @@ dashboard, which had also been missed by the localisation pass because it was un
 **A-4 · FIXED**
 
 `RLTeamController.__init__` ends with `self._load_if_exists()`, which loads
-`data/checkpoints/<slug>_<paradigm>.pt` whenever the file is present. So `python scripts/train_rl.py`
+`data/checkpoints/<slug>_<paradigm>.npz` whenever the file is present. So `python scripts/train_rl.py`
 does **not** start from scratch on a machine that has the versioned checkpoints: it continues from the
 100 k-step policies while resetting `total_env_steps` to 0 and creating a fresh Adam optimizer with
 fresh moments.
 
-`train_rl.py` still has no flag to disable this, so the hazard stands for that entry point.
+`train_rl.py` now has `--from-scratch`, which disables the warm start; without it the old behaviour
+remains, and the README warns that a bare `python scripts/train_rl.py` resumes from the versioned weights.
 
 **Mitigation.** `ARENA_DATA_DIR` now re-roots the whole data tree — metrics, exports and checkpoints —
 so pointing it at a fresh directory guarantees a run from random initialisation.

@@ -87,8 +87,8 @@ not be relied on are set out in [§ Threats to validity](10_threats_to_validity.
 1. A self-contained, dependency-light MARL arena (NumPy physics + PPO, no external RL framework) in
    which six distinct information-flow architectures share one simulator, one reward and one
    observation encoding.
-2. A from-scratch implementation of all six architectures in 1,085 lines of model and training code
-   (`rl/`, `controllers/`, `models.py`; 949 excluding blank lines), including a swept-AABB projectile
+2. A from-scratch implementation of all six architectures in 1,438 lines of model and training code
+   (`rl/`, `controllers/`, `models.py`; 1,234 excluding blank lines), including a swept-AABB projectile
    collision solver whose geometry is verified against hand-computed entry parameters, including a step
    long enough to tunnel a barrier
    ([§ Collision detection](03_arena_system_model.md#343-collision-detection), `tests/test_collision.py`).
@@ -128,7 +128,7 @@ not be relied on are set out in [§ Threats to validity](10_threats_to_validity.
    the measurement showing that a NumPy major-version change destroys it for training outcomes
    ([A-31](11_code_audit.md#the-pinned-environment-does-not-reproduce-the-recorded-runs)).
 9. A written account of what the implementation *actually computes*, as opposed to what the architecture
-   names conventionally imply — 41 audited findings, several of which are the reason the results changed on
+   names conventionally imply — 48 audited findings, several of which are the reason the results changed on
    re-measurement ([§ Optimisation procedure](06_optimisation_procedure.md#65-what-the-implementation-does-not-do)
    and [§ Code audit](11_code_audit.md)). This is the part that constrains how the results may be read.
 
@@ -151,8 +151,8 @@ Out of scope, deliberately or as unfinished work:
   width by [§ 8.13](08_results.md#ablations). What those two sections establish is that this is not a
   neutral backdrop -- one key reorders both experiments -- and the ablated configurations have not been
   re-measured through the common-opponent or random-pool instruments.
-* Respawn is configured but not implemented; the flag has no effect
-  ([§ Code audit](11_code_audit.md#dead-configuration)).
+* Respawn was removed from the configuration rather than left inert, so there is no respawn setting to
+  mistake for a working one ([§ Code audit](11_code_audit.md#dead-configuration)).
 * No recurrent policies, no opponent modelling, no self-play league. Teams train concurrently against
   each other's moving policies, which is a non-stationary environment none of the three algorithms
   accounts for.

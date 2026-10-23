@@ -134,7 +134,7 @@ CommNet. The differences that matter:
 
 * **One round only.** Information cannot travel \(i \to j \to k\).
 * **The team observation is assembled by the controller**, sorted by `agent_id`, with dead allies
-  replaced by an all-zero 8-vector. A dead ally therefore emits a message \(m = \text{msg\_net}(0)\),
+  replaced by an all-zero 9-vector. A dead ally therefore emits a message \(m = \text{msg\_net}(0)\),
   which is a *non-zero constant* that biases the receiver's channel — CommNet masks absent agents; this
   implementation does not. With 3-agent teams and frequent early deaths, this is a systematic effect on
   the arm that is already last.
@@ -143,12 +143,13 @@ CommNet. The differences that matter:
 * The message is 4-dimensional against a 9-dimensional observation, so the channel is
   lower-dimensional than the private signal it modulates.
 
-## 5.6 Dead code
+## 5.6 Dead code (removed)
 
-`CTDEActorNetwork` and `CTDECriticNetwork` are `pass` subclasses of `ActorNetwork` and
-`CentralizedCriticNetwork`, referenced nowhere. They are listed here so that a reader searching for
-"the CTDE network" does not mistake them for the live implementation — the CTDE arm uses plain
-`ActorNetwork` + `CentralizedCriticNetwork`.
+`CTDEActorNetwork` and `CTDECriticNetwork` were `pass` subclasses of `ActorNetwork` and
+`CentralizedCriticNetwork`, referenced nowhere. They were removed under
+[A-20](11_code_audit.md#dead-classes); a reader searching for "the CTDE network" should look at the live
+implementation, which is plain `ActorNetwork` + `CentralizedCriticNetwork` (and, for the communication
+arm, `CommActorNetwork`).
 
 ## 5.7 Checkpoint contents
 

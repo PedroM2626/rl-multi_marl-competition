@@ -186,6 +186,22 @@ def main() -> int:
     experiments = args.experiments.split(",")
     out_dir = args.out
 
+    # A campaign must not run on an interpreter that is not the measured runtime. Collection and
+    # re-aggregation are pure reads of existing summaries, so they stay available on any interpreter.
+    if not args.collect_only:
+        sys.path.insert(0, str(ROOT / "src"))
+        from marl_arena.runtime import require_measured_runtime
+
+        try:
+            info = require_measured_runtime(ROOT)
+        except Exception as exc:
+            print(f"[abort] runtime check failed: {exc}", file=sys.stderr, flush=True)
+            return 2
+        print(
+            "runtime: python {python} | jax {jax} | numpy {numpy} | rust_extension {rust_extension}".format(**info),
+            flush=True,
+        )
+
     failures: list[str] = []
     if args.collect_only:
         # Re-aggregate a finished campaign without launching anything: the runs are the expensive part and

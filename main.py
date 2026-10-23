@@ -25,7 +25,7 @@ from ursina import (
     window,
 )
 
-from marl_arena.config import CONFIG
+from marl_arena.config import CONFIG, DEMO_DATA_DIR
 from marl_arena.controllers.rl_controller import set_rl_training
 from marl_arena.systems.metrics import MetricsStore
 from marl_arena.systems.simulation import ArenaSimulation
@@ -156,7 +156,11 @@ class ProjectileVisual(Entity):
 
 class ArenaApp:
     def __init__(self) -> None:
-        self.metrics = MetricsStore()
+        # A demo match is not study evidence: write it under data/demo/ rather than appending to the
+        # versioned data/metrics/ CSVs that every table in docs/ is derived from.
+        self.metrics = MetricsStore(
+            metrics_dir=DEMO_DATA_DIR / "metrics", exports_dir=DEMO_DATA_DIR / "exports"
+        )
         self.simulation = ArenaSimulation(domain_randomization=False)
         set_rl_training(self.simulation.controllers, False)
         self.agent_visuals: dict[str, CapsuleVisual] = {}
@@ -246,7 +250,10 @@ class ArenaApp:
         self.finished = True
         result = self.simulation.finish_match()
         exported = self.metrics.record_match(result, self.simulation.cumulative_metrics)
-        export_text = "Files: " + ", ".join(path.name for path in exported) if exported else "Files: none"
+        export_text = (
+            "Demo files: " + ", ".join(path.name for path in exported)
+            if exported else "Demo files: none"
+        )
         self.export_label.text = export_text
         self.match_banner = Text(
             text=f"Winner: {result.winner_team} | Restarting in 4s",

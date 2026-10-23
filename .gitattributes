@@ -1,0 +1,12 @@
+# Normalise text to LF in the repository. The artefact inventory hashes the blob Git stores, so a
+# Windows checkout with core.autocrlf=true must not turn a tracked CSV into a different artefact than a
+# Linux clone sees (A-38 is the post-mortem). Binary formats are declared so Git never touches them.
+* text=auto eol=lf
+
+*.png binary
+*.gif binary
+*.npz binary
+*.pt binary
+*.ico binary
+*.woff binary
+*.woff2 binary

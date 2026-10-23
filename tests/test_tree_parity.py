@@ -28,6 +28,7 @@ IDENTICAL = [
     "src/marl_arena/rl/buffer.py",
     "src/marl_arena/rl/networks.py",
     "src/marl_arena/rl/ppo.py",
+    "src/marl_arena/runtime.py",
     "src/marl_arena/systems/__init__.py",
     "src/marl_arena/systems/metrics.py",
     "src/marl_arena/systems/plotting.py",
@@ -53,6 +54,8 @@ IDENTICAL = [
     "tests/test_policy_batching.py",
     "tests/test_native_parity.py",
     "tests/test_dashboard.py",
+    "tests/test_checkpoint_atomicity.py",
+    "tests/test_runtime_provenance.py",
 ]
 
 # Files that legitimately differ: the paradigm cycle and the MLflow integration. The engine, the

@@ -19,13 +19,9 @@
 # docs/09 § 9.5 is wrong for both this and whatever else is running.
 set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-# The repository runtime, not the CI-verification one: .venv holds the jax 0.4.38 build with the Rust
-# core that every measurement in docs/09 section 9.5 was taken on. The older campaign scripts prefer
-# .venv-check, which was created to verify the CI install during the A-45 pin episode and still holds
-# the deprecated jax 0.6.2 build without the Rust extension -- running a measurement through it would
-# report the wrong runtime's numbers, which is why this script does not fall back to it.
-PY="$ROOT/.venv/Scripts/python.exe"
-[ -x "$PY" ] || { echo "the repository runtime (.venv) is not installed; a measurement must not run on any other interpreter" >&2; exit 1; }
+# The repository runtime only: _runtime.sh verifies the JAX pin and the Rust extension and refuses
+# .venv-check (jax 0.6.2, no Rust), which no measurement in docs/09 section 9.5 was taken on.
+source "$ROOT/scripts/_runtime.sh"
 TMP="${TEMP:-/tmp}"
 
 echo "regime replay started at $(date -Is)"

@@ -6,7 +6,10 @@
 # throughput in the documentation wrong for both, so this waits for the round-robin to finish
 # and then launches v2 with its own results directory.
 set -u
-cd "$(dirname "$0")/.."
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+source "$ROOT/scripts/_runtime.sh"
 
 PENDING=15
 while :; do
@@ -27,9 +30,6 @@ echo "round-robin blocks complete at $(date -Is); starting arena v2 study"
 export REWARD_ALIVE_BONUS=0.0015
 export REWARD_ALIVE_DECAY_HALF_LIFE_S=30
 export TERMINATION_CAP_AWARDS_WIN=false
-
-PY=.venv-check/Scripts/python.exe
-[ -x "$PY" ] || PY=.venv/Scripts/python.exe
 
 "$PY" scripts/run_study.py \
   --steps 500000 \

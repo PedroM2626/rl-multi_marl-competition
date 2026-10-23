@@ -113,6 +113,7 @@ def main() -> None:
 
     from marl_arena.config import CONFIG
     from marl_arena.controllers.rl_controller import save_rl_checkpoints, set_rl_training
+    from marl_arena.runtime import runtime_provenance
     from marl_arena.systems.metrics import MetricsStore
     from marl_arena.systems.simulation import ArenaSimulation
 
@@ -204,6 +205,7 @@ def main() -> None:
         "evaluation_seconds": round(eval_seconds, 1),
         "steps_per_second": round(sim.total_env_steps / max(train_seconds, 1e-9), 1),
         "device": CONFIG.rl_device,
+        "runtime": runtime_provenance(PROJECT_ROOT),
         "domain_randomization": sim.domain_randomization,
         "paradigm_rotation": sim.paradigm_rotation,
         "paradigms": {name: controller.paradigm for name, controller in sim.controllers.items()},

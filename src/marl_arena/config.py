@@ -14,11 +14,16 @@ from dotenv import load_dotenv
 
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
+# Load the committed configuration before deriving any path from the environment: an ARENA_DATA_DIR
+# written into .env must re-root the data tree just as one exported by a campaign does.
+load_dotenv(ROOT_DIR / ".env")
+
 DATA_DIR = Path(os.getenv("ARENA_DATA_DIR", str(ROOT_DIR / "data")))
 METRICS_DIR = DATA_DIR / "metrics"
 EXPORTS_DIR = DATA_DIR / "exports"
-
-load_dotenv(ROOT_DIR / ".env")
+# A demo run must not append to the versioned metrics tree: `python main.py` is the documented
+# "just look at it" command, and its matches are not part of the study's evidence base.
+DEMO_DATA_DIR = DATA_DIR / "demo"
 
 
 def _read_bool(name: str, default: bool) -> bool:
@@ -38,8 +43,6 @@ class ArenaConfig:
     gravity: float = float(os.getenv("GRAVITY", "14.0"))
     shoot_range: float = float(os.getenv("SHOOT_RANGE", "20.0"))
     shoot_cooldown: float = float(os.getenv("SHOOT_COOLDOWN", "0.45"))
-    plot_update_interval: float = float(os.getenv("PLOT_UPDATE_INTERVAL", "1.0"))
-    metrics_flush_interval: float = float(os.getenv("METRICS_FLUSH_INTERVAL", "1.5"))
     random_seed: int = int(os.getenv("RANDOM_SEED", "7"))
     sim_step_dt: float = float(os.getenv("SIM_STEP_DT", "0.1"))
     domain_randomization: bool = _read_bool("DOMAIN_RANDOMIZATION", True)

@@ -113,11 +113,11 @@ seed, so a run is reproducible end to end ([A-8](11_code_audit.md#unseeded-minib
 
 | Path | Actor input | Critic input | Used by |
 |---|---|---|---|
-| `update_actor_critic` | \(o_i\) (8) | none — the actor's own value head | DTE |
-| `update_ctde` | \(o_i\) (8) | \(s\) (36) | CTDE, CTDE-CAC |
-| `update_cte` | \([s, \text{slot}]\) (39) | \(s\) (36) | CTE |
+| `update_actor_critic` | \(o_i\) (9) | none — the actor's own value head | DTE |
+| `update_ctde` | \(o_i\) (9) | \(s\) (45) | CTDE, CTDE-CAC |
+| `update_cte` | \([s, \text{slot}]\) (48) | \(s\) (45) | CTE |
 | `update_ctde_vd` | — delegates verbatim to `update_ctde` — | | CTDE-VD |
-| `update_ctde_comm` | team obs (24) + slot | \(s\) (36) | CTDE-Comm |
+| `update_ctde_comm` | team obs (27) + slot (3) | \(s\) (45) | CTDE-Comm |
 
 Two things follow. First, **`update_ctde_vd` is a one-line alias**:
 
@@ -145,17 +145,19 @@ closed, and the row says so rather than quietly dropping them.
 | Omitted | Where it would matter | Evidence |
 |---|---|---|
 | **KL early stopping** | With 4 epochs over a variable-size batch and no KL guard, a short match (122 rows → one minibatch) and a long match (1,157 rows → five minibatches) get very different effective step counts | `approx_kl` is now **measured** and logged ([A-14](11_code_audit.md#approx-kl-placeholder)), but nothing acts on it: no epoch breaks early and no update is skipped on a KL spike. That mattered enough to test: one replicate behaves normally during training and fires 3.8 shots per match held out ([§ 8.1](08_results.md#leave-one-out)). The study was re-trained with the trace in place and the answer is that the trace would not have said anything — the collapsed run sits mid-field in its own entropy and KL, and no correlation between the optimiser's statistics and the held-out read survives correction or a change of unit to the run ([§ 8.1](08_results.md#traces-measured)). The guard is still worth having for a different reason: nothing acts on it, so a run that diverges is only discoverable afterwards. |
-| **Value-function clipping** | Deviation from MAPPO practice. Measured returns in a typical match span \([-1.50, +2.72]\), so this is not visibly harmful here | `nn.functional.mse_loss(values, returns_batch)` only |
+| **Value-function clipping** | Deviation from MAPPO practice. Measured returns in a typical match span \([-1.50, +2.72]\), so this is not visibly harmful here | the JAX update uses an unclipped squared error between `values` and `returns` |
 | **Reward / return normalisation** | MAPPO's reported stability is largely attributed to this; here the mean reward per buffer row is \(+0.012\) for a surviving team against informative events of \(\pm1.5\), so the signal-to-noise ratio of the value target is low | absent |
 | **Reporting of training loss** | Without policy/value/entropy curves there is no way to tell a converged policy from a diverged one | **Fixed, re-trained and now answered** — `PPOStats` reaches `training_log.json` per team ([A-15](11_code_audit.md#ppostats-discarded)), and `scripts/run_traces_campaign.sh` re-trained all twenty study replicates with the capture in place: every checkpoint hash matches the versioned set, so the traces belong to the study's own networks. The correlation they were wanted for is negative — no KL or entropy quantity keeps a signal after Bonferroni correction or after the unit changes ([§ 8.1](08_results.md#traces-measured)), and the collapsed seed-6 replicate is mid-field in its own trace. The ablation and arena-v2 replicates still have no trace: they were trained before the logger landed, and re-training them was not needed for any claim |
 | **Recurrent or history-conditioned policies** | Agents have no memory, so a partially observed state cannot be disambiguated over time | MLPs only |
 | **Learning-rate schedule** | 3 M-step runs at a constant 3e-4 Adam | absent |
 | **Optimizer state persistence** | Resuming from a checkpoint resets Adam moments while keeping the weights, so a continued run is not the same optimisation process | Checkpoints hold `{paradigm, actor, critic}` only — [§ 5.7](05_network_architectures.md#57-checkpoint-contents) |
 
-The `PPOStats` row deserves emphasis because it is the one that was *intended*: the dataclass exists,
-`_optimize` fills it, `finish_episode` returns it, `finish_rl_episode` collects it into a dict — and
-then `simulation.finish_match()` throws the dict away. The README's "next steps" item about persisting
-PPO statistics is accurate: the plumbing stops one function short of being useful.
+The `PPOStats` row was the one that was *intended* and then nearly lost: the dataclass existed,
+`_optimize` filled it, `finish_episode` returned it, `finish_rl_episode` collected it into a dict, and
+`simulation.finish_match()` used to discard that dict. It is now stored on `simulation.last_ppo_stats`,
+written to `training_log.json` by both training entry points, and recorded per sampled match by the study
+runner (the traces behind [§ 8.1](08_results.md#traces-measured)). The paragraph that used to sit here said
+the dict was thrown away; that was true before the logger was wired, and is kept only as history.
 
 ## 6.6 Exploration
 

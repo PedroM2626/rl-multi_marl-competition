@@ -16,14 +16,14 @@ Current requirements are pinned per experiment. Root: `ursina==6.1.2`, `numpy==2
 `pytest==8.3.5`. `ctde_arena/` adds `mlflow==2.17.2`. Building the Rust extension also requires Rust
 stable and `maturin==1.15.0`.
 
-Two gaps in the declared environment:
+The declared environment is complete: `pandas` is pinned in both `requirements.txt` files (it was once
+only imported by `scripts/plot_metrics.py`, and the documentation used to call that a gap).
 
-* `scripts/plot_metrics.py` imports **pandas**, which appears in neither `requirements.txt`. The script
-  exits with an install hint if the import fails, so this is a visible failure rather than a silent one.
-* The `.venv/` directory in the working tree is **not usable**: its `pyvenv.cfg` points at
-  `C:\Python313\python.exe` and records a creation command from `C:\Users\pedro\Downloads/…`. It was
-  built on a different machine. It is git-ignored so it never reached the repository, but anyone
-  copying the folder between machines will get a broken interpreter and a confusing error.
+Two local directories are deliberately not part of the environment. `.venv/` is the repository runtime
+the campaign scripts measure on: the JAX version pinned above plus the Rust extension built from
+`native/arena_core`. `.venv-check/` was a CI-verification environment and has held a different JAX build
+without that extension, so `scripts/_runtime.sh` refuses it and the campaign scripts no longer prefer it.
+A stale `.venv.broken_old/` from an earlier host is git-ignored local state, not a supported runtime.
 
 ### Verification environment actually used
 
@@ -126,13 +126,14 @@ of them in the same place.
 | Command | Experiment | What it does |
 |---|---|---|
 | `python scripts/train_rl.py --seed S` | 1 | Headless JAX PPO training; seeded smoke path verified, full-study replay pending |
-| `python main.py` | 1 | Ursina 3D window, greedy policies loaded from `data/checkpoints/` |
+| `python main.py` | 1 | Ursina 3D window, greedy policies loaded from `data/checkpoints/`; demo matches record under `data/demo/`, not the versioned metrics tree |
 | `python scripts/plot_metrics.py` | 1 | Reads `data/metrics/summary.json` → `exports/metrics/` |
-| `python -m pytest tests/ -q` | 1 | 175 passed, 1 skipped (verified 2026-10-20) |
+| `python -m pytest tests/ -q` | 1 | 187 passed, 1 skipped (verified 2026-10-23) |
+| `python scripts/check_runtime.py` | either | Refuses an interpreter that is not the JAX pin + Rust extension; campaign scripts call it through `scripts/_runtime.sh` |
 | `cd ctde_arena && python scripts/train_rl.py` | 2 | Same, plus MLflow scalar and checkpoint-artefact logging |
 | `cd ctde_arena && mlflow ui --backend-store-uri file:./mlruns` | 2 | Tracking UI |
 | `cd ctde_arena && python main.py` | 2 | 3D window for the CTDE variants |
-| `cd ctde_arena && python -m pytest tests/ -q` | 2 | 82 passed, 1 skipped (verified 2026-10-20) |
+| `cd ctde_arena && python -m pytest tests/ -q` | 2 | 90 passed, 1 skipped (verified 2026-10-23) |
 | `cd ctde_arena && docker build -t ctde-arena . && docker run --rm -v ${PWD}/data:/app/data -v ${PWD}/mlruns:/app/mlruns ctde-arena` | 2 | Containerised training |
 | `python scripts/run_experiment.py --seed S --steps N --out DIR` | either | One seeded replicate: train, then greedy held-out evaluation |
 | `python scripts/run_study.py --steps 500000 --seeds 1..10 --jobs 20` | both | Fan replicates out across processes and collect `results/study/` |
@@ -240,13 +241,13 @@ ImportError: cannot import name 'ValueDecompositionCriticNetwork' from 'marl_are
 
 ## 9.4 Test results
 
-Current JAX/Rust verification on 2026-10-20, after A-46 moved the per-step eager device ops to the host:
+Current JAX/Rust verification on 2026-10-23, after the Phase 0 hygiene changes:
 
 ```
 $ python -m pytest tests/ -q
-175 passed, 1 skipped in 329.97s
+187 passed, 1 skipped in 159.97s
 $ cd ctde_arena && python -m pytest tests/ -q
-82 passed, 1 skipped in 129.46s
+90 passed, 1 skipped in 77.00s
 ```
 
 Three consecutive runs of each suite returned those totals unchanged. One earlier run of the root suite failed
@@ -267,21 +268,21 @@ commented rendering block of `requirements-measured.lock.txt` has been installed
 `docs/assets/` were rendered in such an environment, and the test numbers here are not from it — which means
 the render path is verified by inspection of its output, not by the suite that is quoted above.
 
-Current statement coverage over `src/marl_arena`, measured with `coverage run --source=src/marl_arena -m pytest`
+Current statement and branch coverage over `src/marl_arena`, measured with `coverage run --branch --source=src/marl_arena -m pytest`
 (`pytest-cov` is not installed, and the two suites must still be run separately), alongside the figures the
 previous implementation recorded:
 
-| Tree | Statements | Missing | Coverage | Runtime measured |
-|---|---:|---:|---:|---|
-| Experiment 1 | 1,853 | 262 | **86 %** | JAX/Rust |
-| Experiment 2 (`ctde_arena/`) | 1,853 | 239 | **87 %** | JAX/Rust |
-| Experiment 1 | 1,548 | 91 | 94 % | PyTorch, historical |
-| Experiment 2 (`ctde_arena/`) | 1,660 | 187 | 89 % | PyTorch, historical |
+| Tree | Statements | Missing | Statement | Branch | Runtime measured |
+|---|---:|---:|---:|---:|---|
+| Experiment 1 | 1,890 | 264 | **86 %** | **84 %** | JAX/Rust |
+| Experiment 2 (`ctde_arena/`) | 1,890 | 229 | **88 %** | **86 %** | JAX/Rust |
+| Experiment 1 | 1,548 | 91 | 94 % | — | PyTorch, historical |
+| Experiment 2 (`ctde_arena/`) | 1,660 | 187 | 89 % | — | PyTorch, historical |
 
-The port lowered measured coverage in both trees, by seven and two points, without adding a feature that is
+The port lowered measured coverage in both trees, by eight and one point, without adding a feature that is
 untested: the two files that grew are `rl/networks.py`, whose 65 missing statements are the CTDE-VD and
 CTDE-Comm forward and `state_dict` branches plus the unknown-kind and shape-mismatch raises, and
-`controllers/batching.py` at 15. A second implementation of every function is, by construction, a second set of
+`controllers/batching.py` at 14. A second implementation of every function is, by construction, a second set of
 paths, and the suites train the paradigms they name rather than every branch of each. Three consecutive runs
 of each suite gave the current totals unchanged. Earlier in the project the same
 measurement did move by a couple of missing statements between identical invocations — four runs of
@@ -289,28 +290,30 @@ experiment 1 gave 90, 84, 88 and 90, which is why this table carried ranges for 
 suites on Linux with `requirements.txt` ([§ 9.4](#continuous-integration)), where a statement or two is
 expected to differ from the host numbers quoted here.
 
-Eleven files hold experiment 1's 263 missing statements: `simulation.py` (73), `rl/networks.py` (65),
-`controllers/rl_controller.py` (39), `controllers/base.py` (32), `controllers/batching.py` (15),
+Twelve files hold experiment 1's 264 missing statements: `simulation.py` (73), `rl/networks.py` (65),
+`controllers/rl_controller.py` (39), `controllers/base.py` (32), `controllers/batching.py` (14),
 `rl/actions.py` (11), `systems/metrics.py` (9), `systems/plotting.py` (8), `rl/ppo.py` (7),
-`systems/match_variant.py` (3) and `config.py` (1). Experiment 2 shares nine of them at the same counts, and
-the 23-statement difference between the two trees is its own four: `rl/networks.py` (−34) and
-`controllers/batching.py` (−4) are less exercised there, `rl/actions.py` (+12) and `rl/ppo.py` (+3) more.
+`systems/match_variant.py` (3), `runtime.py` (2) and `config.py` (1). Experiment 2 shares nine of them at
+the same counts, and the 35-statement difference between the two trees is its own three:
+`rl/networks.py` (−34) and `controllers/batching.py` (−4) are less exercised there, `rl/ppo.py` (+3) more.
 `ui/dashboard.py`, which was the single
 largest uncovered file for most of this repository's life, is at 100 % in both trees.
 
-What the 244 current test cases do **not** cover is catalogued in
+What the 188 root-tree and 91 `ctde_arena` test cases do **not** cover is catalogued in
 [§ Coverage](11_code_audit.md#coverage). The collision solver is now geometrically verified against
 hand-computed values, but no test checks a *metric* against an independent reference — see the note at the
 end of that section on coverage not being correctness.
 
 ### Continuous integration <a name="continuous-integration"></a>
 
-`.github/workflows/tests.yml` runs three things on every push and pull request:
+`.github/workflows/tests.yml` runs five job families on every push and pull request:
 
 | Job | Gate |
 |---|---|
-| `suite (experiment 1, the root tree)` | `pytest tests/ -q`, then statement coverage of `src/marl_arena` |
-| `suite (experiment 2, ctde_arena)` | the same in the other tree — they must be run separately, see above |
+| `suite (experiment 1/2, py3.10/3.11)` | `pytest tests/ -q` in each tree on two Python versions, then branch + statement coverage of `src/marl_arena` with `--fail-under=83` |
+| `native extension parity` | builds `native/arena_core` with maturin and Rust, asserts the extension imports, and runs `tests/test_native_parity.py` so the test cannot skip |
+| `docker image builds` | `docker build` of `ctde_arena/` and an import smoke test inside the container |
+| `suite (windows, py3.11)` | the root suite on Windows, where A-42's path bug lived |
 | `documentation and derived-artefact gates` | tree parity; documentation cross-references; regenerate `docs/09` § 9.7 and fail on a diff; re-derive **every** pooled round-robin report from its committed CSV and every absolute-strength summary from its own `matches.csv`, and fail on a diff; `bash -n` every campaign script; and check that `results/dependency_audit.json` covers exactly the pins of `requirements-measured.lock.txt` |
 
 The two artefact gates are the interesting ones, because they turn claims this chapter makes in prose into
@@ -341,8 +344,11 @@ that failed on the runner is the one that has since passed on it.
 tests say, and [A-31](11_code_audit.md#the-pinned-environment-does-not-reproduce-the-recorded-runs) measured
 that the environment that would reproduce *the numbers* is not reachable from a CI container without also
 re-running the study. It excludes `ursina`, so `test_render.py`'s capture case skips for the same reason it
-skips on the host (a runner has no libGL, and a half-installed Panda3D would fail rather than skip). And it
-never trains: the fastest training test in either suite is a 4,000-step update, not a run.
+skips on the host (a runner has no libGL, and a half-installed Panda3D would fail rather than skip). It
+never trains a campaign: the fastest training test in either suite is a 4,000-step update, the native job
+plays a 32-step parity test, and the Docker job imports the engine rather than running it. The Rust and
+Docker jobs prove the artefacts build and import; they do not replace a measured run on the repository
+runtime, which `scripts/_runtime.sh` enforces for campaigns.
 
 ## 9.5 Cost of a run
 

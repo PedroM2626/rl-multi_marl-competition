@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import os
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -58,8 +60,22 @@ def save_checkpoint(path: Path, payload: dict[str, Any]) -> None:
         else:
             metadata[key] = value
     arrays["__metadata__"] = np.asarray(json.dumps(metadata))
-    with path.open("wb") as handle:
-        np.savez_compressed(handle, **arrays)
+    # Write beside the destination and replace it atomically. A campaign interrupted during a save must not
+    # leave a truncated .npz where a versioned checkpoint used to be: the file is the evidence, and a partial
+    # one is worse than a stale one.
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{path.name}.", suffix=".tmp", dir=str(path.parent)
+    )
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "wb") as handle:
+            np.savez_compressed(handle, **arrays)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    except BaseException:
+        temporary.unlink(missing_ok=True)
+        raise
 
 
 def load_checkpoint(path: Path, device: Any = None) -> dict[str, Any]:

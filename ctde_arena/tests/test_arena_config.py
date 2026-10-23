@@ -21,7 +21,7 @@ SRC_DIR = PROJECT_ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-from marl_arena.config import CONFIG
+from marl_arena.config import CONFIG, DEMO_DATA_DIR, METRICS_DIR
 from marl_arena.systems import simulation as simulation_module
 from marl_arena.systems.simulation import ArenaSimulation
 
@@ -210,3 +210,42 @@ def test_the_pinned_values_are_the_arena_that_was_measured() -> None:
 def test_dotenv_and_dotenv_example_are_the_same_file() -> None:
     """docs/09 tells the reader to `cp .env.example .env`; both files are tracked, so they cannot differ."""
     assert (PROJECT_ROOT / ".env").read_bytes() == (PROJECT_ROOT / ".env.example").read_bytes()
+
+def _config_field_names() -> list[str]:
+    """Every field on the frozen config dataclass, in declaration order."""
+    source = (PROJECT_ROOT / "src" / "marl_arena" / "config.py").read_text(encoding="utf-8")
+    return re.findall(r"^\s{4}([a-z0-9_]+):", source, re.MULTILINE)
+
+
+def test_every_config_field_is_consumed_somewhere() -> None:
+    """A field that is read from the environment but never used is A-16 returning with a new name.
+
+    PLOT_UPDATE_INTERVAL and METRICS_FLUSH_INTERVAL lived like that for the life of the project: both were
+    parsed, both appeared in .env, and nothing consulted either. The committed .env is the instrument's
+    specification, so a key that does nothing is a false claim about the instrument.
+    """
+    config_path = PROJECT_ROOT / "src" / "marl_arena" / "config.py"
+    fields = _config_field_names()
+    assert fields, "the config dataclass could not be parsed"
+    corpus = "\n".join(
+        path.read_text(encoding="utf-8")
+        for base in (PROJECT_ROOT / "src", PROJECT_ROOT / "scripts")
+        for path in base.rglob("*.py")
+        if path != config_path
+    )
+    unused = sorted(field for field in fields if not re.search(rf"\.{field}\b", corpus))
+    assert not unused, f"config fields that nothing reads: {unused}"
+
+
+def test_the_demo_writes_an_unversioned_metrics_tree() -> None:
+    """`python main.py` is the README's "just look at it" command, not a study run.
+
+    It used to instantiate MetricsStore() with the default directory, so finishing one demo match appended
+    to the tracked data/metrics/*.csv files and rewrote summary.json and the dashboard. The demo now owns
+    data/demo/, which is git-ignored.
+    """
+    assert DEMO_DATA_DIR != METRICS_DIR
+    assert DEMO_DATA_DIR.parent == METRICS_DIR.parent
+    source = (PROJECT_ROOT / "main.py").read_text(encoding="utf-8")
+    assert "DEMO_DATA_DIR" in source, "main.py no longer routes demo metrics away from the evidence tree"
+    assert "MetricsStore()" not in source, "a bare MetricsStore() resolves to the versioned metrics directory"

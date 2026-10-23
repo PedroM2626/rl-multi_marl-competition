@@ -15,11 +15,10 @@ set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
+source "$ROOT/scripts/_runtime.sh"
+
 while [ ! -f /tmp/ablations.flag ]; do sleep 180; done
 echo "ablations complete; starting the six-block round-robin at $(date -Is)"
-
-PY="$ROOT/.venv-check/Scripts/python.exe"
-[ -x "$PY" ] || PY="$ROOT/.venv/Scripts/python.exe"
 
 # The three blocks already versioned are (1,7) (10,5) (9,2). These three add a different experiment-1 seed
 # and a different experiment-2 seed each, so no exp1 x exp2 pairing repeats and a pairing effect cannot

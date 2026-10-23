@@ -1,0 +1,20 @@
+# Keep the image context to code and pinned requirements. data/ and results/ are the evidence base and
+# are mounted at run time (README "Docker"), not baked into an image that would then age differently.
+.git
+.gitignore
+.gitattributes
+.venv
+.venv-check
+.venv.broken_old
+data
+results
+mlruns
+exports
+docs_assets_tmp
+__pycache__
+.pytest_cache
+.coverage
+htmlcov
+tests
+*.pyc
+*.pyo

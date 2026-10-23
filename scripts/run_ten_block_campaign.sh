@@ -16,8 +16,7 @@ set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-PY="$ROOT/.venv-check/Scripts/python.exe"
-[ -x "$PY" ] || PY="$ROOT/.venv/Scripts/python.exe"
+source "$ROOT/scripts/_runtime.sh"
 TMP="${TEMP:-/tmp}"
 
 # Every exp-1 seed pairs with exactly one exp-2 seed and no seed repeats, so ten blocks use all twenty study
