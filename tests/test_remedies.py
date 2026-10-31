@@ -71,7 +71,8 @@ def test_per_agent_gae_follows_each_agent_not_the_interleaved_rows() -> None:
 
     a = solo([1.0, 0.0], [0.5, 0.25], [0, 1], bootstrap=0.25)
     b = solo([-1.0, 3.0], [2.0, 1.0], [0, 0], bootstrap=1.0)   # cut off by the match end: own last value
-    np.testing.assert_allclose(advantages, [a[0], b[0], a[1], b[1]], rtol=1e-6)
+    # float32 buffer against a float64 reference; NumPy 2 keeps the arithmetic in float32 (NEP 50).
+    np.testing.assert_allclose(advantages, [a[0], b[0], a[1], b[1]], rtol=1e-5, atol=1e-6)
     np.testing.assert_allclose(returns, advantages + np.array([0.5, 2.0, 0.25, 1.0]), rtol=1e-6)
     interleaved, _ = buffer.compute_returns(gamma, lam, last_value=1.0)
     assert not np.allclose(interleaved, advantages), "the remedy must change the interleaved recursion"
