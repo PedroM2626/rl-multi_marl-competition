@@ -6,7 +6,7 @@ from typing import Sequence
 
 import numpy as np
 
-from marl_arena.config import ArenaConfig
+from marl_arena.config import CONFIG, ArenaConfig
 
 
 TEAM_NAMES: tuple[str, ...] = ("Team 1", "Team 2", "Team 3")
@@ -15,7 +15,11 @@ TEAM_COLORS: tuple[tuple[float, float, float], ...] = (
     (0.25, 0.55, 0.95),
     (0.25, 0.88, 0.45),
 )
-PARADIGM_CYCLE: tuple[str, ...] = ("CTE", "DTE", "CTDE")
+# ("CTE", "DTE", "CTDE") in experiment 1 and ("CTDE-VD", "CTDE-CAC", "CTDE-Comm") in experiment 2, read
+# from each tree's .env since the engine stopped being forked.
+PARADIGM_CYCLE: tuple[str, ...] = CONFIG.paradigm_cycle
+if len(PARADIGM_CYCLE) != len(TEAM_NAMES):
+    raise ValueError(f"PARADIGM_CYCLE must name {len(TEAM_NAMES)} paradigms, got {PARADIGM_CYCLE}")
 
 
 def paradigm_assignment(rotation: int = 0) -> dict[str, str]:
@@ -202,7 +206,66 @@ def _default_team_spawns(config: ArenaConfig, rotation: int = 0) -> tuple[TeamSp
     return tuple(spawns)
 
 
+# Spawn bearings of the symmetric layout, one per team slot: 120 degrees apart, the first on the +z axis
+# where the legacy arena's Team 3 spawned.
+SYMMETRIC_SPAWN_BEARINGS_DEG: tuple[float, ...] = (90.0, 210.0, 330.0)
+
+
+def _polar(radius: float, bearing_deg: float, height: float) -> np.ndarray:
+    radians = np.radians(bearing_deg)
+    return np.array([radius * np.cos(radians), height, radius * np.sin(radians)], dtype=float)
+
+
+def _symmetric_team_spawns(config: ArenaConfig, rotation: int = 0) -> tuple[TeamSpawnSpec, ...]:
+    radius = config.arena_size * 0.32
+    centers = tuple(_polar(radius, bearing, 1.0) for bearing in SYMMETRIC_SPAWN_BEARINGS_DEG)
+    return tuple(
+        TeamSpawnSpec(team_name, paradigm, center, color)
+        for (team_name, paradigm, color), center in zip(team_meta(rotation), centers, strict=True)
+    )
+
+
+def _symmetric_obstacle_specs(arena_size: float) -> tuple[ObstacleSpec, ...]:
+    """A layout that looks the same from every spawn, up to what axis-aligned boxes allow (A-32).
+
+    Every obstacle is a square pillar, and every pillar but the central one has two partners at +-120
+    degrees, so each spawn faces the same cover at the same distances. Two things are not symmetric and
+    cannot be with this engine: a square pillar rotated by 120 degrees is not the same axis-aligned box,
+    and the arena wall is a square. scripts/random_baseline.py measures what that residue is worth, and
+    SPAWN_CYCLE_PER_MATCH removes it from a measurement whatever it is.
+    """
+    unit = arena_size / 32.0
+    specs = [ObstacleSpec(
+        "sym-centre", "fixed_barrier", np.array([0.0, 1.5, 0.0], dtype=float),
+        np.array([3.0 * unit, 3.0, 3.0 * unit], dtype=float), (0.58, 0.56, 0.54),
+        np.zeros(3, dtype=float), 0.0, 0.0, 0.0,
+    )]
+    rings = (
+        # (radius, bearing offset from a spawn, side, type, colour)
+        (6.0, 60.0, 2.4, "fixed_barrier", (0.54, 0.52, 0.50)),
+        (11.5, 35.0, 2.0, "restricted_passage", (0.38, 0.42, 0.50)),
+        (11.5, -35.0, 2.0, "restricted_passage", (0.38, 0.42, 0.50)),
+    )
+    for ring_index, (radius, offset, side, kind, color) in enumerate(rings):
+        for slot, bearing in enumerate(SYMMETRIC_SPAWN_BEARINGS_DEG):
+            specs.append(ObstacleSpec(
+                f"sym-{ring_index}-{slot}", kind, _polar(radius * unit, bearing + offset, 1.5),
+                np.array([side * unit, 3.0, side * unit], dtype=float), color,
+                np.zeros(3, dtype=float), 0.0, 0.0, 0.0,
+            ))
+    return tuple(specs)
+
+
 def create_default_variant(config: ArenaConfig, variant_id: int = 0, rotation: int = 0) -> MatchVariant:
+    """The fixed arena every held-out evaluation is played in; ARENA_LAYOUT picks which one."""
+    if config.arena_layout == "symmetric":
+        spawns = _symmetric_team_spawns(config, rotation)
+        obstacles = _symmetric_obstacle_specs(config.arena_size)
+    elif config.arena_layout == "legacy":
+        spawns = _default_team_spawns(config, rotation)
+        obstacles = _default_obstacle_specs()
+    else:
+        raise ValueError(f"ARENA_LAYOUT must be 'legacy' or 'symmetric', got {config.arena_layout!r}")
     return MatchVariant(
         variant_id=variant_id,
         arena_size=config.arena_size,
@@ -211,8 +274,18 @@ def create_default_variant(config: ArenaConfig, variant_id: int = 0, rotation: i
         agent_turn_speed=config.agent_turn_speed,
         shoot_range=config.shoot_range,
         shoot_cooldown=config.shoot_cooldown,
-        team_spawns=_default_team_spawns(config, rotation),
-        obstacles=_default_obstacle_specs(),
+        team_spawns=spawns,
+        obstacles=obstacles,
+    )
+
+
+def cycle_spawns(spawns: tuple[TeamSpawnSpec, ...], shift: int) -> tuple[TeamSpawnSpec, ...]:
+    """Move every team `shift` spawn positions along, keeping its name, paradigm and colour."""
+    centers = [spawn.spawn_center for spawn in spawns]
+    count = len(spawns)
+    return tuple(
+        TeamSpawnSpec(spawn.team_name, spawn.paradigm, centers[(index + shift) % count], spawn.color_rgb)
+        for index, spawn in enumerate(spawns)
     )
 
 

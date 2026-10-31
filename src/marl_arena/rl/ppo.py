@@ -16,6 +16,7 @@ from marl_arena.rl.networks import (
     _comm_actor_forward,
     _critic_forward,
     _vd_critic_forward,
+    _vd_local_critic_forward,
 )
 
 
@@ -25,10 +26,13 @@ class PPOStats:
     value_loss: float
     entropy: float
     approx_kl: float
+    # Minibatches the update actually took; smaller than planned when the KL guard stopped it.
+    minibatches: int = 0
 
 
 @partial(jax.jit, static_argnames=(
     "actor_kind", "critic_kind", "actor_agent_indices", "critic_agent_indices", "use_actor_value",
+    "comm_rounds", "comm_mask_dead",
 ))
 def _ppo_step(
     params: dict[str, Any], opt_state: dict[str, Any], observations: jax.Array, global_obs: jax.Array,
@@ -37,6 +41,7 @@ def _ppo_step(
     advantages: jax.Array, learning_rate: float, clip_eps: float, value_coef: float,
     entropy_coef: float, max_grad_norm: float, actor_kind: str, critic_kind: str | None,
     actor_agent_indices: tuple[int, ...], critic_agent_indices: tuple[int, ...], use_actor_value: bool,
+    comm_rounds: int = 1, comm_mask_dead: bool = False,
 ) -> tuple[dict[str, Any], dict[str, Any], jax.Array, jax.Array, jax.Array, jax.Array]:
     def loss_fn(current: dict[str, Any]) -> tuple[jax.Array, tuple[jax.Array, jax.Array, jax.Array, jax.Array]]:
         if actor_kind == "actor":
@@ -45,7 +50,9 @@ def _ppo_step(
             logits = _central_actor_forward(current["actor"], global_obs, slots)
             actor_values = jnp.zeros_like(returns)
         else:
-            logits = _comm_actor_forward(current["actor"], observations, slots)
+            logits = _comm_actor_forward(
+                current["actor"], observations, slots, rounds=comm_rounds, mask_dead=comm_mask_dead
+            )
             actor_values = jnp.zeros_like(returns)
 
         log_distribution = jax.nn.log_softmax(logits)
@@ -62,6 +69,8 @@ def _ppo_step(
             values = actor_values
         elif critic_kind == "critic":
             values = _critic_forward(current["critic"], global_obs)
+        elif critic_kind == "vd_local_critic":
+            values = _vd_local_critic_forward(current["critic"], global_obs)
         else:
             values = _vd_critic_forward(current["critic"], global_obs, critic_agent_indices)
         value_loss = jnp.sum((values - returns) ** 2 * valid_mask) / mask_total
@@ -101,6 +110,9 @@ class PPOTrainer:
         ppo_epochs: int,
         batch_size: int,
         device: Any,
+        gae_per_agent: bool = False,
+        update_minibatches: int = 0,
+        target_kl: float = 0.0,
     ) -> None:
         self.clip_eps = clip_eps
         self.value_coef = value_coef
@@ -110,6 +122,9 @@ class PPOTrainer:
         self.batch_size = batch_size
         self.device = device
         self.learning_rate = learning_rate
+        self.gae_per_agent = gae_per_agent
+        self.update_minibatches = update_minibatches
+        self.target_kl = target_kl
         self.actor: JAXNetwork | None = None
         self.critic: JAXNetwork | None = None
         self.opt_state: dict[str, Any] | None = None
@@ -133,7 +148,10 @@ class PPOTrainer:
             self.bind_optimizer(actor, critic)
         assert self.actor is actor and self.opt_state is not None
 
-        advantages, returns = buffer.compute_returns(gamma, gae_lambda, last_value)
+        if self.gae_per_agent:
+            advantages, returns = buffer.compute_returns_per_agent(gamma, gae_lambda)
+        else:
+            advantages, returns = buffer.compute_returns(gamma, gae_lambda, last_value)
         advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
         use_global = critic is not None or actor.kind == "central_actor"
         use_slots = actor.kind in {"central_actor", "comm_actor"}
@@ -141,60 +159,76 @@ class PPOTrainer:
         sample_count = len(buffer)
         stats = None
         pending_stats: tuple[jax.Array, ...] | None = None
+        taken = 0
 
-        for _ in range(self.ppo_epochs):
-            indices = np.arange(sample_count)
-            buffer.rng.shuffle(indices)
-            for start in range(0, sample_count, self.batch_size):
-                valid_indices = indices[start : start + self.batch_size]
-                valid_count = len(valid_indices)
-                # Bucket and pad the final minibatch so JAX compiles only a small set of shapes.
-                # Masked duplicate rows contribute zero to every loss term and gradient.
-                bucket_size = min(self.batch_size, 1 << max(0, (valid_count - 1).bit_length()))
-                if bucket_size < valid_count:
-                    bucket_size = self.batch_size
-                batch_indices = np.pad(
-                    valid_indices,
-                    (0, bucket_size - valid_count),
-                    mode="edge",
-                )
-                valid_mask = jnp.asarray(
-                    np.concatenate((np.ones(valid_count, dtype=np.float32), np.zeros(bucket_size - valid_count, dtype=np.float32))),
-                    dtype=jnp.float32,
-                )
-                obs = jnp.asarray(tensors["local_obs"][batch_indices], dtype=jnp.float32)
-                if "global_obs" in tensors:
-                    global_batch = tensors["global_obs"][batch_indices]
-                else:
-                    global_batch = np.zeros((len(batch_indices), 0), dtype=np.float32)
-                if "agent_slots" in tensors:
-                    slot_batch = tensors["agent_slots"][batch_indices]
-                else:
-                    slot_batch = np.zeros((len(batch_indices), 0), dtype=np.float32)
-                global_obs = jnp.asarray(global_batch, dtype=jnp.float32)
-                slots = jnp.asarray(slot_batch, dtype=jnp.float32)
-                actions = jnp.asarray(tensors["actions"][batch_indices], dtype=jnp.int32)
-                old_log_probs = jnp.asarray(tensors["old_log_probs"][batch_indices], dtype=jnp.float32)
-                returns_batch = jnp.asarray(returns[batch_indices], dtype=jnp.float32)
-                advantages_batch = jnp.asarray(advantages[batch_indices], dtype=jnp.float32)
+        def minibatches():
+            if self.update_minibatches > 0:
+                # A fixed number of gradient steps per update, whatever the buffer holds: a team whose
+                # agents live longer gets more distinct rows, not more updates.
+                for _ in range(self.update_minibatches):
+                    yield buffer.rng.integers(0, sample_count, size=self.batch_size)
+                return
+            for _ in range(self.ppo_epochs):
+                indices = np.arange(sample_count)
+                buffer.rng.shuffle(indices)
+                for start in range(0, sample_count, self.batch_size):
+                    yield indices[start : start + self.batch_size]
 
-                params = {"actor": actor.params, "critic": critic.params if critic is not None else {}}
-                params, self.opt_state, policy_loss, value_loss, entropy, approx_kl = _ppo_step(
-                    params, self.opt_state, obs, global_obs, slots, actions, old_log_probs,
-                    returns_batch, valid_mask, advantages_batch, self.learning_rate, self.clip_eps,
-                    self.value_coef, self.entropy_coef, self.max_grad_norm, actor.kind,
-                    critic.kind if critic is not None else None, actor.agent_indices,
-                    critic.agent_indices if critic is not None else (), critic is None,
-                )
-                actor.params = params["actor"]
-                if critic is not None:
-                    critic.params = params["critic"]
-                # The per-minibatch scalars stay unmaterialised until the update finishes: syncing
-                # inside the loop serialised the host against every dispatch, and only the last
-                # minibatch's numbers are ever reported. The synced values are identical.
-                pending_stats = (policy_loss, value_loss, entropy, approx_kl)
+        for valid_indices in minibatches():
+            valid_count = len(valid_indices)
+            # Bucket and pad the final minibatch so JAX compiles only a small set of shapes.
+            # Masked duplicate rows contribute zero to every loss term and gradient.
+            bucket_size = min(self.batch_size, 1 << max(0, (valid_count - 1).bit_length()))
+            if bucket_size < valid_count:
+                bucket_size = self.batch_size
+            batch_indices = np.pad(
+                valid_indices,
+                (0, bucket_size - valid_count),
+                mode="edge",
+            )
+            # Host arrays go to the jitted step as they are: it transfers float32/int32 NumPy itself, and a
+            # jnp.asarray per input was a separate dispatch each (the same finding as JAXNetwork.forward).
+            valid_mask = np.concatenate(
+                (np.ones(valid_count, dtype=np.float32), np.zeros(bucket_size - valid_count, dtype=np.float32))
+            )
+            obs = np.asarray(tensors["local_obs"][batch_indices], dtype=np.float32)
+            if "global_obs" in tensors:
+                global_batch = tensors["global_obs"][batch_indices]
+            else:
+                global_batch = np.zeros((len(batch_indices), 0), dtype=np.float32)
+            if "agent_slots" in tensors:
+                slot_batch = tensors["agent_slots"][batch_indices]
+            else:
+                slot_batch = np.zeros((len(batch_indices), 0), dtype=np.float32)
+            global_obs = np.asarray(global_batch, dtype=np.float32)
+            slots = np.asarray(slot_batch, dtype=np.float32)
+            actions = np.asarray(tensors["actions"][batch_indices], dtype=np.int32)
+            old_log_probs = np.asarray(tensors["old_log_probs"][batch_indices], dtype=np.float32)
+            returns_batch = np.asarray(returns[batch_indices], dtype=np.float32)
+            advantages_batch = np.asarray(advantages[batch_indices], dtype=np.float32)
+
+            params = {"actor": actor.params, "critic": critic.params if critic is not None else {}}
+            params, self.opt_state, policy_loss, value_loss, entropy, approx_kl = _ppo_step(
+                params, self.opt_state, obs, global_obs, slots, actions, old_log_probs,
+                returns_batch, valid_mask, advantages_batch, self.learning_rate, self.clip_eps,
+                self.value_coef, self.entropy_coef, self.max_grad_norm, actor.kind,
+                critic.kind if critic is not None else None, actor.agent_indices,
+                critic.agent_indices if critic is not None else (), critic is None,
+                actor.comm_rounds, actor.comm_mask_dead,
+            )
+            actor.params = params["actor"]
+            if critic is not None:
+                critic.params = params["critic"]
+            # The per-minibatch scalars stay unmaterialised until the update finishes: syncing
+            # inside the loop serialised the host against every dispatch, and only the last
+            # minibatch's numbers are ever reported. The synced values are identical.
+            pending_stats = (policy_loss, value_loss, entropy, approx_kl)
+            taken += 1
+            # The guard is the one place a sync per minibatch is paid, and only when it is switched on.
+            if self.target_kl > 0.0 and float(jax.device_get(approx_kl)) > 1.5 * self.target_kl:
+                break
         if pending_stats is not None:
-            stats = PPOStats(*(float(value) for value in jax.device_get(pending_stats)))
+            stats = PPOStats(*(float(value) for value in jax.device_get(pending_stats)), minibatches=taken)
         return stats
 
     def update_actor_critic(self, actor: JAXNetwork, buffer: RolloutBuffer, last_value: float, gamma: float, gae_lambda: float) -> PPOStats | None:

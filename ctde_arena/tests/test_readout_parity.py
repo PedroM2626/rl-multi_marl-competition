@@ -131,10 +131,11 @@ def test_temperature_zero_is_argmax_and_positive_samples() -> None:
 
 def test_the_default_temperature_is_the_published_readout() -> None:
     """A fresh process must read greedy, or every committed number describes a different arena."""
+    import marl_arena
     from marl_arena.config import CONFIG
 
     assert CONFIG.eval_temperature == 0.0
-    config_source = (PROJECT_ROOT / "src" / "marl_arena" / "config.py").read_text(encoding="utf-8")
+    config_source = (Path(marl_arena.__path__[0]) / "config.py").read_text(encoding="utf-8")
     assert 'os.getenv("EVAL_TEMPERATURE", "0")' in config_source
 
 

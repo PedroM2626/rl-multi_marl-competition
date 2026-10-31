@@ -1,4 +1,8 @@
-"""Absolute strength: each trained policy against a fixed pool of uniform-random opponents.
+"""Absolute strength: each trained policy against a fixed pool of non-learning opponents.
+
+`--opponent random` (the default, and every committed table) draws the opponents' actions uniformly;
+`--opponent scripted` uses `marl_arena.controllers.scripted`, a hand-written engage-and-fire policy that is
+neither degenerate nor another trained network (docs/10 § 10.4, item 13).
 
 Every win rate in this repository is relative -- an arm beating two other arms that trained against it.
 That is why no number here is comparable to the literature, and it is the gap chapter 10 lists as open.
@@ -173,6 +177,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--null-json", type=Path, default=None,
                         help="a random_baseline.py uniform-mode JSON; its per-slot win rates are the matched "
                              "null, because three mutually random teams do not split the arena evenly")
+    parser.add_argument("--opponent", choices=("random", "scripted"), default="random",
+                        help="what fills the two other teams: uniform-random actions, or the scripted "
+                             "engage-and-fire controller")
     parser.add_argument("--report-only", action="store_true",
                         help="replay the aggregation from the matches.csv already in --out, without playing "
                              "any matches; the summary is then verifiably derived from the raw record")
@@ -304,6 +311,8 @@ def main() -> None:
     if (out_dir / "summary.json").is_file():
         previous = json.loads((out_dir / "summary.json").read_text(encoding="utf-8"))
     arena_settings = arena_snapshot(args, previous)
+    if args.report_only:
+        args.opponent = previous.get("opponent", "random")
     if args.report_only and (args.null_json is None or args.compare_pool is None):
         # Re-deriving must reproduce the committed summary, so inherit the inputs it was made with rather
         # than quietly emitting a summary with the null and agreement blocks missing.
@@ -333,6 +342,11 @@ def main() -> None:
                 arena = harness.CrossArena(seed, policies)
                 rng = np.random.default_rng(seed)
 
+                def make_scripted_controller(team_name: str, slot: int):
+                    from marl_arena.controllers.scripted import ScriptedTeamController
+
+                    return ScriptedTeamController(team_name, 1000 + slot)
+
                 def make_random_controller(team_name: str, slot: int):
                     """A real controller -- so the simulation is untouched -- forced to sample uniformly.
 
@@ -343,6 +357,9 @@ def main() -> None:
                     controller._greedy_action = lambda logits, _r=rng: int(_r.integers(NUM_ACTIONS))
                     return controller
 
+                opponent_label = "SCRIPTED" if args.opponent == "scripted" else "RANDOM"
+                make_opponent = (make_scripted_controller if args.opponent == "scripted"
+                                 else make_random_controller)
                 print(f"\n--- {block_label}, harness seed {seed}, {args.matches} matches per architecture ---",
                       flush=True)
                 for paradigm in sorted(policies):
@@ -351,7 +368,7 @@ def main() -> None:
                         slot = index % 3
                         team_names = [spec.team_name for spec in arena.base_variant.team_spawns]
                         spawns = tuple(
-                            TeamSpawnSpec(name, paradigm if position == slot else "RANDOM",
+                            TeamSpawnSpec(name, paradigm if position == slot else opponent_label,
                                           spec.spawn_center, spec.color_rgb)
                             for position, (name, spec) in enumerate(
                                 zip(team_names, arena.base_variant.team_spawns))
@@ -363,7 +380,7 @@ def main() -> None:
                                 controllers[spec.team_name] = arena.policy_controller(
                                     spec.team_name, paradigm, position)
                             else:
-                                controllers[spec.team_name] = make_random_controller(spec.team_name, position)
+                                controllers[spec.team_name] = make_opponent(spec.team_name, position)
                         arena.sim.controllers = controllers
                         arena.set_training(arena.sim.controllers, False)
                         arena.sim.reset_match()
@@ -425,8 +442,16 @@ def main() -> None:
         comparison = compare_scales(pooled, path)
 
     out_dir.mkdir(parents=True, exist_ok=True)
+    design = {
+        "random": "one trained policy versus two uniform-random controllers, trained slot rotated",
+        "scripted": "one trained policy versus two scripted engage-and-fire controllers, trained slot rotated",
+    }[args.opponent]
+    # The opponent is recorded only when it is not the committed instrument's, so the random-pool summaries
+    # already in results/ re-derive byte-for-byte.
+    opponent_field = {} if args.opponent == "random" else {"opponent": args.opponent}
     (out_dir / "summary.json").write_text(json.dumps({
-        "design": "one trained policy versus two uniform-random controllers, trained slot rotated",
+        "design": design,
+        **opponent_field,
         "blocks": blocks,
         "seeds": seeds,
         "campaign": args.campaign or "study",

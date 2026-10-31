@@ -73,7 +73,8 @@ jobs:
       - name: Statement and branch coverage of the engine
         working-directory: ${{ matrix.tree.workdir }}
         run: |
-          python -m coverage run --branch --source=src/marl_arena -m pytest tests/ -q
+          # Experiment 2's src/ is a shim onto the shared engine, so both trees measure the same files.
+          python -m coverage run --branch --source=${{ github.workspace }}/src/marl_arena -m pytest tests/ -q
           python -m coverage report --fail-under=83
 
   rust:
@@ -116,7 +117,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build the ctde_arena image
-        run: docker build -t ctde-arena ctde_arena
+        run: docker build -t ctde-arena -f ctde_arena/Dockerfile .
 
       - name: The image imports the engine
         run: docker run --rm ctde-arena python -c "import marl_arena, numpy, jax; print(marl_arena.__file__)"

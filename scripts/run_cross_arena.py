@@ -218,12 +218,12 @@ class CrossArena:
         self.device = resolve_device()
         self.set_training = set_rl_training
         self.base_variant = create_default_variant(CONFIG, rotation=0)
-        self.root_controller = load_module(
-            "exp1_rl_controller", ROOT_ROOT / "src" / "marl_arena" / "controllers" / "rl_controller.py"
-        ).RLTeamController
         self.ctde_controller = __import__(
             "marl_arena.controllers.rl_controller", fromlist=["RLTeamController"]
         ).RLTeamController
+        # The two trees used to carry separate copies of the engine, so experiment 1's class was loaded from
+        # its own file. There is one engine now (A-11): both names are the same class.
+        self.root_controller = self.ctde_controller
         self.load_checkpoint = __import__(
             "marl_arena.rl.actions", fromlist=["load_checkpoint"]
         ).load_checkpoint

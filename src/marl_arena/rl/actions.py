@@ -12,8 +12,19 @@ import numpy as np
 from marl_arena.models import AgentSnapshot, StepDecision
 
 
+# The measured observation sizes. OBS_OBSTACLE_RAYS appends that many ray distances per agent to both,
+# so the sizes a network is built with come from the two functions below.
 LOCAL_OBS_DIM = 9
 GLOBAL_OBS_DIM = 45
+
+
+def local_obs_dim(rays: int = 0) -> int:
+    return LOCAL_OBS_DIM + rays
+
+
+def global_obs_dim(rays: int = 0) -> int:
+    # Nine agents, each with its own rays appended after the 45 measured features.
+    return GLOBAL_OBS_DIM + 9 * rays
 NUM_TARGETS = 4
 NUM_ACTIONS = NUM_TARGETS * 2
 

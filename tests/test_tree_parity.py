@@ -1,13 +1,17 @@
-"""Guard against silent drift between the two experiment trees.
+"""Guard the shape of the two experiment trees.
 
-ctde_arena/ is a fork of the root engine rather than an import of it, so a fix applied to the shared
-physics, metrics or controller code has to be applied twice. This test asserts which files are meant to
-be byte-identical and which are allowed to differ, so drift in the shared ones fails the suite instead
-of quietly producing two different arenas.
+ctde_arena/ used to be a fork of the root engine, so a fix to the shared physics, metrics or controller
+code had to be applied twice (A-11). The engine now exists once, in src/marl_arena; ctde_arena/src holds
+only a shim that points its import path there. What remains duplicated is the per-tree tooling -- entry
+points and tests that each tree runs against its own .env -- and this test asserts that it stays
+byte-identical, so drift fails the suite instead of quietly producing two different instruments.
 """
 
 from __future__ import annotations
 
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -16,29 +20,6 @@ OTHER = PROJECT_ROOT / "ctde_arena"
 # Files that must stay byte-identical across the two trees.
 IDENTICAL = [
     "main.py",
-    "src/marl_arena/__init__.py",
-    "src/marl_arena/config.py",
-    "src/marl_arena/models.py",
-    "src/marl_arena/controllers/__init__.py",
-    "src/marl_arena/controllers/base.py",
-    "src/marl_arena/controllers/batching.py",
-    "src/marl_arena/controllers/rl_controller.py",
-    "src/marl_arena/rl/__init__.py",
-    "src/marl_arena/rl/actions.py",
-    "src/marl_arena/rl/buffer.py",
-    "src/marl_arena/rl/networks.py",
-    "src/marl_arena/rl/ppo.py",
-    "src/marl_arena/runtime.py",
-    "src/marl_arena/systems/__init__.py",
-    "src/marl_arena/systems/metrics.py",
-    "src/marl_arena/systems/plotting.py",
-    "src/marl_arena/systems/simulation.py",
-    "native/arena_core/Cargo.toml",
-    "native/arena_core/Cargo.lock",
-    "native/arena_core/pyproject.toml",
-    "native/arena_core/src/lib.rs",
-    "src/marl_arena/ui/__init__.py",
-    "src/marl_arena/ui/dashboard.py",
     "scripts/plot_metrics.py",
     "scripts/random_baseline.py",
     "scripts/render_trailer.py",
@@ -58,10 +39,8 @@ IDENTICAL = [
     "tests/test_runtime_provenance.py",
 ]
 
-# Files that legitimately differ: the paradigm cycle and the MLflow integration. The engine, the
-# JAX optimizer, the Rust kernels, the renderer and the arena are shared verbatim.
+# Files that legitimately differ: the MLflow integration of experiment 2's training entry point.
 EXPECTED_DIFFERENT = [
-    "src/marl_arena/systems/match_variant.py",        # PARADIGM_CYCLE only
     "scripts/train_rl.py",                            # MLflow integration
 ]
 
@@ -84,16 +63,27 @@ def test_declared_divergences_are_real() -> None:
     assert not stale, f"these files are now identical and can move to IDENTICAL: {stale}"
 
 
-def test_match_variant_differs_only_in_the_paradigm_cycle() -> None:
-    """The arena definition is shared; only the list of paradigms being compared may differ."""
-    import difflib
+def test_experiment_two_carries_no_engine_of_its_own() -> None:
+    """The fork is gone: ctde_arena/src is one shim file, and there is one Rust crate."""
+    files = sorted(p.relative_to(OTHER).as_posix() for p in (OTHER / "src").rglob("*") if p.is_file()
+                   and "__pycache__" not in p.parts)
+    assert files == ["src/marl_arena/__init__.py"], files
+    assert not (OTHER / "native").exists()
 
-    left = (PROJECT_ROOT / "src/marl_arena/systems/match_variant.py").read_text(encoding="utf-8").splitlines()
-    right = (OTHER / "src/marl_arena/systems/match_variant.py").read_text(encoding="utf-8").splitlines()
-    changed = [
-        line
-        for line in difflib.unified_diff(left, right, lineterm="", n=0)
-        if line.startswith(("+", "-")) and not line.startswith(("+++", "---"))
-    ]
-    assert len(changed) == 2, f"unexpected divergence in match_variant.py: {changed}"
-    assert all("PARADIGM_CYCLE" in line for line in changed)
+
+def test_each_tree_binds_the_shared_engine_to_its_own_configuration() -> None:
+    """Importing through either tree loads the root engine files and that tree's .env."""
+    probe = (
+        "import marl_arena, marl_arena.config as c, marl_arena.systems.match_variant as m;"
+        "print(marl_arena.PROJECT_DIR.name, c.__file__, ','.join(m.PARADIGM_CYCLE))"
+    )
+    seen = {}
+    for tree in (PROJECT_ROOT, OTHER):
+        env = {key: value for key, value in os.environ.items() if key not in {"PARADIGM_CYCLE", "ARENA_DATA_DIR"}}
+        out = subprocess.run(
+            [sys.executable, "-c", f"import sys; sys.path.insert(0, r'{tree / 'src'}'); {probe}"],
+            cwd=tree, env=env, capture_output=True, text=True, check=True,
+        ).stdout.split()
+        assert Path(out[1]).resolve() == (PROJECT_ROOT / "src/marl_arena/config.py").resolve()
+        seen[out[0]] = out[2]
+    assert seen == {PROJECT_ROOT.name: "CTE,DTE,CTDE", "ctde_arena": "CTDE-VD,CTDE-CAC,CTDE-Comm"}

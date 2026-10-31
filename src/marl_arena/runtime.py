@@ -14,9 +14,11 @@ import re
 from pathlib import Path
 from typing import Any
 
+from marl_arena import PROJECT_DIR
 
-# src/marl_arena/runtime.py -> the experiment tree that owns this package.
-DEFAULT_ROOT = Path(__file__).resolve().parents[2]
+
+# The experiment tree this process runs for (its requirements.txt is the pin being checked).
+DEFAULT_ROOT = PROJECT_DIR
 
 
 def _root(root: Path | None) -> Path:

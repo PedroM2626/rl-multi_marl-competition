@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import math
 import random
 import warnings
@@ -17,6 +18,7 @@ from marl_arena.config import CONFIG
 from marl_arena.controllers.base import ControllerContext, normalize
 from marl_arena.controllers.rl_controller import build_controllers, finish_rl_episode
 from marl_arena.models import AgentSnapshot, MatchResult, ObstacleSnapshot, ProjectileSnapshot, TeamMetrics, TransitionRecord
+from marl_arena.rl.league import OpponentPool
 from marl_arena.systems.match_variant import (
     AGENT_FORMATION_OFFSETS,
     TEAM_NAMES,
@@ -24,6 +26,7 @@ from marl_arena.systems.match_variant import (
     team_meta,
     MatchVariant,
     create_default_variant,
+    cycle_spawns,
     sample_training_variant,
 )
 
@@ -170,6 +173,13 @@ class ArenaSimulation:
         self.trajectory_rows: List[Dict[str, float]] = []
         self.last_match_result: MatchResult | None = None
         self.last_ppo_stats: Dict[str, object] = {}
+        self.opponent_pool: OpponentPool | None = None
+        if self.config.rl_opponent_pool_prob > 0.0:
+            self.opponent_pool = OpponentPool(
+                self.controllers, self.seed, self.config.rl_opponent_pool_prob,
+                self.config.rl_opponent_pool_every, self.config.rl_opponent_pool_size,
+            )
+        self.frozen_team: str | None = None
         self.reset_match()
 
     def _sample_next_variant(self) -> MatchVariant:
@@ -203,6 +213,16 @@ class ArenaSimulation:
         self.last_match_result = None
         self.trajectory_rows = []
         self.match_variant = self._sample_next_variant()
+        if self.config.spawn_cycle_per_match:
+            # Each team moves one spawn position along per match, so over any three consecutive matches
+            # every team has started once from every position (A-32).
+            self.match_variant = dataclasses.replace(
+                self.match_variant,
+                team_spawns=cycle_spawns(self.match_variant.team_spawns, self.match_index % len(TEAM_NAMES)),
+            )
+        if self.opponent_pool is not None:
+            self.opponent_pool.end_match()
+            self.frozen_team = self.opponent_pool.begin_match()
         self.agents = []
         self.obstacles = self._create_obstacles()
         for obstacle in self.obstacles:
@@ -767,6 +787,15 @@ class ArenaSimulation:
         return reward
 
     def step(self, dt: float) -> bool:
+        snapshots, context = self.begin_step(dt)
+        return self.finish_step(dt, snapshots, self.decide(snapshots, context))
+
+    def begin_step(self, dt: float) -> tuple[List[AgentSnapshot], ControllerContext]:
+        """Advance the clock and the obstacles, and return what the controllers decide from.
+
+        `step` is begin_step -> decide -> finish_step; the split exists so that several arenas can pool
+        their controllers' policy passes between the first and the last (systems/vector.py).
+        """
         self.pending_obstacle_hits.clear()
         self.match_time += dt
         self.step_index += 1
@@ -778,11 +807,12 @@ class ArenaSimulation:
             arena_size=self.match_variant.arena_size,
             time_delta=dt,
             shoot_range=self.match_variant.shoot_range,
+            obstacle_boxes=self._obstacle_boxes() if self.config.obs_obstacle_rays else None,
         )
-        decisions: Dict[str, object] = {}
-        hit_status = {agent.agent_id: False for agent in self.agents}
-        scored_status = {agent.agent_id: False for agent in self.agents}
+        return snapshots, context
 
+    def decide(self, snapshots: List[AgentSnapshot], context: ControllerContext) -> Dict[str, object]:
+        decisions: Dict[str, object] = {}
         agents_by_team: Dict[str, List[AgentSnapshot]] = {
             team_name: [] for team_name in self.controllers
         }
@@ -797,6 +827,12 @@ class ArenaSimulation:
                 continue
             for snapshot in team_agents:
                 decisions[snapshot.agent_id] = controller.decide(snapshot, snapshots, context)
+        return decisions
+
+    def finish_step(self, dt: float, snapshots: List[AgentSnapshot], decisions: Dict[str, object]) -> bool:
+        """Move, shoot, resolve projectiles and hand the rewards to the controllers; True once decided."""
+        hit_status = {agent.agent_id: False for agent in self.agents}
+        scored_status = {agent.agent_id: False for agent in self.agents}
 
         if _arena_native is not None and self.agents:
             movement = [decisions.get(agent.agent_id) if agent.alive else None for agent in self.agents]
@@ -877,6 +913,15 @@ class ArenaSimulation:
         self._record_trajectory()
         return self._is_match_finished()
 
+    def _obstacle_boxes(self) -> np.ndarray:
+        """Ground-plane footprints of the obstacles where they stand this step, for the observation rays."""
+        if not self.obstacles:
+            return np.zeros((0, 4), dtype=float)
+        return np.array(
+            [[o.position[0], o.position[2], o.size[0] * 0.5, o.size[2] * 0.5] for o in self.obstacles],
+            dtype=float,
+        )
+
     def _is_match_finished(self) -> bool:
         alive_by_team = self.live_team_counts()
         alive_teams = [team_name for team_name, count in alive_by_team.items() if count > 0]
@@ -954,6 +999,10 @@ class ArenaSimulation:
             trajectory_rows=self.trajectory_rows.copy(),
         )
         self.last_ppo_stats = finish_rl_episode(self.controllers)
+        if self.opponent_pool is not None:
+            # Restore the frozen team before anything can save or update it, then let the pool grow.
+            self.opponent_pool.end_match()
+            self.opponent_pool.maybe_snapshot(self.match_index)
         return self.last_match_result
 
     def match_status_text(self) -> str:

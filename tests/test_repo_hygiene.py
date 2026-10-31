@@ -25,9 +25,12 @@ def test_campaign_scripts_use_the_shared_runtime_resolver() -> None:
 def test_checkout_declares_line_endings_and_a_docker_context() -> None:
     attributes = (ROOT / ".gitattributes").read_text(encoding="utf-8")
     assert "text=auto" in attributes and "eol=lf" in attributes
-    dockerignore = (ROOT / "ctde_arena" / ".dockerignore").read_text(encoding="utf-8")
-    for pattern in ("data", "results", ".venv", "__pycache__"):
-        assert pattern in dockerignore, f".dockerignore does not exclude {pattern}"
+    # The image is built from the repository root (the engine is shared), so its ignore file sits beside
+    # the Dockerfile and starts from "exclude everything".
+    dockerignore = (ROOT / "ctde_arena" / "Dockerfile.dockerignore").read_text(encoding="utf-8")
+    assert dockerignore.splitlines()[[l.startswith("#") for l in dockerignore.splitlines()].index(False)] == "*"
+    for pattern in ("ctde_arena/data", "ctde_arena/results", "ctde_arena/.venv", "**/__pycache__"):
+        assert pattern in dockerignore, f"Dockerfile.dockerignore does not exclude {pattern}"
 
 
 def test_env_files_no_longer_advertise_dead_keys() -> None:

@@ -35,6 +35,17 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+REMEDY_FIELDS = (
+    "rl_gae_per_agent", "rl_update_minibatches", "rl_target_kl", "rl_param_target", "comm_rounds",
+    "comm_mask_dead", "vd_local_critic", "obs_obstacle_rays", "arena_layout", "spawn_cycle_per_match",
+    "rl_opponent_pool_prob", "rl_opponent_pool_every", "rl_opponent_pool_size",
+)
+
+
+def remedy_settings(config) -> dict[str, object]:
+    return {field: getattr(config, field) for field in REMEDY_FIELDS}
+
+
 def seed_everything(seed: int) -> None:
     """Delegates to the library helper so the study and scripts/train_rl.py seed identically."""
     from marl_arena.config import seed_all
@@ -209,6 +220,11 @@ def main() -> None:
         "domain_randomization": sim.domain_randomization,
         "paradigm_rotation": sim.paradigm_rotation,
         "paradigms": {name: controller.paradigm for name, controller in sim.controllers.items()},
+        # Which docs/10 remedies this replicate trained under, and the width each arm actually got (they
+        # differ only under RL_PARAM_TARGET), so a v3 run and a committed-arena run cannot be confused.
+        "remedies": remedy_settings(CONFIG),
+        "hidden_dims": {name: controller.hidden_dim for name, controller in sim.controllers.items()},
+        "opponent_pool_frozen_matches": sim.opponent_pool.frozen_matches if sim.opponent_pool else 0,
         "training_cumulative": {t: m.as_summary() for t, m in sim.cumulative_metrics.items()},
         "held_out_greedy": {
             "matches": final["matches"],

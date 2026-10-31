@@ -14,15 +14,17 @@ RUN apt-get update && apt-get install -y \
     libxi6 \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+# Built from the repository root (docker build -f ctde_arena/Dockerfile .): the engine is the shared
+# src/marl_arena, and this tree's src/ is a shim that resolves it at ../src (audit item A-11).
+WORKDIR /repo/ctde_arena
 
-COPY requirements.txt .
+COPY ctde_arena/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY src /repo/src
+COPY ctde_arena /repo/ctde_arena
 
-# Set PYTHONPATH to include src
-ENV PYTHONPATH=/app/src
+ENV PYTHONPATH=/repo/ctde_arena/src
 
 # Default command is to run the PPO training
 CMD ["python", "scripts/train_rl.py"]

@@ -1,0 +1,23 @@
+# The build context is the repository root; BuildKit reads this file because it sits beside
+# ctde_arena/Dockerfile. Only the shared engine (src/) and this tree are needed.
+# Keep the image context to code and pinned requirements. data/ and results/ are the evidence base and
+# are mounted at run time (README "Docker"), not baked into an image that would then age differently.
+*
+!src
+!ctde_arena
+ctde_arena/.venv
+ctde_arena/.venv-check
+ctde_arena/.venv.broken_old
+ctde_arena/data
+ctde_arena/results
+ctde_arena/mlruns
+ctde_arena/exports
+ctde_arena/docs_assets_tmp
+ctde_arena/__pycache__
+ctde_arena/.pytest_cache
+ctde_arena/.coverage
+ctde_arena/htmlcov
+ctde_arena/tests
+**/*.pyc
+**/*.pyo
+**/__pycache__

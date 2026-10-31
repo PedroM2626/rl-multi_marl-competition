@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import warnings
+from functools import lru_cache
 from pathlib import Path
 from typing import Dict, Iterable, List
 
@@ -13,10 +14,10 @@ from marl_arena.controllers.base import BaseTeamController, ControllerContext
 from marl_arena.controllers.batching import decide_many as _decide_many
 from marl_arena.models import AgentSnapshot, StepDecision, TransitionRecord
 from marl_arena.rl.actions import (
-    GLOBAL_OBS_DIM,
-    LOCAL_OBS_DIM,
     NUM_ACTIONS,
+    global_obs_dim,
     load_checkpoint,
+    local_obs_dim,
     save_checkpoint,
 )
 from marl_arena.rl.buffer import RolloutBuffer, RolloutStep
@@ -26,10 +27,77 @@ from marl_arena.rl.networks import (
     CentralizedCriticNetwork,
     CommActorNetwork,
     JAXNetwork,
+    LocalValueDecompositionCriticNetwork,
     ValueDecompositionCriticNetwork,
 )
 from marl_arena.rl.ppo import PPOStats, PPOTrainer
 from marl_arena.systems.match_variant import paradigm_assignment
+
+
+ALL_PARADIGMS = ("CTE", "DTE", "CTDE", "CTDE-VD", "CTDE-CAC", "CTDE-Comm")
+TEAM_AGENT_INDICES = {"Team 1": [0, 1, 2], "Team 2": [3, 4, 5], "Team 3": [6, 7, 8]}
+
+
+def make_networks(
+    paradigm: str, team_name: str, hidden: int, seed: int,
+) -> tuple[JAXNetwork, JAXNetwork | None]:
+    """The actor and (if any) critic a paradigm trains, sized by the observation and remedy settings."""
+    rays = CONFIG.obs_obstacle_rays
+    local_dim, global_dim = local_obs_dim(rays), global_obs_dim(rays)
+    critic: JAXNetwork | None
+    if paradigm == "CTDE-VD":
+        actor: JAXNetwork = ActorNetwork(local_dim, NUM_ACTIONS, hidden, seed=seed)
+        if CONFIG.vd_local_critic:
+            critic = LocalValueDecompositionCriticNetwork(local_dim, hidden, seed=seed + 1)
+        else:
+            critic = ValueDecompositionCriticNetwork(
+                TEAM_AGENT_INDICES.get(team_name, [0, 1, 2]), hidden, seed=seed + 1
+            )
+    elif paradigm == "CTDE-Comm":
+        actor = CommActorNetwork(
+            local_dim, NUM_ACTIONS, msg_dim=4, hidden_dim=hidden, seed=seed,
+            rounds=CONFIG.comm_rounds, mask_dead=CONFIG.comm_mask_dead,
+        )
+        critic = CentralizedCriticNetwork(global_dim, hidden, seed=seed + 1)
+    elif paradigm in {"CTDE", "CTDE-CAC"}:
+        actor = ActorNetwork(local_dim, NUM_ACTIONS, hidden, seed=seed)
+        critic = CentralizedCriticNetwork(global_dim, hidden, seed=seed + 1)
+    elif paradigm == "CTE":
+        actor = CentralizedActorNetwork(
+            global_dim, agent_slot_dim=3, action_dim=NUM_ACTIONS, hidden_dim=hidden, seed=seed,
+        )
+        critic = CentralizedCriticNetwork(global_dim, hidden, seed=seed + 1)
+    else:  # DTE and defensive fallback
+        actor = ActorNetwork(local_dim, NUM_ACTIONS, hidden, seed=seed)
+        critic = None
+    return actor, critic
+
+
+def parameter_count(paradigm: str, hidden: int) -> int:
+    actor, critic = make_networks(paradigm, "Team 1", hidden, seed=0)
+    leaves = actor.parameters() + (critic.parameters() if critic is not None else [])
+    return int(sum(leaf.size for leaf in leaves))
+
+
+@lru_cache(maxsize=None)
+def matched_hidden_dim(paradigm: str, target: int) -> int:
+    """The hidden width whose total trainable parameters come closest to `target`.
+
+    Every architecture here grows monotonically with its width, so a bisection finds the first width at or
+    above the target, and the answer is that one or the width below it. A negative target means the
+    largest of the six arms at RL_HIDDEN_DIM.
+    """
+    if target < 0:
+        target = max(parameter_count(name, CONFIG.rl_hidden_dim) for name in ALL_PARADIGMS)
+    low, high = 4, 1024
+    while low < high:
+        middle = (low + high) // 2
+        if parameter_count(paradigm, middle) >= target:
+            high = middle
+        else:
+            low = middle + 1
+    below = max(low - 1, 4)
+    return min((below, low), key=lambda width: (abs(parameter_count(paradigm, width) - target), width))
 
 
 def resolve_device():
@@ -71,6 +139,11 @@ class RLTeamController(BaseTeamController):
         self.buffer = RolloutBuffer(rng=np.random.default_rng(rng_seed))
         self.pending_steps: Dict[str, RolloutStep] = {}
         self.training_enabled = True
+        # Set for a match in which this team plays a frozen past snapshot of itself: it samples actions as
+        # in training but records no rollout and takes no update (RL_OPPONENT_POOL_PROB).
+        self.frozen = False
+        self.ray_count = CONFIG.obs_obstacle_rays
+        self.vd_local = paradigm == "CTDE-VD" and CONFIG.vd_local_critic
         self._agent_slot_map: Dict[str, int] = {}
         self.trainer = PPOTrainer(
             learning_rate=CONFIG.rl_learning_rate,
@@ -81,6 +154,9 @@ class RLTeamController(BaseTeamController):
             ppo_epochs=CONFIG.rl_ppo_epochs,
             batch_size=CONFIG.rl_batch_size,
             device=device,
+            gae_per_agent=CONFIG.rl_gae_per_agent,
+            update_minibatches=CONFIG.rl_update_minibatches,
+            target_kl=CONFIG.rl_target_kl,
         )
         self.actor: JAXNetwork | None = None
         self.critic: JAXNetwork | None = None
@@ -91,28 +167,12 @@ class RLTeamController(BaseTeamController):
 
     def _build_networks(self, seed: int) -> None:
         hidden = CONFIG.rl_hidden_dim
-        if self.paradigm == "CTDE-VD":
-            team_indices = {"Team 1": [0, 1, 2], "Team 2": [3, 4, 5], "Team 3": [6, 7, 8]}
-            self.actor = ActorNetwork(LOCAL_OBS_DIM, NUM_ACTIONS, hidden, seed=seed).to(self.device)
-            self.critic = ValueDecompositionCriticNetwork(
-                team_indices.get(self.team_name, [0, 1, 2]), hidden, seed=seed + 1
-            ).to(self.device)
-        elif self.paradigm == "CTDE-Comm":
-            self.actor = CommActorNetwork(
-                LOCAL_OBS_DIM, NUM_ACTIONS, msg_dim=4, hidden_dim=hidden, seed=seed
-            ).to(self.device)
-            self.critic = CentralizedCriticNetwork(GLOBAL_OBS_DIM, hidden, seed=seed + 1).to(self.device)
-        elif self.paradigm in {"CTDE", "CTDE-CAC"}:
-            self.actor = ActorNetwork(LOCAL_OBS_DIM, NUM_ACTIONS, hidden, seed=seed).to(self.device)
-            self.critic = CentralizedCriticNetwork(GLOBAL_OBS_DIM, hidden, seed=seed + 1).to(self.device)
-        elif self.paradigm == "CTE":
-            self.actor = CentralizedActorNetwork(
-                GLOBAL_OBS_DIM, agent_slot_dim=3, action_dim=NUM_ACTIONS,
-                hidden_dim=hidden, seed=seed,
-            ).to(self.device)
-            self.critic = CentralizedCriticNetwork(GLOBAL_OBS_DIM, hidden, seed=seed + 1).to(self.device)
-        else:  # DTE and defensive fallback
-            self.actor = ActorNetwork(LOCAL_OBS_DIM, NUM_ACTIONS, hidden, seed=seed).to(self.device)
+        if CONFIG.rl_param_target != 0:
+            hidden = matched_hidden_dim(self.paradigm, CONFIG.rl_param_target)
+        self.hidden_dim = hidden
+        actor, critic = make_networks(self.paradigm, self.team_name, hidden, seed)
+        self.actor = actor.to(self.device)
+        self.critic = critic.to(self.device) if critic is not None else None
 
     def _checkpoint_path(self, directory: Path | None = None) -> Path:
         root = CONFIG.rl_checkpoint_dir if directory is None else directory
@@ -215,7 +275,7 @@ class RLTeamController(BaseTeamController):
         global_obs: np.ndarray | None = None,
         agent_slot: np.ndarray | None = None,
     ) -> None:
-        if not self.training_enabled:
+        if not self.training_enabled or self.frozen:
             return
         self.pending_steps[agent_id] = RolloutStep(
             local_obs=local_obs,
@@ -226,6 +286,7 @@ class RLTeamController(BaseTeamController):
             value=value,
             reward=0.0,
             done=False,
+            agent_id=agent_id,
         )
 
     def decide(

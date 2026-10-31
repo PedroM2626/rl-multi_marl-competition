@@ -21,9 +21,14 @@ SRC_DIR = PROJECT_ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
+import marl_arena
 from marl_arena.config import CONFIG, DEMO_DATA_DIR, METRICS_DIR
 from marl_arena.systems import simulation as simulation_module
 from marl_arena.systems.simulation import ArenaSimulation
+
+# The engine's source tree. Experiment 2's src/ is a shim onto the root package, so the config source and
+# the code that consumes it live here for both trees rather than under this tree's src/.
+ENGINE_SRC = Path(marl_arena.__path__[0]).parent
 
 
 def _sim_with(monkeypatch, **overrides) -> ArenaSimulation:
@@ -157,10 +162,9 @@ def _pinned_env(path: Path) -> dict[str, str]:
 
 def _variables_config_reads() -> tuple[set[str], dict[str, str]]:
     """(every name read, name -> literal default) straight out of this tree's config.py."""
-    source = (PROJECT_ROOT / "src" / "marl_arena" / "config.py").read_text(encoding="utf-8")
-    names = set(re.findall(r'os\.getenv\("([A-Z_0-9]+)"', source)) | \
-        set(re.findall(r'_read_bool\("([A-Z_0-9]+)"', source))
-    defaults = dict(re.findall(r'os\.getenv\("([A-Z_0-9]+)", "([^"]*)"\)', source))
+    source = (ENGINE_SRC / "marl_arena" / "config.py").read_text(encoding="utf-8")
+    names = set(re.findall(r'(?:os\.getenv|_read_bool|_read_list)\("([A-Z_0-9]+)"', source))
+    defaults = dict(re.findall(r'(?:os\.getenv|_read_list)\("([A-Z_0-9]+)", "([^"]*)"\)', source))
     defaults.update({m.group(1): m.group(2).lower()
                      for m in re.finditer(r'_read_bool\("([A-Z_0-9]+)", (True|False)\)', source)})
     return names, defaults
@@ -171,9 +175,10 @@ def _variables_config_reads() -> tuple[set[str], dict[str, str]]:
 # it in a file that every run shares would put all of them in one place.
 NOT_PINNED = {"ARENA_DATA_DIR"}
 
-# The only two committed values that differ from the code default, both documented in README.md and
-# docs/06_optimisation_procedure.md#67-hyperparameters-as-trained.
-DOCUMENTED_OVERRIDES = {"RANDOM_SEED", "RL_TRAIN_TOTAL_STEPS"}
+# The committed values that differ from the code default, documented in README.md and
+# docs/06_optimisation_procedure.md#67-hyperparameters-as-trained. PARADIGM_CYCLE equals the default in the
+# root tree and names experiment 2's arms in ctde_arena/.
+DOCUMENTED_OVERRIDES = {"RANDOM_SEED", "RL_TRAIN_TOTAL_STEPS", "PARADIGM_CYCLE"}
 
 
 def test_every_variable_the_config_reads_is_written_down() -> None:
@@ -213,7 +218,7 @@ def test_dotenv_and_dotenv_example_are_the_same_file() -> None:
 
 def _config_field_names() -> list[str]:
     """Every field on the frozen config dataclass, in declaration order."""
-    source = (PROJECT_ROOT / "src" / "marl_arena" / "config.py").read_text(encoding="utf-8")
+    source = (ENGINE_SRC / "marl_arena" / "config.py").read_text(encoding="utf-8")
     return re.findall(r"^\s{4}([a-z0-9_]+):", source, re.MULTILINE)
 
 
@@ -224,12 +229,12 @@ def test_every_config_field_is_consumed_somewhere() -> None:
     parsed, both appeared in .env, and nothing consulted either. The committed .env is the instrument's
     specification, so a key that does nothing is a false claim about the instrument.
     """
-    config_path = PROJECT_ROOT / "src" / "marl_arena" / "config.py"
+    config_path = ENGINE_SRC / "marl_arena" / "config.py"
     fields = _config_field_names()
     assert fields, "the config dataclass could not be parsed"
     corpus = "\n".join(
         path.read_text(encoding="utf-8")
-        for base in (PROJECT_ROOT / "src", PROJECT_ROOT / "scripts")
+        for base in (ENGINE_SRC, PROJECT_ROOT / "scripts")
         for path in base.rglob("*.py")
         if path != config_path
     )
