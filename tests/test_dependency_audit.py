@@ -74,9 +74,9 @@ def test_the_runtime_locks_are_fully_parsable() -> None:
     root_pins = audit.parse_pins(PROJECT_ROOT / "requirements.txt")
     ctde_pins = audit.parse_pins(PROJECT_ROOT / "ctde_arena" / "requirements.txt")
     assert ("jax", "0.4.38") in root_pins
-    assert ("python-dotenv", "1.0.1") in root_pins
+    assert ("python-dotenv", "1.2.4") in root_pins
     assert ctde_pins[:-1] == root_pins, "the shared pins must stay identical across the trees"
-    assert ctde_pins[-1] == ("mlflow", "2.17.2"), "experiment 2's own dependency is the tracking store"
+    assert ctde_pins[-1] == ("mlflow", "3.17.2"), "experiment 2's own dependency is the tracking store"
 
 
 def test_severity_picks_the_highest_recorded_level() -> None:

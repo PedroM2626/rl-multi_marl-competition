@@ -37,6 +37,12 @@ def main() -> None:
 
     mlflow = None
     if not args.no_mlflow:
+        # MLflow 3 puts the file store in maintenance mode and refuses it unless asked. This repository
+        # tracks to a local ./mlruns and never runs a tracking server (docs/09 § 9.10), so the opt-in keeps
+        # the documented store rather than migrating every reader to a database backend.
+        import os
+
+        os.environ.setdefault("MLFLOW_ALLOW_FILE_STORE", "true")
         import mlflow
 
         mlflow.set_tracking_uri("file:./mlruns")

@@ -1291,6 +1291,19 @@ fresh measurement campaign, whose cost § 9.1 quantifies.
 
 ### The runtime locks, audited (2026-10-20) <a name="runtime-dependency-audit"></a>
 
+**Upgraded on branch `deps/upgrade-pins` (2026-10-31).** The three advised pins were moved to the newest
+releases -- `python-dotenv` 1.0.1 -> 1.2.4, `pytest` 8.3.5 -> 9.2.0 and, in experiment 2, `mlflow` 2.17.2 ->
+3.17.2 -- and the audit re-run: **8/8 and 9/9 pins with no known OSV advisory**. The change was re-verified
+the way this section says an upgrade must be, in a fresh virtualenv with NumPy 2.2.6 and the Rust extension
+built: both suites pass (211 + 2 skipped, 90 + 1 skipped), `benchmark_runtime.py`'s exact outcome-and-weight
+parity gate holds (Rust 342.8 / fallback 319.6 steps/s, inside the host's session drift), and experiment 2's
+`train_rl.py` logs to MLflow. MLflow 3 refuses the file store unless `MLFLOW_ALLOW_FILE_STORE=true`, which
+`train_rl.py` now sets by default because this repository tracks to a local `./mlruns` and never runs a
+tracking server. What the upgrade does not change: the published numbers were produced under the measured
+lock and keep that provenance; the PyTorch-era advisory of A-37 is a property of that lock, not of these pins.
+
+The record below is the pre-upgrade audit, kept as the state it describes.
+
 Everything above is about `requirements-measured.lock.txt` — the environment that produced the published
 numbers. The environments that *run* the code today are `requirements.txt` in each tree, and until now no
 record said what OSV knows about them; the audit script always took the measured lock as its default and
