@@ -191,11 +191,27 @@ def committed_blob(path: str) -> bytes:
     return result
 
 
+LFS_POINTER_HEADER = b"version https://git-lfs.github.com/spec/v1\n"
+
+
+def content_identity(blob: bytes) -> tuple[int, str]:
+    """(size, SHA-256) of the artefact a committed blob stands for.
+
+    Checkpoints live in Git LFS, so their blob is a pointer; its `oid sha256:` and `size` lines are, by the
+    LFS specification, the SHA-256 and byte count of the real file. Reading them keeps every row of the
+    table describing the artefact a reader downloads, exactly as it did before the switch.
+    """
+    if blob.startswith(LFS_POINTER_HEADER):
+        fields = dict(line.split(" ", 1) for line in blob.decode("ascii").splitlines() if " " in line)
+        return int(fields["size"]), fields["oid"].removeprefix("sha256:")
+    return len(blob), hashlib.sha256(blob).hexdigest()
+
+
 def rows_for(paths: list[str]) -> list[str]:
     table = ["| Path | Bytes | SHA-256 |", "|---|---:|---|"]
     for path in sorted(paths):
-        blob = committed_blob(path)
-        table.append(f"| `{path}` | {len(blob):,} | `{hashlib.sha256(blob).hexdigest()}` |")
+        size, digest = content_identity(committed_blob(path))
+        table.append(f"| `{path}` | {size:,} | `{digest}` |")
     return table
 
 

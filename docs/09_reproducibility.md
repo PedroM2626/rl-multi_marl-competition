@@ -630,7 +630,7 @@ inclination to replay 4,500 matches.
 
 ## 9.7 Artefact inventory
 
-Every versioned experiment artefact (432 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed, and each hash is of the blob Git stores rather than of the file on disk — a text artefact checked out with CRLF on Windows hashes differently from the same committed bytes on Linux, and a reader on any platform should be able to reproduce this column.
+Every versioned experiment artefact (433 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed, and each hash is of the blob Git stores rather than of the file on disk — a text artefact checked out with CRLF on Windows hashes differently from the same committed bytes on Linux, and a reader on any platform should be able to reproduce this column.
 
 **Promoted replicate.** The artefacts that match the current code. Chosen by `promote_run.py --seed median`, which is the replicate with the least L1 distance to the per-arm study means; `PROVENANCE.json` records the choice and the full run summary behind it.
 
@@ -682,6 +682,7 @@ Every versioned experiment artefact (432 files), with SHA-256 for integrity chec
 | `results/cross_arena/wide_256_blocks.csv` | 2,626,611 | `a4cf32ed064c04e5789222ec13dcf55420a5289c2f0b38f4a2936da90f794375` |
 | `results/cross_arena/wide_256_blocks.json` | 16,659 | `9e25a582e234ebbe41ff12b1025d1f8af7b068acf1845ab047f0ad6b0eb1a7c5` |
 | `results/study/analysis.json` | 4,226 | `0761e5fa08f9be1cbee21f515b28eb17ad48e65b7207868bc161ce933f87527b` |
+| `results/study/coupled_tests.json` | 4,791 | `89de1c028157dfd189f81a23a8cfe89f23166f94cc84edab8c2a0bf7db99a686` |
 | `results/study/eval_match_regimes.csv` | 589,145 | `235eef5a14766b04d1abc739602caa1ae9b145761393961689aac03805d29ff7` |
 | `results/study/learning_curves.png` | 137,532 | `1915d48d117e8a96730b3659e0259e5ad6446c0fb7103d0642a6a5e7bd601cbe` |
 | `results/study/per_seed_metrics.csv` | 5,226 | `a69098a4e88eef37c1291f73b1cb2526f0d31a98c0c2c6f0da27af0263b30d17` |

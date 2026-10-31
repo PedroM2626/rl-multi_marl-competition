@@ -54,6 +54,8 @@ jobs:
             workdir: ctde_arena
     steps:
       - uses: actions/checkout@v4
+        with:
+          lfs: true   # checkpoints are LFS objects; the suites load and hash the real files
 
       - uses: actions/setup-python@v5
         with:
@@ -83,6 +85,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          lfs: true   # checkpoints are LFS objects; the suites load and hash the real files
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -115,6 +119,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          lfs: true   # checkpoints are LFS objects; the suites load and hash the real files
 
       - name: Build the ctde_arena image
         run: docker build -t ctde-arena -f ctde_arena/Dockerfile .
@@ -128,6 +134,8 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+        with:
+          lfs: true   # checkpoints are LFS objects; the suites load and hash the real files
 
       - uses: actions/setup-python@v5
         with:
@@ -149,6 +157,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          lfs: true   # checkpoints are LFS objects; the suites load and hash the real files
 
       - uses: actions/setup-python@v5
         with:

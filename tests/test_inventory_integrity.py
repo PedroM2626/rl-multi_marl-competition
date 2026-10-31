@@ -70,9 +70,21 @@ def test_every_published_hash_is_the_committed_bytes() -> None:
     rows = inventory_rows()
     assert len(rows) > 150, rows
     blobs = committed_blobs([row[0] for row in rows])
+    pointers = 0
     for path, size, digest in rows:
         blob = blobs[path]
         assert blob, f"{path} is not readable as a committed blob"
+        if blob.startswith(b"version https://git-lfs.github.com/spec/v1\n"):
+            # A checkpoint in Git LFS: the pointer's oid and size are the real file's SHA-256 and size, and
+            # where the checkout holds the real file (CI fetches LFS) it must hash to the same value.
+            pointers += 1
+            fields = dict(line.split(" ", 1) for line in blob.decode("ascii").splitlines() if " " in line)
+            assert size == int(fields["size"]), f"{path}: the byte column is not the LFS object's size"
+            assert digest == fields["oid"].removeprefix("sha256:"), f"{path}: hash is not the LFS object"
+            on_disk = (ROOT / path).read_bytes()
+            if not on_disk.startswith(b"version https://git-lfs"):
+                assert hashlib.sha256(on_disk).hexdigest() == digest, f"{path}: the checkout is not the LFS object"
+            continue
         assert size == len(blob), f"{path}: the byte column is not the committed size"
         assert digest == hashlib.sha256(blob).hexdigest(), f"{path}: hash is not the committed object"
 
