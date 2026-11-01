@@ -12,8 +12,8 @@
 ## 9.1 Environment
 
 Current requirements are pinned per experiment. Root: `ursina==6.1.2`, `numpy==2.2.6`,
-`matplotlib==3.10.3`, `python-dotenv==1.0.1`, `jax==0.4.38`, `jaxlib==0.4.38`, and
-`pytest==8.3.5`. `ctde_arena/` adds `mlflow==2.17.2`. Building the Rust extension also requires Rust
+`matplotlib==3.10.3`, `pandas==2.3.3`, `python-dotenv==1.2.4`, `jax==0.4.38`, `jaxlib==0.4.38`, and
+`pytest==9.2.0`. `ctde_arena/` adds `mlflow==3.17.2`. Building the Rust extension also requires Rust
 stable and `maturin==1.15.0`.
 
 The declared environment is complete: `pandas` is pinned in both `requirements.txt` files (it was once
@@ -27,29 +27,31 @@ A stale `.venv.broken_old/` from an earlier host is git-ignored local state, not
 
 ### Verification environment actually used
 
-This is the historical PyTorch environment that produced the published measurements. The JAX/Rust
-runtime is separate and has not produced a replacement study yet.
+This is the historical PyTorch environment that produced the published measurements up to § 8.13. The
+JAX/Rust runtime has since re-trained the study twice ([§ 8.14](08_results.md#v3): the JAX replication and
+v3) and the capacity arms at ten seeds ([§ 8.13](08_results.md#capacity-ten)); those numbers were produced
+on the pinned runtime of § 9.1, not on this table.
 
-Every number in this documentation set was produced on:
+Every PyTorch-era number in this documentation set was produced on:
 
 | | |
 |---|---|
 | Python | 3.10.11 |
 | NumPy | 1.26.4 (pinned requirement says 2.2.6) |
-| PyTorch | 2.5.1+cu121 (pinned says 2.6.0) |
+| PyTorch | 2.5.1+cu121 (pinned then 2.6.0; no longer a dependency) |
 | Matplotlib | 3.10.9 (pinned says 3.10.3) |
-| pytest | 9.1.1 (pinned says 8.3.5) |
+| pytest | 9.1.1 (pinned then 8.3.5) |
 | Device | CPU |
 | Platform | Windows 10 / 11 x64 |
 
-**Every number in this documentation set was produced on the versions above, not on the pinned
+**Every PyTorch-era number in this documentation set was produced on the versions above, not on the pinned
 requirements** — NumPy 1.26 → 2.2 is a *major* version change. Rather than leave that as an untested
 reassuring-sounding claim, it was measured, in a second environment holding everything else constant:
 
 | Check | NumPy 1.26.4 vs 2.2.6 | Result |
 |---|---|---|
-| Experiment 1 test suite (59 tests then, 125 now) | both versions | **pass** |
-| Experiment 2 test suite (47 tests then, 76 now) | both versions | **pass** |
+| Experiment 1 test suite (59 tests then, 125 at this check) | both versions | **pass** |
+| Experiment 2 test suite (47 tests then, 76 at this check) | both versions | **pass** |
 | Collision geometry (14 hand-computed entry parameters and hit positions) | both versions | **identical to 1e-12** |
 | Domain-randomisation stream (`arena_size`, speeds, cooldowns of match 41) | both versions | **identical, all digits** |
 | `train_rl.py --seed 42 --steps 4000`, first PPO update | both versions | policy/value loss differ at the **1e-6 – 1e-8** level |
@@ -135,7 +137,7 @@ of them in the same place.
 
 | Command | Experiment | What it does |
 |---|---|---|
-| `python scripts/train_rl.py --seed S` | 1 | Headless JAX PPO training; seeded smoke path verified, full-study replay pending |
+| `python scripts/train_rl.py --seed S` | 1 | Headless JAX PPO training; seeded smoke path verified, and the full study re-trained on it ([§ 8.14](08_results.md#v3)) |
 | `python main.py` | 1 | Ursina 3D window, greedy policies loaded from `data/checkpoints/`; demo matches record under `data/demo/`, not the versioned metrics tree |
 | `python scripts/plot_metrics.py` | 1 | Reads `data/metrics/summary.json` → `exports/metrics/` |
 | `python -m pytest tests/ -q`<!--auto:cmd-exp1--> | 1 | 215 passed, 1 skipped (verified 2026-11-01) |
@@ -1291,11 +1293,11 @@ fresh measurement campaign, whose cost § 9.1 quantifies.
 
 ### The runtime locks, audited (2026-10-20) <a name="runtime-dependency-audit"></a>
 
-**Upgraded on branch `deps/upgrade-pins` (2026-10-31).** The three advised pins were moved to the newest
+**Upgraded on `main` (2026-10-31, merged 2026-11-01).** The three advised pins were moved to the newest
 releases -- `python-dotenv` 1.0.1 -> 1.2.4, `pytest` 8.3.5 -> 9.2.0 and, in experiment 2, `mlflow` 2.17.2 ->
 3.17.2 -- and the audit re-run: **8/8 and 9/9 pins with no known OSV advisory**. The change was re-verified
 the way this section says an upgrade must be, in a fresh virtualenv with NumPy 2.2.6 and the Rust extension
-built: both suites pass (211 + 2 skipped, 90 + 1 skipped), `benchmark_runtime.py`'s exact outcome-and-weight
+built: both suites pass (211 + 2 skipped, 90 + 1 skipped, and again after the merge onto the v3 code), `benchmark_runtime.py`'s exact outcome-and-weight
 parity gate holds (Rust 342.8 / fallback 319.6 steps/s, inside the host's session drift), and experiment 2's
 `train_rl.py` logs to MLflow. MLflow 3 refuses the file store unless `MLFLOW_ALLOW_FILE_STORE=true`, which
 `train_rl.py` now sets by default because this repository tracks to a local `./mlruns` and never runs a

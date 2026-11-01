@@ -67,7 +67,7 @@ Every finding below was open at some point; the status column is the current sta
 | [A-45](#the-runtime-swap-orphaned-the-committed-checkpoint-archive) | MED · FIXED | The runtime move to JAX left 165 committed `.pt` policies that nothing could load and took Torch out of the dependencies two tools still needed; the archive now has byte-verified `.npz` twins, a gate, and a resolution rule that says what to run |
 | [A-46](#eager-device-ops-and-per-minibatch-syncs-were-the-jax-steps-own-overhead) | MED · FIXED | The batched JAX step still paid five eager device dispatches and two syncs per team per step, and the PPO update synced its scalars per minibatch; moving them to the host is value-neutral and worth +30 % measured |
 | [A-47](#the-jax-training-update-is-not-bit-deterministic-under-concurrent-load) | LOW · ACCEPTED RISK | Under concurrent load, identical-seed JAX training runs can differ by a few float32 ulps after the first update; solo runs are byte-stable, and no published number depends on concurrent JAX training |
-| [A-48](#the-runtime-that-replaced-the-measured-lock-was-never-dependency-audited) | LOW · FIXED | Nothing recorded what OSV knows about the *runtime* requirements — only the measured lock was audited; both trees' runtime locks are now queried, committed and CI-gated, and mlflow 2.17.2's 58 records are assessed against what this repository actually runs |
+| [A-48](#the-runtime-that-replaced-the-measured-lock-was-never-dependency-audited) | LOW · FIXED | Nothing recorded what OSV knows about the *runtime* requirements — only the measured lock was audited; both trees' runtime locks are now queried, committed and CI-gated, and mlflow 2.17.2's 58 records are assessed against what this repository actually runs; the three advised pins were since upgraded (0 advised pins) |
 | [A-49](#jnpasarray-on-host-inputs-was-a-third-of-a-step) | MED · FIXED | `JAXNetwork.forward` and the PPO minibatch converted every host input with `jnp.asarray` before the jitted call -- ~37 % of an evaluation step; passing float32 NumPy straight through is byte-identical and worth ~+45 % Rust / ~+30 % fallback training throughput |
 | [A-50](#the-remedies-landed-as-switches-and-the-defaults-are-byte-identical) | INFO · IMPLEMENTED | Every docs/10 remedy a code change can make is now a configuration key with a byte-identical default; the engine fork of A-11 is gone |
 | [A-51](#solo-jax-training-runs-are-not-byte-stable-either) | LOW · ACCEPTED RISK | A-47's float32 camps also appear in *solo* runs on this host -- 3 of 7 identical-code probes landed in a second camp -- so a byte-identity verification needs repeated runs, not one |
@@ -1603,6 +1603,11 @@ the throughput sample on. The reasoning per advisory, and the conditions that wo
 are in [§ 9.10](09_reproducibility.md#runtime-dependency-audit). The assessments, not the pins, are what
 this entry adds: the exposures were always there, but until the record existed no reader could be expected
 to know which of them this repository's workflows can actually reach.
+
+**Since upgraded (2026-10-31).** The re-verification this entry asked for was done, and the three pins moved
+to `python-dotenv==1.2.4`, `pytest==9.2.0` and `mlflow==3.17.2`; both runtime records now hold 0 advised pins
+([§ 9.10](09_reproducibility.md#runtime-dependency-audit)). The paragraphs above describe the record as it
+stood before.
 
 ## jnp.asarray on host inputs was a third of a step
 

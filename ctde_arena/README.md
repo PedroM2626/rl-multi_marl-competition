@@ -29,7 +29,7 @@ used to rerun that study.
 | Promoted replicate in `data/` | seed 2, chosen as the one least distant from the study means (`data/PROVENANCE.json`) |
 | Untrained baseline | 300 matches in both greedy and uniform modes (`results/baseline/`) |
 | Historical PyTorch training replay | yes, verified with `--no-mlflow` |
-| Current JAX/Rust replay | smoke-verified; full same-seed replay check pending |
+| Current JAX/Rust replay | the whole study re-trained on it, 10 seeds ([§ 8.14](../docs/08_results.md#v3)): the null reproduces, the leader changes; with every docs/10 remedy on (v3) nothing separates in this experiment |
 | License | MIT — [`LICENSE`](../LICENSE) at the repository root covers this tree as well as experiment 1 |
 | MLflow curves | **1 logged point** for the 100k run — see [A-9](../docs/11_code_audit.md#mlflow-cadence) |
 | Current tests<!--auto:ctde-status--> | 90 passed, 1 skipped, **79 %** statements / **66 %** branches |
@@ -77,7 +77,7 @@ project, so this tree still reads its own `.env`, `data/` and `requirements.txt`
 here imports exactly as before. `tests/test_tree_parity.py` asserts that the shim is all this `src/` holds.
 
 What still differs is tooling: `scripts/train_rl.py` adds the MLflow run, params, metrics, artefacts and
-registered models; `requirements.txt` adds `mlflow==2.17.2`; and this tree has the `Dockerfile`, which is
+registered models; `requirements.txt` adds `mlflow==3.17.2`; and this tree has the `Dockerfile`, which is
 built from the repository root because the engine lives there. `RANDOM_SEED` also differs (2 here, 9 at the root) because each value is the one that makes
 `python main.py` load that tree's promoted checkpoints.
 
@@ -105,8 +105,8 @@ maturin develop --release
 cd ../../ctde_arena
 ```
 
-Pinned runtime: `ursina==6.1.2`, `numpy==2.2.6`, `matplotlib==3.10.3`, `python-dotenv==1.0.1`,
-`jax==0.4.38`, `jaxlib==0.4.38`, `pytest==8.3.5`, `mlflow==2.17.2`. Rust stable and `maturin==1.15.0`
+Pinned runtime: `ursina==6.1.2`, `numpy==2.2.6`, `matplotlib==3.10.3`, `pandas==2.3.3`,
+`python-dotenv==1.2.4`, `jax==0.4.38`, `jaxlib==0.4.38`, `pytest==9.2.0`, `mlflow==3.17.2`. Rust stable and `maturin==1.15.0`
 build the optional `marl_arena_rust` extension.
 
 ## Training and MLOps
