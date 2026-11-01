@@ -649,7 +649,7 @@ inclination to replay 4,500 matches.
 
 ## 9.7 Artefact inventory
 
-Every versioned experiment artefact (433 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed, and each hash is of the blob Git stores rather than of the file on disk — a text artefact checked out with CRLF on Windows hashes differently from the same committed bytes on Linux, and a reader on any platform should be able to reproduce this column.
+Every versioned experiment artefact (452 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed, and each hash is of the blob Git stores rather than of the file on disk — a text artefact checked out with CRLF on Windows hashes differently from the same committed bytes on Linux, and a reader on any platform should be able to reproduce this column.
 
 **Promoted replicate.** The artefacts that match the current code. Chosen by `promote_run.py --seed median`, which is the replicate with the least L1 distance to the per-arm study means; `PROVENANCE.json` records the choice and the full run summary behind it.
 
@@ -707,6 +707,30 @@ Every versioned experiment artefact (433 files), with SHA-256 for integrity chec
 | `results/study/per_seed_metrics.csv` | 5,226 | `a69098a4e88eef37c1291f73b1cb2526f0d31a98c0c2c6f0da27af0263b30d17` |
 | `results/study/regime_split.json` | 5,777 | `ef7cb800f4a2f9aea949550e593eb443c60eacd74175b0ab27273bff4ba73638` |
 | `results/study/regime_summary.json` | 2,666 | `6aacb485dd644a4b0a35046f7f345f4c8463b2d4285bf12edd444a8844862608` |
+
+**The v3 campaign.** Everything `scripts/run_v3_campaign.sh` measured: the study re-trained on the JAX runtime (`study_jax/`) and with every docs/10 remedy on (`study_v3/`), each with `coupled_tests.json` ([§ 8.14](08_results.md#v3)); the capacity arms at ten seeds on the same runtime ([§ 8.13](08_results.md#capacity-ten)); the `no_dr` blocks against the random pool ([§ 8.13](08_results.md#no-dr-absolute)); the study's blocks against the scripted opponent ([§ 8.11](08_results.md#scripted-opponents)); and the uniform-random baseline in the symmetric arena ([§ 8.9](08_results.md#symmetric-baseline)). The training runs behind the four studies are git-ignored scratch under `data/runs_*/`.
+
+| Path | Bytes | SHA-256 |
+|---|---:|---|
+| `results/ablation_jax_narrow_64/analysis.json` | 4,223 | `8a612e7f0514d58507cbbb82402362b5294950a77e3eec675e05df415f0fbf36` |
+| `results/ablation_jax_narrow_64/per_seed_metrics.csv` | 5,189 | `5bd2a702d0071d2b04dcb7210a44f5b59c3910f875c266bc16b7b019f830bf56` |
+| `results/ablation_jax_narrow_64/report.md` | 7,963 | `20fcd08d89690f2c42a4e99e2b9fa0f5679da67466cbe1df15f76e23a776cb6c` |
+| `results/ablation_jax_wide_256/analysis.json` | 4,215 | `c24fb9c12dad0cee444e416a65757cd6795398480178676c54b06ef633f9bd90` |
+| `results/ablation_jax_wide_256/per_seed_metrics.csv` | 5,250 | `de3c00ff0bff18a4b644e087b6dc47c055308067559ca450d9e50b98f043d07a` |
+| `results/ablation_jax_wide_256/report.md` | 7,966 | `971cddf0f11c8b168ddf902227825246954156c85c3f4df67c5c7960c885f10f` |
+| `results/absolute_no_dr/matches.csv` | 261,884 | `9cb2d72daf11d52b0b8a394fa1a7ad0e6245124a5e40b9453ecacc5c4eb2ab11` |
+| `results/absolute_no_dr/summary.json` | 45,242 | `3383b097f3a9fe378a6ccd89c0ed626cd71e360280826f66d8772979cf77b613` |
+| `results/baseline_symmetric/random_baseline_uniform.json` | 1,192 | `1f72f99e735f7cbfdbe20066c72d5546588b402616b8acf24ccf8a0ac73ea0ea` |
+| `results/scripted_ten/matches.csv` | 233,683 | `cc0ee953ae4f70e68fe56392e7a5bf404d4726b0142b1d92e664cd86f3039f6c` |
+| `results/scripted_ten/summary.json` | 43,807 | `2a57eb6daa5cbc9d516359b693d11d7d3849c4fa89a8573549a7de34bd36457a` |
+| `results/study_jax/analysis.json` | 4,197 | `77da184e99bf24fa69369883cdfd82f1b7b6943af27a3ef768e0fdc0021ca644` |
+| `results/study_jax/coupled_tests.json` | 4,768 | `636b4ed6156fcf30574ccbe8e38eb343f2c658c4ec3b5861294c546051a17318` |
+| `results/study_jax/per_seed_metrics.csv` | 5,204 | `bc4ca761c78881a7bb9738b78f97c7e2ccd6d85ae9f783cd896e68af24bfb210` |
+| `results/study_jax/report.md` | 7,984 | `a9613e2e43ed4a5d25650ce9466e4526b25c96cecef756ab059d9b3b771eda06` |
+| `results/study_v3/analysis.json` | 4,220 | `e4e82da9bb2f510b19a83fdcac50d622513f2b4b08528fcd5153b5ba7be914c1` |
+| `results/study_v3/coupled_tests.json` | 4,781 | `ab532343e3aff5164886b636cfa231bdcbe166e8dc0ee8fb92822bc353772155` |
+| `results/study_v3/per_seed_metrics.csv` | 5,258 | `8427d1c7ed08b746a2f3a645451d1092c788bc11a98cfe34ab15fe8d61e251f5` |
+| `results/study_v3/report.md` | 7,987 | `f4fbc1ac1bf0cc89571a41ffb5c47df815947e75bd8006f6f1a40c45a3a90055` |
 
 **Optimiser traces and the analysis of them.** `results/trace_analysis.json`: the KL, entropy and value-loss traces of the re-trained twenty replicates joined to the published per-replicate reads, with the two controls the analysis rests on recorded alongside it — every produced checkpoint hash-matches `data/training_replicates/`, and the re-trained held-out rates match `results/study/` to 3.3e-05. The per-run `training_log.json` files themselves are git-ignored scratch under `data/runs_traces/`; this is the derived summary, reproducible with `scripts/analyse_traces.py` from a machine that has re-run the campaign.
 

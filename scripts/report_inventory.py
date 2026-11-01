@@ -47,6 +47,20 @@ GROUPS = [
          "results/cross_arena/no_dr_blocks3.csv", "results/cross_arena/no_dr_blocks3.json"),
     ),
     (
+        "The v3 campaign",
+        "Everything `scripts/run_v3_campaign.sh` measured: the study re-trained on the JAX runtime "
+        "(`study_jax/`) and with every docs/10 remedy on (`study_v3/`), each with `coupled_tests.json` "
+        "([§ 8.14](08_results.md#v3)); the capacity arms at ten seeds on the same runtime "
+        "([§ 8.13](08_results.md#capacity-ten)); the `no_dr` blocks against the random pool "
+        "([§ 8.13](08_results.md#no-dr-absolute)); the study's blocks against the scripted opponent "
+        "([§ 8.11](08_results.md#scripted-opponents)); and the uniform-random baseline in the symmetric "
+        "arena ([§ 8.9](08_results.md#symmetric-baseline)). The training runs behind the four studies are "
+        "git-ignored scratch under `data/runs_*/`.",
+        ("results/study_jax/", "results/study_v3/", "results/ablation_jax_narrow_64/",
+         "results/ablation_jax_wide_256/", "results/absolute_no_dr/", "results/scripted_ten/",
+         "results/baseline_symmetric/"),
+    ),
+    (
         "Optimiser traces and the analysis of them",
         "`results/trace_analysis.json`: the KL, entropy and value-loss traces of the re-trained "
         "twenty replicates joined to the published per-replicate reads, with the two controls the "
