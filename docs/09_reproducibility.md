@@ -1123,10 +1123,10 @@ Every versioned experiment artefact (452 files), with SHA-256 for integrity chec
 |---|---:|---|
 | `LICENSE` | 1,075 | `fd4599d12f7345289a2684a68d852eac9e0e7a68f0ed17298ebfe502c11f95f6` |
 | `ctde_arena/requirements-measured.lock.txt` | 2,448 | `13a9ead65d70af5c9c42671c50477a8b736b864b790b25e38d61bee78a1f55bd` |
-| `ctde_arena/results/dependency_audit_runtime.json` | 26,325 | `e41954218c9b0d5cae4bcedeb323a9e8f9d8dc27f8b053cc48e96d99f4a5f999` |
+| `ctde_arena/results/dependency_audit_runtime.json` | 1,123 | `ce368e0bf38bb0406a38361d78ec261a5d8ca335e65eb19d158130734742a560` |
 | `requirements-measured.lock.txt` | 2,448 | `13a9ead65d70af5c9c42671c50477a8b736b864b790b25e38d61bee78a1f55bd` |
 | `results/dependency_audit.json` | 11,288 | `5de3f482896f88e80460bda28378eca0a48b0f9661d270e6f92b0c8e705ec3dd` |
-| `results/dependency_audit_runtime.json` | 2,576 | `ebc150645d08deaa166874c6005d381a06167c32e10360da1880d2829af6413d` |
+| `results/dependency_audit_runtime.json` | 1,028 | `1cfacb10332d5f909403cd69f43b89be4153c319eb2a1f458f95448d4b709e19` |
 
 **Ablation and arena-v2 campaigns.** `run_arena_v2_campaign.sh` and `run_ablation_campaign.sh` output, each aggregated by `run_study.py` from 500 k-step replicates: `no_dr` on seeds 1-10 (extended by `run_no_dr_extension.sh`), the two capacity arms on seeds 1-3, arena v2 on seeds 1-10, and `results/study_3m/` -- the same twenty replicates re-trained at the 3 M-step budget `main.py` ships with, which is the one arm whose single key is the budget. Every arm differs from `results/study/` by exactly one configuration key.
 
