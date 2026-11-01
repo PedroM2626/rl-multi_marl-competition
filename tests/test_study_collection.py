@@ -170,3 +170,19 @@ def test_compare_arms_keeps_paradigms_apart(capsys) -> None:
     printed = capsys.readouterr().out
     assert sum(line.startswith("| exp1 |") for line in printed.splitlines()) == 2
     assert "1 shared seeds per arm" in printed, "the divisor is the seed count, not the row count"
+
+
+def test_a_run_that_trained_the_other_trees_arms_is_refused(tmp_path: Path) -> None:
+    """A-53: experiment 2 inherited experiment 1's PARADIGM_CYCLE from the launcher's environment and trained
+    CTE/DTE/CTDE under an exp2 label. Collection is where that has to stop, before it reaches a table."""
+    path = _write_summary(tmp_path, "exp2", 3, "CTDE", 0.3)
+    with pytest.raises(SystemExit, match="other tree"):
+        run_study.collect([str(path)])
+    assert run_study.collect([str(_write_summary(tmp_path, "exp2", 4, "CTDE-VD", 0.3))])[0]
+
+
+def test_the_launcher_hands_children_the_environment_from_before_the_engine_loaded() -> None:
+    source = (SCRIPTS / "run_study.py").read_text(encoding="utf-8")
+    assert "env=LAUNCH_ENV" in source
+    assert source.index("LAUNCH_ENV = dict(os.environ)") < source.index("from marl_arena")
+

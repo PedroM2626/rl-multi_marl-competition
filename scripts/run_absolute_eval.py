@@ -117,11 +117,13 @@ def pearson(x: list[float], y: list[float]) -> float:
     return numerator / denominator if denominator else float("nan")
 
 
-def compare_scales(pooled: dict, pool_json: Path) -> dict:
+def compare_scales(pooled: dict, pool_json: Path, opponent: str = "random") -> dict:
     """Join the random-pool result with the trained-peer round-robin and say how much they agree.
 
     This is the measurement behind "strength is not one quantity": the two orders are nearly unrelated, and
-    none of the pool run's own component metrics predicts the absolute result.
+    none of the pool run's own component metrics predicts the absolute result. The JSON keys keep the name
+    `vs_random` whatever the opponent was, so every reader of a summary keeps working; `opponent` only names
+    it in the printed tables.
     """
     peer = json.loads(pool_json.read_text(encoding="utf-8"))["per_architecture"]
     arms = sorted(set(pooled) & set(peer))
@@ -143,8 +145,8 @@ def compare_scales(pooled: dict, pool_json: Path) -> dict:
         "per_arm": {arm: {"vs_random": abs_rate[arm], "vs_peers": pool_rate[arm],
                           "rank_random": abs_rank[arm], "rank_peers": pool_rank[arm]} for arm in arms},
     }
-    print("\n--- agreement between the two scales (random pool vs trained peers) ---")
-    print("| architecture | vs random | rank | vs peers | rank |")
+    print(f"\n--- agreement between the two scales ({opponent} pool vs trained peers) ---")
+    print(f"| architecture | vs {opponent} | rank | vs peers | rank |")
     print("|---|---:|---:|---:|---:|")
     for arm in sorted(arms, key=lambda a: -abs_rate[a]):
         print(f"| {arm} | {abs_rate[arm]:.3f} | {abs_rank[arm]:.1f} | {pool_rate[arm]:.3f} "
@@ -415,7 +417,7 @@ def main() -> None:
     if balanced_null is not None:
         print(f"matched null: {', '.join(f'{k} {v:.4f}' for k, v in sorted(null_by_slot.items()))}"
               f" -> slot-balanced {balanced_null:.4f} (not 0.3333)", flush=True)
-    print("| architecture | win rate vs random | 95 % CI | excess over null | draws | losses | by trained team |")
+    print(f"| architecture | win rate vs {args.opponent} | 95 % CI | excess over null | draws | losses | by trained team |")
     print("|---|---:|---|---:|---:|---:|---|")
     for paradigm, p in sorted(pooled.items(), key=lambda kv: -kv[1]["win_rate_vs_random"]):
         slots = " ".join(
@@ -439,7 +441,7 @@ def main() -> None:
     comparison = None
     if args.compare_pool is not None:
         path = PROJECT_ROOT / args.compare_pool if not args.compare_pool.is_absolute() else args.compare_pool
-        comparison = compare_scales(pooled, path)
+        comparison = compare_scales(pooled, path, args.opponent)
 
     out_dir.mkdir(parents=True, exist_ok=True)
     design = {

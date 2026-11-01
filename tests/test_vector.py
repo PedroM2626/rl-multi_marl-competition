@@ -13,7 +13,11 @@ if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
 from marl_arena.config import CONFIG  # noqa: E402
-from marl_arena.controllers.rl_controller import set_rl_training  # noqa: E402
+from marl_arena.controllers.rl_controller import (  # noqa: E402
+    RLTeamController,
+    resolve_device,
+    set_rl_training,
+)
 from marl_arena.systems.simulation import ArenaSimulation  # noqa: E402
 from marl_arena.systems.vector import VecArena  # noqa: E402
 
@@ -46,6 +50,18 @@ def test_several_arenas_share_one_policy_and_play_their_quota() -> None:
     results = vec.play(5, CONFIG.sim_step_dt)
     assert len(results) == 5
     assert [sim.match_index - 1 for sim in vec.sims] == [2, 2, 1]
+
+
+def test_a_controller_without_a_critic_decides_under_any_label() -> None:
+    """The absolute-scale opponent is an untrained controller labelled RANDOM: no critic, and not DTE."""
+    sim = _frozen_sim(21)
+    team = next(iter(sim.controllers))
+    random_team = RLTeamController(team, "RANDOM", 1000, resolve_device(), load_checkpoints=False)
+    random_team.training_enabled = False
+    assert random_team.critic is None
+    sim.controllers[team] = random_team
+    for _ in range(5):
+        sim.step(CONFIG.sim_step_dt)
 
 
 def test_a_training_controller_is_refused() -> None:

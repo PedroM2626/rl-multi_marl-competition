@@ -195,7 +195,9 @@ def _prepare(
         policy_obs = local_obs
         saved_local_obs = local_obs
 
-    if paradigm == "DTE":
+    # Whether a value head beyond the actor exists is what decides the value path, not the arm name: DTE has
+    # none, and neither does an untrained controller under a label outside the six arms (the RANDOM opponent).
+    if controller.critic is None:
         global_obs = None
     elif getattr(controller, "vd_local", False):
         # What the VDN critic reads is the team's local observations, so that is what the rollout row keeps.
@@ -243,14 +245,14 @@ def _forward(controller, prepared: list[dict]) -> list[tuple[np.ndarray, np.ndar
         values = controller.critic.forward(stacked("global_rows"))
     else:
         logits, values = controller.actor.forward(stacked("policy_rows"))
-        if paradigm != "DTE":
+        if controller.critic is not None:
             values = controller.critic.forward(stacked("global_rows"))
 
     logits_result, values_result = jax.device_get((logits, values))
     if count == 1:
         return [(logits_result, values_result)]
     rows = INFERENCE_BATCH
-    value_rows = rows if paradigm == "DTE" else 1
+    value_rows = rows if controller.critic is None else 1
     return [
         (logits_result[index * rows:(index + 1) * rows],
          values_result[index * value_rows:(index + 1) * value_rows])
@@ -279,7 +281,7 @@ def _finish(controller, prepared: dict, logits_result, values_result) -> dict[st
         action_rows = [controller._eval_action(logits_host[i]) for i in range(len(agents))]
         log_prob_rows = [0.0] * len(agents)
 
-    if paradigm == "DTE":
+    if controller.critic is None:
         value_rows = np.asarray(values_result)[:len(agents)].tolist()
     else:
         value_rows = np.broadcast_to(np.asarray(values_result), (len(agents),)).tolist()

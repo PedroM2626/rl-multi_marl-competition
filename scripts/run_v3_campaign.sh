@@ -40,23 +40,28 @@ V3_ENV=(
 
 stamp() { echo "[$(date -Is)] $*"; }
 
-complete_study() {  # <out dir relative to each tree>: 20 run summaries across the two trees
-  local found=0
+missing_experiments() {  # <out dir relative to each tree>: the experiments with a seed still to train
+  local exp1="" exp2=""
   for s in ${SEEDS//,/ }; do
-    [ -f "$ROOT/$1/exp1_seed$s/evaluation/run_summary.json" ] && found=$((found+1))
-    [ -f "$ROOT/ctde_arena/$1/exp2_seed$s/evaluation/run_summary.json" ] && found=$((found+1))
+    [ -f "$ROOT/$1/exp1_seed$s/evaluation/run_summary.json" ] || exp1=exp1
+    [ -f "$ROOT/ctde_arena/$1/exp2_seed$s/evaluation/run_summary.json" ] || exp2=exp2
   done
-  [ "$found" = 20 ]
+  local both="$exp1,$exp2"; both="${both#,}"; echo "${both%,}"
 }
 
 study() {  # <name> <out> <results-dir> [env...]
   local name=$1 out=$2 results=$3; shift 3
-  if complete_study "$out" && [ -s "$ROOT/$results/per_seed_metrics.csv" ]; then
+  local missing; missing="$(missing_experiments "$out")"
+  if [ -z "$missing" ] && [ -s "$ROOT/$results/per_seed_metrics.csv" ]; then
     stamp "$name: already complete, skipping"; return 0
   fi
-  stamp "$name: training 20 replicates, $JOBS at a time"
+  # Only an experiment with seeds still to train is launched (A-53 left one tree to re-train); collection
+  # reads both trees either way, so the aggregate still holds all 20 replicates.
+  local scope=(--experiments "$missing")
+  [ -z "$missing" ] && scope=(--collect-only)
+  stamp "$name: training ${missing:-nothing, re-collecting} at seeds $SEEDS, $JOBS at a time"
   env "$@" "$PY" scripts/run_study.py --steps 500000 --seeds "$SEEDS" --jobs "$JOBS" --eval-matches 150 \
-    --out "$out" --results-dir "$results" > "$TMP/v3_$name.log" 2>&1
+    "${scope[@]}" --out "$out" --results-dir "$results" > "$TMP/v3_$name.log" 2>&1
   tail -4 "$TMP/v3_$name.log"
   grep -q "failures: none" "$TMP/v3_$name.log" || { stamp "$name did not finish cleanly" >&2; exit 1; }
 }

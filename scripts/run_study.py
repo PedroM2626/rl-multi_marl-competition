@@ -15,6 +15,7 @@ import concurrent.futures
 import csv
 import json
 import math
+import os
 import subprocess
 import sys
 import time
@@ -22,6 +23,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 TREES = {"exp1": ROOT, "exp2": ROOT / "ctde_arena"}
+# The arms each tree's own .env names. A run whose summary names others was configured by the wrong file.
+TREE_ARMS = {"exp1": {"CTE", "DTE", "CTDE"}, "exp2": {"CTDE-VD", "CTDE-CAC", "CTDE-Comm"}}
+# The environment as the caller set it, taken before anything imports the engine. Importing
+# `marl_arena.config` (the runtime check below does) loads this tree's .env into os.environ, and a child
+# inheriting that cannot override it from its own .env: experiment 2 then trained experiment 1's arms
+# under PARADIGM_CYCLE=CTE,DTE,CTDE. Each child gets this snapshot instead (A-53).
+LAUNCH_ENV = dict(os.environ)
 
 
 def parse_args() -> argparse.Namespace:
@@ -56,7 +64,8 @@ def launch(experiment: str, tree: Path, out_dir: Path, seed: int, args: argparse
     ]
     started = time.time()
     with log_path.open("w", encoding="utf-8") as handle:
-        proc = subprocess.run(command, cwd=tree, stdout=handle, stderr=subprocess.STDOUT, text=True)
+        proc = subprocess.run(command, cwd=tree, env=LAUNCH_ENV, stdout=handle, stderr=subprocess.STDOUT,
+                              text=True)
     return label, proc.returncode, time.time() - started, str(out_dir / label / "evaluation" / "run_summary.json")
 
 
@@ -121,6 +130,11 @@ def collect(summaries: list[str]) -> tuple[list[dict[str, object]], list[str]]:
             continue
         payload = json.loads(summary.read_text(encoding="utf-8"))
         experiment = summary.parents[1].name.split("_seed")[0]
+        arms = set(payload["paradigms"].values())
+        foreign = {arm for other, names in TREE_ARMS.items() if other != experiment for arm in names} & arms
+        if experiment in TREE_ARMS and foreign:
+            raise SystemExit(f"{path} trained {sorted(foreign)}, which are not {experiment}'s arms: the run "
+                             "read the other tree's configuration")
         for team, stats in payload["held_out_greedy"]["per_team"].items():
             records.append({
                 "experiment": experiment,
