@@ -271,6 +271,28 @@ Four things follow, and the first two are the ones that change what this reposit
    networks are asked stochastically.
 
 
+### The headline under both readouts <a name="dual-readout"></a>
+
+The remedy for item 11 of [§ 10.4](10_threats_to_validity.md#104-statistical-validity) is to stop publishing
+one readout. `report_study.py --sampled-readout results/readout/T0.5` prints the study's table under argmax
+and under T = 0.5 side by side, each with a 95 % bootstrap interval over the ten replicates:
+
+| Experiment | Paradigm | Greedy (T = 0) | Rank | Sampled (T = 0.5) | Rank |
+|---|---|---|---:|---|---:|
+| 1 | DTE | 0.381 [0.273, 0.498] | 1 | 0.379 [0.267, 0.499] | 1 |
+| 1 | CTDE | 0.326 [0.219, 0.437] | 2 | 0.337 [0.231, 0.447] | 2 |
+| 1 | CTE | 0.252 [0.189, 0.331] | 3 | 0.255 [0.189, 0.339] | 3 |
+| 2 | CTDE-VD | 0.367 [0.268, 0.469] | 1 | 0.323 [0.225, 0.425] | 3 |
+| 2 | CTDE-Comm | 0.331 [0.217, 0.469] | 2 | 0.331 [0.215, 0.468] | 1 |
+| 2 | CTDE-CAC | 0.282 [0.181, 0.392] | 3 | 0.325 [0.213, 0.445] | 2 |
+
+Experiment 1's order is readout-invariant; experiment 2's is not, and every interval in it overlaps every
+other. The same script now also runs the tests the coupled arms call for -- Friedman over the replicate's
+ranking, and an exact sign-flip test per pair -- and they agree with the paired *t* of the tables above:
+Friedman p = 0.273 (experiment 1) and 0.232 (experiment 2), and no pair's
+sign-flip p falls below 0.160
+(`results/study/coupled_tests.json`, which also records the bootstrap intervals of every secondary metric).
+
 ### What the optimiser's own trace says about the readout <a name="traces-measured"></a>
 
 The audit's open-work item 4 has asked since the first pass whether a replicate that collapses under the
@@ -789,6 +811,28 @@ python scripts/random_baseline.py --matches 300 --policy greedy
 python scripts/random_baseline.py --matches 300 --policy uniform
 ```
 
+### The symmetric layout's residue <a name="symmetric-baseline"></a>
+
+`ARENA_LAYOUT=symmetric` ([§ 6.8](06_optimisation_procedure.md#68-the-docs10-remedies-as-switches)) replaces
+the fixed arena with square pillars in three-fold rotational symmetry and spawns 120 degrees apart. The
+uniform-random baseline is the right probe for what is left, because no policy is involved: whatever the
+three random teams win unequally is the geometry. 900 matches
+(`results/baseline_symmetric/random_baseline_uniform.json`):
+
+| Arena | Team 1 | Team 2 | Team 3 | Spread (max - min) | Matches |
+|---|---:|---:|---:|---:|---:|
+| legacy (§ 8.9 above, A-32) | 0.257 | 0.270 | 0.463 | 0.207 | 300 |
+| symmetric | 0.387 | 0.309 | 0.304 | 0.082 | 900 |
+
+The layout cuts the slot spread by more than half and moves the advantage to a different position -- the
+spawn on the +z axis, whose nearest wall is closer than the other two's -- but it does not remove it:
+0.387 is about 3.4 standard errors above a third at this sample. That is the residue the module
+docstring predicts, and it cannot be designed out with axis-aligned boxes in a square arena: a pillar rotated
+by 120 degrees is not the same box, and the wall is not round. So the layout is half of the remedy and
+`SPAWN_CYCLE_PER_MATCH` is the other: cycling every team through every position each three matches balances
+whatever the geometry leaves, exactly, in any evaluation whose match count is a multiple of three. The v3
+campaign uses both.
+
 ## 8.10 Cross-experiment round-robin: all six architectures on one scale <a name="cross-arena"></a>
 
 Everything above compares the three arms of one experiment against each other. The two experiments never
@@ -1199,6 +1243,45 @@ than noise loses to noise, while two other checkpoints of the same architecture 
 matches. The six-set value for that cell is 0.653, unremarkable. It is a property of one network, not of
 centralised training with decentralised execution.
 
+### Against a scripted opponent <a name="scripted-opponents"></a>
+
+Uniform noise is a floor, not a reference: every arm clears it by a wide margin, so it cannot say whether
+the trained teams are *good*. `ScriptedTeamController` (`src/marl_arena/controllers/scripted.py`) is the
+smallest opponent that plays the game on purpose — each agent turns to the nearest living enemy, closes to
+firing range and fires — with no learning, no randomness of its own and no run in common with any arm.
+`run_absolute_eval.py --opponent scripted` plays the same ten blocks, three harness seeds and 25 matches per
+cell as the random pool, with two scripted teams in place of the two random ones (`results/scripted_ten/`,
+4,500 matches):
+
+| Rank | Architecture | Win rate vs scripted | 95 % CI | Losses | Draws | Median match (s) | SD across blocks |
+|---|---|---:|---|---:|---:|---:|---:|
+| 1 | DTE | 0.347 | [0.314, 0.381] | 0.625 | 0.028 | 9.6 | 0.094 |
+| 2 | CTDE-Comm | 0.321 | [0.289, 0.356] | 0.677 | 0.001 | 9.0 | **0.020** |
+| 3 | CTDE-VD | 0.312 | [0.280, 0.346] | 0.653 | 0.035 | 10.1 | 0.044 |
+| 4 | CTE | 0.300 | [0.268, 0.334] | 0.689 | 0.011 | 8.2 | 0.073 |
+| 5 | CTDE-CAC | 0.283 | [0.252, 0.316] | 0.693 | 0.024 | 9.4 | 0.085 |
+| 6 | **CTDE** | **0.248** | [0.218, 0.280] | 0.727 | 0.025 | 13.4 | 0.052 |
+
+**The trained arms are roughly as strong as a hand-written heuristic.** Averaged over the six arms the trained
+team wins 0.302 against two scripted teams, below the 0.330 that a team of equal strength would take from the
+same slot rotation, and its win rate by spawn slot — 0.204 / 0.257 / 0.457 — is almost exactly the
+0.257 / 0.270 / 0.463 that three *mutually random* teams split ([§ 8.9](#random-baseline)). Against this
+opponent a trained policy is, to a first approximation, one more team of the same strength: whatever the six
+architectures learned beyond "find the nearest enemy and shoot it" is not enough to beat the rule that does
+only that.
+
+**The order is a third order.** Against scripted opponents DTE is first and plain CTDE last, which is neither
+the random pool's order (Spearman −0.26) nor the trained-peer pool's (+0.09). One pair separates on the
+block-paired test the coupled design calls for — CTDE-Comm above CTDE in all ten blocks, exact sign-flip
+p = 0.002 against a Bonferroni bar of 0.0033 over fifteen pairs — and no other pair does (the next, CTDE-VD
+above CTDE, p = 0.020). CTDE-Comm is again the arm whose result moves least across training blocks (SD 0.020,
+against 0.044–0.094), which makes three instruments — trained peers, uniform noise and a scripted rule — that
+agree on Comm's *reproducibility* while disagreeing on where every arm ranks.
+
+Plain CTDE is the instructive case: first against noise in the `no_dr` pool and second in the committed one,
+last here, with the longest matches of the six (13.4 s median against 8.2–10.1 s). It survives longer and
+wins less — the signature of a policy that avoids fights a target-seeking opponent is happy to finish.
+
 ### What this section can and cannot support
 
 **Can:** that all ten trained replicates of every architecture beat uniform-random play by an interval that
@@ -1208,8 +1291,9 @@ only one that does not depend on which run produced it (block SD 0.026 against 0
 five).
 
 **Cannot:** place any number here against a published result — uniform-random play in this arena is not any
-paper's baseline, and there is still no scripted opponent, no second game and no shared benchmark; say that
-CTE's 0.633 makes it weak, since it is +0.303 over its own matched null; or read the agreement as
+paper's baseline, and the [scripted opponent](#scripted-opponents) is this repository's own rule, not a
+shared benchmark — there is still no second game; say that CTE's 0.649 makes it weak, since it is +0.319 over
+its own matched null; or read the agreement as
 significance — [§ 8.10](#cross-arena) still cannot separate the middle three from each other, and two of the
 six positions differ between the scales.
 
@@ -1373,7 +1457,8 @@ configuration. Three arms re-train experiment 1 **and** experiment 2 at 500,000 
 through 10, the two capacity arms on seeds 1, 2 and 3 — using the same seed numbers as the committed study, so
 the paradigm-to-slot rotation matches the control seed by seed and every comparison is paired. `no_dr` is at
 the control's full replication because [item 13 of the open-work list](11_code_audit.md#open-work-suggested-measurements)
-was closed by re-training it; the capacity arms are still three seeds short, and their tables say so.
+was closed by re-training it; the capacity arms are three seeds short in the tables below, which are the PyTorch ones, and have since
+been re-trained to ten seeds on the JAX runtime ([below](#capacity-ten)).
 
 | Arm | Key | Control → arm |
 |---|---|---|
@@ -1447,6 +1532,36 @@ reaches nominal p < 0.05. What carries the finding is the size of the columns, n
   small" from the parameter table would be wrong in the direction of that inference. These two arms are the
   ones still measured on three seeds, and the sign flips above are the reason that is treated as a limit
   rather than as enough.
+
+### The capacity arms at ten seeds, on the JAX runtime <a name="capacity-ten"></a>
+
+The three-seed tables above cannot carry a capacity claim, and their seeds were trained on the PyTorch
+runtime that no longer exists. `scripts/run_v3_campaign.sh` (phase E) re-trains both arms at seeds 1-10 on the
+current JAX runtime (`results/ablation_jax_narrow_64/`, `results/ablation_jax_wide_256/`), and pairs them with
+the JAX replication of the study ([§ 8.14](#v3)) as the control, so arm and control share the runtime, the
+seeds and every other key:
+
+| Paradigm | `narrow_64` | Δ vs 128 | *p* | width 128 (JAX) | `wide_256` | Δ vs 128 | *p* |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| **exp1** CTDE | 0.403 | +0.006 | 0.866 | 0.397 | 0.359 | −0.038 | 0.588 |
+| **exp1** CTE | 0.245 | −0.020 | 0.721 | 0.265 | 0.262 | −0.003 | 0.974 |
+| **exp1** DTE | 0.338 | +0.017 | 0.765 | 0.321 | 0.345 | +0.024 | 0.695 |
+| **exp2** CAC | 0.292 | +0.058 | 0.276 | 0.234 | 0.378 | +0.144 | 0.160 |
+| **exp2** Comm | 0.354 | −0.120 | 0.060 | **0.474** | 0.258 | **−0.216** | **0.003** |
+| **exp2** VD | 0.305 | +0.043 | 0.380 | 0.261 | 0.351 | +0.090 | 0.330 |
+
+**Width does nothing measurable to experiment 1** — every move is under 0.04 and every *p* above 0.58 — and
+**one thing to experiment 2: CTDE-Comm is lower at both other widths**, on 9 of 10 seeds each way, and the
+256 drop clears the corrected bar for 12 comparisons (alpha = 0.0042). Neither arm separates any pair inside
+its own run (Friedman *p* = 0.72 and 0.67 in experiment 1, 0.79 and 1.00 in experiment 2).
+
+Read that against the four measurements of CTDE-Comm at 500,000 steps that now exist — 0.331 (width 128,
+PyTorch), 0.354 (64, JAX), **0.474** (128, JAX) and 0.258 (256, JAX) — and the honest reading is that the
+outlier is the control, not the arms: the JAX width-128 replication drew a Comm that leads its experiment,
+and two neighbouring widths and the other runtime did not. A capacity effect that is non-monotone in width and
+peaks exactly at the default is possible, but ten seeds per cell cannot tell it from one favourable draw of the
+control. What the ten-seed arms do settle is the three-seed reading's direction: the largest three-seed move,
+CTE −0.060 at width 256 (*p* = 0.016), is −0.003 at ten.
 
 ### The arms play a different game, not only a different score
 
@@ -1574,11 +1689,42 @@ sample the headline pool has and no larger. A signature of the difference is vis
 decided with the clock running out against 38.2 %, and 8.8 % were draws against 3.1 % — networks trained in a
 fixed arena finish fewer fights against this opponent mix, whatever their win rate.
 
-**What this does not do:** it does not re-measure the *absolute-strength* instrument under either variation.
-The two arms whose capacity was ablated are now played on the common pool — [below](#capacity-pool) — which
+**What this does not do** — or did not, until the subsection below: it did not re-measure the
+*absolute-strength* instrument, which `no_dr` now has ([below](#no-dr-absolute)). The two arms whose capacity
+was ablated are now played on the common pool — [below](#capacity-pool) — which
 needed `RL_HIDDEN_DIM` 64 and 256 exported per arm, and the capacity guard in `run_cross_arena.py` is what
 makes that safe: it reads each set's width out of `MANIFEST.json` and refuses to play a checkpoint at a width
 it was not trained at.
+
+### The no_dr checkpoints against the random pool <a name="no-dr-absolute"></a>
+
+The pool above measures no_dr networks against other no_dr networks, so its levels average 1/3 by construction
+and it can only reorder the field. The [§ 8.11](#absolute-strength) instrument can do what it cannot — say
+whether training without domain randomisation produced *weaker* networks. `run_absolute_eval.py --campaign
+no_dr` plays the same ten no_dr blocks against two uniform-random teams, three harness seeds and 25 matches per
+cell, exactly the design of the committed `results/absolute_ten/` (`results/absolute_no_dr/`, 4,500 matches):
+
+| Architecture | Committed, vs random | no_dr, vs random | change | Block SD, committed | Block SD, no_dr |
+|---|---:|---:|---:|---:|---:|
+| CTDE | 0.725 | **0.603** · 1st | −0.123 | 0.150 | 0.163 |
+| CTDE-Comm | **0.760** · 1st | 0.532 · 2nd | −0.228 | **0.026** | **0.269** |
+| CTDE-CAC | 0.679 | 0.523 · 3rd | −0.156 | 0.117 | 0.155 |
+| CTE | 0.649 | 0.508 · 4th | −0.141 | 0.101 | 0.273 |
+| DTE | 0.607 | 0.492 · 5th | −0.115 | 0.200 | 0.247 |
+| CTDE-VD | 0.696 | 0.460 · 6th | −0.236 | 0.090 | 0.212 |
+
+**Domain randomisation raises absolute strength for every arm, by 0.115 to 0.236.** Every no_dr arm still
+clears the matched null of 0.330 (+0.130 to +0.273), but none reaches the weakest committed arm's 0.607.
+This is the half of the domain-randomisation effect the peer pool structurally could not show: a level, not
+an order.
+
+**And it is the stability claim of the pool, measured a second way.** Without randomisation the
+between-block SD rises for all six arms, and CTDE-Comm's goes from 0.026 to 0.269 — tenfold, the largest
+change in the table, from the most reproducible arm on every committed instrument to one of the two least
+reproducible here. Its ten no_dr blocks span 0.093 to 0.827 against uniform noise. Plain CTDE again moves
+least (0.150 to 0.163), the same arm that kept its SD unchanged in the peer pool. The two instruments agree on
+the no_dr field's order more loosely than on the committed one (Spearman +0.49, Pearson +0.73, against +0.886
+and +0.787), and on the same head: CTDE first on both.
 
 ### The capacity arms against the common pool <a name="capacity-pool"></a>
 
@@ -1646,9 +1792,10 @@ from the run summaries already on disk, with no re-training. And on this mostly-
 replicates run at 243–350 steps/s in 24–34 minutes, against the 85–92 steps/s and 90–101 minutes the
 committed study measured under its 20-way load ([§ 9.5](09_reproducibility.md#95-cost-of-a-run)).
 
-**What this does not do:** it does not re-run the *random-pool* instrument under these configurations, so it
-cannot yet say whether the [§ 8.11](#absolute-strength) agreement survives a different `RL_HIDDEN_DIM` or no
-domain randomisation. The common-opponent pool has now been re-run for `no_dr` ([above](#no-dr-pool)), which
+**What this does not do:** it does not re-run the *random-pool* instrument for the capacity arms, so it
+cannot say whether the [§ 8.11](#absolute-strength) agreement survives a different `RL_HIDDEN_DIM`. For no
+domain randomisation it now can, and the answer is "more loosely" ([§ no_dr vs random](#no-dr-absolute)):
+Spearman +0.49 against +0.886, with every arm 0.115–0.236 weaker in absolute terms. The common-opponent pool has now been re-run for `no_dr` ([above](#no-dr-pool)), which
 is the arm whose key the study's own analysis singled out, and for both capacity arms
 ([above](#capacity-pool)); each arm still measures teams that co-adapted inside their own run, so the pool
 result is about the trained networks, not about the ablation's within-run comparison. It also does not close
@@ -1738,7 +1885,81 @@ configuration arms, one level up.
 
 ------
 
-## 8.14 Summary of answers <a name="summary-of-answers"></a>
+## 8.14 The JAX replication and the v3 study <a name="v3"></a>
+
+Two campaigns, both 10 seeds x 2 experiments at 500,000 steps with 150 held-out greedy matches per replicate,
+both on the JAX runtime that replaced PyTorch ([A-45](11_code_audit.md#the-runtime-swap-orphaned-the-committed-checkpoint-archive)), both launched by
+`bash scripts/run_v3_campaign.sh` and paired seed by seed with the study:
+
+* **The JAX replication** (`results/study_jax/`) changes nothing but the runtime. Every number in § 8.1 was
+  trained on PyTorch; until this campaign no study number had been produced by the code that ships.
+* **v3** (`results/study_v3/`) turns on, at once, every remedy of
+  [§ 6.8](06_optimisation_procedure.md#68-the-docs10-remedies-as-switches): per-agent GAE, a fixed 16
+  minibatches per update, a KL guard at 0.02, parameter-matched arms (every arm within 1 % of CTDE-Comm's
+  107,793 parameters, which gives widths 136-225 and leaves Comm at 128), two masked message rounds, the local
+  VDN critic, eight obstacle rays, the three-fold symmetric arena, spawn slots cycled every match, and a
+  past-self opponent in 20 % of matches (19 % of the matches played, 683 of 3,546 in exp1 seed 1). It is a
+  bundle on purpose — it asks whether a corrected instrument ranks the arms, not which remedy does what — so
+  nothing in it can be attributed to one key.
+
+The experiment-2 half of all four JAX studies was trained twice: the first time the launcher leaked
+experiment 1's `.env` into experiment 2's children, which trained the wrong arms under exp2 labels
+([A-53](11_code_audit.md#the-study-launcher-leaked-one-trees-configuration-into-the-other)). Collection now
+refuses such a run; the numbers below are the re-trained ones.
+
+| Paradigm | Study (PyTorch) mean · SD | JAX replication mean · SD | v3 mean · SD | v3 vs JAX, paired *p* |
+|---|---:|---:|---:|---:|
+| **exp1** CTDE | 0.326 · 0.187 | **0.397** · 0.166 | 0.374 · 0.105 | 0.759 |
+| **exp1** CTE | 0.252 · 0.122 | 0.265 · 0.165 | 0.201 · **0.074** | 0.207 |
+| **exp1** DTE | **0.381** · 0.191 | 0.321 · 0.187 | **0.405** · 0.153 | 0.275 |
+| **exp2** CAC | 0.282 · 0.182 | 0.234 · 0.111 | 0.295 · 0.084 | 0.219 |
+| **exp2** Comm | 0.331 · 0.218 | **0.474** · 0.205 | 0.299 · **0.054** | **0.013** |
+| **exp2** VD | **0.367** · 0.171 | 0.261 · 0.189 | **0.380** · 0.088 | 0.081 |
+
+### The runtime reproduces the null, not the order
+
+No arm moves significantly between PyTorch and JAX (paired *p* 0.058-0.840 across the six), and neither
+experiment ranks its arms under either runtime (Friedman *p* = 0.273 in experiment 1 under both, 0.273 in
+experiment 2 under JAX against 0.232). But **the leader changes in both experiments**: DTE to CTDE in
+experiment 1, CTDE-VD to CTDE-Comm in experiment 2, where Comm's 0.474 against CAC's 0.234 is nominal at the
+seed level (sign-flip *p* = 0.020) and short of the corrected 0.0167. The seed numbers are shared, but the
+random streams behind them are not — a JAX seed is not a PyTorch seed — so this is two independent draws of
+the same study, and it is what [§ Leave one out](#leave-one-out) predicted: an order that one replicate can
+reverse is an order that a second campaign reverses.
+
+### The remedies halve the between-seed spread
+
+**Every one of the six arms has a smaller between-seed SD under v3**, and the mean over the six falls from
+0.171 (JAX) and 0.179 (PyTorch) to **0.093**. CTDE-Comm's falls fourfold, 0.205 to 0.054. RQ3 called variance
+the headline result of the study; this is the first configuration in the repository that moves it.
+
+The precision buys the first within-experiment separation at the seed level anywhere in this document:
+**experiment 1 under v3, CTDE above CTE on all ten seeds**, mean +0.173, exact sign-flip *p* = 0.002, under the
+per-experiment Bonferroni bar of 0.0167 and under 0.0083 if the six v3 pairs are corrected together; Friedman
+*p* = 0.025. CTE is also below DTE on 7 of 10 seeds (*p* = 0.020, nominal only), and CTE is never the best arm
+of a v3 replicate. Experiment 2 still ranks nothing (Friedman *p* = 0.332; VD's lead over Comm is *p* = 0.061).
+
+The matches change as well: shorter (mean survival 13-18.5 s against 16-21 s), with roughly 40 % fewer shots
+in experiment 1 and higher accuracy (0.052-0.061 against 0.031-0.036) — teams that fire less and hit more.
+
+### What v3 can and cannot support
+
+**Can:** that the remedies of docs/10, together, make the same ten replicates a much more precise instrument;
+that under them one experiment-1 pair separates at the replicate level; and that CTDE-Comm's lead in the JAX
+replication does not survive them (−0.175, 8 of 10 seeds below, *p* = 0.013 against six comparisons'
+corrected 0.0083 — nominal).
+
+**Cannot:** say which remedy did it. Two of them are the obvious suspects for the variance — cycling spawn
+slots every match removes the per-replicate slot assignment the study rotated by seed, and the symmetric
+layout shrinks the slot advantage itself (0.387 / 0.309 / 0.304 for uniform-random teams, against 0.257 /
+0.270 / 0.463 in the committed arena, [§ 8.9](#symmetric-baseline)) — but that is a hypothesis the bundle
+cannot test, and the single-key ablations of [§ 8.13](#ablations) are the instrument that could. Nor can it
+say that CTE is the weakest architecture in general: parameter matching widened every arm except Comm, so the
+v3 CTE is a different network from § 8.1's, and the symmetric arena is a different game. It also does not
+reach the cross-experiment pool, the random pool or the scripted opponent: none of the v3 checkpoints have been
+played there.
+
+## 8.15 Summary of answers <a name="summary-of-answers"></a>
 
 | Question | Answer from the replicated study (10 replicates per arm) |
 |---|---|
@@ -1805,15 +2026,23 @@ configuration arms, one level up.
    pairs separate against the committed pool's four — and the between-block SD of five of the six arms becomes
    1.3–4.5× what the randomised checkpoints show (CTDE-Comm 0.115 against 0.026; CTDE-CAC swings 0.615 → 0.129
    across blocks), which is the mechanism the earlier tables could only report as a difference in levels
-   ([§ 8.13](#no-dr-pool)).
+   ([§ 8.13](#no-dr-pool)). Against uniform-random play the same key lowers every arm by 0.115-0.236 and
+   multiplies CTDE-Comm's between-block SD tenfold ([§ 8.13](#no-dr-absolute)).
+8. On the JAX runtime the study reproduces its null and not its order — both experiments change leader — and
+   with every docs/10 remedy on together (v3) the between-seed SD of all six arms falls, from a mean of 0.171
+   to 0.093, enough for **the one within-experiment, replicate-level separation in this document**: CTDE above
+   CTE on all ten v3 seeds (sign-flip *p* = 0.002). Which remedy does it is not measured
+   ([§ 8.14](#v3)). Against a scripted engage-and-fire opponent the trained arms win 0.248-0.347, about the
+   share an equal team would take, in a third order matching neither pool ([§ 8.11](#scripted-opponents)).
 
 **What it cannot claim:** that any architecture is best, or that the six admit a strict ordering — CTDE-Comm
 and DTE cannot be told apart, and neither can CTDE, CTDE-CAC and CTDE-VD; that the ordering is settled by six
 checkpoints per architecture, since the count of separated pairs has moved at every replication step
-(2 → 8 → 5) and two of the three-block table's headline separations disappeared at six; that within-experiment differences exist at all, since every corrected significance is
-*cross*-experiment; that win rate here measures fighting skill rather than, in a third of matches,
+(2 → 8 → 5) and two of the three-block table's headline separations disappeared at six; that within-experiment differences exist under the committed configuration, since every corrected
+significance there is *cross*-experiment — the one within-experiment separation is v3's, under a bundle of
+changed keys; that win rate here measures fighting skill rather than, in a third of matches,
 survival to the clock; that the ablated configurations generalise — each arm's own table is measured inside its
 own co-adapted runs, and while all three have now been through the common-opponent pool
-([§ 8.13](#no-dr-pool)), the two capacity arms reach it at three blocks rather than ten and no arm has been
+([§ 8.13](#no-dr-pool)), the two capacity arms reach it at three blocks rather than ten and only `no_dr` has been
 through the random-pool instrument; or
 that any of it holds under a different setting of the keys [§ 8.13](#ablations) shows to matter.

@@ -199,9 +199,40 @@ the 43 parameters recorded in the MLflow store
 > `RL_TRAIN_TOTAL_STEPS` has had three values in this project's history and the documentation once
 > attributed the wrong one to the shipped artefacts ([A-12](11_code_audit.md#configuration-claims)).
 > The code default when the variable is absent is 3,000,000; the historical 100 k-step artefacts were
-> produced with `.env` set to 100,000; `.env` and `.env.example` now both say 1,000,000, which is the
-> scale the study runs at.
+> produced with `.env` set to 100,000; `.env` and `.env.example` have said 1,000,000 since commit `601b9ee`,
+> which is the budget of a bare `train_rl.py` run and of nothing published -- the study trains 500,000.
 >
 > The replicated study does not rely on `.env`: `scripts/run_experiment.py` takes `--steps` and writes
 > `RL_TRAIN_TOTAL_STEPS` into the process environment, so a replicate's budget is recorded in its own
 > `run_summary.json` rather than inherited from a shared file.
+
+## 6.8 The docs/10 remedies, as switches
+
+Every threat in [§ 10](10_threats_to_validity.md) that a code change can address now has one, behind a
+configuration key whose default is the instrument every committed number was measured with. The defaults
+were verified the A-34 way: the seeded 4,000-step training probe and a short replicate produce
+byte-identical checkpoints and evaluation rows before and after, in both trees
+([A-50](11_code_audit.md#the-remedies-landed-as-switches-and-the-defaults-are-byte-identical)). The
+`v3` profile of `scripts/run_v3_campaign.sh` turns all of them on at once.
+
+| Key (default) | v3 | What it changes | Threat it answers |
+|---|---|---|---|
+| `RL_GAE_PER_AGENT` (false) | true | the advantage recursion runs over each agent's own rows; an agent cut off by the match end bootstraps from its own last value | [§ 6.2](#the-buffer-is-not-a-trajectory), [§ 10.1](10_threats_to_validity.md#gae-over-an-interleaved-buffer) |
+| `RL_UPDATE_MINIBATCHES` (0) | 16 | every update takes exactly this many minibatches, sampled with replacement, so gradient volume no longer follows survival | [§ 10.1](10_threats_to_validity.md#confounded-training-signal-volume) |
+| `RL_TARGET_KL` (0) | 0.02 | an update stops at the first minibatch whose approx KL exceeds 1.5x the target | the KL row of [§ 6.5](#65-what-the-implementation-does-not-do) |
+| `RL_PARAM_TARGET` (0) | -1 | each arm's hidden width is chosen so its trainable total is closest to the target; -1 means the largest of the six arms at `RL_HIDDEN_DIM` | [§ 10.1](10_threats_to_validity.md#unmatched-model-capacity) |
+| `COMM_ROUNDS` (1) | 2 | CTDE-Comm re-encodes each agent's observation with what it heard, once per extra round | [§ 10.2](10_threats_to_validity.md#ctde-comm-is-one-round-of-mean-pooled-communication) |
+| `COMM_MASK_DEAD` (false) | true | the communication mean runs over live teammates only, so a dead ally no longer injects `msg_net(0)` | [§ 10.2](10_threats_to_validity.md#dead-allies-inject-a-constant-message) |
+| `VD_LOCAL_CRITIC` (false) | true | CTDE-VD's critic is \(\sum_i V(o_i)\) over each live teammate's *local* observation -- VDN proper | [§ 10.2](10_threats_to_validity.md#ctde-vd-is-not-value-decomposition-over-local-observations) |
+| `OBS_OBSTACLE_RAYS` (0) | 8 | that many ray distances to the nearest obstacle or wall are appended to every local observation and, per agent, to the global state | [A-17](11_code_audit.md#observation-encoding) |
+| `ARENA_LAYOUT` (legacy) | symmetric | the held-out arena becomes three-fold symmetric square pillars with spawns 120 degrees apart | [A-32](11_code_audit.md#the-arena-spawn-geometry-is-not-symmetric) |
+| `SPAWN_CYCLE_PER_MATCH` (false) | true | each team moves one spawn position along every match | A-32, whatever residue the layout leaves |
+| `RL_OPPONENT_POOL_PROB` (0) | 0.2 | in that share of matches one team plays a frozen past snapshot of itself (taken every `RL_OPPONENT_POOL_EVERY_MATCHES`, last `RL_OPPONENT_POOL_SIZE` kept), samples actions but records nothing | [§ 10.1](10_threats_to_validity.md#non-stationary-opponents) |
+
+Three things the switches do not do. They do not separate the remedies from each other -- `v3` is a bundle,
+because its question is whether a corrected instrument ranks the arms at all; the single-key arms of
+[§ 8.13](08_results.md#ablations) are the instrument for "which remedy moves what". They do not add
+value clipping, return normalisation or a learning-rate schedule, the remaining rows of § 6.5, which change
+the optimiser rather than remove a confound. And they leave the reward and the termination rule alone,
+which [§ 4.4.2](04_mdp_formalisation.md#442-the-reward-and-the-termination-rule-are-configurable) already
+made configurable and arena v2 already measured.

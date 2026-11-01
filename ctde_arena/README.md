@@ -32,7 +32,7 @@ used to rerun that study.
 | Current JAX/Rust replay | smoke-verified; full same-seed replay check pending |
 | License | MIT — [`LICENSE`](../LICENSE) at the repository root covers this tree as well as experiment 1 |
 | MLflow curves | **1 logged point** for the 100k run — see [A-9](../docs/11_code_audit.md#mlflow-cadence) |
-| Current tests | 90 passed, 1 skipped, **88 %** statements / **86 %** branches |
+| Current tests<!--auto:ctde-status--> | 90 passed, 1 skipped, **79 %** statements / **66 %** branches |
 | Cross-experiment round-robin | hosted here, since this tree's package is the superset holding all six architectures |
 | Absolute strength vs random opponents | `results/absolute_ten/` at the repository root (ten checkpoint sets — every replicate either experiment trained), from `scripts/run_absolute_eval.py`; `results/absolute_six/` is its six-set predecessor, `results/absolute_blocks/` and `results/absolute/` are the three-set and promoted-set predecessors, kept because [§ 8.11](../docs/08_results.md#absolute-strength) quotes their history ([§ 8.11](../docs/08_results.md#absolute-strength)) |
 | Docker image | built and import-smoke-tested in CI; no end-to-end training run recorded |
@@ -59,29 +59,26 @@ Two implementation facts that change how the comparison should be read:
 * **VD does not decompose over local observations.** The documented formula is
   \(V_{\text{tot}}(s) = \sum_i V_i(o_i)\); the code computes \(\sum_i V_i(\text{slice}_i(s))\) from the
   *global* vector, so it is not a decentralisable factorisation.
-  [§ 5.4](../docs/05_network_architectures.md#valuedecompositioncriticnetwork).
+  [§ 5.4](../docs/05_network_architectures.md#valuedecompositioncriticnetwork). `VD_LOCAL_CRITIC=true` switches
+  in the decomposition the label names ([§ 6.8](../docs/06_optimisation_procedure.md#68-the-docs10-remedies-as-switches)).
 * **Comm uses one communication round**, and dead allies contribute a learned non-zero constant message
   because their observations are zero-filled rather than masked.
-  [§ 5.5](../docs/05_network_architectures.md#commactornetwork).
+  [§ 5.5](../docs/05_network_architectures.md#commactornetwork). `COMM_ROUNDS` and `COMM_MASK_DEAD=true` switch in
+  more rounds and a live-only mean ([§ 6.8](../docs/06_optimisation_procedure.md#68-the-docs10-remedies-as-switches)).
 
 ## Differences from the root experiment
 
-**Five source files differ, and the engine is not one of them.** `simulation.py`, `main.py`, `config.py`,
-`models.py`, `controllers/base.py`, `rl/actions.py`, `rl/buffer.py`, `systems/metrics.py`,
-`systems/plotting.py`, `ui/dashboard.py`, `scripts/run_experiment.py`, `scripts/random_baseline.py` and
-`scripts/plot_metrics.py` are byte-identical copies, and `tests/test_tree_parity.py` fails the suite if
-they drift. Measured by `diff`:
+This tree runs the repository's one engine. It used to carry a fork of it, which meant every engine fix
+had to be applied twice; once the parity test had reduced the fork to a single line -- the paradigm cycle
+-- that line moved into `.env` (`PARADIGM_CYCLE=CTDE-VD,CTDE-CAC,CTDE-Comm`) and the copy was deleted
+([§ Cross-tree divergence](../docs/11_code_audit.md#cross-tree-divergence)). `src/marl_arena/__init__.py`
+here is a shim: it points the package's import path at `../src/marl_arena` and names this directory as the
+project, so this tree still reads its own `.env`, `data/` and `requirements.txt`, and every script and test
+here imports exactly as before. `tests/test_tree_parity.py` asserts that the shim is all this `src/` holds.
 
-| File | Changed lines | Why |
-|---|---:|---|
-| `src/marl_arena/controllers/rl_controller.py` | 116 | paradigm selection and the Comm decision path |
-| `src/marl_arena/rl/networks.py` | 84 | adds `ValueDecompositionCriticNetwork`, `CommActorNetwork` |
-| `src/marl_arena/rl/ppo.py` | 58 | adds `update_ctde_vd`, `update_ctde_comm` |
-| `scripts/train_rl.py` | 135 | MLflow run, params, metrics, artefacts, registered models |
-| `src/marl_arena/systems/match_variant.py` | **2** | `PARADIGM_CYCLE` only — a pinned, asserted difference |
-
-Non-code differences: `requirements.txt` adds `mlflow==2.17.2`, and this tree has a `Dockerfile` the root
-lacks. `RANDOM_SEED` also differs (2 here, 9 at the root) because each value is the one that makes
+What still differs is tooling: `scripts/train_rl.py` adds the MLflow run, params, metrics, artefacts and
+registered models; `requirements.txt` adds `mlflow==2.17.2`; and this tree has the `Dockerfile`, which is
+built from the repository root because the engine lives there. `RANDOM_SEED` also differs (2 here, 9 at the root) because each value is the one that makes
 `python main.py` load that tree's promoted checkpoints.
 
 **The physics, the reward, the termination rule, the observation encoder and the collision solver are the
@@ -96,15 +93,16 @@ The full divergence history, including the unintended drift that was removed, is
 ## Installation
 
 ```bash
+git lfs install                    # the checkpoints are Git LFS objects
 cd ctde_arena
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 pip install maturin==1.15.0
-# Install Rust stable with rustup, then build the native extension:
-cd native/arena_core
+# Install Rust stable with rustup, then build the native extension -- the one crate, at the repository root:
+cd ../native/arena_core
 maturin develop --release
-cd ../..
+cd ../../ctde_arena
 ```
 
 Pinned runtime: `ursina==6.1.2`, `numpy==2.2.6`, `matplotlib==3.10.3`, `python-dotenv==1.0.1`,
@@ -174,9 +172,9 @@ policies, keep the seed's remainder at 2.
 ## Docker
 
 ```bash
-cd ctde_arena
-docker build -t ctde-arena .
-docker run --rm -v ${PWD}/data:/app/data -v ${PWD}/mlruns:/app/mlruns ctde-arena
+# from the repository root: the image needs the shared engine in src/ as well as this tree
+docker build -t ctde-arena -f ctde_arena/Dockerfile .
+docker run --rm -v ${PWD}/ctde_arena/data:/repo/ctde_arena/data -v ${PWD}/ctde_arena/mlruns:/repo/ctde_arena/mlruns ctde-arena
 ```
 
 `python:3.10-slim` plus OpenGL/X11 libraries; `CMD` is headless training. **Not built or tested in this
@@ -328,8 +326,7 @@ The values that matter most here:
 
 ```bash
 cd ctde_arena
-python -m pytest tests/ -q        # 90 passed, 1 skipped; 88 % statements / 86 % branches after the
-port
+python -m pytest tests/ -q        # current totals and coverage: the status table above
 ```
 
 `test_components.py` checks tensor shapes for the two new networks; `test_ctde_training.py` terminates real

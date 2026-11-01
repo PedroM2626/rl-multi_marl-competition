@@ -30,7 +30,7 @@ Every finding below was open at some point; the status column is the current sta
 | [A-8](#unseeded-minibatch-shuffle) | FIXED | Minibatch order was unseeded; runs are now byte-reproducible |
 | [A-9](#mlflow-cadence) | FIXED | MLflow logged one point per 100 k-step run; a final entry is now always written |
 | [A-10](#cumulative-tiebreak) | FIXED | Wins were awarded using run-long cumulative statistics; ties are now draws |
-| [A-11](#cross-tree-divergence) | FIXED | The two trees drifted; a parity test now pins which files may differ |
+| [A-11](#cross-tree-divergence) | FIXED | The two trees drifted; a parity test pinned which files may differ, and the engine fork has since been removed |
 | [A-12](#configuration-claims) | FIXED | Documented training budget contradicted the committed `.env` |
 | [A-13](#degenerate-transition-pair) | FIXED | `state_features == next_state_features` always; both were discarded |
 | [A-14](#approx-kl-placeholder) | FIXED | `approx_kl` was hard-coded to 0.0 |
@@ -68,6 +68,12 @@ Every finding below was open at some point; the status column is the current sta
 | [A-46](#eager-device-ops-and-per-minibatch-syncs-were-the-jax-steps-own-overhead) | MED · FIXED | The batched JAX step still paid five eager device dispatches and two syncs per team per step, and the PPO update synced its scalars per minibatch; moving them to the host is value-neutral and worth +30 % measured |
 | [A-47](#the-jax-training-update-is-not-bit-deterministic-under-concurrent-load) | LOW · ACCEPTED RISK | Under concurrent load, identical-seed JAX training runs can differ by a few float32 ulps after the first update; solo runs are byte-stable, and no published number depends on concurrent JAX training |
 | [A-48](#the-runtime-that-replaced-the-measured-lock-was-never-dependency-audited) | LOW · FIXED | Nothing recorded what OSV knows about the *runtime* requirements — only the measured lock was audited; both trees' runtime locks are now queried, committed and CI-gated, and mlflow 2.17.2's 58 records are assessed against what this repository actually runs |
+| [A-49](#jnpasarray-on-host-inputs-was-a-third-of-a-step) | MED · FIXED | `JAXNetwork.forward` and the PPO minibatch converted every host input with `jnp.asarray` before the jitted call -- ~37 % of an evaluation step; passing float32 NumPy straight through is byte-identical and worth ~+45 % Rust / ~+30 % fallback training throughput |
+| [A-50](#the-remedies-landed-as-switches-and-the-defaults-are-byte-identical) | INFO · IMPLEMENTED | Every docs/10 remedy a code change can make is now a configuration key with a byte-identical default; the engine fork of A-11 is gone |
+| [A-51](#solo-jax-training-runs-are-not-byte-stable-either) | LOW · ACCEPTED RISK | A-47's float32 camps also appear in *solo* runs on this host -- 3 of 7 identical-code probes landed in a second camp -- so a byte-identity verification needs repeated runs, not one |
+| [A-52](#a-wider-inference-batch-changes-greedy-outcomes) | INFO · MEASURED | The vectorised evaluator reproduces the one-arena path exactly at N = 1 and changes 28-31 % of greedy matches at N = 4-16, for a 5-24 % throughput gain; it is kept out of every published instrument |
+| [A-53](#the-study-launcher-leaked-one-trees-configuration-into-the-other) | HIGH · FIXED | `run_study.py` loaded the root `.env` into its own environment and every child inherited it, so once `PARADIGM_CYCLE` differed between the trees experiment 2 trained experiment 1's arms; 40 runs were discarded and re-trained, and collection now refuses such a run |
+| [A-54](#the-random-opponent-had-no-critic-on-the-shared-value-path) | LOW · FIXED | The batched inference chose its value path by arm name, so the RANDOM opponent of the absolute scale -- no critic, not DTE -- crashed it; the path now follows whether a critic exists, identical for the six arms |
 
 ---
 
@@ -352,22 +358,38 @@ Any fix applied to the shared physics or metrics code must be applied twice, and
 would notice a drift. The defect in A-1 lives in `controllers/base.py`, which is byte-identical in both
 trees — so it is present in both.
 
+**Resolved by removing the fork (2026-10-31).** The parity test had reduced the divergence to one line --
+`PARADIGM_CYCLE` in `match_variant.py` -- so that line became a `.env` key and the second copy of the engine
+was deleted. `ctde_arena/src/marl_arena/__init__.py` is now a shim that points the package's import path at
+the root `src/marl_arena` and names `ctde_arena/` as the project directory, so experiment 2 still reads its
+own `.env`, `data/` and `requirements.txt` and every script and test there imports exactly as before. The
+second Rust crate went with it. `tests/test_tree_parity.py` now asserts that the shim is all
+`ctde_arena/src` holds and that importing through either tree loads the root engine with that tree's
+paradigm cycle; the per-tree entry points and tests it still pins byte-identical are tooling, not engine.
+The seeded probe of A-50 reproduced the pre-change checkpoints in both trees.
+
 ## Configuration claims
 
 **A-12 · MED · FIXED**
 
 The prior documentation stated the standard training budget was 3,000,000 steps. The committed `.env`
-says otherwise, and `CONFIG` reads it:
+said otherwise when this entry was written, and `CONFIG` read it:
 
 ```
-$ grep TOTAL_STEPS .env
+$ grep TOTAL_STEPS .env          # as of the audit, 2026-09-27
 RL_TRAIN_TOTAL_STEPS=100000
 CONFIG.rl_train_total_steps = 100,000
 ```
 
 The 3,000,000 figure is the *code default* used only when the environment variable is absent — i.e. in a
-checkout with no `.env`. Both numbers are real; the documentation attributed the wrong one to the shipped
+checkout with no `.env`. Both numbers were real; the documentation attributed the wrong one to the shipped
 artefacts. Corrected in [§ 6.7](06_optimisation_procedure.md#67-hyperparameters-as-trained).
+
+**Current value.** Commit `601b9ee` (2026-09-28) set both committed `.env` files to
+`RL_TRAIN_TOTAL_STEPS=1000000`, which is what they say today; the 100,000 above is the value the historical
+single-seed runs of [§ 8.2](08_results.md#historical-single-seed-runs) were trained under, and the study and
+every campaign since pass `--steps` explicitly, so neither file value is the budget of a published number.
+This paragraph was added because the entry above kept being read as a description of the current file.
 
 Also: `ctde_arena/.env` and `ctde_arena/.env.example` are byte-identical, as are the root pair, so
 committing `.env` leaks nothing today — but the pattern means a future secret added to `.env` would be
@@ -1376,6 +1398,17 @@ headline pool, and that is now a stated limit rather than an open task.
     ([§ 8.1 Readout](08_results.md#traces-measured)). A failing optimiser trace would not have flagged the
     seed-6 arm. `scripts/run_no_dr_extension.sh` was queued behind that campaign and has also finished; item
     13 is its result.
+15. **Closed:** the measurements docs/10's remedies were waiting for, run as one queue by
+    `scripts/run_v3_campaign.sh` — the study on the JAX runtime with every default unchanged, the same study
+    with every remedy on (v3), the capacity arms at ten seeds, the `no_dr` arm on the random pool, the
+    study's blocks against a scripted opponent, and the symmetric arena's residual slot bias. Results are in
+    [§ 8.14](08_results.md#v3), [§ 8.13](08_results.md#capacity-ten),
+    [§ 8.13](08_results.md#no-dr-absolute), [§ 8.11](08_results.md#scripted-opponents) and
+    [§ 8.9](08_results.md#symmetric-baseline). Its experiment-2 half had to be trained twice (A-53).
+16. **Open:** the single-key ablations of the v3 remedies. v3 halves the between-seed spread and does not say
+    which key does it; the two candidates are `SPAWN_CYCLE_PER_MATCH` and `ARENA_LAYOUT=symmetric`, and a
+    ten-seed arm for each is about four hours on this host at four concurrent replicates. The v3 checkpoints
+    have also not been through the cross-experiment pool, the random pool or the scripted opponent.
 
 ## Per-agent policy dispatch was the training bottleneck
 
@@ -1453,11 +1486,14 @@ flag that would is rejected by this jaxlib. Campaign widths of twelve and twenty
 per process was enforced by `torch.set_num_threads(1)`; under JAX the measured optimum on this host is about
 four, and that is a scheduling fact about the queue rather than a result about the arena.
 
-Three entries below post-date this note. A-46 is the throughput finding the port's own step was carrying:
+Nine entries below post-date this note (A-49 to A-54 are summarised at the end of this paragraph). A-46 is the throughput finding the port's own step was carrying:
 the batched path still dispatched five eager device ops and two syncs per team per step, and the PPO update
 synced per minibatch. A-47 is the reproducibility limit the verification for A-46 could not help finding:
 the JAX training update is not bit-deterministic under concurrent load. A-48 is the dependency-audit gap of
 the same swap: the runtime requirements that replaced the measured lock had no OSV record and no gate.
+A-49 found the dispatch A-46 had left on the inputs; A-50 records the remedies of docs/10 and the removal of
+the engine fork; A-51 extends A-47 to solo runs; A-52 measures the vectorised evaluator and keeps it out of
+the published instruments; A-53 is the configuration leak that removing the fork exposed in the study launcher, and A-54 the value-path check that removing it exposed in the batched inference.
 
 ## Eager device ops and per-minibatch syncs were the JAX step's own overhead
 
@@ -1567,3 +1603,136 @@ the throughput sample on. The reasoning per advisory, and the conditions that wo
 are in [§ 9.10](09_reproducibility.md#runtime-dependency-audit). The assessments, not the pins, are what
 this entry adds: the exposures were always there, but until the record existed no reader could be expected
 to know which of them this repository's workflows can actually reach.
+
+## jnp.asarray on host inputs was a third of a step
+
+**A-49 · MED · FIXED**
+
+A-46 moved the slicing and broadcasting around the policy pass to the host, and left one dispatch per input
+in place: `JAXNetwork.forward` wrapped every host array in `jnp.asarray(..., dtype=jnp.float32)` before
+calling the jitted function, and the PPO update did the same for its eight minibatch inputs. A jitted function
+already accepts NumPy arguments and transfers them itself, so each wrap was an extra primitive bind and
+`device_put` with an identical result. Profiled over six greedy evaluation matches (2,231 steps), the wraps
+were 1.35 s of 3.69 s -- **37 % of the step** -- more than the policy arithmetic, the Rust physics and the
+observation building together.
+
+**Fix.** Host inputs go through `np.ascontiguousarray(..., dtype=np.float32)` (int32 for actions), which
+produces the same bytes the device receives either way.
+
+**Verification.** The seeded probe of A-50 -- 4,000 training steps from scratch plus a short replicate with
+its held-out evaluation, in both trees -- reproduced all fourteen pre-change hashes, and
+`scripts/benchmark_runtime.py`'s `exact_outcome_and_weight_parity` gate held in every run. Throughput was
+measured the way A-46 was, pre- and post-change source interleaved in one session, four rounds:
+
+| | Rust route, median of 4 | Python fallback, median of 4 |
+|---|---:|---:|
+| before (`3af3398`) | 278 steps/s | 258 steps/s |
+| after | 403 steps/s | 335 steps/s |
+
+about **+45 % / +30 %**, with every per-round pair favouring the change. Greedy evaluation, which has no
+PPO update to amortise against, moved further: ~890 to 1,330-1,780 steps/s in `scripts/benchmark_vec.py`'s
+sequential column. The absolute levels carry this host's +-10 % session drift (A-46); the ratio is the
+finding.
+
+## The remedies landed as switches, and the defaults are byte-identical
+
+**A-50 · INFO · IMPLEMENTED**
+
+docs/10 listed, per threat, "what would have to be done to remove it". Every item a code change can do is now
+done, as a configuration key whose default is the measured instrument -- the A-34 rule, for the same reason:
+the committed numbers must keep describing the arena they were measured in. The keys and what each answers
+are tabulated in [§ 6.8](06_optimisation_procedure.md#68-the-docs10-remedies-as-switches); the statistical
+remedies (Friedman and exact sign-flip tests for the coupled arms, bootstrap intervals on the secondary
+metrics, the dual-readout table) are in `scripts/report_study.py`, and the scripted opponent is
+`marl_arena.controllers.scripted` with `run_absolute_eval.py --opponent scripted`.
+
+**Verification of the defaults.** A probe trains 4,000 steps from scratch with `--seed 42` and runs a
+3,000-step replicate with its held-out evaluation, in both trees, and hashes the twelve checkpoints and two
+evaluation CSVs it writes. Run on `3af3398` and after every stage of this change -- tree unification, the
+switches, A-49 -- it reproduced all fourteen hashes, with the qualification of A-51: some runs of *unchanged*
+code land in a second float32 camp, so each stage was accepted when a run matched the baseline exactly and
+every non-matching run matched a camp already observed on unchanged code.
+
+**Verification of the switches.** `tests/test_remedies.py` (21 cases) checks each one against an independent
+computation: per-agent GAE against a hand-computed two-agent interleaving; the fixed update volume and the KL
+guard by the minibatch count the update reports; matched widths to within 3 % for all six arms; masked
+communication against a context recomputed from the live ally alone; the extra round's weight sharing and
+its checkpoint round trip; the local VDN critic against a sum of per-agent values; ray distances against a
+box and a wall placed by hand; the symmetric layout's three-fold rotation of every obstacle; spawn cycling's
+coverage of every position; and that a frozen past-self team records nothing, takes no update and is
+restored. A full replicate with all of them on runs in both trees.
+
+## Solo JAX training runs are not byte-stable either
+
+**A-51 · LOW · ACCEPTED RISK**
+
+A-47 recorded that identical-seed JAX training runs split into float32 "camps" under concurrent load and
+said solo runs were byte-stable. The A-50 probe is a solo run -- one process at a time, nothing else training
+on the host -- and over seven executions of code whose engine was value-identical, three produced a second
+camp in one of the two trees' 4,000-step training (differences of 1-2 float32 ulps, at most 1.2e-07, in the
+same leaves A-47 names), while the other four reproduced the baseline exactly. Both camps recurred: the
+alternate hashes of one run were the exact hashes of a later one. Held-out evaluation never diverged.
+
+The consequence is procedural: a byte-identity claim about JAX training on this host needs repeated runs and
+the set of camps, not one run. A-47's limit -- statistical equivalence, not byte-identity, for any JAX
+training campaign -- now applies to solo runs too. No published number depends on it, for the reason A-47
+gives.
+
+## A wider inference batch changes greedy outcomes
+
+**A-52 · INFO · MEASURED**
+
+`marl_arena.systems.vector.VecArena` steps N arenas in lock-step and stacks each team's rows from all of them
+into one actor pass and one critic pass, which is the environment-side batching A-26 said a GPU would need.
+`scripts/benchmark_vec.py` plays the same arena seeds through it and through the one-arena path:
+
+| Arenas | Sequential steps/s | Vectorised steps/s | Speed-up | Matches identical |
+|---:|---:|---:|---:|---:|
+| 1 | 1,334 | 1,271 | 0.95x | 32 / 32 |
+| 4 | 1,384 | 1,706 | 1.24x | 23 / 32 |
+| 16 | 1,783 | 1,878 | 1.05x | 22 / 32 |
+
+Two findings. With one arena it is the published path exactly, which `tests/test_vector.py` pins. With more,
+the batch is 3N rows instead of three, float32 rows round differently (A-44's ~6e-8), and that is
+enough to flip a near-tied argmax and send a match down a different trajectory: **28-31 % of greedy matches
+change**, the same mechanism behind A-45's 52-of-60 cell agreement. And after A-49 the dispatch it was built
+to amortise is no longer the bottleneck, so the gain is 5-24 % and noisy. The evaluator is therefore kept as a
+tool and out of every published instrument: a measurement that depends on how many arenas were batched
+together is not one this repository would publish.
+
+## The study launcher leaked one tree's configuration into the other
+
+**A-53 · HIGH · FIXED**
+
+`scripts/run_study.py` launches each replicate as a child whose working directory is its experiment's tree,
+so that the child reads that tree's `.env`. Before launching, it runs the measured-runtime check, which
+imports `marl_arena.config`, and `config` calls `load_dotenv` on the root `.env` -- which writes every key
+into `os.environ`. Every child inherited them, and `load_dotenv` never overrides a variable that is already
+set, so experiment 2's children read experiment 1's file. While the two files agreed on every value this was
+invisible. Removing the engine fork (A-50) moved the one difference into `.env` as `PARADIGM_CYCLE`, and from
+then on an experiment-2 child trained `CTE`, `DTE` and `CTDE` under an `exp2_seed*` label.
+
+It surfaced the first time the study launcher ran after A-50: the JAX replication's exp2 table listed the
+exp1 arms. All four studies of the v3 campaign were affected on their experiment-2 half -- the JAX
+replication, v3, and the two JAX capacity arms, 40 runs -- and those runs were discarded and re-trained.
+Experiment 1's half and every instrument launched straight from the shell (the symmetric baseline, the
+scripted-opponent and `no_dr` random-pool scales) were not affected. Neither was any number published before
+this campaign, because none of them was trained after the fork was removed.
+
+Two fixes. The launcher takes a copy of the environment before anything imports the engine and hands that
+copy to every child, so a child's configuration is its own `.env` plus what the caller set -- the remedy
+switches of a v3 run still reach both trees. And `collect()` refuses any run summary whose arms belong to the
+other tree, so the failure, should it recur by another route, stops at collection instead of producing a
+plausible table. `tests/test_study_collection.py` pins both.
+
+## The random opponent had no critic on the shared value path
+
+**A-54 · LOW · FIXED**
+
+The absolute scale's opponent is a real `RLTeamController` under the label `RANDOM`, untrained and forced to
+sample uniformly. `make_networks` builds no critic for a label outside the six arms, but the batched
+inference chose its value path by the arm name -- critic unless the arm is `DTE` -- so the first decision of
+the first `no_dr` random-pool match raised on `None.forward`. The old experiment-2 fork had the same check, so
+this was latent rather than introduced. The value path now follows whether the controller has a critic,
+which for the six arms is the same condition (only `DTE` has none), so every published instrument is
+unchanged; `tests/test_vector.py` plays a critic-less `RANDOM` controller to pin it.

@@ -86,11 +86,19 @@ NumPy 2.2.6 installed over PyTorch 2.5.1, so the two runs share a Torch version 
 
 ## 9.2 Setup
 
+Checkpoints (`*.pt`, `*.npz`) are stored in Git LFS since the commit that introduced it; earlier history holds
+them as ordinary blobs. Install Git LFS before cloning, or run `git lfs pull` afterwards -- without it the
+checkout holds 130-byte pointer files and every test that loads a policy fails on them. The inventory of
+[§ 9.7](#97-artefact-inventory) publishes the real files' SHA-256, which is the LFS object id.
+
 ```bash
-# from the experiment directory (repository root for experiment 1, ctde_arena/ for experiment 2)
+git lfs install                   # once per machine
+git clone <repository> && cd <repository>
+# The engine is one package, src/marl_arena; ctde_arena/src is a shim onto it, so one environment and one
+# Rust build serve both experiments.
 python -m venv .venv
 .venv/Scripts/activate            # Windows;  source .venv/bin/activate  on POSIX
-pip install -r requirements.txt
+pip install -r requirements.txt   # ctde_arena/requirements.txt adds mlflow for experiment 2's train_rl.py
 pip install pandas                # only needed by scripts/plot_metrics.py
 pip install maturin==1.15.0
 cd native/arena_core && maturin develop --release   # after installing Rust stable
@@ -108,14 +116,16 @@ pip install -r requirements-measured.lock.txt --extra-index-url https://download
 pip install pandas                # not a dependency of anything measured
 ```
 
-Each committed `.env` lists 49 of the 50 environment variables that tree's `CONFIG` reads — the two trees
-read the same 49 names, and the reward and termination keys of
-[§ 4.4.2](04_mdp_formalisation.md#442-the-reward-and-the-termination-rule-are-configurable) were added to the
-file so that reading it describes the whole instrument. Only two of the 49 values differ from the code
-default in `src/marl_arena/config.py` — `RANDOM_SEED`, which selects the slot rotation the shipped
-checkpoints need, and `RL_TRAIN_TOTAL_STEPS`, which the file pins to 1,000,000 against a code default of
-3,000,000 ([§ 6.7](06_optimisation_procedure.md#67-hyperparameters-as-trained)) — so the file can be checked
-against the published numbers without opening the source. The single deliberate omission is
+Each committed `.env` lists 61 of the 62 environment variables `CONFIG` reads — the two trees run one
+engine and read the same names, and the reward and termination keys of
+[§ 4.4.2](04_mdp_formalisation.md#442-the-reward-and-the-termination-rule-are-configurable) and the remedy
+switches of [§ 6.8](06_optimisation_procedure.md#68-the-docs10-remedies-as-switches) are in the file so that
+reading it describes the whole instrument. Only three values differ from the code default in
+`src/marl_arena/config.py` — `RANDOM_SEED`, which selects the slot rotation the shipped checkpoints need;
+`RL_TRAIN_TOTAL_STEPS`, which the file pins to 1,000,000 against a code default of 3,000,000
+([§ 6.7](06_optimisation_procedure.md#67-hyperparameters-as-trained)); and, in `ctde_arena/.env` only,
+`PARADIGM_CYCLE`, which names experiment 2's three arms — so the file can be checked against the published
+numbers without opening the source. `tests/test_arena_config.py` enforces all of it. The single deliberate omission is
 `ARENA_DATA_DIR`: it re-roots the entire data tree,
 `run_experiment.py` sets it to a fresh directory per replicate to guarantee random initialisation
 ([A-4](11_code_audit.md#silent-warm-start)), and pinning it in a file that every run shares would put all
@@ -128,13 +138,17 @@ of them in the same place.
 | `python scripts/train_rl.py --seed S` | 1 | Headless JAX PPO training; seeded smoke path verified, full-study replay pending |
 | `python main.py` | 1 | Ursina 3D window, greedy policies loaded from `data/checkpoints/`; demo matches record under `data/demo/`, not the versioned metrics tree |
 | `python scripts/plot_metrics.py` | 1 | Reads `data/metrics/summary.json` → `exports/metrics/` |
-| `python -m pytest tests/ -q` | 1 | 187 passed, 1 skipped (verified 2026-10-23) |
+| `python -m pytest tests/ -q`<!--auto:cmd-exp1--> | 1 | 215 passed, 1 skipped (verified 2026-11-01) |
 | `python scripts/check_runtime.py` | either | Refuses an interpreter that is not the JAX pin + Rust extension; campaign scripts call it through `scripts/_runtime.sh` |
 | `cd ctde_arena && python scripts/train_rl.py` | 2 | Same, plus MLflow scalar and checkpoint-artefact logging |
 | `cd ctde_arena && mlflow ui --backend-store-uri file:./mlruns` | 2 | Tracking UI |
 | `cd ctde_arena && python main.py` | 2 | 3D window for the CTDE variants |
-| `cd ctde_arena && python -m pytest tests/ -q` | 2 | 90 passed, 1 skipped (verified 2026-10-23) |
-| `cd ctde_arena && docker build -t ctde-arena . && docker run --rm -v ${PWD}/data:/app/data -v ${PWD}/mlruns:/app/mlruns ctde-arena` | 2 | Containerised training |
+| `cd ctde_arena && python -m pytest tests/ -q`<!--auto:cmd-exp2--> | 2 | 90 passed, 1 skipped (verified 2026-11-01) |
+| `docker build -t ctde-arena -f ctde_arena/Dockerfile . && docker run --rm -v ${PWD}/ctde_arena/data:/repo/ctde_arena/data -v ${PWD}/ctde_arena/mlruns:/repo/ctde_arena/mlruns ctde-arena` | 2 | Containerised training; built from the repository root because the engine is shared |
+| `bash scripts/run_v3_campaign.sh` | both | The resumable queue behind [§ 8.14](08_results.md#v3): symmetric-arena baseline, JAX replication, the v3 study, scripted opponents, capacity arms at ten seeds, the `no_dr` random pool |
+| `python scripts/report_study.py --sampled-readout results/readout/T0.5 --json-out results/study/coupled_tests.json` | both | The study table under both readouts, Friedman and sign-flip tests, bootstrap intervals on the secondary metrics |
+| `python scripts/update_doc_counts.py` | both | Runs both suites under coverage and rewrites every marked test count and coverage figure in the docs; `--check` is the CI gate |
+| `python scripts/benchmark_vec.py --arenas 1,4,16 --matches 32` | either | The vectorised evaluator against the one-arena path ([A-52](11_code_audit.md#a-wider-inference-batch-changes-greedy-outcomes)) |
 | `python scripts/run_experiment.py --seed S --steps N --out DIR` | either | One seeded replicate: train, then greedy held-out evaluation |
 | `python scripts/run_study.py --steps 500000 --seeds 1..10 --jobs 20` | both | Fan replicates out across processes and collect `results/study/` |
 | `python scripts/run_study.py --collect-only --out data/runs_v2 --results-dir results/study_v2` | both | Rebuild an aggregate from run summaries already on disk, launching nothing |
@@ -241,14 +255,19 @@ ImportError: cannot import name 'ValueDecompositionCriticNetwork' from 'marl_are
 
 ## 9.4 Test results
 
-Current JAX/Rust verification on 2026-10-23, after the Phase 0 hygiene changes:
+Current JAX/Rust verification. The block below, the coverage rows further down and every "Current tests"
+line in the READMEs are written by `scripts/update_doc_counts.py` from an actual run of both suites under
+coverage, and CI's artefact job fails when the documented totals stop matching what pytest collects -- they
+used to be typed, and went stale with every new test:
 
+<!--auto:pytest-block-->
 ```
 $ python -m pytest tests/ -q
-187 passed, 1 skipped in 159.97s
+215 passed, 1 skipped in 107.63s
 $ cd ctde_arena && python -m pytest tests/ -q
-90 passed, 1 skipped in 77.00s
+90 passed, 1 skipped in 18.82s
 ```
+<!--/auto-->
 
 Three consecutive runs of each suite returned those totals unchanged. One earlier run of the root suite failed
 a single case, and the summary line was the only thing captured, so the case is unnamed here; it did not
@@ -274,8 +293,8 @@ previous implementation recorded:
 
 | Tree | Statements | Missing | Statement | Branch | Runtime measured |
 |---|---:|---:|---:|---:|---|
-| Experiment 1 | 1,890 | 264 | **86 %** | **84 %** | JAX/Rust |
-| Experiment 2 (`ctde_arena/`) | 1,890 | 229 | **88 %** | **86 %** | JAX/Rust |
+| Experiment 1<!--auto:cov-exp1--> | 2,275 | 235 | **90 %** | **80 %** | JAX/Rust |
+| Experiment 2 (`ctde_arena/`)<!--auto:cov-exp2--> | 2,275 | 481 | **79 %** | **66 %** | JAX/Rust |
 | Experiment 1 | 1,548 | 91 | 94 % | — | PyTorch, historical |
 | Experiment 2 (`ctde_arena/`) | 1,660 | 187 | 89 % | — | PyTorch, historical |
 

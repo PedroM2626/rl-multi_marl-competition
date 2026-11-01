@@ -1,0 +1,1862 @@
+{
+  "design": "one trained policy versus two scripted engage-and-fire controllers, trained slot rotated",
+  "opponent": "scripted",
+  "blocks": [
+    "exp1_seed1+exp2_seed7",
+    "exp1_seed10+exp2_seed5",
+    "exp1_seed2+exp2_seed1",
+    "exp1_seed3+exp2_seed3",
+    "exp1_seed4+exp2_seed4",
+    "exp1_seed5+exp2_seed6",
+    "exp1_seed6+exp2_seed8",
+    "exp1_seed7+exp2_seed9",
+    "exp1_seed8+exp2_seed10",
+    "exp1_seed9+exp2_seed2"
+  ],
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "campaign": "study",
+  "arena": {
+    "domain_randomization": false,
+    "hidden_dim": 128,
+    "match_duration_seconds": 90.0,
+    "reward": {
+      "alive_bonus": 0.015,
+      "alive_decay_half_life_s": 0.0,
+      "kill": 1.2,
+      "death": -0.5,
+      "hit": -1.0,
+      "cap_awards_win": true
+    }
+  },
+  "inputs": {
+    "null_json": null,
+    "compare_pool": "results/cross_arena/blocks10.json"
+  },
+  "matches_per_architecture_per_block_per_seed": 25,
+  "chance_level": 0.3333,
+  "matched_null_by_slot": {},
+  "matched_null_balanced": null,
+  "pooled": {
+    "CTDE": {
+      "matches": 750,
+      "wins": 186,
+      "draws": 19,
+      "losses": 545,
+      "win_rate_vs_random": 0.248,
+      "wilson_95_ci": [
+        0.2184,
+        0.2801
+      ],
+      "draw_rate": 0.0253,
+      "loss_rate": 0.7267,
+      "median_duration_seconds": 13.4,
+      "win_rate_by_trained_team": {
+        "Team 1": 0.1296,
+        "Team 2": 0.2333,
+        "Team 3": 0.3958
+      }
+    },
+    "CTDE-CAC": {
+      "matches": 750,
+      "wins": 212,
+      "draws": 18,
+      "losses": 520,
+      "win_rate_vs_random": 0.2827,
+      "wilson_95_ci": [
+        0.2516,
+        0.3159
+      ],
+      "draw_rate": 0.024,
+      "loss_rate": 0.6933,
+      "median_duration_seconds": 9.4,
+      "win_rate_by_trained_team": {
+        "Team 1": 0.2333,
+        "Team 2": 0.1375,
+        "Team 3": 0.4833
+      }
+    },
+    "CTDE-Comm": {
+      "matches": 750,
+      "wins": 241,
+      "draws": 1,
+      "losses": 508,
+      "win_rate_vs_random": 0.3213,
+      "wilson_95_ci": [
+        0.2889,
+        0.3556
+      ],
+      "draw_rate": 0.0013,
+      "loss_rate": 0.6773,
+      "median_duration_seconds": 9.0,
+      "win_rate_by_trained_team": {
+        "Team 1": 0.2037,
+        "Team 2": 0.3458,
+        "Team 3": 0.4292
+      }
+    },
+    "CTDE-VD": {
+      "matches": 750,
+      "wins": 234,
+      "draws": 26,
+      "losses": 490,
+      "win_rate_vs_random": 0.312,
+      "wilson_95_ci": [
+        0.2799,
+        0.346
+      ],
+      "draw_rate": 0.0347,
+      "loss_rate": 0.6533,
+      "median_duration_seconds": 10.149999999999999,
+      "win_rate_by_trained_team": {
+        "Team 1": 0.2481,
+        "Team 2": 0.2458,
+        "Team 3": 0.45
+      }
+    },
+    "CTE": {
+      "matches": 750,
+      "wins": 225,
+      "draws": 8,
+      "losses": 517,
+      "win_rate_vs_random": 0.3,
+      "wilson_95_ci": [
+        0.2683,
+        0.3337
+      ],
+      "draw_rate": 0.0107,
+      "loss_rate": 0.6893,
+      "median_duration_seconds": 8.149999999999999,
+      "win_rate_by_trained_team": {
+        "Team 1": 0.1333,
+        "Team 2": 0.225,
+        "Team 3": 0.5625
+      }
+    },
+    "DTE": {
+      "matches": 750,
+      "wins": 260,
+      "draws": 21,
+      "losses": 469,
+      "win_rate_vs_random": 0.3467,
+      "wilson_95_ci": [
+        0.3135,
+        0.3814
+      ],
+      "draw_rate": 0.028,
+      "loss_rate": 0.6253,
+      "median_duration_seconds": 9.55,
+      "win_rate_by_trained_team": {
+        "Team 1": 0.2741,
+        "Team 2": 0.3542,
+        "Team 3": 0.4208
+      }
+    }
+  },
+  "per_training_block": {
+    "exp1_seed1+exp2_seed7": {
+      "CTDE": {
+        "matches": 75,
+        "wins": 21,
+        "draws": 5,
+        "losses": 49,
+        "win_rate_vs_random": 0.28,
+        "wilson_95_ci": [
+          0.191,
+          0.3904
+        ],
+        "draw_rate": 0.0667,
+        "loss_rate": 0.6533,
+        "median_duration_seconds": 9.6,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1481,
+          "Team 2": 0.4167,
+          "Team 3": 0.2917
+        }
+      },
+      "CTDE-CAC": {
+        "matches": 75,
+        "wins": 12,
+        "draws": 10,
+        "losses": 53,
+        "win_rate_vs_random": 0.16,
+        "wilson_95_ci": [
+          0.094,
+          0.2592
+        ],
+        "draw_rate": 0.1333,
+        "loss_rate": 0.7067,
+        "median_duration_seconds": 9.7,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.2222,
+          "Team 2": 0.0,
+          "Team 3": 0.25
+        }
+      },
+      "CTDE-Comm": {
+        "matches": 75,
+        "wins": 23,
+        "draws": 0,
+        "losses": 52,
+        "win_rate_vs_random": 0.3067,
+        "wilson_95_ci": [
+          0.2139,
+          0.4183
+        ],
+        "draw_rate": 0.0,
+        "loss_rate": 0.6933,
+        "median_duration_seconds": 8.9,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1852,
+          "Team 2": 0.3333,
+          "Team 3": 0.4167
+        }
+      },
+      "CTDE-VD": {
+        "matches": 75,
+        "wins": 16,
+        "draws": 2,
+        "losses": 57,
+        "win_rate_vs_random": 0.2133,
+        "wilson_95_ci": [
+          0.1358,
+          0.3188
+        ],
+        "draw_rate": 0.0267,
+        "loss_rate": 0.76,
+        "median_duration_seconds": 10.6,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1481,
+          "Team 2": 0.25,
+          "Team 3": 0.25
+        }
+      },
+      "CTE": {
+        "matches": 75,
+        "wins": 15,
+        "draws": 0,
+        "losses": 60,
+        "win_rate_vs_random": 0.2,
+        "wilson_95_ci": [
+          0.1251,
+          0.3041
+        ],
+        "draw_rate": 0.0,
+        "loss_rate": 0.8,
+        "median_duration_seconds": 9.7,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.037,
+          "Team 2": 0.1667,
+          "Team 3": 0.4167
+        }
+      },
+      "DTE": {
+        "matches": 75,
+        "wins": 26,
+        "draws": 1,
+        "losses": 48,
+        "win_rate_vs_random": 0.3467,
+        "wilson_95_ci": [
+          0.2488,
+          0.4595
+        ],
+        "draw_rate": 0.0133,
+        "loss_rate": 0.64,
+        "median_duration_seconds": 12.9,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1852,
+          "Team 2": 0.375,
+          "Team 3": 0.5
+        }
+      }
+    },
+    "exp1_seed10+exp2_seed5": {
+      "CTDE": {
+        "matches": 75,
+        "wins": 20,
+        "draws": 2,
+        "losses": 53,
+        "win_rate_vs_random": 0.2667,
+        "wilson_95_ci": [
+          0.1798,
+          0.3763
+        ],
+        "draw_rate": 0.0267,
+        "loss_rate": 0.7067,
+        "median_duration_seconds": 16.3,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1481,
+          "Team 2": 0.2083,
+          "Team 3": 0.4583
+        }
+      },
+      "CTDE-CAC": {
+        "matches": 75,
+        "wins": 21,
+        "draws": 0,
+        "losses": 54,
+        "win_rate_vs_random": 0.28,
+        "wilson_95_ci": [
+          0.191,
+          0.3904
+        ],
+        "draw_rate": 0.0,
+        "loss_rate": 0.72,
+        "median_duration_seconds": 8.1,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.2222,
+          "Team 2": 0.1667,
+          "Team 3": 0.4583
+        }
+      },
+      "CTDE-Comm": {
+        "matches": 75,
+        "wins": 25,
+        "draws": 0,
+        "losses": 50,
+        "win_rate_vs_random": 0.3333,
+        "wilson_95_ci": [
+          0.2371,
+          0.4458
+        ],
+        "draw_rate": 0.0,
+        "loss_rate": 0.6667,
+        "median_duration_seconds": 9.8,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1852,
+          "Team 2": 0.375,
+          "Team 3": 0.4583
+        }
+      },
+      "CTDE-VD": {
+        "matches": 75,
+        "wins": 22,
+        "draws": 2,
+        "losses": 51,
+        "win_rate_vs_random": 0.2933,
+        "wilson_95_ci": [
+          0.2024,
+          0.4044
+        ],
+        "draw_rate": 0.0267,
+        "loss_rate": 0.68,
+        "median_duration_seconds": 8.2,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.2222,
+          "Team 2": 0.2083,
+          "Team 3": 0.4583
+        }
+      },
+      "CTE": {
+        "matches": 75,
+        "wins": 12,
+        "draws": 0,
+        "losses": 63,
+        "win_rate_vs_random": 0.16,
+        "wilson_95_ci": [
+          0.094,
+          0.2592
+        ],
+        "draw_rate": 0.0,
+        "loss_rate": 0.84,
+        "median_duration_seconds": 7.6,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1481,
+          "Team 2": 0.2083,
+          "Team 3": 0.125
+        }
+      },
+      "DTE": {
+        "matches": 75,
+        "wins": 31,
+        "draws": 3,
+        "losses": 41,
+        "win_rate_vs_random": 0.4133,
+        "wilson_95_ci": [
+          0.3088,
+          0.5263
+        ],
+        "draw_rate": 0.04,
+        "loss_rate": 0.5467,
+        "median_duration_seconds": 9.2,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.2222,
+          "Team 2": 0.5417,
+          "Team 3": 0.5
+        }
+      }
+    },
+    "exp1_seed2+exp2_seed1": {
+      "CTDE": {
+        "matches": 75,
+        "wins": 20,
+        "draws": 2,
+        "losses": 53,
+        "win_rate_vs_random": 0.2667,
+        "wilson_95_ci": [
+          0.1798,
+          0.3763
+        ],
+        "draw_rate": 0.0267,
+        "loss_rate": 0.7067,
+        "median_duration_seconds": 16.3,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1481,
+          "Team 2": 0.2083,
+          "Team 3": 0.4583
+        }
+      },
+      "CTDE-CAC": {
+        "matches": 75,
+        "wins": 34,
+        "draws": 2,
+        "losses": 39,
+        "win_rate_vs_random": 0.4533,
+        "wilson_95_ci": [
+          0.3457,
+          0.5655
+        ],
+        "draw_rate": 0.0267,
+        "loss_rate": 0.52,
+        "median_duration_seconds": 90.1,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.3333,
+          "Team 2": 0.1667,
+          "Team 3": 0.875
+        }
+      },
+      "CTDE-Comm": {
+        "matches": 75,
+        "wins": 23,
+        "draws": 0,
+        "losses": 52,
+        "win_rate_vs_random": 0.3067,
+        "wilson_95_ci": [
+          0.2139,
+          0.4183
+        ],
+        "draw_rate": 0.0,
+        "loss_rate": 0.6933,
+        "median_duration_seconds": 9.0,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1852,
+          "Team 2": 0.3333,
+          "Team 3": 0.4167
+        }
+      },
+      "CTDE-VD": {
+        "matches": 75,
+        "wins": 25,
+        "draws": 2,
+        "losses": 48,
+        "win_rate_vs_random": 0.3333,
+        "wilson_95_ci": [
+          0.2371,
+          0.4458
+        ],
+        "draw_rate": 0.0267,
+        "loss_rate": 0.64,
+        "median_duration_seconds": 8.5,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.2222,
+          "Team 2": 0.2083,
+          "Team 3": 0.5833
+        }
+      },
+      "CTE": {
+        "matches": 75,
+        "wins": 17,
+        "draws": 0,
+        "losses": 58,
+        "win_rate_vs_random": 0.2267,
+        "wilson_95_ci": [
+          0.1466,
+          0.3334
+        ],
+        "draw_rate": 0.0,
+        "loss_rate": 0.7733,
+        "median_duration_seconds": 8.6,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.0741,
+          "Team 2": 0.1667,
+          "Team 3": 0.4583
+        }
+      },
+      "DTE": {
+        "matches": 75,
+        "wins": 22,
+        "draws": 2,
+        "losses": 51,
+        "win_rate_vs_random": 0.2933,
+        "wilson_95_ci": [
+          0.2024,
+          0.4044
+        ],
+        "draw_rate": 0.0267,
+        "loss_rate": 0.68,
+        "median_duration_seconds": 9.7,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.2593,
+          "Team 2": 0.2917,
+          "Team 3": 0.3333
+        }
+      }
+    },
+    "exp1_seed3+exp2_seed3": {
+      "CTDE": {
+        "matches": 75,
+        "wins": 20,
+        "draws": 2,
+        "losses": 53,
+        "win_rate_vs_random": 0.2667,
+        "wilson_95_ci": [
+          0.1798,
+          0.3763
+        ],
+        "draw_rate": 0.0267,
+        "loss_rate": 0.7067,
+        "median_duration_seconds": 16.3,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1481,
+          "Team 2": 0.2083,
+          "Team 3": 0.4583
+        }
+      },
+      "CTDE-CAC": {
+        "matches": 75,
+        "wins": 21,
+        "draws": 0,
+        "losses": 54,
+        "win_rate_vs_random": 0.28,
+        "wilson_95_ci": [
+          0.191,
+          0.3904
+        ],
+        "draw_rate": 0.0,
+        "loss_rate": 0.72,
+        "median_duration_seconds": 8.1,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.2222,
+          "Team 2": 0.1667,
+          "Team 3": 0.4583
+        }
+      },
+      "CTDE-Comm": {
+        "matches": 75,
+        "wins": 23,
+        "draws": 0,
+        "losses": 52,
+        "win_rate_vs_random": 0.3067,
+        "wilson_95_ci": [
+          0.2139,
+          0.4183
+        ],
+        "draw_rate": 0.0,
+        "loss_rate": 0.6933,
+        "median_duration_seconds": 9.0,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1852,
+          "Team 2": 0.3333,
+          "Team 3": 0.4167
+        }
+      },
+      "CTDE-VD": {
+        "matches": 75,
+        "wins": 24,
+        "draws": 1,
+        "losses": 50,
+        "win_rate_vs_random": 0.32,
+        "wilson_95_ci": [
+          0.2254,
+          0.4321
+        ],
+        "draw_rate": 0.0133,
+        "loss_rate": 0.6667,
+        "median_duration_seconds": 8.8,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.2222,
+          "Team 2": 0.25,
+          "Team 3": 0.5
+        }
+      },
+      "CTE": {
+        "matches": 75,
+        "wins": 25,
+        "draws": 0,
+        "losses": 50,
+        "win_rate_vs_random": 0.3333,
+        "wilson_95_ci": [
+          0.2371,
+          0.4458
+        ],
+        "draw_rate": 0.0,
+        "loss_rate": 0.6667,
+        "median_duration_seconds": 7.3,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.0741,
+          "Team 2": 0.25,
+          "Team 3": 0.7083
+        }
+      },
+      "DTE": {
+        "matches": 75,
+        "wins": 31,
+        "draws": 0,
+        "losses": 44,
+        "win_rate_vs_random": 0.4133,
+        "wilson_95_ci": [
+          0.3088,
+          0.5263
+        ],
+        "draw_rate": 0.0,
+        "loss_rate": 0.5867,
+        "median_duration_seconds": 8.1,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.3704,
+          "Team 2": 0.3333,
+          "Team 3": 0.5417
+        }
+      }
+    },
+    "exp1_seed4+exp2_seed4": {
+      "CTDE": {
+        "matches": 75,
+        "wins": 12,
+        "draws": 2,
+        "losses": 61,
+        "win_rate_vs_random": 0.16,
+        "wilson_95_ci": [
+          0.094,
+          0.2592
+        ],
+        "draw_rate": 0.0267,
+        "loss_rate": 0.8133,
+        "median_duration_seconds": 10.7,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.0,
+          "Team 2": 0.1667,
+          "Team 3": 0.3333
+        }
+      },
+      "CTDE-CAC": {
+        "matches": 75,
+        "wins": 22,
+        "draws": 0,
+        "losses": 53,
+        "win_rate_vs_random": 0.2933,
+        "wilson_95_ci": [
+          0.2024,
+          0.4044
+        ],
+        "draw_rate": 0.0,
+        "loss_rate": 0.7067,
+        "median_duration_seconds": 9.1,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.2222,
+          "Team 2": 0.1667,
+          "Team 3": 0.5
+        }
+      },
+      "CTDE-Comm": {
+        "matches": 75,
+        "wins": 24,
+        "draws": 0,
+        "losses": 51,
+        "win_rate_vs_random": 0.32,
+        "wilson_95_ci": [
+          0.2254,
+          0.4321
+        ],
+        "draw_rate": 0.0,
+        "loss_rate": 0.68,
+        "median_duration_seconds": 8.9,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1852,
+          "Team 2": 0.375,
+          "Team 3": 0.4167
+        }
+      },
+      "CTDE-VD": {
+        "matches": 75,
+        "wins": 21,
+        "draws": 7,
+        "losses": 47,
+        "win_rate_vs_random": 0.28,
+        "wilson_95_ci": [
+          0.191,
+          0.3904
+        ],
+        "draw_rate": 0.0933,
+        "loss_rate": 0.6267,
+        "median_duration_seconds": 11.8,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1852,
+          "Team 2": 0.2917,
+          "Team 3": 0.375
+        }
+      },
+      "CTE": {
+        "matches": 75,
+        "wins": 28,
+        "draws": 1,
+        "losses": 46,
+        "win_rate_vs_random": 0.3733,
+        "wilson_95_ci": [
+          0.2726,
+          0.4865
+        ],
+        "draw_rate": 0.0133,
+        "loss_rate": 0.6133,
+        "median_duration_seconds": 7.7,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1852,
+          "Team 2": 0.25,
+          "Team 3": 0.7083
+        }
+      },
+      "DTE": {
+        "matches": 75,
+        "wins": 34,
+        "draws": 1,
+        "losses": 40,
+        "win_rate_vs_random": 0.4533,
+        "wilson_95_ci": [
+          0.3457,
+          0.5655
+        ],
+        "draw_rate": 0.0133,
+        "loss_rate": 0.5333,
+        "median_duration_seconds": 9.2,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.3704,
+          "Team 2": 0.4583,
+          "Team 3": 0.5417
+        }
+      }
+    },
+    "exp1_seed5+exp2_seed6": {
+      "CTDE": {
+        "matches": 75,
+        "wins": 20,
+        "draws": 2,
+        "losses": 53,
+        "win_rate_vs_random": 0.2667,
+        "wilson_95_ci": [
+          0.1798,
+          0.3763
+        ],
+        "draw_rate": 0.0267,
+        "loss_rate": 0.7067,
+        "median_duration_seconds": 16.3,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1481,
+          "Team 2": 0.2083,
+          "Team 3": 0.4583
+        }
+      },
+      "CTDE-CAC": {
+        "matches": 75,
+        "wins": 16,
+        "draws": 1,
+        "losses": 58,
+        "win_rate_vs_random": 0.2133,
+        "wilson_95_ci": [
+          0.1358,
+          0.3188
+        ],
+        "draw_rate": 0.0133,
+        "loss_rate": 0.7733,
+        "median_duration_seconds": 7.9,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1852,
+          "Team 2": 0.0,
+          "Team 3": 0.4583
+        }
+      },
+      "CTDE-Comm": {
+        "matches": 75,
+        "wins": 23,
+        "draws": 0,
+        "losses": 52,
+        "win_rate_vs_random": 0.3067,
+        "wilson_95_ci": [
+          0.2139,
+          0.4183
+        ],
+        "draw_rate": 0.0,
+        "loss_rate": 0.6933,
+        "median_duration_seconds": 9.0,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1852,
+          "Team 2": 0.3333,
+          "Team 3": 0.4167
+        }
+      },
+      "CTDE-VD": {
+        "matches": 75,
+        "wins": 26,
+        "draws": 2,
+        "losses": 47,
+        "win_rate_vs_random": 0.3467,
+        "wilson_95_ci": [
+          0.2488,
+          0.4595
+        ],
+        "draw_rate": 0.0267,
+        "loss_rate": 0.6267,
+        "median_duration_seconds": 10.5,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.3333,
+          "Team 2": 0.25,
+          "Team 3": 0.4583
+        }
+      },
+      "CTE": {
+        "matches": 75,
+        "wins": 26,
+        "draws": 1,
+        "losses": 48,
+        "win_rate_vs_random": 0.3467,
+        "wilson_95_ci": [
+          0.2488,
+          0.4595
+        ],
+        "draw_rate": 0.0133,
+        "loss_rate": 0.64,
+        "median_duration_seconds": 8.1,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1852,
+          "Team 2": 0.2083,
+          "Team 3": 0.6667
+        }
+      },
+      "DTE": {
+        "matches": 75,
+        "wins": 16,
+        "draws": 0,
+        "losses": 59,
+        "win_rate_vs_random": 0.2133,
+        "wilson_95_ci": [
+          0.1358,
+          0.3188
+        ],
+        "draw_rate": 0.0,
+        "loss_rate": 0.7867,
+        "median_duration_seconds": 6.3,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.0,
+          "Team 2": 0.1667,
+          "Team 3": 0.5
+        }
+      }
+    },
+    "exp1_seed6+exp2_seed8": {
+      "CTDE": {
+        "matches": 75,
+        "wins": 12,
+        "draws": 0,
+        "losses": 63,
+        "win_rate_vs_random": 0.16,
+        "wilson_95_ci": [
+          0.094,
+          0.2592
+        ],
+        "draw_rate": 0.0,
+        "loss_rate": 0.84,
+        "median_duration_seconds": 90.1,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1481,
+          "Team 2": 0.3333,
+          "Team 3": 0.0
+        }
+      },
+      "CTDE-CAC": {
+        "matches": 75,
+        "wins": 23,
+        "draws": 1,
+        "losses": 51,
+        "win_rate_vs_random": 0.3067,
+        "wilson_95_ci": [
+          0.2139,
+          0.4183
+        ],
+        "draw_rate": 0.0133,
+        "loss_rate": 0.68,
+        "median_duration_seconds": 9.1,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.2593,
+          "Team 2": 0.2083,
+          "Team 3": 0.4583
+        }
+      },
+      "CTDE-Comm": {
+        "matches": 75,
+        "wins": 25,
+        "draws": 0,
+        "losses": 50,
+        "win_rate_vs_random": 0.3333,
+        "wilson_95_ci": [
+          0.2371,
+          0.4458
+        ],
+        "draw_rate": 0.0,
+        "loss_rate": 0.6667,
+        "median_duration_seconds": 9.0,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1852,
+          "Team 2": 0.3333,
+          "Team 3": 0.5
+        }
+      },
+      "CTDE-VD": {
+        "matches": 75,
+        "wins": 28,
+        "draws": 1,
+        "losses": 46,
+        "win_rate_vs_random": 0.3733,
+        "wilson_95_ci": [
+          0.2726,
+          0.4865
+        ],
+        "draw_rate": 0.0133,
+        "loss_rate": 0.6133,
+        "median_duration_seconds": 90.1,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.3333,
+          "Team 2": 0.2083,
+          "Team 3": 0.5833
+        }
+      },
+      "CTE": {
+        "matches": 75,
+        "wins": 23,
+        "draws": 1,
+        "losses": 51,
+        "win_rate_vs_random": 0.3067,
+        "wilson_95_ci": [
+          0.2139,
+          0.4183
+        ],
+        "draw_rate": 0.0133,
+        "loss_rate": 0.68,
+        "median_duration_seconds": 7.2,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1111,
+          "Team 2": 0.2083,
+          "Team 3": 0.625
+        }
+      },
+      "DTE": {
+        "matches": 75,
+        "wins": 28,
+        "draws": 1,
+        "losses": 46,
+        "win_rate_vs_random": 0.3733,
+        "wilson_95_ci": [
+          0.2726,
+          0.4865
+        ],
+        "draw_rate": 0.0133,
+        "loss_rate": 0.6133,
+        "median_duration_seconds": 90.1,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.3333,
+          "Team 2": 0.3333,
+          "Team 3": 0.4583
+        }
+      }
+    },
+    "exp1_seed7+exp2_seed9": {
+      "CTDE": {
+        "matches": 75,
+        "wins": 25,
+        "draws": 1,
+        "losses": 49,
+        "win_rate_vs_random": 0.3333,
+        "wilson_95_ci": [
+          0.2371,
+          0.4458
+        ],
+        "draw_rate": 0.0133,
+        "loss_rate": 0.6533,
+        "median_duration_seconds": 17.2,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1481,
+          "Team 2": 0.1667,
+          "Team 3": 0.7083
+        }
+      },
+      "CTDE-CAC": {
+        "matches": 75,
+        "wins": 16,
+        "draws": 3,
+        "losses": 56,
+        "win_rate_vs_random": 0.2133,
+        "wilson_95_ci": [
+          0.1358,
+          0.3188
+        ],
+        "draw_rate": 0.04,
+        "loss_rate": 0.7467,
+        "median_duration_seconds": 9.1,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.2222,
+          "Team 2": 0.0417,
+          "Team 3": 0.375
+        }
+      },
+      "CTDE-Comm": {
+        "matches": 75,
+        "wins": 28,
+        "draws": 1,
+        "losses": 46,
+        "win_rate_vs_random": 0.3733,
+        "wilson_95_ci": [
+          0.2726,
+          0.4865
+        ],
+        "draw_rate": 0.0133,
+        "loss_rate": 0.6133,
+        "median_duration_seconds": 13.5,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.3704,
+          "Team 2": 0.3333,
+          "Team 3": 0.4167
+        }
+      },
+      "CTDE-VD": {
+        "matches": 75,
+        "wins": 27,
+        "draws": 1,
+        "losses": 47,
+        "win_rate_vs_random": 0.36,
+        "wilson_95_ci": [
+          0.2606,
+          0.473
+        ],
+        "draw_rate": 0.0133,
+        "loss_rate": 0.6267,
+        "median_duration_seconds": 9.1,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.3704,
+          "Team 2": 0.25,
+          "Team 3": 0.4583
+        }
+      },
+      "CTE": {
+        "matches": 75,
+        "wins": 24,
+        "draws": 2,
+        "losses": 49,
+        "win_rate_vs_random": 0.32,
+        "wilson_95_ci": [
+          0.2254,
+          0.4321
+        ],
+        "draw_rate": 0.0267,
+        "loss_rate": 0.6533,
+        "median_duration_seconds": 8.5,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1481,
+          "Team 2": 0.2917,
+          "Team 3": 0.5417
+        }
+      },
+      "DTE": {
+        "matches": 75,
+        "wins": 14,
+        "draws": 4,
+        "losses": 57,
+        "win_rate_vs_random": 0.1867,
+        "wilson_95_ci": [
+          0.1146,
+          0.2893
+        ],
+        "draw_rate": 0.0533,
+        "loss_rate": 0.76,
+        "median_duration_seconds": 90.1,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.3333,
+          "Team 2": 0.2083,
+          "Team 3": 0.0
+        }
+      }
+    },
+    "exp1_seed8+exp2_seed10": {
+      "CTDE": {
+        "matches": 75,
+        "wins": 20,
+        "draws": 2,
+        "losses": 53,
+        "win_rate_vs_random": 0.2667,
+        "wilson_95_ci": [
+          0.1798,
+          0.3763
+        ],
+        "draw_rate": 0.0267,
+        "loss_rate": 0.7067,
+        "median_duration_seconds": 16.3,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1481,
+          "Team 2": 0.2083,
+          "Team 3": 0.4583
+        }
+      },
+      "CTDE-CAC": {
+        "matches": 75,
+        "wins": 30,
+        "draws": 1,
+        "losses": 44,
+        "win_rate_vs_random": 0.4,
+        "wilson_95_ci": [
+          0.2966,
+          0.5131
+        ],
+        "draw_rate": 0.0133,
+        "loss_rate": 0.5867,
+        "median_duration_seconds": 90.1,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.2222,
+          "Team 2": 0.4167,
+          "Team 3": 0.5833
+        }
+      },
+      "CTDE-Comm": {
+        "matches": 75,
+        "wins": 23,
+        "draws": 0,
+        "losses": 52,
+        "win_rate_vs_random": 0.3067,
+        "wilson_95_ci": [
+          0.2139,
+          0.4183
+        ],
+        "draw_rate": 0.0,
+        "loss_rate": 0.6933,
+        "median_duration_seconds": 9.0,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1852,
+          "Team 2": 0.3333,
+          "Team 3": 0.4167
+        }
+      },
+      "CTDE-VD": {
+        "matches": 75,
+        "wins": 23,
+        "draws": 2,
+        "losses": 50,
+        "win_rate_vs_random": 0.3067,
+        "wilson_95_ci": [
+          0.2139,
+          0.4183
+        ],
+        "draw_rate": 0.0267,
+        "loss_rate": 0.6667,
+        "median_duration_seconds": 8.8,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.2222,
+          "Team 2": 0.25,
+          "Team 3": 0.4583
+        }
+      },
+      "CTE": {
+        "matches": 75,
+        "wins": 27,
+        "draws": 2,
+        "losses": 46,
+        "win_rate_vs_random": 0.36,
+        "wilson_95_ci": [
+          0.2606,
+          0.473
+        ],
+        "draw_rate": 0.0267,
+        "loss_rate": 0.6133,
+        "median_duration_seconds": 7.7,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1852,
+          "Team 2": 0.25,
+          "Team 3": 0.6667
+        }
+      },
+      "DTE": {
+        "matches": 75,
+        "wins": 22,
+        "draws": 7,
+        "losses": 46,
+        "win_rate_vs_random": 0.2933,
+        "wilson_95_ci": [
+          0.2024,
+          0.4044
+        ],
+        "draw_rate": 0.0933,
+        "loss_rate": 0.6133,
+        "median_duration_seconds": 13.3,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.2593,
+          "Team 2": 0.2917,
+          "Team 3": 0.3333
+        }
+      }
+    },
+    "exp1_seed9+exp2_seed2": {
+      "CTDE": {
+        "matches": 75,
+        "wins": 16,
+        "draws": 1,
+        "losses": 58,
+        "win_rate_vs_random": 0.2133,
+        "wilson_95_ci": [
+          0.1358,
+          0.3188
+        ],
+        "draw_rate": 0.0133,
+        "loss_rate": 0.7733,
+        "median_duration_seconds": 9.8,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1111,
+          "Team 2": 0.2083,
+          "Team 3": 0.3333
+        }
+      },
+      "CTDE-CAC": {
+        "matches": 75,
+        "wins": 17,
+        "draws": 0,
+        "losses": 58,
+        "win_rate_vs_random": 0.2267,
+        "wilson_95_ci": [
+          0.1466,
+          0.3334
+        ],
+        "draw_rate": 0.0,
+        "loss_rate": 0.7733,
+        "median_duration_seconds": 9.0,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.2222,
+          "Team 2": 0.0417,
+          "Team 3": 0.4167
+        }
+      },
+      "CTDE-Comm": {
+        "matches": 75,
+        "wins": 24,
+        "draws": 0,
+        "losses": 51,
+        "win_rate_vs_random": 0.32,
+        "wilson_95_ci": [
+          0.2254,
+          0.4321
+        ],
+        "draw_rate": 0.0,
+        "loss_rate": 0.68,
+        "median_duration_seconds": 9.0,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1852,
+          "Team 2": 0.375,
+          "Team 3": 0.4167
+        }
+      },
+      "CTDE-VD": {
+        "matches": 75,
+        "wins": 22,
+        "draws": 6,
+        "losses": 47,
+        "win_rate_vs_random": 0.2933,
+        "wilson_95_ci": [
+          0.2024,
+          0.4044
+        ],
+        "draw_rate": 0.08,
+        "loss_rate": 0.6267,
+        "median_duration_seconds": 90.1,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.2222,
+          "Team 2": 0.2917,
+          "Team 3": 0.375
+        }
+      },
+      "CTE": {
+        "matches": 75,
+        "wins": 28,
+        "draws": 1,
+        "losses": 46,
+        "win_rate_vs_random": 0.3733,
+        "wilson_95_ci": [
+          0.2726,
+          0.4865
+        ],
+        "draw_rate": 0.0133,
+        "loss_rate": 0.6133,
+        "median_duration_seconds": 7.7,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1852,
+          "Team 2": 0.25,
+          "Team 3": 0.7083
+        }
+      },
+      "DTE": {
+        "matches": 75,
+        "wins": 36,
+        "draws": 2,
+        "losses": 37,
+        "win_rate_vs_random": 0.48,
+        "wilson_95_ci": [
+          0.3707,
+          0.5913
+        ],
+        "draw_rate": 0.0267,
+        "loss_rate": 0.4933,
+        "median_duration_seconds": 7.9,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.4074,
+          "Team 2": 0.5417,
+          "Team 3": 0.5
+        }
+      }
+    }
+  },
+  "per_harness_seed": {
+    "1": {
+      "CTDE": {
+        "matches": 250,
+        "wins": 71,
+        "draws": 15,
+        "losses": 164,
+        "win_rate_vs_random": 0.284,
+        "wilson_95_ci": [
+          0.2317,
+          0.3428
+        ],
+        "draw_rate": 0.06,
+        "loss_rate": 0.656,
+        "median_duration_seconds": 13.55,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.0889,
+          "Team 2": 0.3875,
+          "Team 3": 0.4
+        }
+      },
+      "CTDE-CAC": {
+        "matches": 250,
+        "wins": 87,
+        "draws": 3,
+        "losses": 160,
+        "win_rate_vs_random": 0.348,
+        "wilson_95_ci": [
+          0.2917,
+          0.4089
+        ],
+        "draw_rate": 0.012,
+        "loss_rate": 0.64,
+        "median_duration_seconds": 8.8,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.2111,
+          "Team 2": 0.2125,
+          "Team 3": 0.6375
+        }
+      },
+      "CTDE-Comm": {
+        "matches": 250,
+        "wins": 72,
+        "draws": 0,
+        "losses": 178,
+        "win_rate_vs_random": 0.288,
+        "wilson_95_ci": [
+          0.2354,
+          0.347
+        ],
+        "draw_rate": 0.0,
+        "loss_rate": 0.712,
+        "median_duration_seconds": 90.1,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1333,
+          "Team 2": 0.2625,
+          "Team 3": 0.4875
+        }
+      },
+      "CTDE-VD": {
+        "matches": 250,
+        "wins": 78,
+        "draws": 12,
+        "losses": 160,
+        "win_rate_vs_random": 0.312,
+        "wilson_95_ci": [
+          0.2578,
+          0.3719
+        ],
+        "draw_rate": 0.048,
+        "loss_rate": 0.64,
+        "median_duration_seconds": 14.2,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1667,
+          "Team 2": 0.2625,
+          "Team 3": 0.525
+        }
+      },
+      "CTE": {
+        "matches": 250,
+        "wins": 79,
+        "draws": 2,
+        "losses": 169,
+        "win_rate_vs_random": 0.316,
+        "wilson_95_ci": [
+          0.2615,
+          0.376
+        ],
+        "draw_rate": 0.008,
+        "loss_rate": 0.676,
+        "median_duration_seconds": 7.25,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1556,
+          "Team 2": 0.3125,
+          "Team 3": 0.5
+        }
+      },
+      "DTE": {
+        "matches": 250,
+        "wins": 83,
+        "draws": 7,
+        "losses": 160,
+        "win_rate_vs_random": 0.332,
+        "wilson_95_ci": [
+          0.2766,
+          0.3925
+        ],
+        "draw_rate": 0.028,
+        "loss_rate": 0.64,
+        "median_duration_seconds": 9.95,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.2667,
+          "Team 2": 0.3,
+          "Team 3": 0.4375
+        }
+      }
+    },
+    "2": {
+      "CTDE": {
+        "matches": 250,
+        "wins": 59,
+        "draws": 0,
+        "losses": 191,
+        "win_rate_vs_random": 0.236,
+        "wilson_95_ci": [
+          0.1876,
+          0.2924
+        ],
+        "draw_rate": 0.0,
+        "loss_rate": 0.764,
+        "median_duration_seconds": 13.2,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.2111,
+          "Team 2": 0.15,
+          "Team 3": 0.35
+        }
+      },
+      "CTDE-CAC": {
+        "matches": 250,
+        "wins": 63,
+        "draws": 7,
+        "losses": 180,
+        "win_rate_vs_random": 0.252,
+        "wilson_95_ci": [
+          0.2022,
+          0.3093
+        ],
+        "draw_rate": 0.028,
+        "loss_rate": 0.72,
+        "median_duration_seconds": 9.5,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.2333,
+          "Team 2": 0.15,
+          "Team 3": 0.375
+        }
+      },
+      "CTDE-Comm": {
+        "matches": 250,
+        "wins": 65,
+        "draws": 0,
+        "losses": 185,
+        "win_rate_vs_random": 0.26,
+        "wilson_95_ci": [
+          0.2095,
+          0.3177
+        ],
+        "draw_rate": 0.0,
+        "loss_rate": 0.74,
+        "median_duration_seconds": 5.8,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.2333,
+          "Team 2": 0.4,
+          "Team 3": 0.15
+        }
+      },
+      "CTDE-VD": {
+        "matches": 250,
+        "wins": 78,
+        "draws": 8,
+        "losses": 164,
+        "win_rate_vs_random": 0.312,
+        "wilson_95_ci": [
+          0.2578,
+          0.3719
+        ],
+        "draw_rate": 0.032,
+        "loss_rate": 0.656,
+        "median_duration_seconds": 8.149999999999999,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.3333,
+          "Team 2": 0.1375,
+          "Team 3": 0.4625
+        }
+      },
+      "CTE": {
+        "matches": 250,
+        "wins": 63,
+        "draws": 0,
+        "losses": 187,
+        "win_rate_vs_random": 0.252,
+        "wilson_95_ci": [
+          0.2022,
+          0.3093
+        ],
+        "draw_rate": 0.0,
+        "loss_rate": 0.748,
+        "median_duration_seconds": 8.4,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.0889,
+          "Team 2": 0.25,
+          "Team 3": 0.4375
+        }
+      },
+      "DTE": {
+        "matches": 250,
+        "wins": 101,
+        "draws": 7,
+        "losses": 142,
+        "win_rate_vs_random": 0.404,
+        "wilson_95_ci": [
+          0.3451,
+          0.4658
+        ],
+        "draw_rate": 0.028,
+        "loss_rate": 0.568,
+        "median_duration_seconds": 13.600000000000001,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.3222,
+          "Team 2": 0.5,
+          "Team 3": 0.4
+        }
+      }
+    },
+    "3": {
+      "CTDE": {
+        "matches": 250,
+        "wins": 56,
+        "draws": 4,
+        "losses": 190,
+        "win_rate_vs_random": 0.224,
+        "wilson_95_ci": [
+          0.1767,
+          0.2796
+        ],
+        "draw_rate": 0.016,
+        "loss_rate": 0.76,
+        "median_duration_seconds": 11.75,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.0889,
+          "Team 2": 0.1625,
+          "Team 3": 0.4375
+        }
+      },
+      "CTDE-CAC": {
+        "matches": 250,
+        "wins": 62,
+        "draws": 8,
+        "losses": 180,
+        "win_rate_vs_random": 0.248,
+        "wilson_95_ci": [
+          0.1986,
+          0.3051
+        ],
+        "draw_rate": 0.032,
+        "loss_rate": 0.72,
+        "median_duration_seconds": 9.1,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.2556,
+          "Team 2": 0.05,
+          "Team 3": 0.4375
+        }
+      },
+      "CTDE-Comm": {
+        "matches": 250,
+        "wins": 104,
+        "draws": 1,
+        "losses": 145,
+        "win_rate_vs_random": 0.416,
+        "wilson_95_ci": [
+          0.3566,
+          0.4779
+        ],
+        "draw_rate": 0.004,
+        "loss_rate": 0.58,
+        "median_duration_seconds": 9.8,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.2444,
+          "Team 2": 0.375,
+          "Team 3": 0.65
+        }
+      },
+      "CTDE-VD": {
+        "matches": 250,
+        "wins": 78,
+        "draws": 6,
+        "losses": 166,
+        "win_rate_vs_random": 0.312,
+        "wilson_95_ci": [
+          0.2578,
+          0.3719
+        ],
+        "draw_rate": 0.024,
+        "loss_rate": 0.664,
+        "median_duration_seconds": 9.1,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.2444,
+          "Team 2": 0.3375,
+          "Team 3": 0.3625
+        }
+      },
+      "CTE": {
+        "matches": 250,
+        "wins": 83,
+        "draws": 6,
+        "losses": 161,
+        "win_rate_vs_random": 0.332,
+        "wilson_95_ci": [
+          0.2766,
+          0.3925
+        ],
+        "draw_rate": 0.024,
+        "loss_rate": 0.644,
+        "median_duration_seconds": 7.7,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.1556,
+          "Team 2": 0.1125,
+          "Team 3": 0.75
+        }
+      },
+      "DTE": {
+        "matches": 250,
+        "wins": 76,
+        "draws": 7,
+        "losses": 167,
+        "win_rate_vs_random": 0.304,
+        "wilson_95_ci": [
+          0.2503,
+          0.3636
+        ],
+        "draw_rate": 0.028,
+        "loss_rate": 0.668,
+        "median_duration_seconds": 7.85,
+        "win_rate_by_trained_team": {
+          "Team 1": 0.2333,
+          "Team 2": 0.2625,
+          "Team 3": 0.425
+        }
+      }
+    }
+  },
+  "spread_across_training_blocks": {
+    "CTDE": {
+      "sd": 0.0517,
+      "levels": {
+        "exp1_seed1+exp2_seed7": 0.28,
+        "exp1_seed10+exp2_seed5": 0.2667,
+        "exp1_seed2+exp2_seed1": 0.2667,
+        "exp1_seed3+exp2_seed3": 0.2667,
+        "exp1_seed4+exp2_seed4": 0.16,
+        "exp1_seed5+exp2_seed6": 0.2667,
+        "exp1_seed6+exp2_seed8": 0.16,
+        "exp1_seed7+exp2_seed9": 0.3333,
+        "exp1_seed8+exp2_seed10": 0.2667,
+        "exp1_seed9+exp2_seed2": 0.2133
+      }
+    },
+    "CTDE-CAC": {
+      "sd": 0.0845,
+      "levels": {
+        "exp1_seed1+exp2_seed7": 0.16,
+        "exp1_seed10+exp2_seed5": 0.28,
+        "exp1_seed2+exp2_seed1": 0.4533,
+        "exp1_seed3+exp2_seed3": 0.28,
+        "exp1_seed4+exp2_seed4": 0.2933,
+        "exp1_seed5+exp2_seed6": 0.2133,
+        "exp1_seed6+exp2_seed8": 0.3067,
+        "exp1_seed7+exp2_seed9": 0.2133,
+        "exp1_seed8+exp2_seed10": 0.4,
+        "exp1_seed9+exp2_seed2": 0.2267
+      }
+    },
+    "CTDE-Comm": {
+      "sd": 0.0202,
+      "levels": {
+        "exp1_seed1+exp2_seed7": 0.3067,
+        "exp1_seed10+exp2_seed5": 0.3333,
+        "exp1_seed2+exp2_seed1": 0.3067,
+        "exp1_seed3+exp2_seed3": 0.3067,
+        "exp1_seed4+exp2_seed4": 0.32,
+        "exp1_seed5+exp2_seed6": 0.3067,
+        "exp1_seed6+exp2_seed8": 0.3333,
+        "exp1_seed7+exp2_seed9": 0.3733,
+        "exp1_seed8+exp2_seed10": 0.3067,
+        "exp1_seed9+exp2_seed2": 0.32
+      }
+    },
+    "CTDE-VD": {
+      "sd": 0.0439,
+      "levels": {
+        "exp1_seed1+exp2_seed7": 0.2133,
+        "exp1_seed10+exp2_seed5": 0.2933,
+        "exp1_seed2+exp2_seed1": 0.3333,
+        "exp1_seed3+exp2_seed3": 0.32,
+        "exp1_seed4+exp2_seed4": 0.28,
+        "exp1_seed5+exp2_seed6": 0.3467,
+        "exp1_seed6+exp2_seed8": 0.3733,
+        "exp1_seed7+exp2_seed9": 0.36,
+        "exp1_seed8+exp2_seed10": 0.3067,
+        "exp1_seed9+exp2_seed2": 0.2933
+      }
+    },
+    "CTE": {
+      "sd": 0.0728,
+      "levels": {
+        "exp1_seed1+exp2_seed7": 0.2,
+        "exp1_seed10+exp2_seed5": 0.16,
+        "exp1_seed2+exp2_seed1": 0.2267,
+        "exp1_seed3+exp2_seed3": 0.3333,
+        "exp1_seed4+exp2_seed4": 0.3733,
+        "exp1_seed5+exp2_seed6": 0.3467,
+        "exp1_seed6+exp2_seed8": 0.3067,
+        "exp1_seed7+exp2_seed9": 0.32,
+        "exp1_seed8+exp2_seed10": 0.36,
+        "exp1_seed9+exp2_seed2": 0.3733
+      }
+    },
+    "DTE": {
+      "sd": 0.0937,
+      "levels": {
+        "exp1_seed1+exp2_seed7": 0.3467,
+        "exp1_seed10+exp2_seed5": 0.4133,
+        "exp1_seed2+exp2_seed1": 0.2933,
+        "exp1_seed3+exp2_seed3": 0.4133,
+        "exp1_seed4+exp2_seed4": 0.4533,
+        "exp1_seed5+exp2_seed6": 0.2133,
+        "exp1_seed6+exp2_seed8": 0.3733,
+        "exp1_seed7+exp2_seed9": 0.1867,
+        "exp1_seed8+exp2_seed10": 0.2933,
+        "exp1_seed9+exp2_seed2": 0.48
+      }
+    }
+  },
+  "spread_across_harness_seeds": {
+    "CTDE": {
+      "sd": 0.0259,
+      "levels": {
+        "1": 0.284,
+        "2": 0.236,
+        "3": 0.224
+      }
+    },
+    "CTDE-CAC": {
+      "sd": 0.0462,
+      "levels": {
+        "1": 0.348,
+        "2": 0.252,
+        "3": 0.248
+      }
+    },
+    "CTDE-Comm": {
+      "sd": 0.0679,
+      "levels": {
+        "1": 0.288,
+        "2": 0.26,
+        "3": 0.416
+      }
+    },
+    "CTDE-VD": {
+      "sd": 0.0,
+      "levels": {
+        "1": 0.312,
+        "2": 0.312,
+        "3": 0.312
+      }
+    },
+    "CTE": {
+      "sd": 0.0346,
+      "levels": {
+        "1": 0.316,
+        "2": 0.252,
+        "3": 0.332
+      }
+    },
+    "DTE": {
+      "sd": 0.0421,
+      "levels": {
+        "1": 0.332,
+        "2": 0.404,
+        "3": 0.304
+      }
+    }
+  },
+  "agreement_with_peer_pool": {
+    "arms": 6,
+    "spearman_rank_correlation": 0.0857,
+    "pearson_win_rate": 0.2158,
+    "pearson_vs_pool_components": {
+      "eliminations_per_match": -0.2514,
+      "shots_per_match": 0.0469,
+      "mean_survival_seconds": 0.7866,
+      "shot_accuracy": -0.7561
+    },
+    "per_arm": {
+      "CTDE": {
+        "vs_random": 0.248,
+        "vs_peers": 0.317,
+        "rank_random": 6.0,
+        "rank_peers": 3.0
+      },
+      "CTDE-CAC": {
+        "vs_random": 0.2827,
+        "vs_peers": 0.3154,
+        "rank_random": 5.0,
+        "rank_peers": 4.0
+      },
+      "CTDE-Comm": {
+        "vs_random": 0.3213,
+        "vs_peers": 0.3595,
+        "rank_random": 2.0,
+        "rank_peers": 1.0
+      },
+      "CTDE-VD": {
+        "vs_random": 0.312,
+        "vs_peers": 0.3306,
+        "rank_random": 3.0,
+        "rank_peers": 2.0
+      },
+      "CTE": {
+        "vs_random": 0.3,
+        "vs_peers": 0.3045,
+        "rank_random": 4.0,
+        "rank_peers": 6.0
+      },
+      "DTE": {
+        "vs_random": 0.3467,
+        "vs_peers": 0.3105,
+        "rank_random": 1.0,
+        "rank_peers": 5.0
+      }
+    }
+  }
+}

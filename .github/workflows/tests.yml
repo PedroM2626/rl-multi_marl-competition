@@ -208,6 +208,9 @@ jobs:
             exit 1
           fi
 
+      - name: The documented test totals are what the suites collect
+        run: python scripts/update_doc_counts.py --check
+
       - name: Campaign scripts at least parse
         run: |
           for script in scripts/*.sh; do bash -n "$script" || exit 1; done

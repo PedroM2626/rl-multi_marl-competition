@@ -18,6 +18,11 @@ into each other**, so "CTDE learned better" and "CTDE got to learn more" are not
 *Remedy:* fixed-length rollouts collected per agent, or importance-weighted minibatching so that update
 volume is decoupled from survival.
 
+**Remedy implemented.** `RL_UPDATE_MINIBATCHES=N` gives every team exactly N gradient steps per update,
+sampled with replacement from whatever its buffer holds, so a longer-lived team gets more distinct rows but
+not more updates ([§ 6.8](06_optimisation_procedure.md#68-the-docs10-remedies-as-switches)). Measured as part
+of the v3 bundle in [§ 8.14](08_results.md#v3).
+
 ### Unmatched model capacity
 
 Parameter totals range from 35,465 (DTE) to 79,369 (CTE) — a 2.24× spread — and the arms differ in
@@ -25,6 +30,13 @@ whether the value function shares a trunk with the policy. In Experiment 2, CTDE
 parameters against CTDE-CAC's 39,041.
 
 *Remedy:* match total trainable parameters per team, e.g. by widening the smaller network.
+
+**Remedy implemented.** `RL_PARAM_TARGET` picks each arm's hidden width so its trainable total is the target
+to within 3 % (tested for all six arms); `-1` targets the largest arm at `RL_HIDDEN_DIM`. Matched in the v3
+bundle; the capacity arms were also re-trained to ten seeds on the JAX runtime so the width effect below is no
+longer a three-seed reading ([§ 8.13](08_results.md#capacity-ten)): at ten seeds width moves nothing in experiment 1
+and lowers only CTDE-Comm in experiment 2, from a JAX control that is itself the high outlier of four
+measurements of that arm.
 
 **Measured, and it is worse than the remedy assumed.** Both capacity arms have now been played on the
 common opponent pool ([§ 8.13](08_results.md#capacity-pool)), and the ordering is not stable under width
@@ -52,6 +64,10 @@ name describes, and it invalidates any attempt to compare against published PPO/
 
 *Remedy:* maintain one buffer per agent, or sort the buffer by (agent, time) before computing returns.
 
+**Remedy implemented.** `RL_GAE_PER_AGENT=true` runs the recursion over each agent's own rows (tested
+against a hand-computed two-agent interleaving); an agent cut off by the match end bootstraps from its own
+last value, which is what the team path's `last_value` already was.
+
 ### Non-stationary opponents
 
 All three teams train concurrently against each other. A team's win rate depends on which two
@@ -59,6 +75,14 @@ co-adapting opponents it faced at that moment. There is no league, no past-oppon
 fictitious self-play.
 
 *Remedy:* evaluate each final policy against a fixed pool of the others, or against scripted baselines.
+
+**Both halves implemented.** For training, `RL_OPPONENT_POOL_PROB` makes one team play a frozen past snapshot
+of itself in that share of matches, so the other two train against a mixture of current and past opponents
+(fictitious-play direction; on in v3). For measurement, `run_absolute_eval.py --opponent scripted` plays
+every arm against a hand-written engage-and-fire controller that neither learns nor shares a run
+([§ 8.11](08_results.md#scripted-opponents)). Against it the trained arms win 0.248–0.347, about what a team of
+equal strength would take from the slot rotation, in an order that matches neither of the other two pools;
+only CTDE-Comm above CTDE separates.
 
 ### The turn control defect (fixed, but it splits the evidence base)
 
@@ -94,6 +118,10 @@ never see ([§ 5.4](05_network_architectures.md#valuedecompositioncriticnetwork)
 The arm is therefore a *sparse-input, weight-shared centralised critic*, not a decentralisable
 factorisation. Conclusions about VDN cannot be drawn from it.
 
+**Remedy implemented.** `VD_LOCAL_CRITIC=true` replaces it with \(V_{\text{tot}} = \sum_i V(o_i)\) over each
+live teammate's local observation, the arm the label names. Conclusions about VDN can be drawn from the v3
+arm and not from the committed one.
+
 ### "CTDE-Comm" is one round of mean-pooled communication
 
 CommNet's published form stacks multiple rounds. With one round the channel cannot propagate a hop, so
@@ -102,11 +130,18 @@ weaker architecture. The claim "communication requires >500k steps" that appears
 documentation is therefore not supported by this implementation, which is a different model than the
 one the claim is about.
 
+**Remedy implemented.** `COMM_ROUNDS=k` adds k - 1 further rounds in which each agent re-encodes its
+observation with what it heard; extra rounds draw from a key the single-round network never consumes, so
+`COMM_ROUNDS=1` still initialises the measured weights exactly. v3 runs two rounds.
+
 ### Dead allies inject a constant message
 
 `CommActorNetwork` receives zero-filled observations for dead teammates, and `msg_net(0)` is a
 non-zero learned constant that enters every receiver's channel. The Comm arm's behaviour is partly a
 function of how many teammates happen to be dead — a nuisance variable no other arm has.
+
+**Remedy implemented.** `COMM_MASK_DEAD=true` averages messages over live teammates only (a dead row is
+recognised by its zero heading encoding); a test checks that a dead ally then contributes nothing.
 
 ### Training metrics presented as results
 
@@ -181,6 +216,10 @@ applied to the original single-seed evidence, and left three that no amount of r
    between two arms of the same match is not strictly valid — it is anti-conservative for the loser and
    conservative for the winner. Reporting all three arms' win rates together, as done here, is the honest
    presentation; the third is determined by the other two.
+   **Remedy implemented:** `report_study.py` now adds Friedman's test over the three arms with the replicate
+   as the block -- the test for coupled arms -- and an exact sign-flip permutation test per pair, neither of
+   which assumes the arms of one match are independent. On the committed study they agree with the paired
+   *t*: Friedman p = 0.273 (exp 1) and 0.232 (exp 2), no pair below 0.160 (`results/study/coupled_tests.json`).
 6. ~~**Slot is not rotated.**~~ **Fixed** — `paradigm_rotation = seed % 3`, so across the 20 runs each
    paradigm occupies each slot 6 or 7 times. Note what this does *not* buy: rotation removes the
    confound, it does not remove the slot's effect, so residual slot variance now appears inside the
@@ -191,6 +230,9 @@ applied to the original single-seed evidence, and left three that no amount of r
    at their *earliest* checkpoint ([§ 8.1](08_results.md#replicated-study)).
 8. **No effect sizes with uncertainty on the secondary metrics.** Eliminations per match, survival and
    accuracy are reported as pooled means without intervals.
+   **Fixed:** `report_study.py` prints each with a 95 % bootstrap interval over replicates (10,000
+   resamples), recorded in `results/study/coupled_tests.json`. The intervals overlap for every pair of arms
+   on every secondary metric in both experiments.
 9. **~~Win rate does not isolate fighting.~~ Measured; removing the route does not resolve the ranking.**
    A quarter of replicates decide most matches on the 90 s clock, and the untrained greedy baseline shows
    41 % three-way draws and 88–398 shots per match at 0.1 % accuracy
@@ -223,6 +265,9 @@ applied to the original single-seed evidence, and left three that no amount of r
    document keeps reporting is training variance, and dual-reporting buys interpretability rather than
    power. What remains open is the choice the study still makes: the published tables are the greedy arm, so
    every experiment-2 ranking in them carries the qualification above.
+   **Closed for the tables:** `report_study.py --sampled-readout results/readout/T0.5` prints the headline
+   table under both readouts side by side, and [§ 8.1](08_results.md#dual-readout) and the README quote that
+   dual table rather than the greedy column alone.
 12. **~~The round-robin tests six checkpoints, not six architectures.~~ Closed at ten; the threat moved from
     the sample to the finding.** The single-checkpoint version represented each arm by its promoted replicate,
     so its two corrected-significant results were statements about particular trained networks — and that is
@@ -282,6 +327,8 @@ ever been "won" by the clock
 * The prior Portuguese-language README asserted a diagnosis of the CTDE-Comm deficit ("messages start as
   noise") that the accuracy decomposition in [§ 8.3](08_results.md#decomposing-the-elimination-gap)
   does not support: Comm's accuracy is fine, its firing volume is not.
-* The README also stated the default training budget was 3 M steps; the committed `.env` says 100,000.
+* The README also stated the default training budget was 3 M steps; the committed `.env` said 100,000 at
+  the time (the historical runs' budget) and has said 1,000,000 since commit `601b9ee`. The study and every
+  campaign pass `--steps` explicitly, so neither value is the budget behind a published number.
 * Both have been corrected in this documentation set, and the corrections are itemised in
   [§ Configuration claims](11_code_audit.md#configuration-claims).

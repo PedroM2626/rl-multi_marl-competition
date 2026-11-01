@@ -33,7 +33,8 @@ Honest summary of what is finished and what is not:
 | | Experiment 1 (root) | Experiment 2 (`ctde_arena/`) |
 |---|---|---|
 | Engine and training code | complete | complete |
-| Engine shared with the other tree | byte-identical, enforced by `tests/test_tree_parity.py` | byte-identical, same guard |
+| Engine shared with the other tree | one package, `src/marl_arena`; the paradigm cycle is a `.env` key | `src/` is a shim onto the root engine, asserted by `tests/test_tree_parity.py` |
+| Remedies for every docs/10 threat a code change can address | configuration switches, off by default, byte-identical defaults ([§ 6.8](docs/06_optimisation_procedure.md#68-the-docs10-remedies-as-switches)) | same switches |
 | Historical 100k-step run | yes (463 matches) | yes (456 matches) |
 | Replicated study | 10 seeds × 500k steps | 10 seeds × 500k steps |
 | Held-out greedy evaluation | yes, 150 matches per replicate | yes, 150 matches per replicate |
@@ -42,7 +43,9 @@ Honest summary of what is finished and what is not:
 | Results committed to Git | yes | yes |
 | Checkpoints committed | yes — newly versioned, and loadable by the current code | yes, re-promoted from the study |
 | Historical PyTorch training replay | verified | verified with `--no-mlflow` |
-| Current JAX/Rust training replay | smoke-verified; not yet remeasured across the study | smoke-verified; not yet remeasured across the study |
+| Current JAX/Rust training replay | the whole study re-trained on it, 10 seeds ([§ 8.14](docs/08_results.md#v3)): the null reproduces, the leader changes | same |
+| Study with every docs/10 remedy on (v3) | 10 seeds × 500k steps: between-seed SD halved for all six arms, CTDE above CTE on all ten seeds (*p* = 0.002) ([§ 8.14](docs/08_results.md#v3)) | 10 seeds, nothing separates |
+| Scripted-opponent scale | 4,500 matches, the study's ten blocks against an engage-and-fire rule: trained arms win 0.248–0.347, about an equal team's share ([§ 8.11](docs/08_results.md#scripted-opponents)) | shared |
 | MLflow tracking | n/a | wired, but only **1 logged point** for the 100k run |
 | Cross-experiment round-robin | 30,000 matches, all six arms on common opponents, 10 checkpoint sets x 5 harness seeds — every replicate either experiment trained (shared, run from `ctde_arena/`) | same |
 | Absolute strength vs random opponents | 4,500 matches over all 10 checkpoint sets — the same population as the round-robin — slot-matched null 0.330 ([§ 8.11](docs/08_results.md#absolute-strength)) | same |
@@ -52,11 +55,11 @@ Honest summary of what is finished and what is not:
 | Optimiser traces for the whole study | The twenty replicates re-trained with the capture in place — 60/60 checkpoints byte-identical to the versioned set — and correlated against the readout: nothing survives correction or a change of unit to the run, and the collapsed replicate is mid-field in its own KL and entropy ([§ 8.1](docs/08_results.md#traces-measured)) | same |
 | Study re-measured under a sampled readout | 27,000 held-out matches over the same sixty cells at T = 0 / 0.5 / 1; the T = 0 control is bit-identical to the published study, and experiment 2's first place moves from CTDE-VD to CTDE-Comm ([§ 8.1](docs/08_results.md#readout-re-measured)) | same |
 | Arena-v2 re-measurement | 10 seeds × 500k steps under a decayed alive bonus and draw-on-cap ([§ 8.12](docs/08_results.md#arena-v2)) | same |
-| Configuration ablations | `no_dr` at 10 seeds × both experiments (the control's full replication), `narrow_64` and `wide_256` at 3 ([§ 8.13](docs/08_results.md#ablations)) | same |
+| Configuration ablations | `no_dr` at 10 seeds × both experiments (the control's full replication), `narrow_64` and `wide_256` at 3 on PyTorch and at 10 on JAX ([§ 8.13](docs/08_results.md#capacity-ten)); `no_dr` also on the random pool ([§ 8.13](docs/08_results.md#no-dr-absolute)) | same |
 | Study re-measured at the shipped step budget | the same twenty replicates trained to 3,000,000 steps instead of 500,000: the lead changes hands in **both** experiments (CTDE 0.429 overtakes DTE; CTDE-Comm 0.395 takes first while CTDE-VD falls to last) and no paired comparison clears the corrected bar ([§ 8.13](docs/08_results.md#budget-3m)) | same |
 | Historical dependency audit | The measured PyTorch lock has recorded advisories; the current runtime requirements use JAX and retain the old lock for historical reproduction ([§ 9.10](docs/09_reproducibility.md#dependency-audit)) | same |
 | Gameplay clips of the trained policies | yes (`docs/assets/`) | yes |
-| Current tests | 187 passed, 1 skipped, **86 %** statements / **84 %** branches | 90 passed, 1 skipped, **88 %** statements / **86 %** branches |
+| Current tests<!--auto:readme-status--> | 215 passed, 1 skipped, **90 %** statements / **80 %** branches | 90 passed, 1 skipped, **79 %** statements / **66 %** branches |
 | Continuous integration | both suites on Ubuntu (Python 3.10 and 3.11) and Windows, a Rust parity job that cannot skip, a Docker build, tree parity, documentation links, inventory and pooled/absolute re-derivation, artefact-path portability, campaign-script syntax — and the re-derivation gate is what caught [A-42](docs/11_code_audit.md#a-committed-artefact-recorded-windows-paths) ([§ 9.4](docs/09_reproducibility.md#continuous-integration)) | same jobs |
 | Docker | n/a | built and import-smoke-tested in CI; **no end-to-end training run recorded** |
 
@@ -205,8 +208,8 @@ is evaluation against fixed opponents rather than argmax. Pooled over all 60 arm
   It reorders experiment 1 completely — the control's best arm, DTE, finishes last — and swaps the bottom pair
   in experiment 2. Measured on three seeds the same arm read 0.253, inverted both experiments, and put plain
   CTDE 0.193 *below* its control; on ten seeds CTDE is 0.074 *above* it
-  ([§ 8.13](docs/08_results.md#ablations)). Halving or doubling the hidden width costs at most 0.064, still on
-  three seeds. So every "X beats Y" claim in this repository is to be read as "under hidden width 128 and
+  ([§ 8.13](docs/08_results.md#ablations)). At ten seeds, halving or doubling the hidden width moves nothing in
+  experiment 1 and lowers only CTDE-Comm in experiment 2 ([§ 8.13](docs/08_results.md#capacity-ten)). So every "X beats Y" claim in this repository is to be read as "under hidden width 128 and
   domain randomisation on".
 * **Two opponent pools agree, once each architecture is replicated at the same count on both sides.**
   Ranking the six architectures by how often they beat trained peers and by how often they beat
@@ -216,6 +219,16 @@ is evaluation against fixed opponents rather than argmax. Pooled over all 60 arm
   and the six-set absolute rates read against the ten-block peer pool give **+0.66** — so the agreement comes
   from replicating the training *and* matching the counts, and the mismatch costs 0.23 of rank correlation
   without changing a single match ([§ 8.11](docs/08_results.md#absolute-strength)).
+* **On the shipped runtime the null reproduces and the order does not; with every remedy on, the variance
+  halves.** Re-trained on JAX with every default unchanged, neither experiment ranks its arms and both change
+  leader (CTDE first in experiment 1, CTDE-Comm in experiment 2). With every docs/10 remedy on together
+  (v3), the between-seed SD of all six arms falls — mean 0.171 to 0.093 — and CTDE beats CTE on all ten seeds
+  (sign-flip *p* = 0.002), the only within-experiment, replicate-level separation in the repository. The
+  bundle cannot say which remedy did it ([§ 8.14](docs/08_results.md#v3)).
+* **The trained policies are about as strong as a hand-written rule.** Against two scripted teams that
+  turn to the nearest enemy and fire, the six arms win 0.248–0.347 — about what an equal team takes from the
+  slot rotation — in an order that matches neither the peer pool nor the random pool
+  ([§ 8.11](docs/08_results.md#scripted-opponents)).
 
 Against a genuine random-play baseline
 ([§ 8.9](docs/08_results.md#random-baseline)) training clearly does something — trained agents survive
@@ -257,8 +270,11 @@ cd ../..
 ```
 
 The Rust extension is optional for source-only use; building it enables the native movement and collision
-path. `ctde_arena/` has the same crate under `native/arena_core/` and uses the same build command from its
-own directory.
+path. There is one crate and one engine: `ctde_arena/src` is a shim onto `src/marl_arena`, so the same
+environment and build serve both experiments.
+
+The checkpoints are Git LFS objects: run `git lfs install` before cloning (or `git lfs pull` after), or the
+checkout holds pointer files and nothing that loads a policy will run.
 
 `.env` is tracked and identical to `.env.example`; copy the latter if you delete it.
 
@@ -365,13 +381,13 @@ and a positive value samples the policy's softmax at that temperature
 │   ├── promote_run.py          # copy one replicate into the versioned data/
 │   └── plot_metrics.py         # summary.json -> CSV/PNG (needs pandas)
 ├── src/marl_arena/
-│   ├── config.py               # .env -> ArenaConfig, plus seed_all()
+│   ├── config.py               # .env -> ArenaConfig (incl. PARADIGM_CYCLE and the docs/10 switches), seed_all()
 │   ├── models.py               # snapshots, TeamMetrics.as_summary, MatchResult
-│   ├── controllers/            # base.py (features, waypoints), rl_controller.py (CTE/DTE/CTDE)
-│   ├── rl/                     # actions, buffer + GAE, networks, ppo
-│   ├── systems/                # match_variant, simulation, metrics, plotting
+│   ├── controllers/            # base.py (features, rays), rl_controller.py (all six arms), scripted.py
+│   ├── rl/                     # actions, buffer + GAE, networks, ppo, league (past-self opponents)
+│   ├── systems/                # match_variant, simulation, vector (batched evaluator), metrics, plotting
 │   └── ui/dashboard.py         # in-game overlay text
-├── tests/                      # 188 tests, incl. tree-parity, collision geometry, the round-robin statistics, the checkpoint-archive pairing and artefact-path portability
+├── tests/                      # counts in the status table above; incl. tree-parity, collision geometry, the round-robin statistics, the checkpoint-archive pairing and artefact-path portability
 ├── data/                       # experiment 1: promoted replicate + historical_100k/ + PROVENANCE.json
 ├── results/
 │   ├── study/                  # per_seed_metrics.csv, analysis.json, learning_curves.png
@@ -381,8 +397,8 @@ and a positive value samples the policy's softmax at that temperature
 └── ctde_arena/                 # experiment 2: same engine, CTDE variants + MLflow
     ├── main.py  Dockerfile  requirements.txt  README.md
     ├── scripts/                # own train_rl.py (adds MLflow); the shared scripts are byte-identical
-    ├── src/marl_arena/         # own copy; VD / CAC / Comm networks
-    ├── tests/                  # 91 tests
+    ├── src/marl_arena/         # a shim onto the root engine; this tree's .env picks the VD / CAC / Comm arms
+    ├── tests/                  # this tree's suite, run against its own .env
     ├── results/baseline/       # experiment 2's untrained reference
     └── data/                   # promoted replicate, historical_100k/, mlflow_export/, PROVENANCE.json
 ```
@@ -417,9 +433,9 @@ Schemas and the difference between "recorded" and "cumulative" matches:
 ## Docker
 
 ```bash
-cd ctde_arena
-docker build -t ctde-arena .
-docker run --rm -v ${PWD}/data:/app/data -v ${PWD}/mlruns:/app/mlruns ctde-arena
+# from the repository root: the image needs the shared engine as well as ctde_arena/
+docker build -t ctde-arena -f ctde_arena/Dockerfile .
+docker run --rm -v ${PWD}/ctde_arena/data:/repo/ctde_arena/data -v ${PWD}/ctde_arena/mlruns:/repo/ctde_arena/mlruns ctde-arena
 ```
 
 The image installs OpenGL/X11 libraries but defaults to headless training. CI now builds it and imports

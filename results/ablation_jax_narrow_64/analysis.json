@@ -1,0 +1,212 @@
+{
+  "exp1": {
+    "per_paradigm": {
+      "CTDE": {
+        "seeds": 10,
+        "pooled_win_rate": 0.4027,
+        "wilson_95_ci_pooled": [
+          0.3781,
+          0.4277
+        ],
+        "per_seed_win_rates": [
+          0.4,
+          0.1867,
+          0.5667,
+          0.3133,
+          0.1533,
+          0.7267,
+          0.4533,
+          0.1067,
+          0.78,
+          0.34
+        ],
+        "mean_survival": 16.429,
+        "eliminations_per_match": 2.269,
+        "shots_per_match": 86.227,
+        "shot_accuracy": 0.0287
+      },
+      "CTE": {
+        "seeds": 10,
+        "pooled_win_rate": 0.2447,
+        "wilson_95_ci_pooled": [
+          0.2236,
+          0.2671
+        ],
+        "per_seed_win_rates": [
+          0.4267,
+          0.1867,
+          0.2533,
+          0.4333,
+          0.2133,
+          0.1733,
+          0.1267,
+          0.2,
+          0.0333,
+          0.4
+        ],
+        "mean_survival": 13.789,
+        "eliminations_per_match": 2.12,
+        "shots_per_match": 66.611,
+        "shot_accuracy": 0.0326
+      },
+      "DTE": {
+        "seeds": 10,
+        "pooled_win_rate": 0.338,
+        "wilson_95_ci_pooled": [
+          0.3145,
+          0.3623
+        ],
+        "per_seed_win_rates": [
+          0.1533,
+          0.6133,
+          0.1733,
+          0.2533,
+          0.6267,
+          0.08,
+          0.3733,
+          0.68,
+          0.1867,
+          0.24
+        ],
+        "mean_survival": 15.874,
+        "eliminations_per_match": 2.144,
+        "shots_per_match": 74.521,
+        "shot_accuracy": 0.0365
+      }
+    },
+    "pairwise": {
+      "CTDE vs CTE": {
+        "wins": [
+          604,
+          1500,
+          367,
+          1500
+        ],
+        "fisher_two_sided_p": 0.0
+      },
+      "CTDE vs DTE": {
+        "wins": [
+          604,
+          1500,
+          507,
+          1500
+        ],
+        "fisher_two_sided_p": 0.000282
+      },
+      "CTE vs DTE": {
+        "wins": [
+          367,
+          1500,
+          507,
+          1500
+        ],
+        "fisher_two_sided_p": 0.0
+      }
+    }
+  },
+  "exp2": {
+    "per_paradigm": {
+      "CTDE-CAC": {
+        "seeds": 10,
+        "pooled_win_rate": 0.292,
+        "wilson_95_ci_pooled": [
+          0.2695,
+          0.3155
+        ],
+        "per_seed_win_rates": [
+          0.1533,
+          0.54,
+          0.2133,
+          0.1,
+          0.4933,
+          0.2267,
+          0.1733,
+          0.6133,
+          0.2,
+          0.2067
+        ],
+        "mean_survival": 22.521,
+        "eliminations_per_match": 1.965,
+        "shots_per_match": 123.299,
+        "shot_accuracy": 0.0196
+      },
+      "CTDE-Comm": {
+        "seeds": 10,
+        "pooled_win_rate": 0.354,
+        "wilson_95_ci_pooled": [
+          0.3302,
+          0.3785
+        ],
+        "per_seed_win_rates": [
+          0.44,
+          0.14,
+          0.64,
+          0.2867,
+          0.22,
+          0.62,
+          0.2933,
+          0.1467,
+          0.5467,
+          0.2067
+        ],
+        "mean_survival": 23.215,
+        "eliminations_per_match": 2.198,
+        "shots_per_match": 135.377,
+        "shot_accuracy": 0.0229
+      },
+      "CTDE-VD": {
+        "seeds": 10,
+        "pooled_win_rate": 0.3047,
+        "wilson_95_ci_pooled": [
+          0.2819,
+          0.3284
+        ],
+        "per_seed_win_rates": [
+          0.3733,
+          0.2933,
+          0.1333,
+          0.2733,
+          0.2667,
+          0.14,
+          0.5133,
+          0.22,
+          0.2533,
+          0.58
+        ],
+        "mean_survival": 23.745,
+        "eliminations_per_match": 1.807,
+        "shots_per_match": 90.201,
+        "shot_accuracy": 0.0291
+      }
+    },
+    "pairwise": {
+      "CTDE-CAC vs CTDE-Comm": {
+        "wins": [
+          438,
+          1500,
+          531,
+          1500
+        ],
+        "fisher_two_sided_p": 0.000326
+      },
+      "CTDE-CAC vs CTDE-VD": {
+        "wins": [
+          438,
+          1500,
+          457,
+          1500
+        ],
+        "fisher_two_sided_p": 0.472593
+      },
+      "CTDE-Comm vs CTDE-VD": {
+        "wins": [
+          531,
+          1500,
+          457,
+          1500
+        ],
+        "fisher_two_sided_p": 0.004558
+      }
+    }
+  }
+}

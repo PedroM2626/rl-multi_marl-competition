@@ -110,6 +110,13 @@ What it does deliver is a 17,409-parameter critic against CAC's 39,041, and an i
 opponent agents entirely. Both are plausible reasons for its behaviour in
 [§ Results](08_results.md), and both are confounds rather than clean tests of decomposition.
 
+**The VDN the label names is now a switch.** `VD_LOCAL_CRITIC=true` builds
+`LocalValueDecompositionCriticNetwork` instead: one shared per-agent MLP over each teammate's *local*
+observation, summed over the live ones, \(V_{	ext{tot}} = \sum_i V(o_i)\). The rollout row stores the three
+teammates' local observations (27 values, zeros for the dead) as the critic's input, the same row the Comm
+actor reads. Default off; on in the v3 campaign
+([§ 6.8](06_optimisation_procedure.md#68-the-docs10-remedies-as-switches)).
+
 ## 5.5 `CommActorNetwork` — one-round differentiable communication (CTDE-Comm) <a name="commactornetwork"></a>
 
 ```
@@ -142,6 +149,15 @@ CommNet. The differences that matter:
   tensors have a different shape from every other arm.
 * The message is 4-dimensional against a 9-dimensional observation, so the channel is
   lower-dimensional than the private signal it modulates.
+
+**Rounds and masking are switches.** `COMM_ROUNDS=k` adds k - 1 `round_net_*` MLPs (13 -> hidden -> hidden ->
+4): in each extra round an agent re-encodes its observation together with the context it heard, and the means
+are recomputed. Their initialisation uses a key the one-round network never draws from, so `COMM_ROUNDS=1`
+reproduces the measured weights, and the extra layers round-trip through the checkpoint as
+`round_net_2.*`, `round_net_3.*`. `COMM_MASK_DEAD=true` takes each mean over the live other teammates only --
+a dead row is recognised by its all-zero heading encoding -- so the learned `msg_net(0)` no longer reaches
+anyone. Both default off; v3 runs two rounds with masking
+([§ 6.8](06_optimisation_procedure.md#68-the-docs10-remedies-as-switches)).
 
 ## 5.6 Dead code (removed)
 
