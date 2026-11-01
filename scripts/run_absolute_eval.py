@@ -315,6 +315,7 @@ def main() -> None:
     arena_settings = arena_snapshot(args, previous)
     if args.report_only:
         args.opponent = previous.get("opponent", "random")
+        args.campaign = previous.get("campaign", "study")
     if args.report_only and (args.null_json is None or args.compare_pool is None):
         # Re-deriving must reproduce the committed summary, so inherit the inputs it was made with rather
         # than quietly emitting a summary with the null and agreement blocks missing.
@@ -326,7 +327,8 @@ def main() -> None:
 
     if args.report_only:
         rows = load_rows(out_dir / "matches.csv")
-        blocks = sorted({str(row["training_block"]) for row in rows})
+        # The order the run played them in, which is the order it wrote: sorting would put seed10 after seed1.
+        blocks = list(dict.fromkeys(str(row["training_block"]) for row in rows))
         seeds = sorted({row["harness_seed"] for row in rows})
         print(f"re-deriving the summary of {len(rows)} recorded matches "
               f"({len(blocks)} block(s) x {len(seeds)} seed(s)); no matches played", flush=True)

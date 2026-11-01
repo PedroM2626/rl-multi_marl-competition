@@ -329,7 +329,7 @@ end of that section on coverage not being correctness.
 
 | Job | Gate |
 |---|---|
-| `suite (experiment 1/2, py3.10/3.11)` | `pytest tests/ -q` in each tree on two Python versions, then branch + statement coverage of `src/marl_arena` with `--fail-under=83` |
+| `suite (experiment 1/2, py3.10/3.11)` | `pytest tests/ -q` in each tree on two Python versions, then branch + statement coverage of `src/marl_arena` with `--fail-under=83` in experiment 1 and `74` in experiment 2, whose suite measures the whole shared engine but exercises only its own arms |
 | `native extension parity` | builds `native/arena_core` with maturin and Rust, asserts the extension imports, and runs `tests/test_native_parity.py` so the test cannot skip |
 | `docker image builds` | `docker build` of `ctde_arena/` and an import smoke test inside the container |
 | `suite (windows, py3.11)` | the root suite on Windows, where A-42's path bug lived |
