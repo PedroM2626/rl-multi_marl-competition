@@ -1365,8 +1365,9 @@ Three expectations from the diagnosis, and what the data says:
 
 * **Variance was expected to shrink; it barely did.** Mean between-seed SD goes from 0.167 to 0.146 in
   experiment 1 and 0.190 to 0.164 in experiment 2 — a 10–13 % reduction against a spread that is still
-  smaller than the differences between arms in the committed arena. The instability is in training, not in
-  the buzzer.
+  smaller than the differences between arms in the committed arena. The instability is not in the buzzer —
+  and, as [§ Which remedy](#which-remedy) later measured, a large share of it is the spawn the readout assigns
+  each arm rather than training.
 * **Engagement was expected to rise once survival paid less; it is mixed.** CTDE fires 140.3 shots per
   match under v2 against 101.2 under the committed rule and eliminates more (2.27 vs 1.97), but CTE fires
   *less* (107.4 vs 121.7) and DTE eliminates *fewer* agents (1.72 vs 1.95). Making survival cheap does not
@@ -1931,7 +1932,9 @@ reverse is an order that a second campaign reverses.
 
 **Every one of the six arms has a smaller between-seed SD under v3**, and the mean over the six falls from
 0.171 (JAX) and 0.179 (PyTorch) to **0.093**. CTDE-Comm's falls fourfold, 0.205 to 0.054. RQ3 called variance
-the headline result of the study; this is the first configuration in the repository that moves it.
+the headline result of the study; this is the first configuration in the repository that moves it — and
+[§ Which remedy](#which-remedy) below shows that what moves it is how a replicate is *read out*, not how it
+trains.
 
 The precision buys the first within-experiment separation at the seed level anywhere in this document:
 **experiment 1 under v3, CTDE above CTE on all ten seeds**, mean +0.173, exact sign-flip *p* = 0.002, under the
@@ -1949,15 +1952,107 @@ that under them one experiment-1 pair separates at the replicate level; and that
 replication does not survive them (−0.175, 8 of 10 seeds below, *p* = 0.013 against six comparisons'
 corrected 0.0083 — nominal).
 
-**Cannot:** say which remedy did it. Two of them are the obvious suspects for the variance — cycling spawn
-slots every match removes the per-replicate slot assignment the study rotated by seed, and the symmetric
-layout shrinks the slot advantage itself (0.387 / 0.309 / 0.304 for uniform-random teams, against 0.257 /
-0.270 / 0.463 in the committed arena, [§ 8.9](#symmetric-baseline)) — but that is a hypothesis the bundle
-cannot test, and the single-key ablations of [§ 8.13](#ablations) are the instrument that could. Nor can it
-say that CTE is the weakest architecture in general: parameter matching widened every arm except Comm, so the
-v3 CTE is a different network from § 8.1's, and the symmetric arena is a different game. It also does not
-reach the cross-experiment pool, the random pool or the scripted opponent: none of the v3 checkpoints have been
-played there.
+**Cannot,** on the bundle alone: say which remedy did it, or whether it did it through training. The two
+suspects — cycling spawn slots every match, and the symmetric layout, which shrinks the slot advantage itself
+(0.387 / 0.309 / 0.304 for uniform-random teams, against 0.257 / 0.270 / 0.463 in the committed arena,
+[§ 8.9](#symmetric-baseline)) — both act in the held-out matches as well as in training. The next two
+subsections answer both questions. Nor can v3 say that CTE is the weakest architecture in general:
+parameter matching widened every arm except Comm, so the v3 CTE is a different network from § 8.1's, and the
+symmetric arena is a different game.
+
+### Which remedy: the single-key arms, and the readout they also change <a name="which-remedy"></a>
+
+`bash scripts/run_item16_campaign.sh` (phases J and K) trains the two suspects one key at a time on the JAX
+runtime, seeds 1-10 of both experiments at 500,000 steps with 150 held-out greedy matches per replicate,
+paired against the JAX replication as the control: `SPAWN_CYCLE_PER_MATCH=true` alone
+(`results/ablation_jax_spawn_cycle/`, 83.7 min of wall clock at four concurrent replicates) and
+`ARENA_LAYOUT=symmetric` alone (`results/ablation_jax_symmetric/`, 151.2 min). Each, alone, shrinks the
+spread as much as the whole bundle does or more: mean between-seed SD **0.062** and **0.089** against the
+control's 0.171 and v3's 0.093, every one of the six arms lower in both.
+
+Both keys, however, act in the held-out matches too: under cycling a replicate's 150 evaluation matches put
+each team on all three spawns in turn instead of the one its seed's rotation assigned, and under the symmetric
+layout the evaluation is played in the other arena. So `bash scripts/run_remedy_readout.sh` re-reads the
+**same checkpoints** at T = 0 with the key flipped in the evaluation only — nothing is trained — into
+`results/readout_remedies/`. The two controls (each arm re-read under its own key) reproduce the published
+per-seed numbers **exactly**, every one of the 120 cells, so every other row differs from its source in the
+readout and nothing else.
+
+| Checkpoints, readout | CTDE | CTE | DTE | CAC | Comm | VD | mean SD |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| JAX control, committed readout (published) | 0.166 | 0.165 | 0.187 | 0.111 | 0.205 | 0.189 | **0.171** |
+| JAX control, cycled readout | 0.084 | 0.097 | 0.109 | 0.115 | 0.075 | 0.100 | **0.097** |
+| JAX control, symmetric-arena readout | 0.115 | 0.089 | 0.094 | 0.143 | 0.152 | 0.078 | **0.112** |
+| trained with cycling, committed readout | 0.166 | 0.243 | 0.179 | 0.120 | 0.138 | 0.202 | **0.175** |
+| trained with cycling, cycled readout (published) | 0.030 | 0.063 | 0.086 | 0.045 | 0.066 | 0.084 | **0.062** |
+| trained symmetric, committed-arena readout | 0.187 | 0.230 | 0.180 | 0.126 | 0.152 | 0.151 | **0.171** |
+| trained symmetric, symmetric readout (published) | 0.099 | 0.084 | 0.074 | 0.064 | 0.110 | 0.103 | **0.089** |
+| v3, cycling off in the readout | 0.178 | 0.081 | 0.195 | 0.112 | 0.071 | 0.152 | **0.131** |
+| v3, as published | 0.105 | 0.074 | 0.153 | 0.084 | 0.054 | 0.088 | **0.093** |
+
+*Between-seed SD of the held-out greedy win rate, ten seeds per cell; CAC, Comm and VD are experiment 2's
+CTDE-CAC, CTDE-Comm and CTDE-VD.*
+
+**Neither remedy makes training more consistent; both make the measurement more precise.** Policies trained
+under either key, read out the committed way, spread exactly as much as the control (0.175 and 0.171 against
+0.171), while the control's own checkpoints, read out under either key, lose most of their spread (0.097 and
+0.112) without a single weight changing. The mechanism is the slot bias of A-32: in the committed readout an
+arm is evaluated from the one spawn its seed's rotation gave it, and the three spawns are worth 0.257 / 0.270 /
+0.463 to a uniform-random team, so that assignment is a large share of what looked like run-to-run training
+variance. Rotation by `seed % 3` removes the slot from the *mean*; it puts it into the *spread*. Spreading a
+replicate's evaluation over all three spawns, or playing it where the spawns are worth nearly the same,
+takes it back out. v3 tells the same story: with cycling off in its readout its spread rises to 0.131, no
+lower than the plain JAX checkpoints read in the same symmetric arena (0.112), so the rest of the bundle adds
+nothing measurable on top.
+
+The ranking result moves with it. **CTDE above CTE**, v3's one replicate-level separation (10 of 10 seeds,
+*p* = 0.002), is not a property of the remedies' training: the control's own checkpoints under the cycled
+readout give it on 9 of 10 seeds (+0.167, sign-flip *p* = 0.006, under the per-experiment 0.0167; Friedman
+*p* = 0.018), while under the committed readout the same checkpoints give *p* = 0.154. In the symmetric-arena
+readout they give *p* = 0.008 by Friedman in experiment 1. Experiment 2 separates under none of the readouts
+(Friedman *p* ≥ 0.061). What the separation needs is a readout that does not hand each arm one spawn.
+
+**What this settles and what it does not.** It settles docs/11's item 16: of the two suspects, neither does
+it through training, and both do it through the readout; the symmetric arena does slightly less than
+cycling, consistent with the residual slot bias it keeps (0.387 for Team 1, [§ 8.9](#symmetric-baseline)).
+It does not say that training variance is small: under the cycled readout the six arms still spread
+0.075-0.115 between seeds, two to three times what 150 matches of binomial noise alone would give at these
+rates (about 0.04), and no remedy here moved that part. And it does not re-read the published PyTorch study,
+whose checkpoints are versioned but whose cycled re-reading has not been run.
+
+### The v3 checkpoints on the three opponent scales <a name="v3-pools"></a>
+
+v3 was the only study whose policies had met nothing but each other. Phases G-I of
+`run_item16_campaign.sh` play its versioned checkpoints (`data/campaign_replicates/v3/`) on every scale the
+study's own policies have been through, in the symmetric arena they were trained in, with the network-shaping
+v3 keys exported and spawn cycling off — the harness assigns spawns itself and refuses to run with cycling on
+([A-56](11_code_audit.md#a-campaign-replay-checked-only-the-width)). The block pairings are the headline
+pool's.
+
+| Scale | Matches | Order (win rate) | Separated pairs |
+|---|---:|---|---|
+| Round-robin, `results/cross_arena/v3_blocks.json` (66 min) | 30,000 | VD 0.379 · CTDE 0.367 · DTE 0.347 · CAC 0.322 · Comm 0.303 · CTE 0.240 | **12 of 15** (Bonferroni-McNemar), 9 surviving leave-one-block-out |
+| Random opponents, `results/absolute_v3/` (9 min) | 4,500 | VD 0.671 · CAC 0.668 · CTDE 0.609 · DTE 0.555 · Comm 0.527 · CTE 0.472 | every arm above the symmetric arena's slot-matched null (0.333), by +0.139 to +0.337 |
+| Scripted opponents, `results/scripted_v3/` (13 min) | 4,500 | DTE 0.405 · CTDE 0.364 · VD 0.304 · Comm 0.292 · CAC 0.261 · CTE 0.203 | — |
+
+Three readings, each against the study's own pools:
+
+* **The round-robin now orders the field.** Twelve of fifteen pairs clear the corrected McNemar bar against
+  four in the study's pool ([§ 8.10](#cross-arena)), nine of them with any one block removed against three.
+  CTE is last against every arm. The arm the study's pool lifted out of the field, CTDE-Comm, is **fifth**,
+  separated *below* VD, CTDE, DTE and CAC — above CTE only. Some of this is the arena rather than the policies — the pool is played
+  in the symmetric layout, whose spawns are closer in value — and none of it is a statement about the
+  study's networks: v3's are different networks trained under a different objective.
+* **The two opponent scales agree again.** Ranking the six by peers and by random opponents gives Spearman
+  +0.829 (Pearson +0.770), as the study's matched pools did (+0.886); against the scripted rule +0.714, where
+  the study's checkpoints gave +0.086 ([§ 8.11](#scripted-opponents)).
+* **Absolute strength is lower, not higher.** Against random teams the v3 arms win 0.472-0.671 where the
+  study's won 0.607-0.760, against a null that is the same one third; against the scripted rule they win
+  0.203-0.405 against 0.248-0.347. The remedies make the instrument more precise; they do not make the
+  policies better at the game.
+
+What none of this does is separate the six architectures under the committed configuration, or say which v3
+key reorders the round-robin: the pools measure the bundle's policies in the bundle's arena.
 
 ## 8.15 Summary of answers <a name="summary-of-answers"></a>
 
@@ -1965,7 +2060,10 @@ played there.
 |---|---|
 | **RQ1** — does CTDE beat CTE and DTE? | **No, and the ordering is not ours to report.** CTDE finishes **second** at 0.326 behind DTE at 0.381 and ahead of CTE at 0.252. The paired per-seed differences are +0.074 vs CTE (*p* = 0.348) and −0.055 vs DTE (*p* = 0.640); detecting them would need ~110 and ~450 replicates. Removing the single degenerate replicate (seed 6) puts CTDE first at 0.362 and flips the sign of the CTDE–DTE difference — so the honest answer is that **this study measures no exp-1 ordering at all.** |
 | **RQ2** — which CTDE variant wins? | **No detectable difference.** VD 0.367, Comm 0.331, CAC 0.282; every paired per-seed comparison has *p* ≥ 0.363, and the smallest gap costs ~117 replicates to confirm. The historical claim that Comm loses decisively **does not reproduce**, and the historical winner CAC is now last of three. |
-| **RQ3** — is it stable? | **No — and that is the headline result.** Between-seed SD is 0.122–0.218 against a 1/3 chance baseline; single replicates range from **0.000 to 0.767** within one architecture; 1 of 30 paradigm-slots reads out as a never-fires policy while the same network led its own match on kills during training — and it stays at 0.020 under a sampled readout, so the anomaly is held-out evaluation rather than argmax ([§ Readout](#readout-divergence)); 5 of 20 replicates play a different game entirely, matches decided by the 90 s clock rather than by kills. The dominant finding is variance, not ranking — and re-measuring the same networks under a sampled readout locates it: the between-replicate spread does **not** shrink when the action rule changes (0.128–0.220 at T = 0.5 and T = 1 against 0.122–0.218 under argmax), so what is unstable is the training, not the measurement. What the readout does control is the level and, in experiment 2, which architecture appears first ([§ Readout re-measured](#readout-re-measured)). |
+| **RQ3** — is it stable? | **No — and that is the headline result.** Between-seed SD is 0.122–0.218 against a 1/3 chance baseline; single replicates range from **0.000 to 0.767** within one architecture; 1 of 30 paradigm-slots reads out as a never-fires policy while the same network led its own match on kills during training — and it stays at 0.020 under a sampled readout, so the anomaly is held-out evaluation rather than argmax ([§ Readout](#readout-divergence)); 5 of 20 replicates play a different game entirely, matches decided by the 90 s clock rather than by kills. The dominant finding is variance, not ranking — and re-measuring the same networks under a sampled readout locates it: the between-replicate spread does **not** shrink when the action rule changes (0.128–0.220 at T = 0.5 and T = 1 against 0.122–0.218 under argmax), so the action rule is not where the instability lives. It is not all training either: reading the JAX
+replication's checkpoints with spawns cycled through the evaluation removes about 43 % of the between-seed SD
+(mean 0.171 → 0.097) without changing a weight, because the committed readout evaluates each arm from the one
+spawn its seed assigned ([§ Which remedy](#which-remedy)). What the readout does control is the level and, in experiment 2, which architecture appears first ([§ Readout re-measured](#readout-re-measured)). |
 | **RQ4** — do the two experiments' numbers belong on one scale? | **Yes — and on that one scale the finding is one arm wide, not a ranking.** The cross-experiment round-robin ([§ 8.10](#cross-arena)) puts all six arms on common opponents over **30,000 matches and ten independently trained networks per architecture, which is every replicate the study produced**: Comm 0.359, VD 0.331, CTDE 0.317, CAC 0.315, DTE 0.310, CTE 0.304. Four of fifteen pairs clear Bonferroni-corrected McNemar, all four put CTDE-Comm above another arm, and three of the four survive deleting any one checkpoint set. The count of separations went 2 → 8 → 5 → 4 as the checkpoint sets went 1 → 3 → 6 → 10, and three of the five pairs the six-block pool separated lost correction when four more trained networks were added — DTE fell from the top band to fifth. What the ten-block pool does *not* support is any ordering among the five architectures without learned communication. |
 
 **What this repository can defensibly claim.**
@@ -2030,17 +2128,22 @@ played there.
    multiplies CTDE-Comm's between-block SD tenfold ([§ 8.13](#no-dr-absolute)).
 8. On the JAX runtime the study reproduces its null and not its order — both experiments change leader — and
    with every docs/10 remedy on together (v3) the between-seed SD of all six arms falls, from a mean of 0.171
-   to 0.093, enough for **the one within-experiment, replicate-level separation in this document**: CTDE above
-   CTE on all ten v3 seeds (sign-flip *p* = 0.002). Which remedy does it is not measured
-   ([§ 8.14](#v3)). Against a scripted engage-and-fire opponent the trained arms win 0.248-0.347, about the
-   share an equal team would take, in a third order matching neither pool ([§ 8.11](#scripted-opponents)).
+   to 0.093, with CTDE above CTE on all ten v3 seeds (sign-flip *p* = 0.002). **That is the readout, not the
+   training**: each of the two candidate keys alone does as much, and re-reading the same checkpoints with the
+   key flipped only in the evaluation shows that policies trained under either key spread as much as the
+   control (0.175 and 0.171), while the control's own checkpoints under a cycled readout fall to 0.097 and
+   separate CTDE from CTE (*p* = 0.006). The per-replicate spawn the committed readout assigns is a large
+   share of the study's "training variance" ([§ Which remedy](#which-remedy)). On the common pool the v3
+   checkpoints separate 12 of 15 pairs, with CTDE-Comm fifth ([§ v3 on the opponent scales](#v3-pools)).
+   Against a scripted engage-and-fire opponent the study's arms win 0.248-0.347, about the share an equal team
+   would take, in a third order matching neither pool ([§ 8.11](#scripted-opponents)).
 
 **What it cannot claim:** that any architecture is best, or that the six admit a strict ordering — CTDE-Comm
 and DTE cannot be told apart, and neither can CTDE, CTDE-CAC and CTDE-VD; that the ordering is settled by six
 checkpoints per architecture, since the count of separated pairs has moved at every replication step
 (2 → 8 → 5) and two of the three-block table's headline separations disappeared at six; that within-experiment differences exist under the committed configuration, since every corrected
-significance there is *cross*-experiment — the one within-experiment separation is v3's, under a bundle of
-changed keys; that win rate here measures fighting skill rather than, in a third of matches,
+significance there is *cross*-experiment — the within-experiment separations are v3's and the cycled
+re-reading's, both under a readout other than the committed one; that win rate here measures fighting skill rather than, in a third of matches,
 survival to the clock; that the ablated configurations generalise — each arm's own table is measured inside its
 own co-adapted runs, and while all three have now been through the common-opponent pool
 ([§ 8.13](#no-dr-pool)), the two capacity arms reach it at three blocks rather than ten and only `no_dr` has been

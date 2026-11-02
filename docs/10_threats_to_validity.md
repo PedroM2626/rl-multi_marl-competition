@@ -223,7 +223,11 @@ applied to the original single-seed evidence, and left three that no amount of r
 6. ~~**Slot is not rotated.**~~ **Fixed** — `paradigm_rotation = seed % 3`, so across the 20 runs each
    paradigm occupies each slot 6 or 7 times. Note what this does *not* buy: rotation removes the
    confound, it does not remove the slot's effect, so residual slot variance now appears inside the
-   between-seed SD rather than hiding inside the architecture contrast.
+   between-seed SD rather than hiding inside the architecture contrast. **Now measured:** re-reading the JAX
+   replication's checkpoints with each team cycled through all three spawns during the held-out matches cuts
+   the mean between-seed SD from 0.171 to 0.097 without changing a weight, and is enough to separate CTDE
+   from CTE (*p* = 0.006); training with either slot remedy, read out the committed way, leaves the SD where
+   it was ([§ 8.14](08_results.md#which-remedy)).
 7. **Budget still short of the hypothesis being tested.** The claim that CTDE-Comm needs more steps than
    the others is tested at 500 k steps; if it is still improving at the end of that budget, the answer is
    "not yet", not "no". The evidence now points the other way: at 500 k steps three of six arms are best

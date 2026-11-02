@@ -284,7 +284,10 @@ def arena_snapshot(args, previous: dict) -> dict | None:
         return previous.get("arena")
     from marl_arena.config import CONFIG
 
+    # Recorded only off the committed layout, so every summary measured in the legacy arena re-derives as it is.
+    layout = {} if CONFIG.arena_layout == "legacy" else {"layout": CONFIG.arena_layout}
     return {
+        **layout,
         # The harness supplies every match variant explicitly, so domain randomisation is off in play
         # whatever the environment says; recorded anyway because that is what makes the no_dr arm's
         # checkpoints comparable to the study's on this scale.

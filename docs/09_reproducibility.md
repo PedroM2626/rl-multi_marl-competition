@@ -140,13 +140,15 @@ of them in the same place.
 | `python scripts/train_rl.py --seed S` | 1 | Headless JAX PPO training; seeded smoke path verified, and the full study re-trained on it ([§ 8.14](08_results.md#v3)) |
 | `python main.py` | 1 | Ursina 3D window, greedy policies loaded from `data/checkpoints/`; demo matches record under `data/demo/`, not the versioned metrics tree |
 | `python scripts/plot_metrics.py` | 1 | Reads `data/metrics/summary.json` → `exports/metrics/` |
-| `python -m pytest tests/ -q`<!--auto:cmd-exp1--> | 1 | 215 passed, 1 skipped (verified 2026-11-01) |
+| `python -m pytest tests/ -q`<!--auto:cmd-exp1--> | 1 | 217 passed, 1 skipped (verified 2026-11-02) |
 | `python scripts/check_runtime.py` | either | Refuses an interpreter that is not the JAX pin + Rust extension; campaign scripts call it through `scripts/_runtime.sh` |
 | `cd ctde_arena && python scripts/train_rl.py` | 2 | Same, plus MLflow scalar and checkpoint-artefact logging |
 | `cd ctde_arena && mlflow ui --backend-store-uri file:./mlruns` | 2 | Tracking UI |
 | `cd ctde_arena && python main.py` | 2 | 3D window for the CTDE variants |
-| `cd ctde_arena && python -m pytest tests/ -q`<!--auto:cmd-exp2--> | 2 | 90 passed, 1 skipped (verified 2026-11-01) |
+| `cd ctde_arena && python -m pytest tests/ -q`<!--auto:cmd-exp2--> | 2 | 90 passed, 1 skipped (verified 2026-11-02) |
 | `docker build -t ctde-arena -f ctde_arena/Dockerfile . && docker run --rm -v ${PWD}/ctde_arena/data:/repo/ctde_arena/data -v ${PWD}/ctde_arena/mlruns:/repo/ctde_arena/mlruns ctde-arena` | 2 | Containerised training; built from the repository root because the engine is shared |
+| `bash scripts/run_item16_campaign.sh` | both | docs/11 item 16 as a resumable queue: the v3 checkpoints on the round-robin, random and scripted scales (66, 9 and 13 min), then `SPAWN_CYCLE_PER_MATCH` and `ARENA_LAYOUT=symmetric` one at a time at seeds 1-10 (83.7 and 151.2 min at four concurrent replicates), then versioning their checkpoints ([§ 8.14](08_results.md#which-remedy)) |
+| `bash scripts/run_remedy_readout.sh` | both | Re-reads the JAX, single-key and v3 checkpoints at T = 0 with a slot remedy flipped in the evaluation only, into `results/readout_remedies/`; its two controls reproduce the published per-seed numbers exactly |
 | `bash scripts/run_v3_campaign.sh` | both | The resumable queue behind [§ 8.14](08_results.md#v3): symmetric-arena baseline, JAX replication, the v3 study, scripted opponents, capacity arms at ten seeds, the `no_dr` random pool |
 | `python scripts/report_study.py --sampled-readout results/readout/T0.5 --json-out results/study/coupled_tests.json` | both | The study table under both readouts, Friedman and sign-flip tests, bootstrap intervals on the secondary metrics |
 | `python scripts/update_doc_counts.py` | both | Runs both suites under coverage and rewrites every marked test count and coverage figure in the docs; `--check` is the CI gate |
@@ -265,9 +267,9 @@ used to be typed, and went stale with every new test:
 <!--auto:pytest-block-->
 ```
 $ python -m pytest tests/ -q
-215 passed, 1 skipped in 107.63s
+217 passed, 1 skipped in 141.35s
 $ cd ctde_arena && python -m pytest tests/ -q
-90 passed, 1 skipped in 18.82s
+90 passed, 1 skipped in 28.24s
 ```
 <!--/auto-->
 
@@ -295,7 +297,7 @@ previous implementation recorded:
 
 | Tree | Statements | Missing | Statement | Branch | Runtime measured |
 |---|---:|---:|---:|---:|---|
-| Experiment 1<!--auto:cov-exp1--> | 2,275 | 235 | **90 %** | **80 %** | JAX/Rust |
+| Experiment 1<!--auto:cov-exp1--> | 2,275 | 234 | **90 %** | **81 %** | JAX/Rust |
 | Experiment 2 (`ctde_arena/`)<!--auto:cov-exp2--> | 2,275 | 481 | **79 %** | **66 %** | JAX/Rust |
 | Experiment 1 | 1,548 | 91 | 94 % | — | PyTorch, historical |
 | Experiment 2 (`ctde_arena/`) | 1,660 | 187 | 89 % | — | PyTorch, historical |
@@ -651,7 +653,7 @@ inclination to replay 4,500 matches.
 
 ## 9.7 Artefact inventory
 
-Every versioned experiment artefact (452 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed, and each hash is of the blob Git stores rather than of the file on disk — a text artefact checked out with CRLF on Windows hashes differently from the same committed bytes on Linux, and a reader on any platform should be able to reproduce this column.
+Every versioned experiment artefact (791 files), with SHA-256 for integrity checking. Regenerate this section with `python scripts/report_inventory.py`; it is built from `git ls-files`, so it cannot drift from what is actually committed, and each hash is of the blob Git stores rather than of the file on disk — a text artefact checked out with CRLF on Windows hashes differently from the same committed bytes on Linux, and a reader on any platform should be able to reproduce this column.
 
 **Promoted replicate.** The artefacts that match the current code. Chosen by `promote_run.py --seed median`, which is the replicate with the least L1 distance to the per-arm study means; `PROVENANCE.json` records the choice and the full run summary behind it.
 
@@ -733,6 +735,170 @@ Every versioned experiment artefact (452 files), with SHA-256 for integrity chec
 | `results/study_v3/coupled_tests.json` | 4,781 | `ab532343e3aff5164886b636cfa231bdcbe166e8dc0ee8fb92822bc353772155` |
 | `results/study_v3/per_seed_metrics.csv` | 5,258 | `8427d1c7ed08b746a2f3a645451d1092c788bc11a98cfe34ab15fe8d61e251f5` |
 | `results/study_v3/report.md` | 7,987 | `f4fbc1ac1bf0cc89571a41ffb5c47df815947e75bd8006f6f1a40c45a3a90055` |
+
+**docs/11 item 16.** What `scripts/run_item16_campaign.sh` and `scripts/run_remedy_readout.sh` measured: the v3 checkpoints on the round-robin (`cross_arena/v3_blocks.*`, its fifty run directories under `cross_arena_v3_blocks/`), the random and the scripted scale ([§ 8.14](08_results.md#v3-pools)); the two slot remedies one key at a time on the JAX runtime; and the same checkpoints re-read with the key flipped in the evaluation only (`readout_remedies/`, [§ 8.14](08_results.md#which-remedy)).
+
+| Path | Bytes | SHA-256 |
+|---|---:|---|
+| `results/ablation_jax_spawn_cycle/analysis.json` | 4,225 | `d3f01749fb4cf8b8e817c27c41746bb8d18e82d1af5d3b5e7ce48fc3736f19b2` |
+| `results/ablation_jax_spawn_cycle/coupled_tests.json` | 4,788 | `f1ef6e54dd0fdef845a61bbeec8023f8f020e68dc7a467b6b0d3905d701648dd` |
+| `results/ablation_jax_spawn_cycle/per_seed_metrics.csv` | 5,256 | `4db6025f88cf9a6856f4a70cfffe9b51b1f09993077e67529c1c63b3b444d08e` |
+| `results/ablation_jax_spawn_cycle/report.md` | 8,076 | `82163504b88bf04c9953559ef14388aac023ad3c8c6e580c402be48a0a390da9` |
+| `results/ablation_jax_symmetric/analysis.json` | 4,208 | `4874f5e2d17489cd7599f55d8f6eba926dcf209aac3d8500aee3ad120e0414d7` |
+| `results/ablation_jax_symmetric/coupled_tests.json` | 4,781 | `e64c96aae94939cdf1d83d4cb0dca9a7dc53f4d80e6745b559186947b5c68a73` |
+| `results/ablation_jax_symmetric/per_seed_metrics.csv` | 5,269 | `3df541d5fa5d18fb726203ccb2feedb57d161bd0339a6aaf5024cf110a416063` |
+| `results/ablation_jax_symmetric/report.md` | 8,051 | `19008c26a5b2d6c443debf858c6a03af203bd851656c09ef2e572d45a9303db7` |
+| `results/absolute_v3/matches.csv` | 246,479 | `600d454e4d0ab3cfa91a41f62a3e2793c30788d2a1ac951f4059ed4474a96f31` |
+| `results/absolute_v3/summary.json` | 44,992 | `9616adc881f18b6a7d3f98fef82336fb0f2fe3e8e0bfa937319ade69c7fab7d4` |
+| `results/cross_arena/v3_blocks.csv` | 8,195,529 | `5ccd6cee672b914d67c67c3ee705caa1c211c8f75996a946dc2629f6e67af277` |
+| `results/cross_arena/v3_blocks.json` | 39,610 | `668008628411b6028fe8bcbc2715a72fa3bb69b998f18b884225caeb09ee9e46` |
+| `results/cross_arena_v3_blocks/v3__e1s10_e2s5_h1/matches.csv` | 114,717 | `08ac136a7c6ca5f80e000a0ff8a88d37b93b39135ba41f4e040126ee32aaa20f` |
+| `results/cross_arena_v3_blocks/v3__e1s10_e2s5_h1/summary.json` | 3,415 | `f8c774868b1aa92e09e0f321f26c32a8ad2548df4f425d9f61ea577b78a75b5c` |
+| `results/cross_arena_v3_blocks/v3__e1s10_e2s5_h2/matches.csv` | 114,840 | `7be10ca152335c8520f7035f0f2f25ed13c535da50685ff1bc4aabd37818e630` |
+| `results/cross_arena_v3_blocks/v3__e1s10_e2s5_h2/summary.json` | 3,410 | `3b3f5fb6810c83ba9206101e3011fc14c0cf1119fe5d6a6c1122b3ae4817c4a4` |
+| `results/cross_arena_v3_blocks/v3__e1s10_e2s5_h3/matches.csv` | 114,388 | `3b0f54933ce0c90407a444c9dd54418508a1de02ea721b86dfa43adf64642d05` |
+| `results/cross_arena_v3_blocks/v3__e1s10_e2s5_h3/summary.json` | 3,424 | `627082213534272f6a3f4dafd53c7b1bffdf694d4c8025e9e7b9a0d7b8cf0e52` |
+| `results/cross_arena_v3_blocks/v3__e1s10_e2s5_h4/matches.csv` | 114,964 | `91f9053971e44050ca0535612d6e0dadec1ce48ab48c1eeda6f523fc4b64a409` |
+| `results/cross_arena_v3_blocks/v3__e1s10_e2s5_h4/summary.json` | 3,414 | `314c272b98030f7b456887e6a93c654e5bdfef5a5c26d956fe8889f3bad70f20` |
+| `results/cross_arena_v3_blocks/v3__e1s10_e2s5_h5/matches.csv` | 114,946 | `32c8a8c92fbe44304641ef2995a64aac339a4b0a699a718fec8655f87d282acf` |
+| `results/cross_arena_v3_blocks/v3__e1s10_e2s5_h5/summary.json` | 3,409 | `ef5b32a451b657a41c07b22ce8b2195d497f862da461a0bed8f45e1e577283e5` |
+| `results/cross_arena_v3_blocks/v3__e1s1_e2s7_h1/matches.csv` | 114,673 | `4d6ec3f5d75563d4069a224682871edead3882f96859dc7bfe7dc96a4721925e` |
+| `results/cross_arena_v3_blocks/v3__e1s1_e2s7_h1/summary.json` | 3,416 | `47670ca321ab8f770707f6d7f1328bef93021478a2e6a1a2ad5afc867f2260f4` |
+| `results/cross_arena_v3_blocks/v3__e1s1_e2s7_h2/matches.csv` | 114,819 | `b46c0e58b05bdf857aade4dae5af9d0e3b5421553f8e8b9ea2619f97413d479a` |
+| `results/cross_arena_v3_blocks/v3__e1s1_e2s7_h2/summary.json` | 3,409 | `0f0155326ffd1acf28f60f09f7085a682bf8423dc6133b6228c9fb88806b0d8f` |
+| `results/cross_arena_v3_blocks/v3__e1s1_e2s7_h3/matches.csv` | 114,497 | `939e0c031025a2f4b62dec9f7c7070fd38ed1614103b091127e5586666dde839` |
+| `results/cross_arena_v3_blocks/v3__e1s1_e2s7_h3/summary.json` | 3,418 | `0a73913db0b07d58d2dcf73f17735bdb918c5b93c37f44ffff4b5536b6d393ab` |
+| `results/cross_arena_v3_blocks/v3__e1s1_e2s7_h4/matches.csv` | 114,763 | `28f15827c2d4bb66db9c0d16a73ca25c34c2c7a0ad123781204827c84e8da901` |
+| `results/cross_arena_v3_blocks/v3__e1s1_e2s7_h4/summary.json` | 3,412 | `54a5c52340d684c954b728be360d8bc2ea549f0365e88593e1b27dd858530a25` |
+| `results/cross_arena_v3_blocks/v3__e1s1_e2s7_h5/matches.csv` | 114,636 | `4f0181873869d96c05aa187b3fb8d738945c27564b6d615bf247d51bc3c2623c` |
+| `results/cross_arena_v3_blocks/v3__e1s1_e2s7_h5/summary.json` | 3,414 | `794d77fd4112475220b685fdb01d7ae0c471015f397848d4921be2e49bdf4051` |
+| `results/cross_arena_v3_blocks/v3__e1s2_e2s1_h1/matches.csv` | 114,919 | `1ccd6d047c5edbc67f162921e943e7cfaca34cea27bc4d3983fb9374a091e1d6` |
+| `results/cross_arena_v3_blocks/v3__e1s2_e2s1_h1/summary.json` | 3,404 | `3e68acd5296f188e99f9e9cc0a297b92e7bbabc689cf6ff3e02f5831a0360a25` |
+| `results/cross_arena_v3_blocks/v3__e1s2_e2s1_h2/matches.csv` | 115,097 | `e0c93c4053d8062a3d9de611db3d7fd89da3e2f1898642f145b0becb823884dc` |
+| `results/cross_arena_v3_blocks/v3__e1s2_e2s1_h2/summary.json` | 3,416 | `1d929541d393100415a008f9dfe33c4a7cf10660b369a18a55eb5ca6e919e8ee` |
+| `results/cross_arena_v3_blocks/v3__e1s2_e2s1_h3/matches.csv` | 115,253 | `784a684c711cd4111dd97cc8554d4068ec432ec21e9c3203a679a574033fe14b` |
+| `results/cross_arena_v3_blocks/v3__e1s2_e2s1_h3/summary.json` | 3,414 | `675d65e2d1e3abbc5f5c6169d7c330705dad064ddad7421a62a53025043b3b27` |
+| `results/cross_arena_v3_blocks/v3__e1s2_e2s1_h4/matches.csv` | 114,573 | `f8ddee6636387712bb183b27e995f2a46d70423b93db71120df56e6e78f8876f` |
+| `results/cross_arena_v3_blocks/v3__e1s2_e2s1_h4/summary.json` | 3,414 | `08be2bc747e58b5b63ac92b590d89a321bc14f0480a3b589bfb46b75742332e2` |
+| `results/cross_arena_v3_blocks/v3__e1s2_e2s1_h5/matches.csv` | 115,018 | `25f1419352df5c8fa91c05293630ed37436838b38002c0e919a78c71604bbce1` |
+| `results/cross_arena_v3_blocks/v3__e1s2_e2s1_h5/summary.json` | 3,412 | `5250f2276d85e5cce5632cd4b43fe6734f0c4b1597c023b8dbcec65d165d29e4` |
+| `results/cross_arena_v3_blocks/v3__e1s3_e2s3_h1/matches.csv` | 114,648 | `d597472a36b8f66c73edfded5a7382dde5ce9e4035961b9b1706a85bef5b6f6e` |
+| `results/cross_arena_v3_blocks/v3__e1s3_e2s3_h1/summary.json` | 3,412 | `78ad9f35ba2fd047503851b9d2e10b4c09a4371fca73778065aaf9a95e84f394` |
+| `results/cross_arena_v3_blocks/v3__e1s3_e2s3_h2/matches.csv` | 114,683 | `b565c2dc06cb098c5bfd66143f890d257ac99dddffa7e3379842d2bfe6844781` |
+| `results/cross_arena_v3_blocks/v3__e1s3_e2s3_h2/summary.json` | 3,406 | `ad8a178e5d6474848b87cb8482d92a978c80aa0adace92e96b509a373e154d06` |
+| `results/cross_arena_v3_blocks/v3__e1s3_e2s3_h3/matches.csv` | 114,947 | `c8905dd1bdf5225890f81704776ec2a76caa924fb8cd5cbee0a0d8a463dacea7` |
+| `results/cross_arena_v3_blocks/v3__e1s3_e2s3_h3/summary.json` | 3,412 | `e65fb9fa8a1ba8897b44fbfc1826b75c0469955c5bd1a9a8c948b165a0e1c35b` |
+| `results/cross_arena_v3_blocks/v3__e1s3_e2s3_h4/matches.csv` | 114,837 | `0f5a8d3356e24ccf5f7b5aac09aa691c3604e601f5e7860e764e8f292f8fe9b9` |
+| `results/cross_arena_v3_blocks/v3__e1s3_e2s3_h4/summary.json` | 3,409 | `07c53137a3377f060ecc3a4ee386bddacee91fb27abc68d69cc5bbf138d6fce1` |
+| `results/cross_arena_v3_blocks/v3__e1s3_e2s3_h5/matches.csv` | 114,660 | `a6152009a1ac47d14ce86ea8153a3eae91381846de5fc0f4f9765e0df650f47e` |
+| `results/cross_arena_v3_blocks/v3__e1s3_e2s3_h5/summary.json` | 3,420 | `866fc9668173c78a7bf805eeef0aec074b58d976b86dcf7cadf1ed3061f5ae3a` |
+| `results/cross_arena_v3_blocks/v3__e1s4_e2s4_h1/matches.csv` | 116,032 | `665e8be12e47fcc5e7db7853e41fddf33bca73be29b437c8ae055caa1cafc35a` |
+| `results/cross_arena_v3_blocks/v3__e1s4_e2s4_h1/summary.json` | 3,415 | `63e406e73a0a3c900dab7f1513dec839dffab40e9ab853e5d500264a0e80d09d` |
+| `results/cross_arena_v3_blocks/v3__e1s4_e2s4_h2/matches.csv` | 116,013 | `ef22a4e4ad5facd628aff724ea9e509c76b0730493bcf7474aa8dd33401ba4e7` |
+| `results/cross_arena_v3_blocks/v3__e1s4_e2s4_h2/summary.json` | 3,411 | `d1623b0b55c3e03dcaeb10aa173960fa25e3af03960c29403d9da0b836cd3de9` |
+| `results/cross_arena_v3_blocks/v3__e1s4_e2s4_h3/matches.csv` | 115,782 | `afb14519682c15b622391890e390174af5da336c7d8bd3f69fa77ecfd7673cee` |
+| `results/cross_arena_v3_blocks/v3__e1s4_e2s4_h3/summary.json` | 3,417 | `8c09ee60f789d16d9b6d15b81189e812aaf490eec16fb0c631a7827c039518c9` |
+| `results/cross_arena_v3_blocks/v3__e1s4_e2s4_h4/matches.csv` | 116,027 | `1074ec3ff79835f608ca90bea62d30b13c04134738c1862ee8e31f918ee65007` |
+| `results/cross_arena_v3_blocks/v3__e1s4_e2s4_h4/summary.json` | 3,410 | `7f8020015c7544631948024682226c34871db56f2233619732c46486bcb038ee` |
+| `results/cross_arena_v3_blocks/v3__e1s4_e2s4_h5/matches.csv` | 115,766 | `d79d633f02765d1736f5890dd75377dc36a4dac982d68017b2f9940bb7f5ce43` |
+| `results/cross_arena_v3_blocks/v3__e1s4_e2s4_h5/summary.json` | 3,418 | `c087c21029a80fe07adfc581d1b0e3e38f59dc9c79b5f83b69e56536b91cd144` |
+| `results/cross_arena_v3_blocks/v3__e1s5_e2s6_h1/matches.csv` | 114,976 | `bb723031a91b79e8bd8924eb0fac97560b4ed67b9f865432722e6072d837cd36` |
+| `results/cross_arena_v3_blocks/v3__e1s5_e2s6_h1/summary.json` | 3,413 | `c7455c296de9ee7877df24a003119bc1e6a83cf8cd9b7786424a6429aa3e3183` |
+| `results/cross_arena_v3_blocks/v3__e1s5_e2s6_h2/matches.csv` | 115,061 | `fa52e89c9dbcb25c8a8e7f7382afe1d7dec0836892696d72fd4fbb9cbb1856af` |
+| `results/cross_arena_v3_blocks/v3__e1s5_e2s6_h2/summary.json` | 3,416 | `457a59e9ca4e0a7995ccd8e47d35b1d1055b586812e9f0b7842b2b34a1631fff` |
+| `results/cross_arena_v3_blocks/v3__e1s5_e2s6_h3/matches.csv` | 115,049 | `677dd31724b2aebfb7a830c56af3f6c1c5e8c22fb55f96ca817062070820a323` |
+| `results/cross_arena_v3_blocks/v3__e1s5_e2s6_h3/summary.json` | 3,406 | `9c8f27649676f186ae72b915d8983f04ba99e2084d58600c915041386fbb5d4b` |
+| `results/cross_arena_v3_blocks/v3__e1s5_e2s6_h4/matches.csv` | 115,210 | `41b586e2e276e3447f9f3f28d889ec1e8f8c7e6e28a2dab950a8df8161e66f21` |
+| `results/cross_arena_v3_blocks/v3__e1s5_e2s6_h4/summary.json` | 3,406 | `0e0bcc6e9be04acb6ab746f40f58d01a7c05ce406cbf76b05f0a663bd7408a5b` |
+| `results/cross_arena_v3_blocks/v3__e1s5_e2s6_h5/matches.csv` | 115,102 | `7a523b537bcd6bc63390873865cb767a442b65b01d3533f7ff7564d5433dcfb0` |
+| `results/cross_arena_v3_blocks/v3__e1s5_e2s6_h5/summary.json` | 3,415 | `7cc8c53653ca11399588c8d06d554e88885e96bc9de87ce449f17c1e161ee1ed` |
+| `results/cross_arena_v3_blocks/v3__e1s6_e2s8_h1/matches.csv` | 115,228 | `44521cda647b2a887fe55de8c8b08017387e60fbd34386041d63487ea55c0e37` |
+| `results/cross_arena_v3_blocks/v3__e1s6_e2s8_h1/summary.json` | 3,410 | `a14b8f42c7fb32ae397a6547f78f5f35f547164b7707cbe2f7cb47413d84a482` |
+| `results/cross_arena_v3_blocks/v3__e1s6_e2s8_h2/matches.csv` | 114,987 | `8f915018357b6362844e055b5f4f8775a967e7fcc4533dc2ed7ab169271b7b3d` |
+| `results/cross_arena_v3_blocks/v3__e1s6_e2s8_h2/summary.json` | 3,404 | `8b5d202f450bc9586125870eb7eebbcc97c66e11e6e75d4023d7a45fc0fb35c4` |
+| `results/cross_arena_v3_blocks/v3__e1s6_e2s8_h3/matches.csv` | 114,937 | `05a1de67e6af5e4a63b13bb02c3cc3966b6519f968c703ea69be7f698420f61d` |
+| `results/cross_arena_v3_blocks/v3__e1s6_e2s8_h3/summary.json` | 3,414 | `f525b6808ad5db890688c890cfdc4d9dca6d7a1573739bfc4d2aca55dfc8f935` |
+| `results/cross_arena_v3_blocks/v3__e1s6_e2s8_h4/matches.csv` | 114,900 | `b9fb87d56803ae68b24ec2216487e8a3da493785dccc381d12ad8a9ec976025b` |
+| `results/cross_arena_v3_blocks/v3__e1s6_e2s8_h4/summary.json` | 3,414 | `f8954502a56dfa7b0af21b9bc6a17cd162c9187c6a239a58b5d1fb27f147e4d7` |
+| `results/cross_arena_v3_blocks/v3__e1s6_e2s8_h5/matches.csv` | 114,981 | `ff5c39f231d7a96d6ad865ef0db48df9bd46108337f43befe28310c4322ce711` |
+| `results/cross_arena_v3_blocks/v3__e1s6_e2s8_h5/summary.json` | 3,405 | `24f3a3f5161dbf16153e375ff7462bcd694166400cae363c99d96066f142da54` |
+| `results/cross_arena_v3_blocks/v3__e1s7_e2s9_h1/matches.csv` | 115,625 | `f89a5f151638176a424691f836388c8fe275702acd1410937c6c8cd30ce59946` |
+| `results/cross_arena_v3_blocks/v3__e1s7_e2s9_h1/summary.json` | 3,416 | `57b731dde38e60c19d0260500f5271e5e9b002008acadd6c4ac4490d621d5006` |
+| `results/cross_arena_v3_blocks/v3__e1s7_e2s9_h2/matches.csv` | 115,400 | `2fc1fdd6540e4b5d59632ce66ce0f354f3af3a5a39c937aa5a6c118a0d2e9ce0` |
+| `results/cross_arena_v3_blocks/v3__e1s7_e2s9_h2/summary.json` | 3,403 | `70f498e7a336f66eafa3e3e862658bc81ab701e4fb6c2621b8bc80f1de804f47` |
+| `results/cross_arena_v3_blocks/v3__e1s7_e2s9_h3/matches.csv` | 115,131 | `0d911e698db32707d2004453ef77af43a4dfdcd18bde75096d32dfc3988f52a1` |
+| `results/cross_arena_v3_blocks/v3__e1s7_e2s9_h3/summary.json` | 3,420 | `a6bec9ef5ea1f93a9cbb53621232afa0c77736e3ef91865706c105af005208e2` |
+| `results/cross_arena_v3_blocks/v3__e1s7_e2s9_h4/matches.csv` | 115,364 | `d2ccea945904fd950b8f54de33a169cb3dc92d95073b84f8e8d842f9f47f533b` |
+| `results/cross_arena_v3_blocks/v3__e1s7_e2s9_h4/summary.json` | 3,413 | `610df9ad3683c57bcc96677a88314ef2b11fd74138a3508bd10cf6a8935f4281` |
+| `results/cross_arena_v3_blocks/v3__e1s7_e2s9_h5/matches.csv` | 115,112 | `d224f4c7aec4022c4f09a2821f71ccb3c813643fbdbb1aee6fdeeac195a08f08` |
+| `results/cross_arena_v3_blocks/v3__e1s7_e2s9_h5/summary.json` | 3,415 | `569615930e5199924de8b1623af6a345f8a24e5aa15819ba5fdc8d12931d69cb` |
+| `results/cross_arena_v3_blocks/v3__e1s8_e2s10_h1/matches.csv` | 115,042 | `e78cf70c2a8d90de1790d52e84bec479bec20f6d2edb9f27a9d702926729e986` |
+| `results/cross_arena_v3_blocks/v3__e1s8_e2s10_h1/summary.json` | 3,416 | `8b2cd776fc9e9c94d2cf2afede7ae23159ce1479f000199e144c243c094543ea` |
+| `results/cross_arena_v3_blocks/v3__e1s8_e2s10_h2/matches.csv` | 115,009 | `6645748b6bfb437417c460176852a07b92bac3c8817d9e16f3faa5cf5cf80759` |
+| `results/cross_arena_v3_blocks/v3__e1s8_e2s10_h2/summary.json` | 3,409 | `7dd2bc38bef5e2f0f4bc18c643e73abb5ec48c879c0fda5a39fde415e4256119` |
+| `results/cross_arena_v3_blocks/v3__e1s8_e2s10_h3/matches.csv` | 114,929 | `8ed85731e2749daa59fe07358a5aa352eff959d889ef31f94bfaa884c29fb27b` |
+| `results/cross_arena_v3_blocks/v3__e1s8_e2s10_h3/summary.json` | 3,415 | `e9f4840080ba24d8781211ad925e327b8f6fbabb9f5a290754e12520bdf355b3` |
+| `results/cross_arena_v3_blocks/v3__e1s8_e2s10_h4/matches.csv` | 115,432 | `5cabd0452f01ede8c69bb81ce01a59488be10b91dd2a2e3066754f3619ec4816` |
+| `results/cross_arena_v3_blocks/v3__e1s8_e2s10_h4/summary.json` | 3,418 | `12cb6ae4734f86004716b00cff508ff5581252d7cb79b356b2c68d2341810e22` |
+| `results/cross_arena_v3_blocks/v3__e1s8_e2s10_h5/matches.csv` | 114,918 | `001b1c97dcff951e64175a0f854f1713a16d22a929fab15804414b54701c5d42` |
+| `results/cross_arena_v3_blocks/v3__e1s8_e2s10_h5/summary.json` | 3,417 | `48e0aff66f979d72c37c4f08d41ed5b07b3019f2d6b88422982cfd7ca063e3ab` |
+| `results/cross_arena_v3_blocks/v3__e1s9_e2s2_h1/matches.csv` | 115,002 | `1f55e850f2a0abb8286fe24e591986fcd6159c2796467b4f61b85f262a0186f4` |
+| `results/cross_arena_v3_blocks/v3__e1s9_e2s2_h1/summary.json` | 3,416 | `35960b4ae17e2fdc907b2026110e4d282491ac7713527ab3ed35233cf4425bbf` |
+| `results/cross_arena_v3_blocks/v3__e1s9_e2s2_h2/matches.csv` | 114,963 | `400d8fd44d83e9c5c45864baca6317e6b4497840b1c7111a7a64cccb01ae1911` |
+| `results/cross_arena_v3_blocks/v3__e1s9_e2s2_h2/summary.json` | 3,415 | `f0234e2fca8871d539269ca6922af7ba3c346fe78996965de70889609a635f4a` |
+| `results/cross_arena_v3_blocks/v3__e1s9_e2s2_h3/matches.csv` | 115,451 | `33609474b694355a0d045a9bfe9fa1c5047c8016ad4bd52cd20541b1e1e15159` |
+| `results/cross_arena_v3_blocks/v3__e1s9_e2s2_h3/summary.json` | 3,410 | `dab48fa4b1c7047a09fcc2747032fb04e4ebd317a4f9ef8fca47f7859e17ffdb` |
+| `results/cross_arena_v3_blocks/v3__e1s9_e2s2_h4/matches.csv` | 115,031 | `1e1c35b16934e9cd4d55c5253af70098b10b6440899cf92fc4337d7506f7a7f1` |
+| `results/cross_arena_v3_blocks/v3__e1s9_e2s2_h4/summary.json` | 3,415 | `5cab489c42293b1767870058eff9eccb54bf39581c77dde7876a5e9cedeebcab` |
+| `results/cross_arena_v3_blocks/v3__e1s9_e2s2_h5/matches.csv` | 115,337 | `915206ac66a0cce1a99764393a110c3af8735ca40bd7cb271921bb4c921826d4` |
+| `results/cross_arena_v3_blocks/v3__e1s9_e2s2_h5/summary.json` | 3,413 | `797bce07011ad937f533f09dc4167082fe17b52c8055adcd513c04706ce9a34e` |
+| `results/readout_remedies/jax_on/coupled_tests.json` | 4,789 | `419e9362766370ab70cf8256ddd02c3d12ee4247d08f1002742abff99a1275b7` |
+| `results/readout_remedies/jax_on/exp1/per_seed_metrics.csv` | 3,246 | `1d52fa6c144c529c19c799732f56a20cc9fce85bd2d27dbf30f9f5a660e9fb25` |
+| `results/readout_remedies/jax_on/exp1/summary.json` | 836 | `f8bf6df64c2dd086605a411cff9590a4a40ad5a1b6a15ef229a4ab29e64e8c39` |
+| `results/readout_remedies/jax_on/exp2/per_seed_metrics.csv` | 3,347 | `8d305ec49ef5a10cef37e48f41da7b33f3e7e2a061adb68426631ce2dd0bcd5e` |
+| `results/readout_remedies/jax_on/exp2/summary.json` | 836 | `f4958cda17def11d07f402ac96dc38bc4199e360126a4d97cca0faa9a1fbe2cc` |
+| `results/readout_remedies/jax_on/per_seed_metrics.csv` | 6,325 | `41b3069bc9009b29a462da20bddbc96f99c3386d1f6fb65e26fd4e6fb98abac1` |
+| `results/readout_remedies/jax_on/report.md` | 7,996 | `41cbe586cafa7d6d14c1baf3d9d2dd4e6ec435b694ac15ebd21d4050c238e250` |
+| `results/readout_remedies/jax_symmetric/coupled_tests.json` | 4,777 | `48232b0841e9ef061fa634ee073f11c3494e73cbaf8a5bdd10ea1c8b05d404c8` |
+| `results/readout_remedies/jax_symmetric/exp1/per_seed_metrics.csv` | 3,204 | `6eb57260565429b3f3818bb3ae9cf598c24156a80358ee7141277cc5275420c2` |
+| `results/readout_remedies/jax_symmetric/exp1/summary.json` | 840 | `e8421ca5fc58e3198ef3a80ce28fda902cb2b87b4fdb600c03256848df4b428a` |
+| `results/readout_remedies/jax_symmetric/exp2/per_seed_metrics.csv` | 3,311 | `25deba5909a106c4b76e05a7a51bbfdeb56e860eb921d42078543e683361ff8d` |
+| `results/readout_remedies/jax_symmetric/exp2/summary.json` | 840 | `dd3fa63b962ad6a5d25592324a4b0e7a61bf10c5e66b71a20887592f74325fde` |
+| `results/readout_remedies/jax_symmetric/per_seed_metrics.csv` | 6,247 | `bfc4ebccf94a9dc160ecca525a82aa378e6404c1f7c8b337384f4119e4731857` |
+| `results/readout_remedies/jax_symmetric/report.md` | 8,022 | `e19c16ec67a801d8c65ba8e9e1f4a03dd7cd8f770dc3ba3707af7ee2bd7c6dd8` |
+| `results/readout_remedies/spawn_cycle_off/coupled_tests.json` | 4,794 | `3e78db3bec79d754263287a42fd91b7df1b2c0aeabdc8f534dc6a80473da405b` |
+| `results/readout_remedies/spawn_cycle_off/exp1/per_seed_metrics.csv` | 3,213 | `4dc45f1f18cfc67737b260277578e17cfbe62efe1b0a59fd9e13b595a526b455` |
+| `results/readout_remedies/spawn_cycle_off/exp1/summary.json` | 837 | `592232d50e4dd58058d543c07339606fa28167dbaab1035a8e4fc9b0a7a73499` |
+| `results/readout_remedies/spawn_cycle_off/exp2/per_seed_metrics.csv` | 3,380 | `6d8f3b18ad282608b9eb282c898607327d8220d2f18495bf676517c1a45d63bb` |
+| `results/readout_remedies/spawn_cycle_off/exp2/summary.json` | 837 | `57603c0c7f7beb7fd4bd9aac3320459b8a5e88c5d2c2fd0b20c40e708fcc19d9` |
+| `results/readout_remedies/spawn_cycle_off/per_seed_metrics.csv` | 6,325 | `ac67c8eeefe74fb91df06d2c90e00abda27cff5ddc0533aa02fb9626993372ae` |
+| `results/readout_remedies/spawn_cycle_off/report.md` | 8,046 | `ff11332be71850d5d0d9f794d51d388ef08d425035e992961d9623b94c2bd89a` |
+| `results/readout_remedies/spawn_cycle_on/exp1/per_seed_metrics.csv` | 3,216 | `2244c4e67230984d6b498512ac7ff845373ef6a3c172a1cdd1c28646c8a33947` |
+| `results/readout_remedies/spawn_cycle_on/exp1/summary.json` | 836 | `6ed0df844035e7215c4635731ee477eb0bf00fa9db4f47b5c3748e3b256de73b` |
+| `results/readout_remedies/spawn_cycle_on/exp2/per_seed_metrics.csv` | 3,383 | `3421dac967fb397fded36966aabc4a35b6ec96ffe88d0ba2268107dcf8119c2c` |
+| `results/readout_remedies/spawn_cycle_on/exp2/summary.json` | 836 | `0a883965634a39a612b927c172b48d56fe952f3248f5ab87c031717a9c17930f` |
+| `results/readout_remedies/spawn_cycle_on/per_seed_metrics.csv` | 6,331 | `5df99844a49aca8eb4a7148197ac8d0876718057494943e041813d9d8501317a` |
+| `results/readout_remedies/symmetric_off/coupled_tests.json` | 4,770 | `cc7a444aff3056f629eba2daeb1bbc0c66e151a0421743f5bda1146f00aa1aac` |
+| `results/readout_remedies/symmetric_off/exp1/per_seed_metrics.csv` | 3,207 | `02f9427e27ce316e813a40a24143d63b36c927a9b2d93ae898fc56ae49f3dbaf` |
+| `results/readout_remedies/symmetric_off/exp1/summary.json` | 837 | `96a54ac30f94d2946a2b5cb3c624f27a0042e1cb52915c6936e8989aaf69e98f` |
+| `results/readout_remedies/symmetric_off/exp2/per_seed_metrics.csv` | 3,363 | `2c250a596d6a9117dbd2db6303626be2ece4a0c1adf82ee03f6de5d8b353fe05` |
+| `results/readout_remedies/symmetric_off/exp2/summary.json` | 837 | `e252fa57ccedf4b3b064e614f201f41fd870cfdc5ff9bd241c418c5c0ccbc6c0` |
+| `results/readout_remedies/symmetric_off/per_seed_metrics.csv` | 6,302 | `c238c86409518e759446363b34d67e60a5ac853c92809ca0ae55cf3ef55e4888` |
+| `results/readout_remedies/symmetric_off/report.md` | 8,016 | `bc7076f26ee057d13406bdc1bb06817b13826bbc1273432f44d1edb1b0d2e781` |
+| `results/readout_remedies/symmetric_on/exp1/per_seed_metrics.csv` | 3,213 | `33c39deea73132e0a22a6377cad38ef8da930e50e045047d08788ac2746393a7` |
+| `results/readout_remedies/symmetric_on/exp1/summary.json` | 840 | `ae5fc135ac0bcc43fef51b26809c4335c6279151e91f0f6972142d17d6775342` |
+| `results/readout_remedies/symmetric_on/exp2/per_seed_metrics.csv` | 3,355 | `49d7e5464b25e23aacb80bd00dff0e8abf645396d0830db95b8a9615b405c434` |
+| `results/readout_remedies/symmetric_on/exp2/summary.json` | 840 | `0bb3fafa9c48b933b5bb59fc08a8392cff27b6f12ca5981ddf1b19317e9e4448` |
+| `results/readout_remedies/symmetric_on/per_seed_metrics.csv` | 6,300 | `1e56dab9ca3338ae21ae233e6c438d056874a23301775eec0617637a15587b3a` |
+| `results/readout_remedies/v3_off/coupled_tests.json` | 4,770 | `cdda1b6c8d9f56c551e21e979a4f5905599445ab094f5f3a8e088c7bdec3a175` |
+| `results/readout_remedies/v3_off/exp1/per_seed_metrics.csv` | 3,201 | `394334e9b41323d1254cc282a1abea16e92766bda6c9ebf30148d5ef450ad670` |
+| `results/readout_remedies/v3_off/exp1/summary.json` | 840 | `10f67dc4cdcb7f104b7f9d10467c6bfd30bf124c16410aa8d06b949c4b42a6e1` |
+| `results/readout_remedies/v3_off/exp2/per_seed_metrics.csv` | 3,364 | `3d06cea57ce9cd208226278072e74651ba64890ac24d367e6250d42c4ac5545c` |
+| `results/readout_remedies/v3_off/exp2/summary.json` | 840 | `5349fb988aa3cd9dbbee5a22631fd97c654c4183204d6874dc07ffe8f56bcd2c` |
+| `results/readout_remedies/v3_off/per_seed_metrics.csv` | 6,297 | `955f49f65a71ef28e29c6e51eb12a79b10bc025cbda0d7175d3e69f9ab63924b` |
+| `results/readout_remedies/v3_off/report.md` | 7,969 | `37dc6a74093372ac28023147cd7a7e0c03b59f170a989c2f77817063371c459b` |
+| `results/scripted_v3/matches.csv` | 246,518 | `df818e7c474c24c1a2c63364ab5f66b32dab3766b794df027549a85aa3bf2665` |
+| `results/scripted_v3/summary.json` | 43,993 | `3f5a9978d4d1d1af4a7dc5dbc33d1c46bfabb3e3d526e0ef79e545ef02ce13ab` |
 
 **Optimiser traces and the analysis of them.** `results/trace_analysis.json`: the KL, entropy and value-loss traces of the re-trained twenty replicates joined to the published per-replicate reads, with the two controls the analysis rests on recorded alongside it — every produced checkpoint hash-matches `data/training_replicates/`, and the re-trained held-out rates match `results/study/` to 3.3e-05. The per-run `training_log.json` files themselves are git-ignored scratch under `data/runs_traces/`; this is the derived summary, reproducible with `scripts/analyse_traces.py` from a machine that has re-run the campaign.
 
@@ -921,11 +1087,11 @@ Every versioned experiment artefact (452 files), with SHA-256 for integrity chec
 | `data/training_replicates/exp2_seed9/team_3_ctde-comm.npz` | 289,321 | `56ec5b7380833e4bb19335837da15fdaace6c55e93a1eae647b17934a8796339` |
 | `data/training_replicates/exp2_seed9/team_3_ctde-comm.pt` | 313,778 | `6f9355bd19f43e84b5d18519ebc175e26048d00eb5cbb67f0b5a9ed13bcc1760` |
 
-**Ablation checkpoints behind the arm tables.** The three configuration-ablation sets of [§ 8.13](08_results.md#ablations), versioned for the same reason as the round-robin blocks -- the scratch they were trained into is git-ignored -- so an arm can be replayed without retraining it: twenty sets for `no_dr` (seeds 1-10 of both experiments) and six for each capacity arm (seeds 1-3). `MANIFEST.json` beside them records each set's single override, the hidden width read out of its own weights, the arm's seed coverage, and a SHA-256 per file; a `.pt` in this repository stores no capacity metadata, which is the one thing that distinguishes `narrow_64` and `wide_256` from the control.
+**Campaign checkpoints behind the arm tables.** The three configuration-ablation sets of [§ 8.13](08_results.md#ablations), and the v3 and single-key sets of [§ 8.14](08_results.md#which-remedy), versioned for the same reason as the round-robin blocks -- the scratch they were trained into is git-ignored -- so an arm can be replayed without retraining it: twenty sets each for `no_dr`, `v3`, `spawn_cycle` and `symmetric` (seeds 1-10 of both experiments) and six for each capacity arm (seeds 1-3). `MANIFEST.json` beside them records each arm's overrides and the study it is paired with, the hidden width and actor parameter count read out of each file's own weights, the arm's seed coverage, and a SHA-256 per file; no checkpoint format here stores capacity or configuration metadata, and the replay guard checks the manifest instead (A-56).
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|
-| `data/campaign_replicates/MANIFEST.json` | 45,237 | `01b167874bd78b6a2cb55a44c91a06c4cae5b406eb4e53c134486232f71aab80` |
+| `data/campaign_replicates/MANIFEST.json` | 139,112 | `8298197e99f0c5b24a81059f771810119f4502be6d83beae9cd508fd72daccff` |
 | `data/campaign_replicates/narrow_64/exp1_seed1/team_1_dte.npz` | 38,042 | `4c43345e94c8b36b096d34820d6633b7fa5146970608776d50d0e77e6fea7cdb` |
 | `data/campaign_replicates/narrow_64/exp1_seed1/team_1_dte.pt` | 42,082 | `7ad507f6be709f8d6e1b68b5fc3fe08d24fe152d0b88f14f4365b30e1716d92e` |
 | `data/campaign_replicates/narrow_64/exp1_seed1/team_2_ctde.npz` | 82,014 | `9425241a04115c10265473e7805d2603b7713855af534880113ad5373bead76a` |
@@ -1082,6 +1248,186 @@ Every versioned experiment artefact (452 files), with SHA-256 for integrity chec
 | `data/campaign_replicates/no_dr/exp2_seed9/team_2_ctde-cac.pt` | 304,400 | `712fd1f2de85ad2022b2252fb7ae78aa6158986eb2867ef7fda7269c95d78ebd` |
 | `data/campaign_replicates/no_dr/exp2_seed9/team_3_ctde-comm.npz` | 288,101 | `23566471d681f2600877b112e663de94f2b3ffca0784f9fd83bf2614bd6ed447` |
 | `data/campaign_replicates/no_dr/exp2_seed9/team_3_ctde-comm.pt` | 313,778 | `0bd4cc857e4cd1ceb5105fafb61f973dd0baf812226d45803a3cee83abec8967` |
+| `data/campaign_replicates/spawn_cycle/exp1_seed1/team_1_dte.npz` | 133,846 | `1ccb658477bbd07873ea7e8317708b65ad895dc4d6becb6d8155195a3cbef1af` |
+| `data/campaign_replicates/spawn_cycle/exp1_seed1/team_2_ctde.npz` | 280,366 | `f1e36d8e0a8b88f852b614f3f3fa2b0ca9fb0cc01b7383311d7205c9f70fc89a` |
+| `data/campaign_replicates/spawn_cycle/exp1_seed1/team_3_cte.npz` | 297,920 | `0c7079a0ee3e0ea2d8ad5ddef7cffc18f8f8adc81889ea6b828ade56eedc459d` |
+| `data/campaign_replicates/spawn_cycle/exp1_seed10/team_1_dte.npz` | 133,805 | `32874991fcf525d94e88a6f5242eb70a5b125d190e43c7239adc83b07cfacbcf` |
+| `data/campaign_replicates/spawn_cycle/exp1_seed10/team_2_ctde.npz` | 280,536 | `cbeb90099e8f79eb4b15c1a9545285c7e6fa12f7b9ef51899e4c973b40b2c24c` |
+| `data/campaign_replicates/spawn_cycle/exp1_seed10/team_3_cte.npz` | 297,994 | `d69b3f70853031736e3856caf6dd4bdc4d5c3095b4d8d9f6259671584d468181` |
+| `data/campaign_replicates/spawn_cycle/exp1_seed2/team_1_ctde.npz` | 280,549 | `ca3511e2e39935caeea41bacd15d3f800751100461120e33639a34a93e29eb25` |
+| `data/campaign_replicates/spawn_cycle/exp1_seed2/team_2_cte.npz` | 297,999 | `f5c312c553f4300a73d48e8eba897cccc9bc9fa70a6f3b549e84b9eefc316374` |
+| `data/campaign_replicates/spawn_cycle/exp1_seed2/team_3_dte.npz` | 133,742 | `da60bba171edda7b26bb9d442f55b13abe62f26526c7d482421f3a2bf8445577` |
+| `data/campaign_replicates/spawn_cycle/exp1_seed3/team_1_cte.npz` | 297,824 | `c051c0a9aeea95120ce8dbcb68e89e81e7391a088875ba80a034f605644a171c` |
+| `data/campaign_replicates/spawn_cycle/exp1_seed3/team_2_dte.npz` | 133,730 | `d0d8ac8e94cedde87b6dd075256ff2f828b32fc248ce3a20a9f59bafd09c80cf` |
+| `data/campaign_replicates/spawn_cycle/exp1_seed3/team_3_ctde.npz` | 280,419 | `084910b47626817b8e03ae58da113b58dd9bff87582df2af7898e8142ad48323` |
+| `data/campaign_replicates/spawn_cycle/exp1_seed4/team_1_dte.npz` | 133,773 | `a0e941fe0b50f63fed3e5639ff56050e3d508e3ca9de50bbbdff5b55a50be20f` |
+| `data/campaign_replicates/spawn_cycle/exp1_seed4/team_2_ctde.npz` | 280,497 | `8d98cab3a36eb8431e76a18fa68d2b159ff8b933e622de9e8401c1feec3a98da` |
+| `data/campaign_replicates/spawn_cycle/exp1_seed4/team_3_cte.npz` | 298,006 | `cd0539cf6d7b59a93c1fdf136521b3a0a2151bf58fb52e3b414b16bd7ad3dd4b` |
+| `data/campaign_replicates/spawn_cycle/exp1_seed5/team_1_ctde.npz` | 280,543 | `56be41e7e042a5af4d6e11d1781002e508bea195165284768b7297f666c6467b` |
+| `data/campaign_replicates/spawn_cycle/exp1_seed5/team_2_cte.npz` | 298,069 | `973853f44ce52f4608e78eed132236ca0aa68a154660b35fae484705b79e7a16` |
+| `data/campaign_replicates/spawn_cycle/exp1_seed5/team_3_dte.npz` | 133,751 | `f0ddf66a2d398964aff286963d6bfa071dc8fde61b3021d4eccccda21582a42e` |
+| `data/campaign_replicates/spawn_cycle/exp1_seed6/team_1_cte.npz` | 297,891 | `2d9c631a05334f58a4de6a451415c2e9dd57ad20e37738e7dc7cc705e0e7d5a4` |
+| `data/campaign_replicates/spawn_cycle/exp1_seed6/team_2_dte.npz` | 133,669 | `844dc6cb28564be857e9d15412b8362ca549cf15d9cb9d66250b7f38bb2a4563` |
+| `data/campaign_replicates/spawn_cycle/exp1_seed6/team_3_ctde.npz` | 280,516 | `8d979588291277cf2695d882474ce7828770c1dbcb0d9f7d67642d8fcb1d590b` |
+| `data/campaign_replicates/spawn_cycle/exp1_seed7/team_1_dte.npz` | 133,723 | `ce2fb2120aa3a10602586b5158032f0a332e7626c83bb36565d8b1bcfa2611e1` |
+| `data/campaign_replicates/spawn_cycle/exp1_seed7/team_2_ctde.npz` | 280,513 | `3a00b15d5acfdfb16f57ed4a9f76ae590237033609ac0b577aee90012341d3d4` |
+| `data/campaign_replicates/spawn_cycle/exp1_seed7/team_3_cte.npz` | 297,944 | `00f0776590a8b4ddbc1600d12895ad8408603f5115a56fffcf4042b99bfd5eec` |
+| `data/campaign_replicates/spawn_cycle/exp1_seed8/team_1_ctde.npz` | 280,513 | `8e361314c2fbdf8b34f1e478c39b60ec4a264adec6e105623c41978af6bfd4a1` |
+| `data/campaign_replicates/spawn_cycle/exp1_seed8/team_2_cte.npz` | 297,962 | `1dc4e77b7cdd8180a0443370e6eb88016d46586f081b578f08c4dcb670bda428` |
+| `data/campaign_replicates/spawn_cycle/exp1_seed8/team_3_dte.npz` | 133,753 | `6245242be4903a508e38e05e6e7e8541d8047e6f11690f06e2ef7b60fbf05785` |
+| `data/campaign_replicates/spawn_cycle/exp1_seed9/team_1_cte.npz` | 297,973 | `4b63b95f0c9a94345b546e5d20e05e49a5dfad165c2af18adec1819426c2d865` |
+| `data/campaign_replicates/spawn_cycle/exp1_seed9/team_2_dte.npz` | 133,773 | `398f021307100f4968fff3d30bf2ffa062125b76d751422e73da9bdc6d4d8d95` |
+| `data/campaign_replicates/spawn_cycle/exp1_seed9/team_3_ctde.npz` | 280,362 | `92c4b457be2780a504b1a73b233fc1403b87f39e90796d29365883e096f68f4a` |
+| `data/campaign_replicates/spawn_cycle/exp2_seed1/team_1_ctde-cac.npz` | 280,226 | `1ad678573669e0ff6c589d404174bfdac68c0efeb958fc06ac38ea576e5a6dd2` |
+| `data/campaign_replicates/spawn_cycle/exp2_seed1/team_2_ctde-comm.npz` | 289,429 | `e069822a9adb6a4e3a63e1f8191fb3e0193b73979a1295c15d14aa06360e4047` |
+| `data/campaign_replicates/spawn_cycle/exp2_seed1/team_3_ctde-vd.npz` | 199,563 | `5e1f9e567a8db5ffbc4833f15fd319a869bf5d505da205443a54ba3742a35545` |
+| `data/campaign_replicates/spawn_cycle/exp2_seed10/team_1_ctde-cac.npz` | 280,347 | `a82f7389c211f9b0b32668f9aa03f88aa539aa0251dfb4eb02bb9b1ce672e380` |
+| `data/campaign_replicates/spawn_cycle/exp2_seed10/team_2_ctde-comm.npz` | 289,380 | `108ac083beed3d9039b62f000d520340b79e6ceba852373c47654f000d9e33ae` |
+| `data/campaign_replicates/spawn_cycle/exp2_seed10/team_3_ctde-vd.npz` | 199,664 | `20f3e78494f50b15d646676ed5173b91d611a97042018c711ea928d2b4a3847d` |
+| `data/campaign_replicates/spawn_cycle/exp2_seed2/team_1_ctde-comm.npz` | 289,372 | `bc0493a15ade31c40a5cd6592d8a74530e68987aabb6ae040d7ec658b830b8ff` |
+| `data/campaign_replicates/spawn_cycle/exp2_seed2/team_2_ctde-vd.npz` | 199,637 | `c44879ac68b27e61d1d97fce23ef5f59ab30c4956959b33103f4e99ccb53a15b` |
+| `data/campaign_replicates/spawn_cycle/exp2_seed2/team_3_ctde-cac.npz` | 280,365 | `02d6e025eeeebf57b43267bc0a1207a816177d9e19392df80e34ffe8d6072368` |
+| `data/campaign_replicates/spawn_cycle/exp2_seed3/team_1_ctde-vd.npz` | 199,532 | `3bdc467451cbc81ed6ea5b754e2008c532801eef0680c0376a3f7a3eca7b0377` |
+| `data/campaign_replicates/spawn_cycle/exp2_seed3/team_2_ctde-cac.npz` | 280,489 | `1ac67ac770218b340db1bec504cc209d8615c9029848e9748074bd8f862a88b1` |
+| `data/campaign_replicates/spawn_cycle/exp2_seed3/team_3_ctde-comm.npz` | 289,318 | `ffc3967cc92cf43d7347208d22666bcc93c879f34509090b56deab3ec1188648` |
+| `data/campaign_replicates/spawn_cycle/exp2_seed4/team_1_ctde-cac.npz` | 280,457 | `2a3ec371c5db813ec4aa33b9e37ce64959c48ba4c773457c143b414ff44d27be` |
+| `data/campaign_replicates/spawn_cycle/exp2_seed4/team_2_ctde-comm.npz` | 289,246 | `eec8c7d9bba7641e50829bb791e4c1954ddb8b7dec81b7aeda62a8a6dd19a973` |
+| `data/campaign_replicates/spawn_cycle/exp2_seed4/team_3_ctde-vd.npz` | 199,625 | `3e5a1ea073cad23fc14edd74b750bc5d2261c3df24d5fce5de0b050162b673a8` |
+| `data/campaign_replicates/spawn_cycle/exp2_seed5/team_1_ctde-comm.npz` | 289,375 | `d87b6155ac66f36b835035dc1c575e7df11de563a3ce266b40a94208d9a79f7f` |
+| `data/campaign_replicates/spawn_cycle/exp2_seed5/team_2_ctde-vd.npz` | 199,597 | `86513272df5e39a60a92076376a78790b75f198ce2daa423066aa0226ca07376` |
+| `data/campaign_replicates/spawn_cycle/exp2_seed5/team_3_ctde-cac.npz` | 280,329 | `167d88563d5f8c113f25d5a4addc34d47570ede3ca8a918d60feff5614f023a4` |
+| `data/campaign_replicates/spawn_cycle/exp2_seed6/team_1_ctde-vd.npz` | 199,487 | `cad827ad7144c9c44280982d9bcdb45feb3ca3267179398d1433cacbfa4b056e` |
+| `data/campaign_replicates/spawn_cycle/exp2_seed6/team_2_ctde-cac.npz` | 280,204 | `a009d60b1f6aa201f5644782ee9fe43ea80cf07cd0e6f9520bbc62a1413971e4` |
+| `data/campaign_replicates/spawn_cycle/exp2_seed6/team_3_ctde-comm.npz` | 289,329 | `e9ffa8354125d056ec9fa450508a0354c585784e56d18ea209022d0c108112f1` |
+| `data/campaign_replicates/spawn_cycle/exp2_seed7/team_1_ctde-cac.npz` | 280,247 | `7f0aa7c75578d96657e7e5690b963089d0f9ab48adbfa8b2674dbc17459bd0d2` |
+| `data/campaign_replicates/spawn_cycle/exp2_seed7/team_2_ctde-comm.npz` | 289,137 | `6b3ecf898755fd1f0fdabe36470960500880775d9451059e67ecfb2156f9ccad` |
+| `data/campaign_replicates/spawn_cycle/exp2_seed7/team_3_ctde-vd.npz` | 199,538 | `9bc8cff97effe37843ea6b6886862028c68341259a99d5bc36743431a49db0da` |
+| `data/campaign_replicates/spawn_cycle/exp2_seed8/team_1_ctde-comm.npz` | 289,365 | `04cb608105dad9671128e011b5e50f835a8640c08da8eef07d55330a86c15a8d` |
+| `data/campaign_replicates/spawn_cycle/exp2_seed8/team_2_ctde-vd.npz` | 199,473 | `6b86f94e6bf05256bf334cb7472c0b2e6895864362d2d8a2b170c82c44c17102` |
+| `data/campaign_replicates/spawn_cycle/exp2_seed8/team_3_ctde-cac.npz` | 280,342 | `630c0eb979ddb221780d57bd96ba27968410d4dff70a427bea87029336a6a6e7` |
+| `data/campaign_replicates/spawn_cycle/exp2_seed9/team_1_ctde-vd.npz` | 199,593 | `114dbb05be82b7f514454aa51f09d42fdc717b9a78e4f314129e17567146f611` |
+| `data/campaign_replicates/spawn_cycle/exp2_seed9/team_2_ctde-cac.npz` | 280,651 | `48d7ff2328bcd1c9fdc330a22374f764325e88431afcabf5ce0d62b3c2659ad5` |
+| `data/campaign_replicates/spawn_cycle/exp2_seed9/team_3_ctde-comm.npz` | 289,243 | `a18beb9bffe1ba85113107040cac13f1e9432570803dd327f3c915a766db510c` |
+| `data/campaign_replicates/symmetric/exp1_seed1/team_1_dte.npz` | 133,784 | `b08abc59f7b9a4d478e0e7a781cc750da8e02dfde4cfa59079432c041a06cd71` |
+| `data/campaign_replicates/symmetric/exp1_seed1/team_2_ctde.npz` | 280,467 | `dce2d0081217273bc6793d7b83f74f94f9fe4fcdb9c49f6ba27d332ce4bdb547` |
+| `data/campaign_replicates/symmetric/exp1_seed1/team_3_cte.npz` | 297,980 | `46db8b0134fe947018c0be67442c3b1e33c2abb84595f0f54e6b68e41d28a308` |
+| `data/campaign_replicates/symmetric/exp1_seed10/team_1_dte.npz` | 133,781 | `55b47389ee0ec2fa7a6bd54ce58eda4425c57f5078b79d3a53121863015214a9` |
+| `data/campaign_replicates/symmetric/exp1_seed10/team_2_ctde.npz` | 280,578 | `db977d69b16437d66984cd2b0230d8313770a81a9a532b9b25eab72c1ee4c420` |
+| `data/campaign_replicates/symmetric/exp1_seed10/team_3_cte.npz` | 297,949 | `33e2abf55dd0a48d481e4e21719cfb985e0fb4c82e21ca42a5ee2c9dc4540318` |
+| `data/campaign_replicates/symmetric/exp1_seed2/team_1_ctde.npz` | 280,490 | `e255609c3cf8aa73c770f2d2f101773b8fef35007bb6c34952353fcbcfb9ca39` |
+| `data/campaign_replicates/symmetric/exp1_seed2/team_2_cte.npz` | 297,823 | `2f9e995f70c17ed48fcfb2323ca8facd6fe61eca839d7efede76303587c4500e` |
+| `data/campaign_replicates/symmetric/exp1_seed2/team_3_dte.npz` | 133,759 | `0e8f7df3e2735bdcdeeb74404eb4c3464a97a84f2d18d8c05999e1623b43acc5` |
+| `data/campaign_replicates/symmetric/exp1_seed3/team_1_cte.npz` | 297,986 | `d1a46c05e16d59f1492b18ce7af8f55c5026f301a103f171b040a2c174092e87` |
+| `data/campaign_replicates/symmetric/exp1_seed3/team_2_dte.npz` | 133,744 | `7e684bfed885f281aa9a944c37ce81274a860bc1ed13b39e44f944d29fc300c2` |
+| `data/campaign_replicates/symmetric/exp1_seed3/team_3_ctde.npz` | 280,534 | `e02d37fe4184db092c0c480c0960e360a89b4484f39eec59f85c68d8e9a46f0e` |
+| `data/campaign_replicates/symmetric/exp1_seed4/team_1_dte.npz` | 133,757 | `75412928725dfb0d93a51fd7913368b3917acfc1ff49e9c5e4ffe122ed17a804` |
+| `data/campaign_replicates/symmetric/exp1_seed4/team_2_ctde.npz` | 280,622 | `ccb80e9731dfc5c49aa942923950eec44492ec93daef6ddc9f66b68604bd8c16` |
+| `data/campaign_replicates/symmetric/exp1_seed4/team_3_cte.npz` | 297,907 | `9462d642feddd1963a34f7cf289c4db31e56c6876eb9c7d01e82d080f6b86487` |
+| `data/campaign_replicates/symmetric/exp1_seed5/team_1_ctde.npz` | 280,347 | `43c38df96d6ab9beac495e5deacc1268bf6ea54039b267c2a4a3b33853165774` |
+| `data/campaign_replicates/symmetric/exp1_seed5/team_2_cte.npz` | 297,913 | `2b46bc746195e7bd30298948e299ba3a0d7db13c2e5952b9bbb477aaab1bb5ac` |
+| `data/campaign_replicates/symmetric/exp1_seed5/team_3_dte.npz` | 133,766 | `d1b4aaf372f91a6d12f247139e86f6bb771a06b21758d7a0953068382120a830` |
+| `data/campaign_replicates/symmetric/exp1_seed6/team_1_cte.npz` | 297,871 | `f163ffb38b0d3d002e38c766aa1e3c1780ae8f4810260b4958afeaedc167712b` |
+| `data/campaign_replicates/symmetric/exp1_seed6/team_2_dte.npz` | 133,857 | `ddc1b203b511cc04235614453fad110c12b9f8f34b953529e2aa82d313110d72` |
+| `data/campaign_replicates/symmetric/exp1_seed6/team_3_ctde.npz` | 280,348 | `f01802853cc709b0ef990b956866db3e58125febaa15efc204f9ad7877c6e035` |
+| `data/campaign_replicates/symmetric/exp1_seed7/team_1_dte.npz` | 133,777 | `2968fd5c00f139a80c86c3a5e0c4f7b4f9f81e0b5a184dd3d92238093f74b74c` |
+| `data/campaign_replicates/symmetric/exp1_seed7/team_2_ctde.npz` | 280,354 | `16f8947d63fc65d7486ab5b828183b4256e8231f2a54fffa8fb8b013487cb573` |
+| `data/campaign_replicates/symmetric/exp1_seed7/team_3_cte.npz` | 298,034 | `2474f57e8aeeccdd9f028d24362f6a30b4c9465c95a6e36b4e9667f62cfef6e7` |
+| `data/campaign_replicates/symmetric/exp1_seed8/team_1_ctde.npz` | 280,428 | `931929a85d82d830755966452d425d6a5c1e6efbf9bf656c89db5f5b7ec43909` |
+| `data/campaign_replicates/symmetric/exp1_seed8/team_2_cte.npz` | 298,005 | `f779bb9904dd5ccb347a9d9a3cf4274f7c30dd59cbd29b3f2e55754ae1b9531f` |
+| `data/campaign_replicates/symmetric/exp1_seed8/team_3_dte.npz` | 133,776 | `53310ba39390d395aca3593673f40136ab4399b37582177de8295049d8e86df8` |
+| `data/campaign_replicates/symmetric/exp1_seed9/team_1_cte.npz` | 297,947 | `00655b47eb5d557cff119e711e17a02127ecffdc8d55bd71b7036f58334f00c9` |
+| `data/campaign_replicates/symmetric/exp1_seed9/team_2_dte.npz` | 133,758 | `aca749443be84953b553ba172ebf614d3cf3e553079ed4a3938ab81312487758` |
+| `data/campaign_replicates/symmetric/exp1_seed9/team_3_ctde.npz` | 280,612 | `41f75adb908db629c59a61fb6d21a018af904b5204584b24fb7a12c75315bafc` |
+| `data/campaign_replicates/symmetric/exp2_seed1/team_1_ctde-cac.npz` | 280,360 | `2852cbf2d0b2b9750e638b33fa591995da029fb4dc9c4315033b56b834932066` |
+| `data/campaign_replicates/symmetric/exp2_seed1/team_2_ctde-comm.npz` | 289,401 | `85681c8cce57d48337ff8f3328afad53a224ea529fd291087d6188a738a6c43b` |
+| `data/campaign_replicates/symmetric/exp2_seed1/team_3_ctde-vd.npz` | 199,649 | `49f18348bec946c68afeeb60c9ecca7b751189f44686143c41689ab83c1ac3f1` |
+| `data/campaign_replicates/symmetric/exp2_seed10/team_1_ctde-cac.npz` | 280,378 | `15cb95a1cec893ab7e1d2a697fab88325f6fd5d3933ae1dfe50c0de9a8ed00db` |
+| `data/campaign_replicates/symmetric/exp2_seed10/team_2_ctde-comm.npz` | 289,467 | `91b15853f64ca2d98fee264ae628649db2b8b2a3d476a60b3abfabf4a61897f1` |
+| `data/campaign_replicates/symmetric/exp2_seed10/team_3_ctde-vd.npz` | 199,663 | `83f99e969e8fab833f0f978850c4da9975e12d4df014397300e2f55303dbf0f8` |
+| `data/campaign_replicates/symmetric/exp2_seed2/team_1_ctde-comm.npz` | 289,282 | `ad7246bbd8dc8b46c9f60cdab7187daf37a144ebe8d692afe0f87f6bc98a56d0` |
+| `data/campaign_replicates/symmetric/exp2_seed2/team_2_ctde-vd.npz` | 199,536 | `784b35828e667823399d8d2dbf0bc01324c2aa341372481109dbb6af2275cd4a` |
+| `data/campaign_replicates/symmetric/exp2_seed2/team_3_ctde-cac.npz` | 280,381 | `3322293536f9c42a3001c6b57761460d60106a2baeb5cb54168d9646e8c4fdf2` |
+| `data/campaign_replicates/symmetric/exp2_seed3/team_1_ctde-vd.npz` | 199,500 | `f2c8eb75ae77acd2001942aa296bf70d86cc8be726d7240301109e33a864c4c6` |
+| `data/campaign_replicates/symmetric/exp2_seed3/team_2_ctde-cac.npz` | 280,586 | `59c10fd5c329b57b73e15d1013526cc0c35a970cce0d1f2c879955e9ae4edac5` |
+| `data/campaign_replicates/symmetric/exp2_seed3/team_3_ctde-comm.npz` | 289,252 | `9a1bc3da04a25b64fc51927aba78a66b8e5a779a1c8df3211cb0455e9bec79fd` |
+| `data/campaign_replicates/symmetric/exp2_seed4/team_1_ctde-cac.npz` | 280,316 | `eaccbe62759f76a5f6e2f813924621cfd2123ef0957a997a5d66f7ab404d4e3f` |
+| `data/campaign_replicates/symmetric/exp2_seed4/team_2_ctde-comm.npz` | 289,330 | `86c377a5926cd55dd8bdc807deb089e28915a0004e0f4a56fa17880baf5f7f5c` |
+| `data/campaign_replicates/symmetric/exp2_seed4/team_3_ctde-vd.npz` | 199,575 | `9cacc24759b0c0165dfa7c4d536f7189a0c5ab2a89bb63b029065661006e9b19` |
+| `data/campaign_replicates/symmetric/exp2_seed5/team_1_ctde-comm.npz` | 289,280 | `be0c3370b3c437a1ca5b327badf468819ccf5992833325dce1ed73195847a349` |
+| `data/campaign_replicates/symmetric/exp2_seed5/team_2_ctde-vd.npz` | 199,374 | `bad9f2097c9cfecf57c104f3ac71b5003fd26d65964d56945a011eece1718946` |
+| `data/campaign_replicates/symmetric/exp2_seed5/team_3_ctde-cac.npz` | 280,414 | `7d46c6865deab4898f1e0fb67f032a705caace922e9d38e6ae54b4c9f4ba5519` |
+| `data/campaign_replicates/symmetric/exp2_seed6/team_1_ctde-vd.npz` | 199,561 | `022381eec647dd7e010581f20cf260bd1950f57bb86eaee5a56cc7b9eaaedbdc` |
+| `data/campaign_replicates/symmetric/exp2_seed6/team_2_ctde-cac.npz` | 280,344 | `c786c2a3b670600a01ec2b9171d3a49f22fef70b3783207f1e98c2befbefec85` |
+| `data/campaign_replicates/symmetric/exp2_seed6/team_3_ctde-comm.npz` | 289,448 | `d016e779bfd5d64b91e6b61848bd16eafd9ed0fba74d3b48abed0bc428823436` |
+| `data/campaign_replicates/symmetric/exp2_seed7/team_1_ctde-cac.npz` | 280,308 | `dfeeca20a15e9506fd8ca5dc53998b35cd180d6b98eee4028cbcacea9ec13321` |
+| `data/campaign_replicates/symmetric/exp2_seed7/team_2_ctde-comm.npz` | 289,401 | `98186454aed5c009fc84bb2d1960c1a5dcc9f36a6bb0dacf34b64f452e45570f` |
+| `data/campaign_replicates/symmetric/exp2_seed7/team_3_ctde-vd.npz` | 199,620 | `eb2928298c690cbfee18baf8d084de22ecdf9f2732a6a00bc36fc2fd5cef3685` |
+| `data/campaign_replicates/symmetric/exp2_seed8/team_1_ctde-comm.npz` | 289,269 | `dddd5daf257a6c2c2a6993f5a9b048a485217cc524247737bfdad1fea257b0b5` |
+| `data/campaign_replicates/symmetric/exp2_seed8/team_2_ctde-vd.npz` | 199,448 | `9d055373630e24a463f2875cb5b3b2e895985c3ec900c197089695173e03a4f3` |
+| `data/campaign_replicates/symmetric/exp2_seed8/team_3_ctde-cac.npz` | 280,146 | `987d7d580512db7784eaef88ae5325b8d7e903a47d3096729f7c42211b8bd21a` |
+| `data/campaign_replicates/symmetric/exp2_seed9/team_1_ctde-vd.npz` | 199,541 | `efd9efbe2be83437a96a8b4bfb7f2fba9647d3e2807befcb7dc864c3773c6598` |
+| `data/campaign_replicates/symmetric/exp2_seed9/team_2_ctde-cac.npz` | 280,460 | `a87a626d27672f43b92d3fbf31a634fcbf93aeff3fc7f64386059edecc45996c` |
+| `data/campaign_replicates/symmetric/exp2_seed9/team_3_ctde-comm.npz` | 289,252 | `73176c7426818e86442d2995dd480c7cf63992df6b9611d395d5e819a0171e40` |
+| `data/campaign_replicates/v3/exp1_seed1/team_1_dte.npz` | 402,190 | `e08bcb3ceae0439c7aabb06905beabc990f17b41f98b382bb6f3fec11c0a8a06` |
+| `data/campaign_replicates/v3/exp1_seed1/team_2_ctde.npz` | 402,535 | `99e851cf44daa678929ad1dbea2501552205634f537b9cb670a4bdb681a0e43c` |
+| `data/campaign_replicates/v3/exp1_seed1/team_3_cte.npz` | 405,852 | `12ae8d762df4f5ec3307a2b6143adecd5e9096e6f96911d8d451673e0955c837` |
+| `data/campaign_replicates/v3/exp1_seed10/team_1_dte.npz` | 402,099 | `1f79f0885e06018a82e1b5f09f92eecb2ede274e2070984f3d75f89b898d55ee` |
+| `data/campaign_replicates/v3/exp1_seed10/team_2_ctde.npz` | 402,536 | `1f0061a16980ae1476e7108e1952569f4e99cdd07c2bf4b0009edcc36ab0cf8e` |
+| `data/campaign_replicates/v3/exp1_seed10/team_3_cte.npz` | 405,876 | `ab032be9e53b54ba1e54c81a3ac99bae78bbaf85992127ee48a5db50676d209a` |
+| `data/campaign_replicates/v3/exp1_seed2/team_1_ctde.npz` | 402,397 | `643f8691f8ec3ce0d2abd76ec5552e9350f62ab459dcde17c701ef5f57d47453` |
+| `data/campaign_replicates/v3/exp1_seed2/team_2_cte.npz` | 405,923 | `88fb105853ae917c451356a67701fc1b0fa15b0fb11fe1e1909fe47ac559545e` |
+| `data/campaign_replicates/v3/exp1_seed2/team_3_dte.npz` | 402,164 | `83cdbd9d45130895351553ae9d91c6a6f5e8b88989161176f19f2a2dcfd5cf0a` |
+| `data/campaign_replicates/v3/exp1_seed3/team_1_cte.npz` | 405,809 | `2346e54fe33a3e2aeb8cf76c334412f4f5092197ff7dee07feb403966de86a52` |
+| `data/campaign_replicates/v3/exp1_seed3/team_2_dte.npz` | 401,892 | `0547212bc8ead8d0ec0528ef67c436e9c0b3e34fe65d8861f1a2d7398244be00` |
+| `data/campaign_replicates/v3/exp1_seed3/team_3_ctde.npz` | 402,570 | `a2fe43fec594bf4ae46645946d431c985113e7c77debfc5b16773de7e051cfcb` |
+| `data/campaign_replicates/v3/exp1_seed4/team_1_dte.npz` | 402,311 | `db3c990350efdf2518182db91e77690ebfd9b8ca81407ee91b66388dc3aac6d3` |
+| `data/campaign_replicates/v3/exp1_seed4/team_2_ctde.npz` | 402,520 | `72734cc2c30b8331826551120002cf854a4fd16bcaa0819d8aa9a0eba227c58e` |
+| `data/campaign_replicates/v3/exp1_seed4/team_3_cte.npz` | 405,968 | `8846ac40da067f82983d1c01c0c19978cd12b41e28ff3d23de73483504776d14` |
+| `data/campaign_replicates/v3/exp1_seed5/team_1_ctde.npz` | 402,584 | `c12fc22b9e403e4adcf65cb5f749bca8c73c6890db228eb0c0ab8ee680225e0b` |
+| `data/campaign_replicates/v3/exp1_seed5/team_2_cte.npz` | 405,898 | `369f6b3dc71cc0fefcafae65d4b4fe06eb1ead154af10e5e430df688f7841a41` |
+| `data/campaign_replicates/v3/exp1_seed5/team_3_dte.npz` | 402,104 | `2f0fffb2845ee4fa904857e194476868352e8a37e99bf7f4c5422992af879af6` |
+| `data/campaign_replicates/v3/exp1_seed6/team_1_cte.npz` | 405,994 | `46b28377cab2618dd016881e2aae5b8ced4f6fe1e7db5fc85068838361d91926` |
+| `data/campaign_replicates/v3/exp1_seed6/team_2_dte.npz` | 402,133 | `98796469253a2bcc4ba8faebbf321a29defb1c2e20c20be2cfe2858ac7510b68` |
+| `data/campaign_replicates/v3/exp1_seed6/team_3_ctde.npz` | 402,918 | `88d303bd6a6a6456033daf77be84cc6cdd3300939676489a8557ded03d0c5756` |
+| `data/campaign_replicates/v3/exp1_seed7/team_1_dte.npz` | 402,155 | `b8330d6177aab6cb14111351db60b7ee92b4ba195e7dab5a5837048ce38de928` |
+| `data/campaign_replicates/v3/exp1_seed7/team_2_ctde.npz` | 402,669 | `af52382e6f3b4ecd32e677446f59fedcd1dc061b8143e23cec231ed1b81f9930` |
+| `data/campaign_replicates/v3/exp1_seed7/team_3_cte.npz` | 405,914 | `94d50d7ffc62ca63f45fbdcd7fe76eb87d49083c315252fa2d1a6e6435fa4c27` |
+| `data/campaign_replicates/v3/exp1_seed8/team_1_ctde.npz` | 402,472 | `3afad9baff0bbade9e256e0556647193ee1983fe2043622aa5ba82f0c45ec0e2` |
+| `data/campaign_replicates/v3/exp1_seed8/team_2_cte.npz` | 405,923 | `7a0b49be11f70c95902bcd79a6ef9e0a7c31f197de3cf8e91e5abd74b3028622` |
+| `data/campaign_replicates/v3/exp1_seed8/team_3_dte.npz` | 402,156 | `2e023ac27d6b44b587c42b4572c6e66a08ae956e8707e179b6a7fdcea5f4518b` |
+| `data/campaign_replicates/v3/exp1_seed9/team_1_cte.npz` | 405,826 | `6f77150c34f9a9d4e98dd71536150eac3ebbeb40abb8b662e0bee4bc94f057f8` |
+| `data/campaign_replicates/v3/exp1_seed9/team_2_dte.npz` | 402,168 | `d927c1352e2b1ead0a32a8bdec8d52e98fb3f6b3571b38041fbf86f2b3913c30` |
+| `data/campaign_replicates/v3/exp1_seed9/team_3_ctde.npz` | 402,667 | `48e377f2d98f96f5b09047a6270907eef97bd988bfc9b92f78ed90156bba4837` |
+| `data/campaign_replicates/v3/exp2_seed1/team_1_ctde-cac.npz` | 402,635 | `528a76a408f33094fc15c4c55e465b951ced73c559816224ee5341998ab3e951` |
+| `data/campaign_replicates/v3/exp2_seed1/team_2_ctde-comm.npz` | 407,143 | `37e60cc10d5c77393116c1b9eba5051081f752238634358aa5cf0a9cc3604cc9` |
+| `data/campaign_replicates/v3/exp2_seed1/team_3_ctde-vd.npz` | 406,056 | `727309efc8c4ea8c43c80d83e9d1800c4f9bd88d78fa5340f1082d85441c37d5` |
+| `data/campaign_replicates/v3/exp2_seed10/team_1_ctde-cac.npz` | 402,574 | `5b8cdaf4d5889c9a18d1f22438f27a6b4445cad09ec8b440ef91d5fa8e00df62` |
+| `data/campaign_replicates/v3/exp2_seed10/team_2_ctde-comm.npz` | 407,268 | `f6b881b7da893e4a2db0b110c6625a2eba7b27267fcd6b8258a14aae2e523ce4` |
+| `data/campaign_replicates/v3/exp2_seed10/team_3_ctde-vd.npz` | 405,879 | `b7b82aeecc715058e564abad3ae329c577cd15a3628d91f178e43efd0ccb98fd` |
+| `data/campaign_replicates/v3/exp2_seed2/team_1_ctde-comm.npz` | 406,968 | `0e1724bb81a358a9ed02ba24deb59da2992719a87eb5c25535c5bcec469299f5` |
+| `data/campaign_replicates/v3/exp2_seed2/team_2_ctde-vd.npz` | 405,585 | `f3c414e1990f1ad14b900c39cabd780725a7d1edcc0219eec767a4b8689110ee` |
+| `data/campaign_replicates/v3/exp2_seed2/team_3_ctde-cac.npz` | 402,563 | `4e1e3120974b0a117d98d840dc538133874c35e9d94ad4ba1d43473eb363eb6d` |
+| `data/campaign_replicates/v3/exp2_seed3/team_1_ctde-vd.npz` | 406,075 | `954be396a20dd5e72d616bbd2032d15c5b9ab5310a64eefa42fe24d3f95231cd` |
+| `data/campaign_replicates/v3/exp2_seed3/team_2_ctde-cac.npz` | 402,605 | `964839906194f6e8181f92db680178cc4ba13b4a075af8896766f31669d60943` |
+| `data/campaign_replicates/v3/exp2_seed3/team_3_ctde-comm.npz` | 407,213 | `9013b8fb4ddde0bfd974c44a6e2e236dfa02e2d77f3e7145bec81a094eeb0054` |
+| `data/campaign_replicates/v3/exp2_seed4/team_1_ctde-cac.npz` | 402,556 | `1ccb3d9568f835dbb2db09677744a67562241474991e1bad36e0efc61f1ec0ef` |
+| `data/campaign_replicates/v3/exp2_seed4/team_2_ctde-comm.npz` | 406,967 | `bda8d335ed16461ae204f4cb0f982ae2d2c2c62de2c6577874ce367b511d6675` |
+| `data/campaign_replicates/v3/exp2_seed4/team_3_ctde-vd.npz` | 405,756 | `eafd07639308bd5e0f351b8cd6c042f1f1a0c9140e76eb6558345e3a1985d8bb` |
+| `data/campaign_replicates/v3/exp2_seed5/team_1_ctde-comm.npz` | 407,269 | `7533f7602e34b07bb58b0dfd3c5fb0420aab8c3254bfd2d4e5a80f2f230a6d08` |
+| `data/campaign_replicates/v3/exp2_seed5/team_2_ctde-vd.npz` | 405,745 | `6a09eab6159ce85e5b7b48c8260151e9157915c46d39450e3962e35b99d95d53` |
+| `data/campaign_replicates/v3/exp2_seed5/team_3_ctde-cac.npz` | 402,827 | `887c377c3a25810e7504024b5305142f52a92441fdbb376127f92e03eb0a0d42` |
+| `data/campaign_replicates/v3/exp2_seed6/team_1_ctde-vd.npz` | 405,802 | `901a20e0cfc8f446fea9f5afefe1fbec2e385bc501979021cdb4177150add48a` |
+| `data/campaign_replicates/v3/exp2_seed6/team_2_ctde-cac.npz` | 402,387 | `d611f2039ab347ca1aa0a0eaa76c539ff919e6aa0f5ea6e7d2bfb82c14731847` |
+| `data/campaign_replicates/v3/exp2_seed6/team_3_ctde-comm.npz` | 406,974 | `bd0a98385b215323f6c5272d341f3d1e2194af8ee82b42063e92745c93dd444a` |
+| `data/campaign_replicates/v3/exp2_seed7/team_1_ctde-cac.npz` | 402,691 | `a31e8b7f6f01fe73fc4e021ca0ef529473585503e63ac26aa860228e0b345614` |
+| `data/campaign_replicates/v3/exp2_seed7/team_2_ctde-comm.npz` | 407,268 | `9af80e63a980851ea9bb30d70f93c45519cd4f90f685ae585a410b7505ee67d1` |
+| `data/campaign_replicates/v3/exp2_seed7/team_3_ctde-vd.npz` | 405,928 | `5ef230b1eb0505216339fadcadfaddd30050614892da522986ef9de67a30eaa4` |
+| `data/campaign_replicates/v3/exp2_seed8/team_1_ctde-comm.npz` | 407,086 | `6e490cc8b7606d3efddc25de47467ae991309bd6bf5c2614f4b7adb2a4bcffcd` |
+| `data/campaign_replicates/v3/exp2_seed8/team_2_ctde-vd.npz` | 405,857 | `51f2a0bf987d2be35be88ca9360d7a554f4ed14ed46e7df00af5a48608188e78` |
+| `data/campaign_replicates/v3/exp2_seed8/team_3_ctde-cac.npz` | 402,587 | `4eec5ff7a075cd29379d0128e3edef34fc787fae818e04db55eb1fa0d3fba289` |
+| `data/campaign_replicates/v3/exp2_seed9/team_1_ctde-vd.npz` | 405,915 | `aac8234be5e5a4d54ae27331bd897e4d8514e462abe014ecb8adeed00d29f218` |
+| `data/campaign_replicates/v3/exp2_seed9/team_2_ctde-cac.npz` | 402,831 | `5b4cce3a7d05e8b7e929c49c743d6298321d80ee077ccc736f6a9d1f859a99fc` |
+| `data/campaign_replicates/v3/exp2_seed9/team_3_ctde-comm.npz` | 407,172 | `d07c6311cf4f9382f10933e59a188ed1d579f794f0da8c3c9e7983e481cbad49` |
 | `data/campaign_replicates/wide_256/exp1_seed1/team_1_dte.npz` | 508,259 | `9eae088d0e047b3f1007a12e9f981125277e9ba7d3495a916e752fb3358dd133` |
 | `data/campaign_replicates/wide_256/exp1_seed1/team_1_dte.pt` | 549,730 | `4b9fd74f1cfb3b7c01cdecc34f4c568d355f49229cd51cdcfdb4b419439e0805` |
 | `data/campaign_replicates/wide_256/exp1_seed1/team_2_ctde.npz` | 1,042,192 | `468308cb80fc87d5d03d85f0cc8e6a29c69884265022581d4e67025d7d28ac7b` |

@@ -1,0 +1,240 @@
+{
+  "exp1": {
+    "replicates": 10,
+    "friedman": {
+      "chi2": 0.6667,
+      "df": 2,
+      "p": 0.7165,
+      "mean_rank": {
+        "CTDE": 2.2,
+        "CTE": 1.95,
+        "DTE": 1.85
+      }
+    },
+    "pairwise_sign_flip": {
+      "CTDE vs CTE": {
+        "mean_difference": -0.062,
+        "sign_flip_p": 0.6387
+      },
+      "CTDE vs DTE": {
+        "mean_difference": -0.0687,
+        "sign_flip_p": 0.377
+      },
+      "CTE vs DTE": {
+        "mean_difference": -0.0067,
+        "sign_flip_p": 0.9688
+      }
+    },
+    "secondary_bootstrap": {
+      "CTDE": {
+        "eval_eliminations_per_match": {
+          "mean": 1.9467,
+          "ci95": [
+            1.3973,
+            2.61
+          ]
+        },
+        "eval_mean_survival": {
+          "mean": 22.8706,
+          "ci95": [
+            16.1337,
+            31.0684
+          ]
+        },
+        "eval_shots_per_match": {
+          "mean": 118.7473,
+          "ci95": [
+            89.2113,
+            149.7206
+          ]
+        },
+        "eval_shot_accuracy": {
+          "mean": 0.0205,
+          "ci95": [
+            0.0129,
+            0.0287
+          ]
+        }
+      },
+      "CTE": {
+        "eval_eliminations_per_match": {
+          "mean": 2.4067,
+          "ci95": [
+            1.7087,
+            3.1487
+          ]
+        },
+        "eval_mean_survival": {
+          "mean": 24.3334,
+          "ci95": [
+            17.6874,
+            33.2642
+          ]
+        },
+        "eval_shots_per_match": {
+          "mean": 122.536,
+          "ci95": [
+            82.0873,
+            174.28
+          ]
+        },
+        "eval_shot_accuracy": {
+          "mean": 0.0263,
+          "ci95": [
+            0.016,
+            0.0379
+          ]
+        }
+      },
+      "DTE": {
+        "eval_eliminations_per_match": {
+          "mean": 1.502,
+          "ci95": [
+            1.018,
+            2.124
+          ]
+        },
+        "eval_mean_survival": {
+          "mean": 28.0768,
+          "ci95": [
+            19.7086,
+            36.7859
+          ]
+        },
+        "eval_shots_per_match": {
+          "mean": 123.382,
+          "ci95": [
+            92.3247,
+            153.536
+          ]
+        },
+        "eval_shot_accuracy": {
+          "mean": 0.0161,
+          "ci95": [
+            0.0092,
+            0.0243
+          ]
+        }
+      }
+    }
+  },
+  "exp2": {
+    "replicates": 10,
+    "friedman": {
+      "chi2": 0.2,
+      "df": 2,
+      "p": 0.9048,
+      "mean_rank": {
+        "CTDE-CAC": 2.1,
+        "CTDE-Comm": 1.9,
+        "CTDE-VD": 2.0
+      }
+    },
+    "pairwise_sign_flip": {
+      "CTDE-CAC vs CTDE-Comm": {
+        "mean_difference": -0.0187,
+        "sign_flip_p": 0.7402
+      },
+      "CTDE-CAC vs CTDE-VD": {
+        "mean_difference": -0.0973,
+        "sign_flip_p": 0.3242
+      },
+      "CTDE-Comm vs CTDE-VD": {
+        "mean_difference": -0.0787,
+        "sign_flip_p": 0.4551
+      }
+    },
+    "secondary_bootstrap": {
+      "CTDE-CAC": {
+        "eval_eliminations_per_match": {
+          "mean": 1.884,
+          "ci95": [
+            1.2993,
+            2.516
+          ]
+        },
+        "eval_mean_survival": {
+          "mean": 20.7817,
+          "ci95": [
+            15.174,
+            27.1809
+          ]
+        },
+        "eval_shots_per_match": {
+          "mean": 104.9333,
+          "ci95": [
+            68.9647,
+            148.7133
+          ]
+        },
+        "eval_shot_accuracy": {
+          "mean": 0.0253,
+          "ci95": [
+            0.0152,
+            0.0356
+          ]
+        }
+      },
+      "CTDE-Comm": {
+        "eval_eliminations_per_match": {
+          "mean": 1.8507,
+          "ci95": [
+            1.3233,
+            2.4613
+          ]
+        },
+        "eval_mean_survival": {
+          "mean": 22.8382,
+          "ci95": [
+            15.4741,
+            31.2782
+          ]
+        },
+        "eval_shots_per_match": {
+          "mean": 110.9587,
+          "ci95": [
+            77.4773,
+            149.1787
+          ]
+        },
+        "eval_shot_accuracy": {
+          "mean": 0.0226,
+          "ci95": [
+            0.0138,
+            0.0322
+          ]
+        }
+      },
+      "CTDE-VD": {
+        "eval_eliminations_per_match": {
+          "mean": 2.38,
+          "ci95": [
+            1.6593,
+            3.1487
+          ]
+        },
+        "eval_mean_survival": {
+          "mean": 21.2859,
+          "ci95": [
+            16.6458,
+            26.6263
+          ]
+        },
+        "eval_shots_per_match": {
+          "mean": 122.7014,
+          "ci95": [
+            94.4147,
+            155.6067
+          ]
+        },
+        "eval_shot_accuracy": {
+          "mean": 0.0247,
+          "ci95": [
+            0.0147,
+            0.0356
+          ]
+        }
+      }
+    }
+  }
+}

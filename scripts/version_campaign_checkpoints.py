@@ -39,13 +39,29 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "campaign_replicates"
 
-# Exactly the overrides scripts/run_ablation_campaign.sh exported per arm; the baseline for all three is
-# results/study (domain randomisation on, hidden width 128, 500,000 steps). The study covers seeds 1-10 of
-# both experiments, and each arm covers as many of them as its scratch holds -- see completed_seeds.
+# Exactly the overrides each arm's campaign script exported, the scratch directory it trained into, and the
+# study its aggregate is paired against. The PyTorch-era arms are one key from results/study; v3 is the
+# whole docs/10 bundle (scripts/run_v3_campaign.sh) and the two single-key arms are one key each from the
+# JAX replication (scripts/run_item16_campaign.sh). Each arm covers as many seeds as its scratch holds --
+# see completed_seeds.
+V3_OVERRIDES = {
+    "RL_GAE_PER_AGENT": "true", "RL_UPDATE_MINIBATCHES": "16", "RL_TARGET_KL": "0.02", "RL_PARAM_TARGET": "-1",
+    "COMM_ROUNDS": "2", "COMM_MASK_DEAD": "true", "VD_LOCAL_CRITIC": "true", "OBS_OBSTACLE_RAYS": "8",
+    "ARENA_LAYOUT": "symmetric", "SPAWN_CYCLE_PER_MATCH": "true",
+    "RL_OPPONENT_POOL_PROB": "0.2", "RL_OPPONENT_POOL_EVERY_MATCHES": "50", "RL_OPPONENT_POOL_SIZE": "20",
+}
 ARMS = {
-    "no_dr": {"DOMAIN_RANDOMIZATION": "false"},
-    "narrow_64": {"RL_HIDDEN_DIM": "64"},
-    "wide_256": {"RL_HIDDEN_DIM": "256"},
+    "no_dr": {"overrides": {"DOMAIN_RANDOMIZATION": "false"},
+              "scratch": "runs_ablation_no_dr", "baseline": "results/study"},
+    "narrow_64": {"overrides": {"RL_HIDDEN_DIM": "64"},
+                  "scratch": "runs_ablation_narrow_64", "baseline": "results/study"},
+    "wide_256": {"overrides": {"RL_HIDDEN_DIM": "256"},
+                 "scratch": "runs_ablation_wide_256", "baseline": "results/study"},
+    "v3": {"overrides": V3_OVERRIDES, "scratch": "runs_v3", "baseline": "results/study_jax"},
+    "spawn_cycle": {"overrides": {"SPAWN_CYCLE_PER_MATCH": "true"},
+                    "scratch": "runs_jax_spawn_cycle", "baseline": "results/study_jax"},
+    "symmetric": {"overrides": {"ARENA_LAYOUT": "symmetric"},
+                  "scratch": "runs_jax_symmetric", "baseline": "results/study_jax"},
 }
 EXPERIMENTS = ("exp1", "exp2")
 # Experiment 2's scratch tree is inside ctde_arena/, which is where its runs were written.
@@ -109,13 +125,20 @@ def actor_shape(path: Path) -> tuple[int | None, int]:
             actor = {name[len(prefix):]: stored[name] for name in stored.files if name.startswith(prefix)}
     widths = {int(tensor.shape[0]) for name, tensor in actor.items()
               if name.endswith(".0.weight") and hasattr(tensor, "shape") and tensor.ndim == 2}
-    parameters = sum(int(tensor.numel()) for tensor in actor.values() if hasattr(tensor, "numel"))
+    # A Torch tensor counts with numel(), a NumPy array with .size; reading only the first made every
+    # converted archive record 0 parameters.
+    parameters = sum(int(tensor.numel()) if hasattr(tensor, "numel") else int(tensor.size)
+                     for tensor in actor.values() if hasattr(tensor, "numel") or hasattr(tensor, "size"))
     width = widths.pop() if len(widths) == 1 else None
     return width, parameters
 
 
+def scratch_root(arm: str, experiment: str) -> Path:
+    return SCRATCH_ROOT[experiment] / "data" / ARMS[arm]["scratch"]
+
+
 def source_dir(arm: str, experiment: str, seed: int) -> Path:
-    return SCRATCH_ROOT[experiment] / "data" / f"runs_ablation_{arm}" / f"{experiment}_seed{seed}"
+    return scratch_root(arm, experiment) / f"{experiment}_seed{seed}"
 
 
 def completed_seeds(arm: str, experiment: str) -> list[int]:
@@ -125,7 +148,7 @@ def completed_seeds(arm: str, experiment: str) -> list[int]:
     mid-training leaves checkpoints behind, and versioning those would publish weights that no aggregate in
     docs/08_results.md was computed from.
     """
-    root = SCRATCH_ROOT[experiment] / "data" / f"runs_ablation_{arm}"
+    root = scratch_root(arm, experiment)
     if not root.is_dir():
         return []
     seeds = []
@@ -187,17 +210,28 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true",
                         help="verify the versioned set against the scratch without writing anything")
+    parser.add_argument("--arms", default=",".join(ARMS),
+                        help="comma-separated arms to (re)version; the manifest keeps every other arm's entry "
+                             "as it was, so an arm still training does not have to exist yet")
     args = parser.parse_args()
+    selected = [arm for arm in args.arms.split(",") if arm]
+    unknown_arms = sorted(set(selected) - set(ARMS))
+    if unknown_arms:
+        raise SystemExit(f"unknown arms {unknown_arms}; known: {sorted(ARMS)}")
+    previous = (json.loads((OUT / "MANIFEST.json").read_text(encoding="utf-8"))
+                if (OUT / "MANIFEST.json").is_file() else {"arms": {}})
 
     manifest: dict[str, object] = {
         "generated_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "purpose": "Checkpoints of the configuration ablations in docs/08_results.md#ablations, versioned "
                    "so an arm can be replayed without retraining it and its capacity is recorded somewhere "
                    "other than the campaign script.",
-        "produced_by": "bash scripts/run_ablation_campaign.sh, then bash scripts/run_no_dr_extension.sh "
-                       "for the seeds that arm carries past three",
-        "baseline": "results/study (both experiments, 500000 steps, domain randomisation on, "
-                    "RL_HIDDEN_DIM=128, seeds 1-10)",
+        "produced_by": "no_dr / narrow_64 / wide_256: bash scripts/run_ablation_campaign.sh, then bash "
+                       "scripts/run_no_dr_extension.sh for the seeds no_dr carries past three; v3: bash "
+                       "scripts/run_v3_campaign.sh; spawn_cycle / symmetric: bash scripts/run_item16_campaign.sh",
+        "baseline": "each arm's 'baseline' field: results/study (PyTorch, both experiments, 500000 steps, "
+                    "domain randomisation on, RL_HIDDEN_DIM=128, seeds 1-10) for the PyTorch-era arms, "
+                    "results/study_jax (the same on the JAX runtime) for v3 and the single-key arms",
         "seed_coverage": "each arm's 'seeds' field lists what its scratch actually holds, discovered per "
                          "experiment rather than assumed; report_study.py pairs on seed number, so an arm "
                          "with fewer seeds than the control is compared on the shared ones only",
@@ -208,10 +242,12 @@ def main() -> None:
         "arms": {},
     }
     arms: dict[str, object] = manifest["arms"]  # type: ignore[index]
+    arms.update({arm: entry for arm, entry in previous.get("arms", {}).items() if arm not in selected})
     copied = 0
     checked = 0
 
-    for arm, overrides in ARMS.items():
+    for arm in selected:
+        overrides = ARMS[arm]["overrides"]
         sets: dict[str, object] = {}
         discovered: dict[str, list[int]] = {}
         for experiment in EXPERIMENTS:
@@ -219,7 +255,7 @@ def main() -> None:
             discovered[experiment] = seeds
             if not seeds:
                 raise SystemExit(f"{arm}: no completed {experiment} run found under "
-                                 f"{SCRATCH_ROOT[experiment] / 'data' / f'runs_ablation_{arm}'} -- the "
+                                 f"{scratch_root(arm, experiment)} -- the "
                                  f"scratch is git-ignored, so this script can only run on the machine that "
                                  f"trained the arm")
             on_disk = set(seeds)
@@ -261,22 +297,30 @@ def main() -> None:
                     "source_scratch": run_dir.relative_to(ROOT).as_posix(),
                     **record(run_dir, policy_files(destination)),
                 }
-        arms[arm] = {"overrides": overrides, "seeds": {k: v for k, v in discovered.items()}, "sets": sets}
+        arms[arm] = {"overrides": overrides, "baseline": ARMS[arm]["baseline"],
+                     "seeds": {k: v for k, v in discovered.items()}, "sets": sets}
 
     if args.check:
         print(f"verified {checked} versioned checkpoints against their scratch; nothing written")
         return
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "MANIFEST.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-    unknown = [f"{arm}/{name}" for arm, payload in arms.items()
-               for name, entry in payload["sets"].items() if entry["hidden_dim"] is None]  # type: ignore[index]
+    # A parameter-matched arm (RL_PARAM_TARGET) trains each architecture at its own width, so its set has no
+    # single width; every file still has to state one.
+    unknown = [f"{arm}/{name}/{file}" for arm, payload in arms.items()
+               for name, entry in payload["sets"].items()  # type: ignore[index]
+               for file, shape in entry["files"].items() if shape["hidden_dim"] is None]
+    unknown += [f"{arm}/{name}" for arm, payload in arms.items()
+                for name, entry in payload["sets"].items()  # type: ignore[index]
+                if entry["hidden_dim"] is None and "RL_PARAM_TARGET" not in payload["overrides"]]
     if unknown:
         raise SystemExit(f"could not read a single hidden width out of {unknown}; the manifest would be "
                          f"lying about the capacity these sets were trained at")
     print(f"copied {copied} checkpoints; manifest lists "
           f"{sum(len(a['sets']) for a in arms.values())} sets -> {OUT / 'MANIFEST.json'}")
     for arm, payload in arms.items():
-        widths = sorted({entry["hidden_dim"] for entry in payload["sets"].values()})  # type: ignore[index]
+        widths = sorted({shape["hidden_dim"] for entry in payload["sets"].values()  # type: ignore[index]
+                         for shape in entry["files"].values()})
         coverage = ", ".join(f"{e} seeds {v}" for e, v in payload["seeds"].items())  # type: ignore[index]
         sets = len(payload["sets"])  # type: ignore[arg-type]
         print(f"  {arm}: hidden width {widths} over {sets} sets ({coverage})")

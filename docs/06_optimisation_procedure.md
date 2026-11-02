@@ -225,13 +225,14 @@ byte-identical checkpoints and evaluation rows before and after, in both trees
 | `COMM_MASK_DEAD` (false) | true | the communication mean runs over live teammates only, so a dead ally no longer injects `msg_net(0)` | [§ 10.2](10_threats_to_validity.md#dead-allies-inject-a-constant-message) |
 | `VD_LOCAL_CRITIC` (false) | true | CTDE-VD's critic is \(\sum_i V(o_i)\) over each live teammate's *local* observation -- VDN proper | [§ 10.2](10_threats_to_validity.md#ctde-vd-is-not-value-decomposition-over-local-observations) |
 | `OBS_OBSTACLE_RAYS` (0) | 8 | that many ray distances to the nearest obstacle or wall are appended to every local observation and, per agent, to the global state | [A-17](11_code_audit.md#observation-encoding) |
-| `ARENA_LAYOUT` (legacy) | symmetric | the held-out arena becomes three-fold symmetric square pillars with spawns 120 degrees apart | [A-32](11_code_audit.md#the-arena-spawn-geometry-is-not-symmetric) |
-| `SPAWN_CYCLE_PER_MATCH` (false) | true | each team moves one spawn position along every match | A-32, whatever residue the layout leaves |
+| `ARENA_LAYOUT` (legacy) | symmetric | the arena -- in training *and* in the held-out matches -- becomes three-fold symmetric square pillars with spawns 120 degrees apart | [A-32](11_code_audit.md#the-arena-spawn-geometry-is-not-symmetric) |
+| `SPAWN_CYCLE_PER_MATCH` (false) | true | each team moves one spawn position along every match, in training *and* in the held-out matches | A-32, whatever residue the layout leaves |
 | `RL_OPPONENT_POOL_PROB` (0) | 0.2 | in that share of matches one team plays a frozen past snapshot of itself (taken every `RL_OPPONENT_POOL_EVERY_MATCHES`, last `RL_OPPONENT_POOL_SIZE` kept), samples actions but records nothing | [§ 10.1](10_threats_to_validity.md#non-stationary-opponents) |
 
 Three things the switches do not do. They do not separate the remedies from each other -- `v3` is a bundle,
-because its question is whether a corrected instrument ranks the arms at all; the single-key arms of
-[§ 8.13](08_results.md#ablations) are the instrument for "which remedy moves what". They do not add
+because its question is whether a corrected instrument ranks the arms at all; single-key arms are the
+instrument for "which remedy moves what", and the two run so far ([§ 8.14](08_results.md#which-remedy)) show
+that the two slot remedies act through the held-out readout, not through training. They do not add
 value clipping, return normalisation or a learning-rate schedule, the remaining rows of § 6.5, which change
 the optimiser rather than remove a confound. And they leave the reward and the termination rule alone,
 which [§ 4.4.2](04_mdp_formalisation.md#442-the-reward-and-the-termination-rule-are-configurable) already

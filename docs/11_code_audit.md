@@ -74,6 +74,8 @@ Every finding below was open at some point; the status column is the current sta
 | [A-52](#a-wider-inference-batch-changes-greedy-outcomes) | INFO · MEASURED | The vectorised evaluator reproduces the one-arena path exactly at N = 1 and changes 28-31 % of greedy matches at N = 4-16, for a 5-24 % throughput gain; it is kept out of every published instrument |
 | [A-53](#the-study-launcher-leaked-one-trees-configuration-into-the-other) | HIGH · FIXED | `run_study.py` loaded the root `.env` into its own environment and every child inherited it, so once `PARADIGM_CYCLE` differed between the trees experiment 2 trained experiment 1's arms; 40 runs were discarded and re-trained, and collection now refuses such a run |
 | [A-54](#the-random-opponent-had-no-critic-on-the-shared-value-path) | LOW · FIXED | The batched inference chose its value path by arm name, so the RANDOM opponent of the absolute scale -- no critic, not DTE -- crashed it; the path now follows whether a critic exists, identical for the six arms |
+| [A-55](#the-campaign-manifest-counted-no-parameters-in-a-converted-archive) | LOW · FIXED | `data/campaign_replicates/MANIFEST.json` recorded `actor_parameters: 0` for every `.npz`, because the count read only Torch's `numel()`; NumPy arrays are now counted by `.size` and the manifest re-derived |
+| [A-56](#a-campaign-replay-checked-only-the-width) | MED · FIXED | The replay guard compared one hidden width, so a set trained under other network-shaping keys (v3) could not be replayed correctly and the harness would have run under spawn cycling if a reader exported the training profile; every recorded override is now checked and spawn cycling is refused |
 
 ---
 
@@ -1405,10 +1407,19 @@ headline pool, and that is now a stated limit rather than an open task.
     [§ 8.14](08_results.md#v3), [§ 8.13](08_results.md#capacity-ten),
     [§ 8.13](08_results.md#no-dr-absolute), [§ 8.11](08_results.md#scripted-opponents) and
     [§ 8.9](08_results.md#symmetric-baseline). Its experiment-2 half had to be trained twice (A-53).
-16. **Open:** the single-key ablations of the v3 remedies. v3 halves the between-seed spread and does not say
-    which key does it; the two candidates are `SPAWN_CYCLE_PER_MATCH` and `ARENA_LAYOUT=symmetric`, and a
-    ten-seed arm for each is about four hours on this host at four concurrent replicates. The v3 checkpoints
-    have also not been through the cross-experiment pool, the random pool or the scripted opponent.
+16. **Closed:** the single-key ablations of the v3 remedies, and the v3 checkpoints on every opponent scale,
+    run as one queue by `scripts/run_item16_campaign.sh` and cross-checked by `scripts/run_remedy_readout.sh`.
+    Both candidate keys, alone, shrink the spread as much as the bundle -- and neither does it through
+    training: re-reading the same checkpoints with the key flipped in the evaluation only shows that the
+    reduction is the held-out readout no longer assigning each arm one spawn ([§ 8.14](08_results.md#which-remedy)).
+    The v3 checkpoints are versioned under `data/campaign_replicates/v3/` and played on the round-robin, the
+    random and the scripted scale ([§ 8.14](08_results.md#v3-pools)). Versioning and replaying them exposed
+    A-55 and A-56.
+17. **Open:** what item 16 leaves. The cycled readout has only been applied to JAX-runtime checkpoints; the
+    published PyTorch study's twenty versioned sets (`data/training_replicates/`) have not been re-read under
+    it, so the study's own between-seed SD and its null are still those of the committed readout. Nor has any
+    remedy moved the part of the spread that remains under a cycled readout (0.075-0.115 between seeds, two to
+    three times the binomial noise of 150 matches), which is the part that belongs to training.
 
 ## Per-agent policy dispatch was the training bottleneck
 
@@ -1486,14 +1497,14 @@ flag that would is rejected by this jaxlib. Campaign widths of twelve and twenty
 per process was enforced by `torch.set_num_threads(1)`; under JAX the measured optimum on this host is about
 four, and that is a scheduling fact about the queue rather than a result about the arena.
 
-Nine entries below post-date this note (A-49 to A-54 are summarised at the end of this paragraph). A-46 is the throughput finding the port's own step was carrying:
+Eleven entries below post-date this note (A-49 to A-56 are summarised at the end of this paragraph). A-46 is the throughput finding the port's own step was carrying:
 the batched path still dispatched five eager device ops and two syncs per team per step, and the PPO update
 synced per minibatch. A-47 is the reproducibility limit the verification for A-46 could not help finding:
 the JAX training update is not bit-deterministic under concurrent load. A-48 is the dependency-audit gap of
 the same swap: the runtime requirements that replaced the measured lock had no OSV record and no gate.
 A-49 found the dispatch A-46 had left on the inputs; A-50 records the remedies of docs/10 and the removal of
 the engine fork; A-51 extends A-47 to solo runs; A-52 measures the vectorised evaluator and keeps it out of
-the published instruments; A-53 is the configuration leak that removing the fork exposed in the study launcher, and A-54 the value-path check that removing it exposed in the batched inference.
+the published instruments; A-53 is the configuration leak that removing the fork exposed in the study launcher, and A-54 the value-path check that removing it exposed in the batched inference; A-55 and A-56 are the two defects that versioning and replaying the v3 checkpoints exposed in the campaign tooling.
 
 ## Eager device ops and per-minibatch syncs were the JAX step's own overhead
 
@@ -1741,3 +1752,38 @@ the first `no_dr` random-pool match raised on `None.forward`. The old experiment
 this was latent rather than introduced. The value path now follows whether the controller has a critic,
 which for the six arms is the same condition (only `DTE` has none), so every published instrument is
 unchanged; `tests/test_vector.py` plays a critic-less `RANDOM` controller to pin it.
+
+## The campaign manifest counted no parameters in a converted archive
+
+**A-55 · LOW · FIXED**
+
+`version_campaign_checkpoints.py` records, per versioned file, the hidden width and the actor's parameter
+count. Since A-45 every committed set is an `.npz`, whose arrays NumPy exposes with `.size`; the count only
+read Torch's `numel()`, skipped every array, and wrote `actor_parameters: 0` for all 96 files of the
+`no_dr`, `narrow_64` and `wide_256` arms. Nothing consumed the field, so no number changed, but the manifest
+stated something false about the weights it describes. The count now reads either attribute, the manifest was
+re-derived from the same scratch (the bytes and hashes are unchanged), and `tests/test_checkpoint_archive.py`
+asserts that the recorded count equals the one read back from each file and is positive.
+
+## A campaign replay checked only the width
+
+**A-56 · MED · FIXED**
+
+`check_campaign_capacity` was written for the capacity arms, so it compared one number: the set's hidden width
+against `RL_HIDDEN_DIM`. The v3 checkpoints break both of its assumptions. They were trained under keys that
+change the network itself -- eight obstacle rays widen the observation, two message rounds and the local VD
+critic change the architectures, and `RL_PARAM_TARGET=-1` gives each architecture its own width, so a set has
+no single width at all -- and under a remedy that would corrupt a replay: `SPAWN_CYCLE_PER_MATCH` moves every
+team off the spawn the harness assigned it while the match is still recorded under that assignment. Against
+the v3 manifest entry the old guard would have refused every set with a width of `None`, a message that names
+no key to fix; and nothing in it or in the harness stopped a reader who exported the whole v3 training profile
+from measuring a pool whose slot accounting had been changed underneath it. (The profile's other training-only
+remedy, the past-self pool, is inert here: `OpponentPool.begin_match` freezes no team while training is off,
+which is also why v3's own held-out evaluation was unaffected by it.)
+
+The guard now compares every override the manifest recorded for the arm against the running environment,
+except the keys that act only in training (the update rule, domain randomisation -- the harness supplies every
+variant -- the past-self pool and spawn cycling), and checks each file's width against what the running
+configuration would build for that architecture, `RL_PARAM_TARGET` included. `CrossArena` refuses to start with
+spawn cycling on. `tests/test_cross_arena_report.py` pins all three: the committed configuration refuses v3 by
+its first network-shaping key, the harness refuses spawn cycling, and the pool freezes nobody with training off.

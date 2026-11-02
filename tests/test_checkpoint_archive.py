@@ -96,10 +96,14 @@ def test_the_capacity_guard_reads_the_width_without_pytorch(tmp_path: Path) -> N
     payload = json.loads(manifest.read_text(encoding="utf-8"))
     for arm, record in payload["arms"].items():
         declared = int(record["overrides"].get("RL_HIDDEN_DIM", 128))
+        matched = "RL_PARAM_TARGET" in record["overrides"]  # one width per architecture, not per arm
         for name, entry in record["sets"].items():
-            assert entry["hidden_dim"] == declared, (arm, name)
-            for file in entry["files"]:
+            if not matched:
+                assert entry["hidden_dim"] == declared, (arm, name)
+            for file, shape in entry["files"].items():
                 path = ROOT / "data" / "campaign_replicates" / arm / name / file
                 assert path.is_file(), path
                 assert path.suffix == ".npz", f"{path}: the manifest must describe the loadable format"
-                assert module.actor_shape(path)[0] == declared, (arm, name, file)
+                width, parameters = module.actor_shape(path)
+                assert width == (shape["hidden_dim"] if matched else declared), (arm, name, file)
+                assert parameters == shape["actor_parameters"] > 0, (arm, name, file)

@@ -61,6 +61,17 @@ GROUPS = [
          "results/baseline_symmetric/"),
     ),
     (
+        "docs/11 item 16",
+        "What `scripts/run_item16_campaign.sh` and `scripts/run_remedy_readout.sh` measured: the v3 checkpoints "
+        "on the round-robin (`cross_arena/v3_blocks.*`, its fifty run directories under "
+        "`cross_arena_v3_blocks/`), the random and the scripted scale ([§ 8.14](08_results.md#v3-pools)); the "
+        "two slot remedies one key at a time on the JAX runtime; and the same checkpoints re-read with the "
+        "key flipped in the evaluation only (`readout_remedies/`, [§ 8.14](08_results.md#which-remedy)).",
+        ("results/cross_arena/v3_blocks.csv", "results/cross_arena/v3_blocks.json",
+         "results/cross_arena_v3_blocks/", "results/absolute_v3/", "results/scripted_v3/",
+         "results/ablation_jax_spawn_cycle/", "results/ablation_jax_symmetric/", "results/readout_remedies/"),
+    ),
+    (
         "Optimiser traces and the analysis of them",
         "`results/trace_analysis.json`: the KL, entropy and value-loss traces of the re-trained "
         "twenty replicates joined to the published per-replicate reads, with the two controls the "
@@ -117,14 +128,15 @@ GROUPS = [
         ("data/training_replicates/",),
     ),
     (
-        "Ablation checkpoints behind the arm tables",
-        "The three configuration-ablation sets of [§ 8.13](08_results.md#ablations), versioned for the same "
-        "reason as the round-robin blocks -- the scratch they were trained into is git-ignored -- so an arm "
-        "can be replayed without retraining it: twenty sets for `no_dr` (seeds 1-10 of both experiments) and "
-        "six for each capacity arm (seeds 1-3). `MANIFEST.json` beside them records each set's single "
-        "override, the hidden width read out of its own weights, the arm's seed coverage, and a SHA-256 per "
-        "file; a `.pt` in this repository stores no capacity metadata, which is the one thing that "
-        "distinguishes `narrow_64` and `wide_256` from the control.",
+        "Campaign checkpoints behind the arm tables",
+        "The three configuration-ablation sets of [§ 8.13](08_results.md#ablations), and the v3 and single-key "
+        "sets of [§ 8.14](08_results.md#which-remedy), versioned for the same reason as the round-robin blocks "
+        "-- the scratch they were trained into is git-ignored -- so an arm can be replayed without retraining "
+        "it: twenty sets each for `no_dr`, `v3`, `spawn_cycle` and `symmetric` (seeds 1-10 of both experiments) "
+        "and six for each capacity arm (seeds 1-3). `MANIFEST.json` beside them records each arm's overrides "
+        "and the study it is paired with, the hidden width and actor parameter count read out of each file's "
+        "own weights, the arm's seed coverage, and a SHA-256 per file; no checkpoint format here stores "
+        "capacity or configuration metadata, and the replay guard checks the manifest instead (A-56).",
         ("data/campaign_replicates/",),
     ),
     (

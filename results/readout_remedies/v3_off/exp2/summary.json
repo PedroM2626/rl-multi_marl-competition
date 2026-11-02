@@ -1,0 +1,25 @@
+{
+  "generated_utc": "2026-11-02T19:29:46+00:00",
+  "readout": "argmax",
+  "eval_temperature": 0.0,
+  "checkpoint_set": "scratch",
+  "protocol": {
+    "matches_per_replicate": 150,
+    "seed_offset": 9000,
+    "domain_randomization": false,
+    "training_mode": false,
+    "hidden_dim": 128,
+    "spawn_cycle_per_match": false,
+    "arena_layout": "symmetric",
+    "arena": {
+      "alive_bonus": 0.015,
+      "alive_decay_half_life_s": 0.0,
+      "cap_awards_win": true,
+      "match_duration_seconds": 90.0
+    }
+  },
+  "replicates": 10,
+  "skipped_for_absent_checkpoints": [],
+  "wall_seconds": 2111.6,
+  "note": "The run directories are git-ignored scratch, so this re-evaluation only runs where the study was trained. The versioned blocks under data/training_replicates/ are the portable equivalent, and the round-robin plays those."
+}

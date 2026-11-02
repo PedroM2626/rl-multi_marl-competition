@@ -54,6 +54,14 @@ def campaign_names() -> list[str]:
 
 CAMPAIGNS = campaign_names()
 
+# Overrides that act only while a policy trains, so a replay need not run under them: the PPO update rule,
+# domain randomisation (the harness supplies every match variant), the past-self opponent pool (inert while
+# training is off) and spawn cycling, which CrossArena refuses outright.
+TRAINING_ONLY_KEYS = {
+    "RL_GAE_PER_AGENT", "RL_UPDATE_MINIBATCHES", "RL_TARGET_KL", "DOMAIN_RANDOMIZATION",
+    "SPAWN_CYCLE_PER_MATCH", "RL_OPPONENT_POOL_PROB", "RL_OPPONENT_POOL_EVERY_MATCHES", "RL_OPPONENT_POOL_SIZE",
+}
+
 # Default policies: the promoted replicate of each experiment, versioned in the two data/ trees. The `.npz`
 # form is what this runtime loads; the `.pt` beside each one is the file that produced the published numbers,
 # and `scripts/convert_torch_checkpoints.py` is what stands between the two (A-45).
@@ -189,19 +197,43 @@ def check_campaign_capacity(campaign: str) -> None:
     reader swapped checkpoints between sets, be played at a width they were never trained at. The manifest
     records the width read out of each set's own weights, which is the only statement about capacity this
     repository can make without re-running the campaign script's `env` line.
+
+    The same holds for every key that shapes a network or the game it was trained in (v3 changes the
+    observation, the message rounds, the VD critic, the layout and, through RL_PARAM_TARGET, a width per
+    architecture), so each such override the manifest recorded must be what this process runs with. Keys
+    that only act during training -- the update rule, domain randomisation (the harness supplies every
+    variant), the past-self pool and spawn cycling (see TRAINING_ONLY_KEYS) -- are not compared.
     """
+    import os
+
     from marl_arena.config import CONFIG
+    from marl_arena.controllers.rl_controller import ALL_PARADIGMS, matched_hidden_dim
 
     manifest = json.loads(CAMPAIGN_MANIFEST.read_text(encoding="utf-8"))
     arm = manifest["arms"].get(campaign)
     if arm is None:
         raise SystemExit(f"no campaign {campaign!r} in {CAMPAIGN_MANIFEST.relative_to(ROOT_ROOT)}; "
                          f"known arms: {sorted(manifest['arms'])}")
+    for key, value in arm["overrides"].items():
+        if key in TRAINING_ONLY_KEYS or key == "RL_HIDDEN_DIM":
+            continue
+        running = os.environ.get(key, "")
+        if running.strip().lower() != str(value).strip().lower():
+            raise SystemExit(f"{campaign} was trained with {key}={value}, this run has {key}={running or '(unset)'}; "
+                             f"export {key}={value} to replay the arm")
+    by_slug = {paradigm.lower(): paradigm for paradigm in ALL_PARADIGMS}
     for name, entry in arm["sets"].items():
-        width = entry["hidden_dim"]
-        if width != CONFIG.rl_hidden_dim:
-            raise SystemExit(f"{campaign}/{name} was trained at RL_HIDDEN_DIM={width}, this run has "
-                             f"{CONFIG.rl_hidden_dim}; export RL_HIDDEN_DIM={width} to replay the arm")
+        for file, shape in entry["files"].items():
+            paradigm = by_slug[Path(file).stem.split("_", 2)[2]]
+            expected = (matched_hidden_dim(paradigm, CONFIG.rl_param_target) if CONFIG.rl_param_target
+                        else CONFIG.rl_hidden_dim)
+            width = shape["hidden_dim"]
+            if width != expected:
+                raise SystemExit(f"{campaign}/{name}/{file} was trained at width {width}, this run would build "
+                                 f"{expected}; export RL_HIDDEN_DIM={width} to replay the arm"
+                                 if not CONFIG.rl_param_target else
+                                 f"{campaign}/{name}/{file} was trained at width {width}, RL_PARAM_TARGET="
+                                 f"{CONFIG.rl_param_target} builds {expected} here")
 
 
 class CrossArena:
@@ -214,6 +246,11 @@ class CrossArena:
         from marl_arena.systems.match_variant import create_default_variant
         from marl_arena.systems.simulation import ArenaSimulation
 
+        # Spawn cycling would move each team off the position the harness assigned it. (The past-self pool
+        # needs no such check: OpponentPool.begin_match freezes nobody while training is off, as it is here.)
+        if CONFIG.spawn_cycle_per_match:
+            raise SystemExit("SPAWN_CYCLE_PER_MATCH is a training remedy; the harness assigns every team's spawn "
+                             "itself, so replay with it off")
         self.config = CONFIG
         self.device = resolve_device()
         self.set_training = set_rl_training

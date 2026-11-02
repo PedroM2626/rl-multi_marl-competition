@@ -8,7 +8,7 @@ itself the measurement.
 
 > **Full technical documentation lives in [`docs/`](docs/README.md)** — system model, MDP
 > formalisation, architectures, optimisation, protocol, results with confidence intervals and power
-> analysis, reproducibility, limitations, and a 54-item code audit. This file is the quick start.
+> analysis, reproducibility, limitations, and a 56-item code audit. This file is the quick start.
 
 ## Documentation
 
@@ -45,6 +45,8 @@ Honest summary of what is finished and what is not:
 | Historical PyTorch training replay | verified | verified with `--no-mlflow` |
 | Current JAX/Rust training replay | the whole study re-trained on it, 10 seeds ([§ 8.14](docs/08_results.md#v3)): the null reproduces, the leader changes | same |
 | Study with every docs/10 remedy on (v3) | 10 seeds × 500k steps: between-seed SD halved for all six arms, CTDE above CTE on all ten seeds (*p* = 0.002) ([§ 8.14](docs/08_results.md#v3)) | 10 seeds, nothing separates |
+| Which remedy does it | `SPAWN_CYCLE_PER_MATCH` and `ARENA_LAYOUT=symmetric` one at a time, 10 seeds each, then the same checkpoints re-read with the key flipped in the evaluation only: both act through the held-out readout, neither through training ([§ 8.14](docs/08_results.md#which-remedy)) | same |
+| v3 checkpoints on the opponent scales | versioned, and played on the round-robin (30,000 matches, 12 of 15 pairs separate, CTDE-Comm fifth), the random and the scripted scale ([§ 8.14](docs/08_results.md#v3-pools)) | same |
 | Scripted-opponent scale | 4,500 matches, the study's ten blocks against an engage-and-fire rule: trained arms win 0.248–0.347, about an equal team's share ([§ 8.11](docs/08_results.md#scripted-opponents)) | shared |
 | MLflow tracking | n/a | wired, but only **1 logged point** for the 100k run |
 | Cross-experiment round-robin | 30,000 matches, all six arms on common opponents, 10 checkpoint sets x 5 harness seeds — every replicate either experiment trained (shared, run from `ctde_arena/`) | same |
@@ -59,7 +61,7 @@ Honest summary of what is finished and what is not:
 | Study re-measured at the shipped step budget | the same twenty replicates trained to 3,000,000 steps instead of 500,000: the lead changes hands in **both** experiments (CTDE 0.429 overtakes DTE; CTDE-Comm 0.395 takes first while CTDE-VD falls to last) and no paired comparison clears the corrected bar ([§ 8.13](docs/08_results.md#budget-3m)) | same |
 | Dependency audit | The measured PyTorch lock has recorded advisories and is kept for historical reproduction ([§ 9.10](docs/09_reproducibility.md#dependency-audit)); the runtime requirements are audited and CI-gated too, with 0 advised pins since `python-dotenv`, `pytest` and `mlflow` were upgraded ([§ 9.10](docs/09_reproducibility.md#runtime-dependency-audit)) | same |
 | Gameplay clips of the trained policies | yes (`docs/assets/`) | yes |
-| Current tests<!--auto:readme-status--> | 215 passed, 1 skipped, **90 %** statements / **80 %** branches | 90 passed, 1 skipped, **79 %** statements / **66 %** branches |
+| Current tests<!--auto:readme-status--> | 217 passed, 1 skipped, **90 %** statements / **81 %** branches | 90 passed, 1 skipped, **79 %** statements / **66 %** branches |
 | Continuous integration | both suites on Ubuntu (Python 3.10 and 3.11) and Windows, a Rust parity job that cannot skip, a Docker build, tree parity, documentation links, inventory and pooled/absolute re-derivation, artefact-path portability, campaign-script syntax — and the re-derivation gate is what caught [A-42](docs/11_code_audit.md#a-committed-artefact-recorded-windows-paths) ([§ 9.4](docs/09_reproducibility.md#continuous-integration)) | same jobs |
 | Docker | n/a | built and import-smoke-tested in CI; **no end-to-end training run recorded** |
 
@@ -93,9 +95,9 @@ margin** (~47 to ~939 replicates, [§ 8.1](docs/08_results.md#power-analysis)), 
 decide matches on the 90 s clock rather than by eliminations
 ([§ 8.1](docs/08_results.md#two-regimes)), one replicate in sixty reads out as a never-fires policy
 ([§ 8.1](docs/08_results.md#leave-one-out)), and the `ctde_arena/` Docker image is built and
-import-smoke-tested in CI but has no end-to-end training run recorded. v3's variance reduction is a bundle
-of remedies, and which one does it is not yet measured; nor have the v3 checkpoints been played in any
-opponent pool ([docs/11 open work, item 16](docs/11_code_audit.md)).
+import-smoke-tested in CI but has no end-to-end training run recorded. The published PyTorch study has not
+been re-read under the cycled readout that removes the slot share of the spread, and no remedy has moved the
+part of the spread that remains under it ([docs/11 open work, item 17](docs/11_code_audit.md)).
 
 ## The two experiments
 
@@ -201,8 +203,9 @@ is evaluation against fixed opponents rather than argmax. Pooled over all 60 arm
   rule. Under it CTDE-VD, first in experiment 2 at 0.367 under argmax, is **last** at 0.323 (T = 0.5), while
   the between-replicate spread does not shrink at any temperature (0.128–0.220 sampled against
   0.122–0.218 greedy). The
-  readout controls which architecture appears best; the instability belongs to training
-  ([§ 8.1 Readout re-measured](docs/08_results.md#readout-re-measured)).
+  readout controls which architecture appears best; the instability is not the action rule
+  ([§ 8.1 Readout re-measured](docs/08_results.md#readout-re-measured)) — and much of it, it later turned
+  out, is the spawn the readout assigns rather than training ([§ 8.14](docs/08_results.md#which-remedy)).
 * **Two of every five held-out matches are not measuring fighting.** 37.9 % (exp 1) and 42.4 % (exp 2) of
   the study's held-out matches run to the 90 s clock, and five of twenty replicates are clock-dominated —
   up to 117 of 150 matches. Separated by regime, **the pooled order is the timeout order in both
@@ -231,8 +234,15 @@ is evaluation against fixed opponents rather than argmax. Pooled over all 60 arm
   halves.** Re-trained on JAX with every default unchanged, neither experiment ranks its arms and both change
   leader (CTDE first in experiment 1, CTDE-Comm in experiment 2). With every docs/10 remedy on together
   (v3), the between-seed SD of all six arms falls — mean 0.171 to 0.093 — and CTDE beats CTE on all ten seeds
-  (sign-flip *p* = 0.002), the only within-experiment, replicate-level separation in the repository. The
-  bundle cannot say which remedy did it ([§ 8.14](docs/08_results.md#v3)).
+  (sign-flip *p* = 0.002) ([§ 8.14](docs/08_results.md#v3)).
+* **Much of the "training variance" is the spawn the readout assigns.** Trained one key at a time, spawn
+  cycling and the symmetric arena each shrink the spread as much as all of v3 — but re-reading the same
+  checkpoints with the key flipped only in the evaluation shows that neither does it through training:
+  policies trained under either key, read out the committed way, spread as much as the control (0.175 and
+  0.171), while the control's own checkpoints, read with each team cycled through all three spawns, fall from
+  0.171 to 0.097 and separate CTDE from CTE (*p* = 0.006) without a weight changing
+  ([§ 8.14](docs/08_results.md#which-remedy)). On the common pool the v3 checkpoints separate 12 of 15 pairs,
+  with CTDE-Comm fifth ([§ 8.14](docs/08_results.md#v3-pools)).
 * **The trained policies are about as strong as a hand-written rule.** Against two scripted teams that
   turn to the nearest enemy and fire, the six arms win 0.248–0.347 — about what an equal team takes from the
   slot rotation — in an order that matches neither the peer pool nor the random pool
@@ -300,6 +310,7 @@ checkout holds pointer files and nothing that loads a policy will run.
 | `python scripts/plot_study.py` | root | `results/study/learning_curves.png` |
 | `python scripts/random_baseline.py --matches 300 --policy uniform` | either | Untrained reference point |
 | `python scripts/promote_run.py --experiment exp1 --seed median` | root | Copy one replicate into the versioned `data/` |
+| `bash scripts/run_item16_campaign.sh` | root | The v3 checkpoints on the round-robin, random and scripted scales, then the two single-key arms ([§ 8.14](docs/08_results.md#which-remedy)); `bash scripts/run_remedy_readout.sh` re-reads their checkpoints with the key flipped in the evaluation |
 | `bash scripts/run_v3_campaign.sh` | root | The JAX replication, v3, the ten-seed capacity arms and the scripted / `no_dr` scales, resumable phase by phase ([§ 8.14](docs/08_results.md#v3)) |
 | `mlflow ui --backend-store-uri file:./mlruns` | `ctde_arena/` | Tracking UI |
 
@@ -403,10 +414,11 @@ and a positive value samples the policy's softmax at that temperature
 ├── results/
 │   ├── study/                  # per_seed_metrics.csv, analysis.json, learning_curves.png
 │   ├── study_jax/  study_v3/   # the JAX re-training and the v3 study (§ 8.14)
+│   ├── readout_remedies/       # the same checkpoints re-read with a slot remedy flipped in the evaluation
 │   ├── study_v2/  study_3m/    # arena v2 and the 3 M-step budget
 │   ├── ablation_*/             # configuration ablations, PyTorch and JAX (§ 8.13)
 │   ├── cross_arena*/           # round-robin pools and their per-run records
-│   ├── absolute*/  scripted_ten/  # strength against random and scripted opponents
+│   ├── absolute*/  scripted_*/ # strength against random and scripted opponents
 │   └── baseline*/              # untrained reference points, committed and symmetric arena
 ├── exports/metrics/            # derived charts
 ├── docs/                       # the full documentation set, 12 chapters
@@ -436,6 +448,7 @@ Both trees ship the same layout; `exp. 1` and `exp. 2` below mean "in each tree'
 | `data/mlflow_export/` | the 48 metric points that reached MLflow | exp. 2 |
 | `results/study/` | the 20-replicate study's aggregate CSV, JSON and figure | yes |
 | `results/study_jax/`, `results/study_v3/` | the same aggregates for the JAX re-training and the v3 study | yes |
+| `data/campaign_replicates/` | the checkpoints of the configuration ablations, v3 and the two single-key arms, with a `MANIFEST.json` of what each was trained as | yes (the checkpoints through Git LFS) |
 | `results/baseline/` | the untrained reference points, greedy and uniform | yes |
 | `data/runs/` | per-replicate scratch (checkpoints, per-step CSVs, `evaluation/run_summary.json`) | **no** — see [§ 9.8](docs/09_reproducibility.md#the-versioning-asymmetry) |
 | `data/demo/` | what `python main.py` records when a demo match ends; never study evidence | **no** — git-ignored |

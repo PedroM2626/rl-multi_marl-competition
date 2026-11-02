@@ -1,0 +1,131 @@
+{
+  "design": "all C(6,3) architecture triples, each played to completion with slot rotation",
+  "policies": {
+    "CTE": "data/campaign_replicates/v3/exp1_seed2/team_2_cte.npz",
+    "DTE": "data/campaign_replicates/v3/exp1_seed2/team_3_dte.npz",
+    "CTDE": "data/campaign_replicates/v3/exp1_seed2/team_1_ctde.npz",
+    "CTDE-VD": "data/campaign_replicates/v3/exp2_seed1/team_3_ctde-vd.npz",
+    "CTDE-CAC": "data/campaign_replicates/v3/exp2_seed1/team_1_ctde-cac.npz",
+    "CTDE-Comm": "data/campaign_replicates/v3/exp2_seed1/team_2_ctde-comm.npz"
+  },
+  "triples": 20,
+  "matches_per_triple": 30,
+  "matches_played": 600,
+  "team_matches": 1800,
+  "seed": 3,
+  "training_block": "v3:exp1_seed2+exp2_seed1",
+  "campaign": "v3",
+  "arena": {
+    "arena_size": 32.0,
+    "match_duration_seconds": 90.0,
+    "domain_randomization": false,
+    "hidden_dim": 128,
+    "reward": {
+      "alive_bonus": 0.015,
+      "alive_decay_half_life_s": 0.0,
+      "kill": 1.2,
+      "death": -0.5,
+      "hit": -1.0,
+      "cap_awards_win": true
+    }
+  },
+  "per_architecture": {
+    "CTDE": {
+      "matches": 300,
+      "wins": 87,
+      "win_rate": 0.29,
+      "wilson_95_ci": [
+        0.2416,
+        0.3437
+      ],
+      "draw_rate": 0.0167,
+      "timeout_rate": 0.26,
+      "eliminations_per_match": 2.167,
+      "mean_survival_seconds": 13.58,
+      "shots_per_match": 76.23,
+      "shots_per_alive_second": 1.871,
+      "shot_accuracy": 0.0284
+    },
+    "CTDE-CAC": {
+      "matches": 300,
+      "wins": 124,
+      "win_rate": 0.4133,
+      "wilson_95_ci": [
+        0.359,
+        0.4698
+      ],
+      "draw_rate": 0.0167,
+      "timeout_rate": 0.29,
+      "eliminations_per_match": 2.547,
+      "mean_survival_seconds": 16.19,
+      "shots_per_match": 90.41,
+      "shots_per_alive_second": 1.8618,
+      "shot_accuracy": 0.0282
+    },
+    "CTDE-Comm": {
+      "matches": 300,
+      "wins": 80,
+      "win_rate": 0.2667,
+      "wilson_95_ci": [
+        0.2198,
+        0.3194
+      ],
+      "draw_rate": 0.02,
+      "timeout_rate": 0.2867,
+      "eliminations_per_match": 1.853,
+      "mean_survival_seconds": 11.71,
+      "shots_per_match": 36.6,
+      "shots_per_alive_second": 1.0421,
+      "shot_accuracy": 0.0506
+    },
+    "CTDE-VD": {
+      "matches": 300,
+      "wins": 104,
+      "win_rate": 0.3467,
+      "wilson_95_ci": [
+        0.2951,
+        0.4022
+      ],
+      "draw_rate": 0.02,
+      "timeout_rate": 0.2667,
+      "eliminations_per_match": 2.037,
+      "mean_survival_seconds": 15.19,
+      "shots_per_match": 52.21,
+      "shots_per_alive_second": 1.1455,
+      "shot_accuracy": 0.039
+    },
+    "CTE": {
+      "matches": 300,
+      "wins": 79,
+      "win_rate": 0.2633,
+      "wilson_95_ci": [
+        0.2167,
+        0.3159
+      ],
+      "draw_rate": 0.0133,
+      "timeout_rate": 0.2633,
+      "eliminations_per_match": 2.437,
+      "mean_survival_seconds": 12.69,
+      "shots_per_match": 71.75,
+      "shots_per_alive_second": 1.885,
+      "shot_accuracy": 0.034
+    },
+    "DTE": {
+      "matches": 300,
+      "wins": 116,
+      "win_rate": 0.3867,
+      "wilson_95_ci": [
+        0.3333,
+        0.4429
+      ],
+      "draw_rate": 0.0133,
+      "timeout_rate": 0.2733,
+      "eliminations_per_match": 2.26,
+      "mean_survival_seconds": 17.01,
+      "shots_per_match": 84.66,
+      "shots_per_alive_second": 1.6595,
+      "shot_accuracy": 0.0267
+    }
+  },
+  "chance_level": 0.3333
+}

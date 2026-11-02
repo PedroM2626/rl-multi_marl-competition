@@ -437,32 +437,38 @@ def test_the_campaign_manifest_matches_the_weights() -> None:
     """
     root = PROJECT_ROOT / "data" / "campaign_replicates"
     manifest = json.loads((root / "MANIFEST.json").read_text(encoding="utf-8"))
-    assert set(manifest["arms"]) == {"no_dr", "narrow_64", "wide_256"}
-    derive = _load("version_campaign_checkpoints").actor_shape
+    versioning = _load("version_campaign_checkpoints")
+    # The single-key arms of docs/11 item 16 join the manifest when their campaign finishes training.
+    assert {"no_dr", "narrow_64", "wide_256", "v3"} <= set(manifest["arms"]) <= set(versioning.ARMS)
+    derive = versioning.actor_shape
     files = 0
+    sets = 0
     for arm, payload in manifest["arms"].items():
+        assert payload["overrides"] == versioning.ARMS[arm]["overrides"], f"{arm}: overrides drifted"
         declared = int(payload["overrides"].get("RL_HIDDEN_DIM", 128))
+        matched = "RL_PARAM_TARGET" in payload["overrides"]
         coverage = payload["seeds"]
         assert {k: sorted(v) for k, v in coverage.items()} == (
-            {"exp1": list(range(1, 11)), "exp2": list(range(1, 11))} if arm == "no_dr"
-            else {"exp1": [1, 2, 3], "exp2": [1, 2, 3]}), f"{arm}: unexpected seed coverage"
+            {"exp1": [1, 2, 3], "exp2": [1, 2, 3]} if arm in ("narrow_64", "wide_256")
+            else {"exp1": list(range(1, 11)), "exp2": list(range(1, 11))}), f"{arm}: unexpected seed coverage"
+        sets += len(payload["sets"])
         assert len(payload["sets"]) == sum(len(v) for v in coverage.values()), \
             f"{arm}: the manifest lists seeds it did not version"
         on_disk = sorted(p.name for p in (root / arm).iterdir() if p.is_dir())
         assert on_disk == sorted(payload["sets"]), (f"{arm}: versioned directories and manifest sets differ "
                                                    f"-- on disk {on_disk}, listed {sorted(payload['sets'])}")
         for name, entry in payload["sets"].items():
-            assert entry["hidden_dim"] == declared, (arm, name)
+            assert entry["hidden_dim"] == (None if matched else declared), (arm, name)
             assert entry["completed_steps"] == entry["target_steps"] == 500000, (arm, name)
             for file, meta in entry["files"].items():
                 path = root / arm / name / file
                 assert path.is_file(), path
                 assert path.stat().st_size == meta["bytes"], file
                 assert hashlib.sha256(path.read_bytes()).hexdigest() == meta["sha256"], file
-                if file == sorted(entry["files"])[0]:
+                if matched or file == sorted(entry["files"])[0]:
                     assert derive(path)[0] == meta["hidden_dim"], (arm, name, file)
                 files += 1
-    assert files == 96, files
+    assert files == 3 * sets, (files, sets)
 
 
 def test_the_capacity_guard_refuses_an_arm_the_configuration_cannot_load() -> None:
@@ -477,6 +483,37 @@ def test_the_capacity_guard_refuses_an_arm_the_configuration_cannot_load() -> No
             harness.check_campaign_capacity(arm)
     with pytest.raises(SystemExit, match="no campaign"):
         harness.check_campaign_capacity("not_an_arm")
+    # v3 changes the observation and the widths, so the committed configuration must refuse it by key --
+    # the first network-shaping override, not a width that happens to differ further down.
+    with pytest.raises(SystemExit, match="export RL_PARAM_TARGET=-1"):
+        harness.check_campaign_capacity("v3")
+
+
+def test_the_harness_refuses_spawn_cycling(monkeypatch) -> None:
+    """Spawn cycling would move every team off the spawn the harness assigned it, under the same label."""
+    import dataclasses
+
+    import marl_arena.config as config_module
+
+    harness = _load("run_cross_arena")
+    monkeypatch.setattr(config_module, "CONFIG",
+                        dataclasses.replace(config_module.CONFIG, spawn_cycle_per_match=True))
+    with pytest.raises(SystemExit, match="replay with it off"):
+        harness.CrossArena(1)
+
+
+def test_the_past_self_pool_freezes_nobody_while_training_is_off() -> None:
+    """Why the harness and the held-out evaluation may run with RL_OPPONENT_POOL_PROB > 0 (v3's profile)."""
+    from types import SimpleNamespace
+
+    from marl_arena.rl.league import OpponentPool
+
+    controllers = {team: SimpleNamespace(training_enabled=False, actor=SimpleNamespace(params=team), frozen=False)
+                   for team in ("Team 1", "Team 2", "Team 3")}
+    pool = OpponentPool(controllers, seed=1, prob=1.0, every=1, size=4)
+    pool.maybe_snapshot(1)
+    assert all(pool.begin_match() is None for _ in range(20))
+    assert pool.frozen_matches == 0
 
 
 def test_a_campaign_arm_is_only_ever_played_from_its_versioned_checkpoints() -> None:

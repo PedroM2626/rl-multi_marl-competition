@@ -256,6 +256,10 @@ def main() -> None:
         "protocol": {"matches_per_replicate": args.matches, "seed_offset": args.seed_offset,
                      "domain_randomization": False, "training_mode": False,
                      "hidden_dim": CONFIG.rl_hidden_dim,
+                     # Both act in the held-out matches themselves, so a re-reading under a different value
+                     # is a different instrument and has to say so.
+                     "spawn_cycle_per_match": CONFIG.spawn_cycle_per_match,
+                     "arena_layout": CONFIG.arena_layout,
                      "arena": {"alive_bonus": CONFIG.reward_alive_bonus,
                                "alive_decay_half_life_s": CONFIG.reward_alive_decay_half_life,
                                "cap_awards_win": CONFIG.termination_cap_awards_win,

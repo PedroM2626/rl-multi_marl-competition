@@ -1,8 +1,8 @@
 {
-  "generated_utc": "2026-10-19T01:38:36+00:00",
+  "generated_utc": "2026-11-02T18:51:39+00:00",
   "purpose": "Checkpoints of the configuration ablations in docs/08_results.md#ablations, versioned so an arm can be replayed without retraining it and its capacity is recorded somewhere other than the campaign script.",
-  "produced_by": "bash scripts/run_ablation_campaign.sh, then bash scripts/run_no_dr_extension.sh for the seeds that arm carries past three",
-  "baseline": "results/study (both experiments, 500000 steps, domain randomisation on, RL_HIDDEN_DIM=128, seeds 1-10)",
+  "produced_by": "no_dr / narrow_64 / wide_256: bash scripts/run_ablation_campaign.sh, then bash scripts/run_no_dr_extension.sh for the seeds no_dr carries past three; v3: bash scripts/run_v3_campaign.sh; spawn_cycle / symmetric: bash scripts/run_item16_campaign.sh",
+  "baseline": "each arm's 'baseline' field: results/study (PyTorch, both experiments, 500000 steps, domain randomisation on, RL_HIDDEN_DIM=128, seeds 1-10) for the PyTorch-era arms, results/study_jax (the same on the JAX runtime) for v3 and the single-key arms",
   "seed_coverage": "each arm's 'seeds' field lists what its scratch actually holds, discovered per experiment rather than assumed; report_study.py pairs on seed number, so an arm with fewer seeds than the control is compared on the shared ones only",
   "reproduce_training": "bash scripts/run_ablation_campaign.sh, or one arm on its own: env RL_HIDDEN_DIM=64 python scripts/run_study.py --steps 500000 --seeds 1,2,3 --jobs 3 --eval-matches 150 --out data/runs_ablation_narrow_64 --results-dir results/ablation_narrow_64",
   "arms": {
@@ -10,6 +10,7 @@
       "overrides": {
         "DOMAIN_RANDOMIZATION": "false"
       },
+      "baseline": "results/study",
       "seeds": {
         "exp1": [
           1,
@@ -60,19 +61,19 @@
               "sha256": "80a0c8e7c4f9bee6d31bf38a0dda5805e3058f39e24be533014d696f0b608deb",
               "bytes": 133541,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             },
             "team_2_ctde.npz": {
               "sha256": "3aaa8065fcc8bb45328b59ba52ef7eae9e2aae8e48a6ac588b7acf50e3e26b3c",
               "bytes": 280120,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             },
             "team_3_cte.npz": {
               "sha256": "e29a90d591272632b7af62c14440a6b89306e2688c779a53db13820e1d5307e9",
               "bytes": 297664,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 40328
             }
           }
         },
@@ -99,19 +100,19 @@
               "sha256": "a276d846cfbae2287a48947e0f634a345d7cfb15398031f63370184810c4dacb",
               "bytes": 280140,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             },
             "team_2_cte.npz": {
               "sha256": "ca535c08cceb5e8605fd54fc90b8992cd414959e01e2cf2fb4e37935de529448",
               "bytes": 297560,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 40328
             },
             "team_3_dte.npz": {
               "sha256": "fc8ac4947c989522bf407365bf02b239f900564d9440739d7776135a722d9478",
               "bytes": 133638,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             }
           }
         },
@@ -138,19 +139,19 @@
               "sha256": "f95bf8a8c60ea893ea73328437acfdfd2e369e7bbe2a610e05e7343b975a2c6f",
               "bytes": 297637,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 40328
             },
             "team_2_dte.npz": {
               "sha256": "c9e4f539e68d29a4b01c06d2318a89064f9a1e044966083003a879040a418e99",
               "bytes": 133608,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             },
             "team_3_ctde.npz": {
               "sha256": "3371a78419d4ca92a8a88f5ee143cfc21f8df632123467e802e79440e5c4b751",
               "bytes": 279968,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             }
           }
         },
@@ -177,19 +178,19 @@
               "sha256": "05b10fb8a0c7379597cf0199d8eebd8d989b05c11a0d803803bea5a7d0ae155c",
               "bytes": 133523,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             },
             "team_2_ctde.npz": {
               "sha256": "2de406308e60fb50b9b03f6166e26b76d1c135769b296bceb7a9ea2a4fe466eb",
               "bytes": 280047,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             },
             "team_3_cte.npz": {
               "sha256": "a512c215d9de62502db2d9484626162033cdeb23e63c40b8ebfec90a98b30f2a",
               "bytes": 297569,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 40328
             }
           }
         },
@@ -216,19 +217,19 @@
               "sha256": "3aa346acd91a7b1b49ff235f976708bc9dc7f34bc3d79609ad053ce964dc33ab",
               "bytes": 280122,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             },
             "team_2_cte.npz": {
               "sha256": "d948c8e67140c42c9e425a0c5c730deab3b68266b6f4436e13fb949e90326055",
               "bytes": 297676,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 40328
             },
             "team_3_dte.npz": {
               "sha256": "3c6921326c08418fd4f9b7860e5664aa032d58cd317d3b0262da1b77a3e85695",
               "bytes": 133697,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             }
           }
         },
@@ -255,19 +256,19 @@
               "sha256": "5fea9475a8d98e2d0e742ba44fe9e90b23cd1b0bf97fec33a866f9a39c45233a",
               "bytes": 297603,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 40328
             },
             "team_2_dte.npz": {
               "sha256": "a12288ab3f062f5615a375cdfbbf328e02763744421917b07d6b82e8373aa805",
               "bytes": 133542,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             },
             "team_3_ctde.npz": {
               "sha256": "854f81aa5d5c13c6614cf7672686ae0fce3375c16e0598242dc8223a2dc9fd05",
               "bytes": 280144,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             }
           }
         },
@@ -294,19 +295,19 @@
               "sha256": "a231f06df51ba526c418ef8da09c64cf2be974abfe156f41a0c24c8a3203ac06",
               "bytes": 133581,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             },
             "team_2_ctde.npz": {
               "sha256": "1a7485734a406161ddd34a64199fc63ff0343781e7111bbe019be43e434b05f6",
               "bytes": 280070,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             },
             "team_3_cte.npz": {
               "sha256": "6c1a754e703adf160703067f950ee40806606b56ce2c8255fe195f5f76fb3f1a",
               "bytes": 297582,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 40328
             }
           }
         },
@@ -333,19 +334,19 @@
               "sha256": "4880943f5c52be49dcad05ce3cba722e887bec7ae6097468780fbc5db8aaf5f5",
               "bytes": 280009,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             },
             "team_2_cte.npz": {
               "sha256": "065fd19cb1c7ed557b445315153a28902dbbb52c75619669996ecd6be4b5f254",
               "bytes": 297525,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 40328
             },
             "team_3_dte.npz": {
               "sha256": "d4d97252eb1ad1508d08f92436110750605544f29a83537d3fcf825b69bff2e1",
               "bytes": 133626,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             }
           }
         },
@@ -372,19 +373,19 @@
               "sha256": "ed54a8eff29cf251c76eec41819204c798e6e97420723b7f16ce3c0eb4fb75db",
               "bytes": 297422,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 40328
             },
             "team_2_dte.npz": {
               "sha256": "49670fa56b9ef7d02af8c980bd7330dd8f194d86e59896ec18fac5e66b00eb92",
               "bytes": 133653,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             },
             "team_3_ctde.npz": {
               "sha256": "6d6deb25d659e411844c9e1d0f9bc57693e8e6d67ea5d7fda210a14e5b8d6189",
               "bytes": 280112,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             }
           }
         },
@@ -411,19 +412,19 @@
               "sha256": "b3d032bce583c2c08aed838f80eaf4558343485df0b23182b010e1308b6a2adc",
               "bytes": 133588,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             },
             "team_2_ctde.npz": {
               "sha256": "502842c05aac239833e974f4da58c2df10a6bfdf5458987f1abe2751e0bf716e",
               "bytes": 279940,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             },
             "team_3_cte.npz": {
               "sha256": "ad783666b47ab649aa389f0d497634c5d533bd84fbe6c615781f4255b3a2ce52",
               "bytes": 297081,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 40328
             }
           }
         },
@@ -450,19 +451,19 @@
               "sha256": "a13dfbfdb55e015a85afa4a69449411c21f1f06c99c8ebeb3246e320650c8fea",
               "bytes": 280110,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             },
             "team_2_ctde-comm.npz": {
               "sha256": "e9bd40617dd3b7dc990099558a81dd759871ad0e2d77b7f2366a3987c1eeb822",
               "bytes": 288628,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 37644
             },
             "team_3_ctde-vd.npz": {
               "sha256": "4dde7f5a7679f716e9392aba4e07b107c4636e1a2ec1c3c76cc886fd185672c8",
               "bytes": 199380,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             }
           }
         },
@@ -489,19 +490,19 @@
               "sha256": "773f76f8f4b7a5e00b6b133fcd9b0356505f9a9f9da32b25748cfd259691d7b3",
               "bytes": 288885,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 37644
             },
             "team_2_ctde-vd.npz": {
               "sha256": "1bdf63771634ab39bb48b81dba45b64930d2804331b79003ad48f35fb051dbb2",
               "bytes": 199446,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             },
             "team_3_ctde-cac.npz": {
               "sha256": "f08836cbeba5e8ae3f7ed4c8e19607aa37cdcb097f2b4716b66edc9db8ad37ec",
               "bytes": 280021,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             }
           }
         },
@@ -528,19 +529,19 @@
               "sha256": "fe5a68b21ab4c03f8f7175c9af26d589bf815bc6bca9075a8138433cd471180c",
               "bytes": 199668,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             },
             "team_2_ctde-cac.npz": {
               "sha256": "fb9f357fc160db45a34c7e3f22b50cf91fad83ead42aec027e51a8490cc61471",
               "bytes": 280036,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             },
             "team_3_ctde-comm.npz": {
               "sha256": "1bcec0d2f2443d748bc215ba466252917cfd6218b1c548a0335f48a4ae4e4283",
               "bytes": 288692,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 37644
             }
           }
         },
@@ -567,19 +568,19 @@
               "sha256": "9abef1104596f1a6b5c24f58a7e1e54ddb114118c9aea0a152054db5c1190790",
               "bytes": 279745,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             },
             "team_2_ctde-comm.npz": {
               "sha256": "fb92eb69fb42ca1b8dfbc8cc244e970ddbbed5a6577a2b5143dce3007b2ad213",
               "bytes": 288884,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 37644
             },
             "team_3_ctde-vd.npz": {
               "sha256": "5795547282ff0a7f9f934955b0c23dea5c46907ec2d28ffd2a2315666a51e73b",
               "bytes": 199538,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             }
           }
         },
@@ -606,19 +607,19 @@
               "sha256": "938bf7210ab0f854bc3203ffe56b41eca93693cf402356de5102e479aa8b99d6",
               "bytes": 288700,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 37644
             },
             "team_2_ctde-vd.npz": {
               "sha256": "8c475c51d70379a78191b728a152f559b404c281c338934cbcdf9d0971c2a8e3",
               "bytes": 199411,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             },
             "team_3_ctde-cac.npz": {
               "sha256": "222d67bd02972d6d55ea9c25233084a392b40bd8abb5c58022329e1a77726b27",
               "bytes": 280119,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             }
           }
         },
@@ -645,19 +646,19 @@
               "sha256": "8225705f1e9bfe9d0ae373caa81cf89fe62bcb672f7b1340d29e26149413da20",
               "bytes": 199631,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             },
             "team_2_ctde-cac.npz": {
               "sha256": "76da9b9a5c466efff947838085a4b8bd2f30ff84f6e652c965ff35bbb7af955e",
               "bytes": 279729,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             },
             "team_3_ctde-comm.npz": {
               "sha256": "447c3303d66de7c4b1bb0bbb7c7d179f235655550ecb28ce11605297d9e8d4b2",
               "bytes": 288664,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 37644
             }
           }
         },
@@ -684,19 +685,19 @@
               "sha256": "9e8defe32684964d7b9a5b21574f30e46937d2a922c3ee37dd9760e49cafe6fe",
               "bytes": 279956,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             },
             "team_2_ctde-comm.npz": {
               "sha256": "4adb202dfa8a0e38f52bd9a3c955434196e9518f294a3b52d4752fde933ee0f3",
               "bytes": 288735,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 37644
             },
             "team_3_ctde-vd.npz": {
               "sha256": "16464568ae1c9afe788998f546408536cff12e73491e7c2f48159ed321ee0c69",
               "bytes": 199450,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             }
           }
         },
@@ -723,19 +724,19 @@
               "sha256": "25316c04ac66a87b6db39eb7d33d6279afb87cc15e8ab4ca1089f367a0dda150",
               "bytes": 288955,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 37644
             },
             "team_2_ctde-vd.npz": {
               "sha256": "a9ee805c2e8ecb8dc5233bf41bcecdde0b849eb797e98bf0f0711ec7d1f72398",
               "bytes": 199137,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             },
             "team_3_ctde-cac.npz": {
               "sha256": "5d8c26f0fad48f1f77c4ed34cdda34d23ced390ef72d8b5b571cd74bb2bbd89b",
               "bytes": 279942,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             }
           }
         },
@@ -762,19 +763,19 @@
               "sha256": "1c20557d5ebd154055288d81625ccd766eb7c1f38a0bfed347e5df2ca4027580",
               "bytes": 199602,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             },
             "team_2_ctde-cac.npz": {
               "sha256": "a79350cf24277a296dd1b3f7b71b7a7712797e7aace1e2dae53f8d57f72cd43b",
               "bytes": 280058,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             },
             "team_3_ctde-comm.npz": {
               "sha256": "23566471d681f2600877b112e663de94f2b3ffca0784f9fd83bf2614bd6ed447",
               "bytes": 288101,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 37644
             }
           }
         },
@@ -801,19 +802,19 @@
               "sha256": "95d997b034ed363332681ae6b3304e97692b407378372ea9e47074a9f1b5a067",
               "bytes": 280088,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             },
             "team_2_ctde-comm.npz": {
               "sha256": "c3e879f114a5c71ddd2f6b9835a10fc474a238e130bd9f0b62f2738d4fec20a1",
               "bytes": 288893,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 37644
             },
             "team_3_ctde-vd.npz": {
               "sha256": "022d1ddaf92c4ab9886d41d67ac361b2c233ccc35185e3c8f0186b6a32bf6a2d",
               "bytes": 199402,
               "hidden_dim": 128,
-              "actor_parameters": 0
+              "actor_parameters": 35465
             }
           }
         }
@@ -823,6 +824,7 @@
       "overrides": {
         "RL_HIDDEN_DIM": "64"
       },
+      "baseline": "results/study",
       "seeds": {
         "exp1": [
           1,
@@ -859,19 +861,19 @@
               "sha256": "4c43345e94c8b36b096d34820d6633b7fa5146970608776d50d0e77e6fea7cdb",
               "bytes": 38042,
               "hidden_dim": 64,
-              "actor_parameters": 0
+              "actor_parameters": 9545
             },
             "team_2_ctde.npz": {
               "sha256": "9425241a04115c10265473e7805d2603b7713855af534880113ad5373bead76a",
               "bytes": 82014,
               "hidden_dim": 64,
-              "actor_parameters": 0
+              "actor_parameters": 9545
             },
             "team_3_cte.npz": {
               "sha256": "45ac1f4cf94540af80499ec3304e0d33011aeea2aaa5ab228801e296be4a6d6a",
               "bytes": 90638,
               "hidden_dim": 64,
-              "actor_parameters": 0
+              "actor_parameters": 11976
             }
           }
         },
@@ -898,19 +900,19 @@
               "sha256": "df2646a83e04ba1fc8c1e1093a5bde65c98dd91c3c5c9cea23e66513339a9aaa",
               "bytes": 81998,
               "hidden_dim": 64,
-              "actor_parameters": 0
+              "actor_parameters": 9545
             },
             "team_2_cte.npz": {
               "sha256": "12b760939e1342681249a3119a5839d77956fa76c24b2d90130919b9d9d4c375",
               "bytes": 90554,
               "hidden_dim": 64,
-              "actor_parameters": 0
+              "actor_parameters": 11976
             },
             "team_3_dte.npz": {
               "sha256": "742b082f384e8329df2ffc860099eddd21411810cbf4557736fac192fc67d439",
               "bytes": 38076,
               "hidden_dim": 64,
-              "actor_parameters": 0
+              "actor_parameters": 9545
             }
           }
         },
@@ -937,19 +939,19 @@
               "sha256": "fd4ed6068c1eadf9423e0dec66131bdc24d60a8590fd74cac58a569bf7617fdd",
               "bytes": 90544,
               "hidden_dim": 64,
-              "actor_parameters": 0
+              "actor_parameters": 11976
             },
             "team_2_dte.npz": {
               "sha256": "63c388d4ce281a3ae34288b639a392309cbed5c5d9d58ec3c71ec77ee1b23bcc",
               "bytes": 38014,
               "hidden_dim": 64,
-              "actor_parameters": 0
+              "actor_parameters": 9545
             },
             "team_3_ctde.npz": {
               "sha256": "68ea8960f5fbb1046412bf08b46ade147bc8c77cab5f85cebd98dc7fccfd1476",
               "bytes": 82092,
               "hidden_dim": 64,
-              "actor_parameters": 0
+              "actor_parameters": 9545
             }
           }
         },
@@ -976,19 +978,19 @@
               "sha256": "2fc9acc0f2201d77e5d62a88d99c58092210dc2dbf8beae8df6530beec3fdfd5",
               "bytes": 82082,
               "hidden_dim": 64,
-              "actor_parameters": 0
+              "actor_parameters": 9545
             },
             "team_2_ctde-comm.npz": {
               "sha256": "3bbc7f1be95145d40d6f151ae81006b6d223e38c9ab4fc36226021c356695388",
               "bytes": 86660,
               "hidden_dim": 64,
-              "actor_parameters": 0
+              "actor_parameters": 10636
             },
             "team_3_ctde-vd.npz": {
               "sha256": "908ba18bee744cd38cb26c25399b901b9ad96918a189490bfa77ccb5b8f025f4",
               "bytes": 56680,
               "hidden_dim": 64,
-              "actor_parameters": 0
+              "actor_parameters": 9545
             }
           }
         },
@@ -1015,19 +1017,19 @@
               "sha256": "a73ff0ddfcdad817050e4cc3aba434e0e1e09db233b7051b010285a7606ce023",
               "bytes": 86652,
               "hidden_dim": 64,
-              "actor_parameters": 0
+              "actor_parameters": 10636
             },
             "team_2_ctde-vd.npz": {
               "sha256": "d159c985473d50305faa61542cb9be72aed4fe2160190e5ba195fd7e92c63d16",
               "bytes": 56668,
               "hidden_dim": 64,
-              "actor_parameters": 0
+              "actor_parameters": 9545
             },
             "team_3_ctde-cac.npz": {
               "sha256": "364fdd2d6b60eed2ffbf78897393c86043124d82eb8b788644303bd4d27a6020",
               "bytes": 82070,
               "hidden_dim": 64,
-              "actor_parameters": 0
+              "actor_parameters": 9545
             }
           }
         },
@@ -1054,19 +1056,19 @@
               "sha256": "e73db06920ff10ac7939fe2a1e78d828dea395a49a88914b708973d0839ac51c",
               "bytes": 56641,
               "hidden_dim": 64,
-              "actor_parameters": 0
+              "actor_parameters": 9545
             },
             "team_2_ctde-cac.npz": {
               "sha256": "4e05416eece360dc12fde1ae77525f94b56411dbfa7311958bcb6636eef18aa9",
               "bytes": 82055,
               "hidden_dim": 64,
-              "actor_parameters": 0
+              "actor_parameters": 9545
             },
             "team_3_ctde-comm.npz": {
               "sha256": "88f27b6c01bcc060c67704d8695c07dcb5e685fb20b025f0a3ced4d828cd50c5",
               "bytes": 86693,
               "hidden_dim": 64,
-              "actor_parameters": 0
+              "actor_parameters": 10636
             }
           }
         }
@@ -1076,6 +1078,7 @@
       "overrides": {
         "RL_HIDDEN_DIM": "256"
       },
+      "baseline": "results/study",
       "seeds": {
         "exp1": [
           1,
@@ -1112,19 +1115,19 @@
               "sha256": "9eae088d0e047b3f1007a12e9f981125277e9ba7d3495a916e752fb3358dd133",
               "bytes": 508259,
               "hidden_dim": 256,
-              "actor_parameters": 0
+              "actor_parameters": 136457
             },
             "team_2_ctde.npz": {
               "sha256": "468308cb80fc87d5d03d85f0cc8e6a29c69884265022581d4e67025d7d28ac7b",
               "bytes": 1042192,
               "hidden_dim": 256,
-              "actor_parameters": 0
+              "actor_parameters": 136457
             },
             "team_3_cte.npz": {
               "sha256": "ec88e0389e77003a68c73a48a7e09f9093b266c3593b209660920810fa84c711",
               "bytes": 1077647,
               "hidden_dim": 256,
-              "actor_parameters": 0
+              "actor_parameters": 146184
             }
           }
         },
@@ -1151,19 +1154,19 @@
               "sha256": "ee9b3552c8d5f33aa14d9df501c5adb4460c6bc2b44bddfe9c9169cad4359a57",
               "bytes": 1042437,
               "hidden_dim": 256,
-              "actor_parameters": 0
+              "actor_parameters": 136457
             },
             "team_2_cte.npz": {
               "sha256": "a883171d47556024aae03b35a42207a5143db70c7dc1a09798163de6d7a10475",
               "bytes": 1077898,
               "hidden_dim": 256,
-              "actor_parameters": 0
+              "actor_parameters": 146184
             },
             "team_3_dte.npz": {
               "sha256": "77b2a40a6afba66b349fec07d965f1150404fe0bccc054d1fa1195537dc4c13a",
               "bytes": 508249,
               "hidden_dim": 256,
-              "actor_parameters": 0
+              "actor_parameters": 136457
             }
           }
         },
@@ -1190,19 +1193,19 @@
               "sha256": "330b50b9cc2d185ea0ed9f4dcd1313243f0843b379b0afc17b87e59ac8f44c50",
               "bytes": 1077955,
               "hidden_dim": 256,
-              "actor_parameters": 0
+              "actor_parameters": 146184
             },
             "team_2_dte.npz": {
               "sha256": "1b2273159fb1604dfb8078b1f16c0149182702435ce9c49e23ad2a086ca29b5f",
               "bytes": 508211,
               "hidden_dim": 256,
-              "actor_parameters": 0
+              "actor_parameters": 136457
             },
             "team_3_ctde.npz": {
               "sha256": "cf6c79d1c88e03d18cf927a6da15e37c20ea7cfb9fe4b5de2c99fba1c75be360",
               "bytes": 1042089,
               "hidden_dim": 256,
-              "actor_parameters": 0
+              "actor_parameters": 136457
             }
           }
         },
@@ -1229,19 +1232,19 @@
               "sha256": "3fd7d53f2e62556181f635d0c7f5a9518cf1b7abdd153063bfd294a599226caa",
               "bytes": 1042289,
               "hidden_dim": 256,
-              "actor_parameters": 0
+              "actor_parameters": 136457
             },
             "team_2_ctde-comm.npz": {
               "sha256": "e182604d7c7c27db9a6f6d456d921c8b25ae67f72967b443ad898b90685fe08b",
               "bytes": 1058597,
               "hidden_dim": 256,
-              "actor_parameters": 0
+              "actor_parameters": 140812
             },
             "team_3_ctde-vd.npz": {
               "sha256": "1d2c8ae19c3bfd6121251511046806beadeb775af04cd4a49766bc158a556674",
               "bytes": 759581,
               "hidden_dim": 256,
-              "actor_parameters": 0
+              "actor_parameters": 136457
             }
           }
         },
@@ -1268,19 +1271,19 @@
               "sha256": "e7b2cf74f6c9ccbd0e4694d97d15cf42f60c82e3f4041f9b901e9dca837fd755",
               "bytes": 1058982,
               "hidden_dim": 256,
-              "actor_parameters": 0
+              "actor_parameters": 140812
             },
             "team_2_ctde-vd.npz": {
               "sha256": "cd589bab0efca3a6aa42fdde72c93789278456d8edd2b50fdb6a30289f5dfab6",
               "bytes": 759194,
               "hidden_dim": 256,
-              "actor_parameters": 0
+              "actor_parameters": 136457
             },
             "team_3_ctde-cac.npz": {
               "sha256": "3e44e8b0ac984784810bc09eddac5b70784c3cc0e2d7e8937213c9fdd519ac45",
               "bytes": 1041960,
               "hidden_dim": 256,
-              "actor_parameters": 0
+              "actor_parameters": 136457
             }
           }
         },
@@ -1307,19 +1310,2713 @@
               "sha256": "d310cc351ccadbbd121f878da100e4a3ef5ef948fd326fbc2a324e9e0d156f4d",
               "bytes": 759545,
               "hidden_dim": 256,
-              "actor_parameters": 0
+              "actor_parameters": 136457
             },
             "team_2_ctde-cac.npz": {
               "sha256": "fcc9e80efa1c19307349518e2054badf0323bccfb3ff700d773331e3588f26db",
               "bytes": 1041969,
               "hidden_dim": 256,
-              "actor_parameters": 0
+              "actor_parameters": 136457
             },
             "team_3_ctde-comm.npz": {
               "sha256": "d3f778f494cf15037e29f31cbca1019844c67b47d23fe28328825d54e70f3da5",
               "bytes": 1058811,
               "hidden_dim": 256,
-              "actor_parameters": 0
+              "actor_parameters": 140812
+            }
+          }
+        }
+      }
+    },
+    "v3": {
+      "overrides": {
+        "RL_GAE_PER_AGENT": "true",
+        "RL_UPDATE_MINIBATCHES": "16",
+        "RL_TARGET_KL": "0.02",
+        "RL_PARAM_TARGET": "-1",
+        "COMM_ROUNDS": "2",
+        "COMM_MASK_DEAD": "true",
+        "VD_LOCAL_CRITIC": "true",
+        "OBS_OBSTACLE_RAYS": "8",
+        "ARENA_LAYOUT": "symmetric",
+        "SPAWN_CYCLE_PER_MATCH": "true",
+        "RL_OPPONENT_POOL_PROB": "0.2",
+        "RL_OPPONENT_POOL_EVERY_MATCHES": "50",
+        "RL_OPPONENT_POOL_SIZE": "20"
+      },
+      "baseline": "results/study_jax",
+      "seeds": {
+        "exp1": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "exp2": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ]
+      },
+      "sets": {
+        "exp1_seed1": {
+          "trained_as": {
+            "RL_GAE_PER_AGENT": "true",
+            "RL_UPDATE_MINIBATCHES": "16",
+            "RL_TARGET_KL": "0.02",
+            "RL_PARAM_TARGET": "-1",
+            "COMM_ROUNDS": "2",
+            "COMM_MASK_DEAD": "true",
+            "VD_LOCAL_CRITIC": "true",
+            "OBS_OBSTACLE_RAYS": "8",
+            "ARENA_LAYOUT": "symmetric",
+            "SPAWN_CYCLE_PER_MATCH": "true",
+            "RL_OPPONENT_POOL_PROB": "0.2",
+            "RL_OPPONENT_POOL_EVERY_MATCHES": "50",
+            "RL_OPPONENT_POOL_SIZE": "20"
+          },
+          "source_scratch": "data/runs_v3/exp1_seed1",
+          "seed": 1,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 2253.9,
+          "domain_randomization": true,
+          "paradigm_rotation": 1,
+          "paradigms": {
+            "Team 1": "DTE",
+            "Team 2": "CTDE",
+            "Team 3": "CTE"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": null,
+          "files": {
+            "team_1_dte.npz": {
+              "sha256": "e08bcb3ceae0439c7aabb06905beabc990f17b41f98b382bb6f3fec11c0a8a06",
+              "bytes": 402190,
+              "hidden_dim": 225,
+              "actor_parameters": 107784
+            },
+            "team_2_ctde.npz": {
+              "sha256": "99e851cf44daa678929ad1dbea2501552205634f537b9cb670a4bdb681a0e43c",
+              "bytes": 402535,
+              "hidden_dim": 146,
+              "actor_parameters": 46875
+            },
+            "team_3_cte.npz": {
+              "sha256": "12ae8d762df4f5ec3307a2b6143adecd5e9096e6f96911d8d451673e0955c837",
+              "bytes": 405852,
+              "hidden_dim": 136,
+              "actor_parameters": 54816
+            }
+          }
+        },
+        "exp1_seed2": {
+          "trained_as": {
+            "RL_GAE_PER_AGENT": "true",
+            "RL_UPDATE_MINIBATCHES": "16",
+            "RL_TARGET_KL": "0.02",
+            "RL_PARAM_TARGET": "-1",
+            "COMM_ROUNDS": "2",
+            "COMM_MASK_DEAD": "true",
+            "VD_LOCAL_CRITIC": "true",
+            "OBS_OBSTACLE_RAYS": "8",
+            "ARENA_LAYOUT": "symmetric",
+            "SPAWN_CYCLE_PER_MATCH": "true",
+            "RL_OPPONENT_POOL_PROB": "0.2",
+            "RL_OPPONENT_POOL_EVERY_MATCHES": "50",
+            "RL_OPPONENT_POOL_SIZE": "20"
+          },
+          "source_scratch": "data/runs_v3/exp1_seed2",
+          "seed": 2,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 2464.0,
+          "domain_randomization": true,
+          "paradigm_rotation": 2,
+          "paradigms": {
+            "Team 1": "CTDE",
+            "Team 2": "CTE",
+            "Team 3": "DTE"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": null,
+          "files": {
+            "team_1_ctde.npz": {
+              "sha256": "643f8691f8ec3ce0d2abd76ec5552e9350f62ab459dcde17c701ef5f57d47453",
+              "bytes": 402397,
+              "hidden_dim": 146,
+              "actor_parameters": 46875
+            },
+            "team_2_cte.npz": {
+              "sha256": "88fb105853ae917c451356a67701fc1b0fa15b0fb11fe1e1909fe47ac559545e",
+              "bytes": 405923,
+              "hidden_dim": 136,
+              "actor_parameters": 54816
+            },
+            "team_3_dte.npz": {
+              "sha256": "83cdbd9d45130895351553ae9d91c6a6f5e8b88989161176f19f2a2dcfd5cf0a",
+              "bytes": 402164,
+              "hidden_dim": 225,
+              "actor_parameters": 107784
+            }
+          }
+        },
+        "exp1_seed3": {
+          "trained_as": {
+            "RL_GAE_PER_AGENT": "true",
+            "RL_UPDATE_MINIBATCHES": "16",
+            "RL_TARGET_KL": "0.02",
+            "RL_PARAM_TARGET": "-1",
+            "COMM_ROUNDS": "2",
+            "COMM_MASK_DEAD": "true",
+            "VD_LOCAL_CRITIC": "true",
+            "OBS_OBSTACLE_RAYS": "8",
+            "ARENA_LAYOUT": "symmetric",
+            "SPAWN_CYCLE_PER_MATCH": "true",
+            "RL_OPPONENT_POOL_PROB": "0.2",
+            "RL_OPPONENT_POOL_EVERY_MATCHES": "50",
+            "RL_OPPONENT_POOL_SIZE": "20"
+          },
+          "source_scratch": "data/runs_v3/exp1_seed3",
+          "seed": 3,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 2207.5,
+          "domain_randomization": true,
+          "paradigm_rotation": 0,
+          "paradigms": {
+            "Team 1": "CTE",
+            "Team 2": "DTE",
+            "Team 3": "CTDE"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": null,
+          "files": {
+            "team_1_cte.npz": {
+              "sha256": "2346e54fe33a3e2aeb8cf76c334412f4f5092197ff7dee07feb403966de86a52",
+              "bytes": 405809,
+              "hidden_dim": 136,
+              "actor_parameters": 54816
+            },
+            "team_2_dte.npz": {
+              "sha256": "0547212bc8ead8d0ec0528ef67c436e9c0b3e34fe65d8861f1a2d7398244be00",
+              "bytes": 401892,
+              "hidden_dim": 225,
+              "actor_parameters": 107784
+            },
+            "team_3_ctde.npz": {
+              "sha256": "a2fe43fec594bf4ae46645946d431c985113e7c77debfc5b16773de7e051cfcb",
+              "bytes": 402570,
+              "hidden_dim": 146,
+              "actor_parameters": 46875
+            }
+          }
+        },
+        "exp1_seed4": {
+          "trained_as": {
+            "RL_GAE_PER_AGENT": "true",
+            "RL_UPDATE_MINIBATCHES": "16",
+            "RL_TARGET_KL": "0.02",
+            "RL_PARAM_TARGET": "-1",
+            "COMM_ROUNDS": "2",
+            "COMM_MASK_DEAD": "true",
+            "VD_LOCAL_CRITIC": "true",
+            "OBS_OBSTACLE_RAYS": "8",
+            "ARENA_LAYOUT": "symmetric",
+            "SPAWN_CYCLE_PER_MATCH": "true",
+            "RL_OPPONENT_POOL_PROB": "0.2",
+            "RL_OPPONENT_POOL_EVERY_MATCHES": "50",
+            "RL_OPPONENT_POOL_SIZE": "20"
+          },
+          "source_scratch": "data/runs_v3/exp1_seed4",
+          "seed": 4,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 2424.0,
+          "domain_randomization": true,
+          "paradigm_rotation": 1,
+          "paradigms": {
+            "Team 1": "DTE",
+            "Team 2": "CTDE",
+            "Team 3": "CTE"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": null,
+          "files": {
+            "team_1_dte.npz": {
+              "sha256": "db3c990350efdf2518182db91e77690ebfd9b8ca81407ee91b66388dc3aac6d3",
+              "bytes": 402311,
+              "hidden_dim": 225,
+              "actor_parameters": 107784
+            },
+            "team_2_ctde.npz": {
+              "sha256": "72734cc2c30b8331826551120002cf854a4fd16bcaa0819d8aa9a0eba227c58e",
+              "bytes": 402520,
+              "hidden_dim": 146,
+              "actor_parameters": 46875
+            },
+            "team_3_cte.npz": {
+              "sha256": "8846ac40da067f82983d1c01c0c19978cd12b41e28ff3d23de73483504776d14",
+              "bytes": 405968,
+              "hidden_dim": 136,
+              "actor_parameters": 54816
+            }
+          }
+        },
+        "exp1_seed5": {
+          "trained_as": {
+            "RL_GAE_PER_AGENT": "true",
+            "RL_UPDATE_MINIBATCHES": "16",
+            "RL_TARGET_KL": "0.02",
+            "RL_PARAM_TARGET": "-1",
+            "COMM_ROUNDS": "2",
+            "COMM_MASK_DEAD": "true",
+            "VD_LOCAL_CRITIC": "true",
+            "OBS_OBSTACLE_RAYS": "8",
+            "ARENA_LAYOUT": "symmetric",
+            "SPAWN_CYCLE_PER_MATCH": "true",
+            "RL_OPPONENT_POOL_PROB": "0.2",
+            "RL_OPPONENT_POOL_EVERY_MATCHES": "50",
+            "RL_OPPONENT_POOL_SIZE": "20"
+          },
+          "source_scratch": "data/runs_v3/exp1_seed5",
+          "seed": 5,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 2646.6,
+          "domain_randomization": true,
+          "paradigm_rotation": 2,
+          "paradigms": {
+            "Team 1": "CTDE",
+            "Team 2": "CTE",
+            "Team 3": "DTE"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": null,
+          "files": {
+            "team_1_ctde.npz": {
+              "sha256": "c12fc22b9e403e4adcf65cb5f749bca8c73c6890db228eb0c0ab8ee680225e0b",
+              "bytes": 402584,
+              "hidden_dim": 146,
+              "actor_parameters": 46875
+            },
+            "team_2_cte.npz": {
+              "sha256": "369f6b3dc71cc0fefcafae65d4b4fe06eb1ead154af10e5e430df688f7841a41",
+              "bytes": 405898,
+              "hidden_dim": 136,
+              "actor_parameters": 54816
+            },
+            "team_3_dte.npz": {
+              "sha256": "2f0fffb2845ee4fa904857e194476868352e8a37e99bf7f4c5422992af879af6",
+              "bytes": 402104,
+              "hidden_dim": 225,
+              "actor_parameters": 107784
+            }
+          }
+        },
+        "exp1_seed6": {
+          "trained_as": {
+            "RL_GAE_PER_AGENT": "true",
+            "RL_UPDATE_MINIBATCHES": "16",
+            "RL_TARGET_KL": "0.02",
+            "RL_PARAM_TARGET": "-1",
+            "COMM_ROUNDS": "2",
+            "COMM_MASK_DEAD": "true",
+            "VD_LOCAL_CRITIC": "true",
+            "OBS_OBSTACLE_RAYS": "8",
+            "ARENA_LAYOUT": "symmetric",
+            "SPAWN_CYCLE_PER_MATCH": "true",
+            "RL_OPPONENT_POOL_PROB": "0.2",
+            "RL_OPPONENT_POOL_EVERY_MATCHES": "50",
+            "RL_OPPONENT_POOL_SIZE": "20"
+          },
+          "source_scratch": "data/runs_v3/exp1_seed6",
+          "seed": 6,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 2705.6,
+          "domain_randomization": true,
+          "paradigm_rotation": 0,
+          "paradigms": {
+            "Team 1": "CTE",
+            "Team 2": "DTE",
+            "Team 3": "CTDE"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": null,
+          "files": {
+            "team_1_cte.npz": {
+              "sha256": "46b28377cab2618dd016881e2aae5b8ced4f6fe1e7db5fc85068838361d91926",
+              "bytes": 405994,
+              "hidden_dim": 136,
+              "actor_parameters": 54816
+            },
+            "team_2_dte.npz": {
+              "sha256": "98796469253a2bcc4ba8faebbf321a29defb1c2e20c20be2cfe2858ac7510b68",
+              "bytes": 402133,
+              "hidden_dim": 225,
+              "actor_parameters": 107784
+            },
+            "team_3_ctde.npz": {
+              "sha256": "88d303bd6a6a6456033daf77be84cc6cdd3300939676489a8557ded03d0c5756",
+              "bytes": 402918,
+              "hidden_dim": 146,
+              "actor_parameters": 46875
+            }
+          }
+        },
+        "exp1_seed7": {
+          "trained_as": {
+            "RL_GAE_PER_AGENT": "true",
+            "RL_UPDATE_MINIBATCHES": "16",
+            "RL_TARGET_KL": "0.02",
+            "RL_PARAM_TARGET": "-1",
+            "COMM_ROUNDS": "2",
+            "COMM_MASK_DEAD": "true",
+            "VD_LOCAL_CRITIC": "true",
+            "OBS_OBSTACLE_RAYS": "8",
+            "ARENA_LAYOUT": "symmetric",
+            "SPAWN_CYCLE_PER_MATCH": "true",
+            "RL_OPPONENT_POOL_PROB": "0.2",
+            "RL_OPPONENT_POOL_EVERY_MATCHES": "50",
+            "RL_OPPONENT_POOL_SIZE": "20"
+          },
+          "source_scratch": "data/runs_v3/exp1_seed7",
+          "seed": 7,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 2849.9,
+          "domain_randomization": true,
+          "paradigm_rotation": 1,
+          "paradigms": {
+            "Team 1": "DTE",
+            "Team 2": "CTDE",
+            "Team 3": "CTE"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": null,
+          "files": {
+            "team_1_dte.npz": {
+              "sha256": "b8330d6177aab6cb14111351db60b7ee92b4ba195e7dab5a5837048ce38de928",
+              "bytes": 402155,
+              "hidden_dim": 225,
+              "actor_parameters": 107784
+            },
+            "team_2_ctde.npz": {
+              "sha256": "af52382e6f3b4ecd32e677446f59fedcd1dc061b8143e23cec231ed1b81f9930",
+              "bytes": 402669,
+              "hidden_dim": 146,
+              "actor_parameters": 46875
+            },
+            "team_3_cte.npz": {
+              "sha256": "94d50d7ffc62ca63f45fbdcd7fe76eb87d49083c315252fa2d1a6e6435fa4c27",
+              "bytes": 405914,
+              "hidden_dim": 136,
+              "actor_parameters": 54816
+            }
+          }
+        },
+        "exp1_seed8": {
+          "trained_as": {
+            "RL_GAE_PER_AGENT": "true",
+            "RL_UPDATE_MINIBATCHES": "16",
+            "RL_TARGET_KL": "0.02",
+            "RL_PARAM_TARGET": "-1",
+            "COMM_ROUNDS": "2",
+            "COMM_MASK_DEAD": "true",
+            "VD_LOCAL_CRITIC": "true",
+            "OBS_OBSTACLE_RAYS": "8",
+            "ARENA_LAYOUT": "symmetric",
+            "SPAWN_CYCLE_PER_MATCH": "true",
+            "RL_OPPONENT_POOL_PROB": "0.2",
+            "RL_OPPONENT_POOL_EVERY_MATCHES": "50",
+            "RL_OPPONENT_POOL_SIZE": "20"
+          },
+          "source_scratch": "data/runs_v3/exp1_seed8",
+          "seed": 8,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 2742.0,
+          "domain_randomization": true,
+          "paradigm_rotation": 2,
+          "paradigms": {
+            "Team 1": "CTDE",
+            "Team 2": "CTE",
+            "Team 3": "DTE"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": null,
+          "files": {
+            "team_1_ctde.npz": {
+              "sha256": "3afad9baff0bbade9e256e0556647193ee1983fe2043622aa5ba82f0c45ec0e2",
+              "bytes": 402472,
+              "hidden_dim": 146,
+              "actor_parameters": 46875
+            },
+            "team_2_cte.npz": {
+              "sha256": "7a0b49be11f70c95902bcd79a6ef9e0a7c31f197de3cf8e91e5abd74b3028622",
+              "bytes": 405923,
+              "hidden_dim": 136,
+              "actor_parameters": 54816
+            },
+            "team_3_dte.npz": {
+              "sha256": "2e023ac27d6b44b587c42b4572c6e66a08ae956e8707e179b6a7fdcea5f4518b",
+              "bytes": 402156,
+              "hidden_dim": 225,
+              "actor_parameters": 107784
+            }
+          }
+        },
+        "exp1_seed9": {
+          "trained_as": {
+            "RL_GAE_PER_AGENT": "true",
+            "RL_UPDATE_MINIBATCHES": "16",
+            "RL_TARGET_KL": "0.02",
+            "RL_PARAM_TARGET": "-1",
+            "COMM_ROUNDS": "2",
+            "COMM_MASK_DEAD": "true",
+            "VD_LOCAL_CRITIC": "true",
+            "OBS_OBSTACLE_RAYS": "8",
+            "ARENA_LAYOUT": "symmetric",
+            "SPAWN_CYCLE_PER_MATCH": "true",
+            "RL_OPPONENT_POOL_PROB": "0.2",
+            "RL_OPPONENT_POOL_EVERY_MATCHES": "50",
+            "RL_OPPONENT_POOL_SIZE": "20"
+          },
+          "source_scratch": "data/runs_v3/exp1_seed9",
+          "seed": 9,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 2601.7,
+          "domain_randomization": true,
+          "paradigm_rotation": 0,
+          "paradigms": {
+            "Team 1": "CTE",
+            "Team 2": "DTE",
+            "Team 3": "CTDE"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": null,
+          "files": {
+            "team_1_cte.npz": {
+              "sha256": "6f77150c34f9a9d4e98dd71536150eac3ebbeb40abb8b662e0bee4bc94f057f8",
+              "bytes": 405826,
+              "hidden_dim": 136,
+              "actor_parameters": 54816
+            },
+            "team_2_dte.npz": {
+              "sha256": "d927c1352e2b1ead0a32a8bdec8d52e98fb3f6b3571b38041fbf86f2b3913c30",
+              "bytes": 402168,
+              "hidden_dim": 225,
+              "actor_parameters": 107784
+            },
+            "team_3_ctde.npz": {
+              "sha256": "48e377f2d98f96f5b09047a6270907eef97bd988bfc9b92f78ed90156bba4837",
+              "bytes": 402667,
+              "hidden_dim": 146,
+              "actor_parameters": 46875
+            }
+          }
+        },
+        "exp1_seed10": {
+          "trained_as": {
+            "RL_GAE_PER_AGENT": "true",
+            "RL_UPDATE_MINIBATCHES": "16",
+            "RL_TARGET_KL": "0.02",
+            "RL_PARAM_TARGET": "-1",
+            "COMM_ROUNDS": "2",
+            "COMM_MASK_DEAD": "true",
+            "VD_LOCAL_CRITIC": "true",
+            "OBS_OBSTACLE_RAYS": "8",
+            "ARENA_LAYOUT": "symmetric",
+            "SPAWN_CYCLE_PER_MATCH": "true",
+            "RL_OPPONENT_POOL_PROB": "0.2",
+            "RL_OPPONENT_POOL_EVERY_MATCHES": "50",
+            "RL_OPPONENT_POOL_SIZE": "20"
+          },
+          "source_scratch": "data/runs_v3/exp1_seed10",
+          "seed": 10,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 2591.4,
+          "domain_randomization": true,
+          "paradigm_rotation": 1,
+          "paradigms": {
+            "Team 1": "DTE",
+            "Team 2": "CTDE",
+            "Team 3": "CTE"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": null,
+          "files": {
+            "team_1_dte.npz": {
+              "sha256": "1f79f0885e06018a82e1b5f09f92eecb2ede274e2070984f3d75f89b898d55ee",
+              "bytes": 402099,
+              "hidden_dim": 225,
+              "actor_parameters": 107784
+            },
+            "team_2_ctde.npz": {
+              "sha256": "1f0061a16980ae1476e7108e1952569f4e99cdd07c2bf4b0009edcc36ab0cf8e",
+              "bytes": 402536,
+              "hidden_dim": 146,
+              "actor_parameters": 46875
+            },
+            "team_3_cte.npz": {
+              "sha256": "ab032be9e53b54ba1e54c81a3ac99bae78bbaf85992127ee48a5db50676d209a",
+              "bytes": 405876,
+              "hidden_dim": 136,
+              "actor_parameters": 54816
+            }
+          }
+        },
+        "exp2_seed1": {
+          "trained_as": {
+            "RL_GAE_PER_AGENT": "true",
+            "RL_UPDATE_MINIBATCHES": "16",
+            "RL_TARGET_KL": "0.02",
+            "RL_PARAM_TARGET": "-1",
+            "COMM_ROUNDS": "2",
+            "COMM_MASK_DEAD": "true",
+            "VD_LOCAL_CRITIC": "true",
+            "OBS_OBSTACLE_RAYS": "8",
+            "ARENA_LAYOUT": "symmetric",
+            "SPAWN_CYCLE_PER_MATCH": "true",
+            "RL_OPPONENT_POOL_PROB": "0.2",
+            "RL_OPPONENT_POOL_EVERY_MATCHES": "50",
+            "RL_OPPONENT_POOL_SIZE": "20"
+          },
+          "source_scratch": "ctde_arena/data/runs_v3/exp2_seed1",
+          "seed": 1,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1809.6,
+          "domain_randomization": true,
+          "paradigm_rotation": 1,
+          "paradigms": {
+            "Team 1": "CTDE-CAC",
+            "Team 2": "CTDE-Comm",
+            "Team 3": "CTDE-VD"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": null,
+          "files": {
+            "team_1_ctde-cac.npz": {
+              "sha256": "528a76a408f33094fc15c4c55e465b951ced73c559816224ee5341998ab3e951",
+              "bytes": 402635,
+              "hidden_dim": 146,
+              "actor_parameters": 46875
+            },
+            "team_2_ctde-comm.npz": {
+              "sha256": "37e60cc10d5c77393116c1b9eba5051081f752238634358aa5cf0a9cc3604cc9",
+              "bytes": 407143,
+              "hidden_dim": 128,
+              "actor_parameters": 59536
+            },
+            "team_3_ctde-vd.npz": {
+              "sha256": "727309efc8c4ea8c43c80d83e9d1800c4f9bd88d78fa5340f1082d85441c37d5",
+              "bytes": 406056,
+              "hidden_dim": 182,
+              "actor_parameters": 71535
+            }
+          }
+        },
+        "exp2_seed2": {
+          "trained_as": {
+            "RL_GAE_PER_AGENT": "true",
+            "RL_UPDATE_MINIBATCHES": "16",
+            "RL_TARGET_KL": "0.02",
+            "RL_PARAM_TARGET": "-1",
+            "COMM_ROUNDS": "2",
+            "COMM_MASK_DEAD": "true",
+            "VD_LOCAL_CRITIC": "true",
+            "OBS_OBSTACLE_RAYS": "8",
+            "ARENA_LAYOUT": "symmetric",
+            "SPAWN_CYCLE_PER_MATCH": "true",
+            "RL_OPPONENT_POOL_PROB": "0.2",
+            "RL_OPPONENT_POOL_EVERY_MATCHES": "50",
+            "RL_OPPONENT_POOL_SIZE": "20"
+          },
+          "source_scratch": "ctde_arena/data/runs_v3/exp2_seed2",
+          "seed": 2,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1816.8,
+          "domain_randomization": true,
+          "paradigm_rotation": 2,
+          "paradigms": {
+            "Team 1": "CTDE-Comm",
+            "Team 2": "CTDE-VD",
+            "Team 3": "CTDE-CAC"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": null,
+          "files": {
+            "team_1_ctde-comm.npz": {
+              "sha256": "0e1724bb81a358a9ed02ba24deb59da2992719a87eb5c25535c5bcec469299f5",
+              "bytes": 406968,
+              "hidden_dim": 128,
+              "actor_parameters": 59536
+            },
+            "team_2_ctde-vd.npz": {
+              "sha256": "f3c414e1990f1ad14b900c39cabd780725a7d1edcc0219eec767a4b8689110ee",
+              "bytes": 405585,
+              "hidden_dim": 182,
+              "actor_parameters": 71535
+            },
+            "team_3_ctde-cac.npz": {
+              "sha256": "4e1e3120974b0a117d98d840dc538133874c35e9d94ad4ba1d43473eb363eb6d",
+              "bytes": 402563,
+              "hidden_dim": 146,
+              "actor_parameters": 46875
+            }
+          }
+        },
+        "exp2_seed3": {
+          "trained_as": {
+            "RL_GAE_PER_AGENT": "true",
+            "RL_UPDATE_MINIBATCHES": "16",
+            "RL_TARGET_KL": "0.02",
+            "RL_PARAM_TARGET": "-1",
+            "COMM_ROUNDS": "2",
+            "COMM_MASK_DEAD": "true",
+            "VD_LOCAL_CRITIC": "true",
+            "OBS_OBSTACLE_RAYS": "8",
+            "ARENA_LAYOUT": "symmetric",
+            "SPAWN_CYCLE_PER_MATCH": "true",
+            "RL_OPPONENT_POOL_PROB": "0.2",
+            "RL_OPPONENT_POOL_EVERY_MATCHES": "50",
+            "RL_OPPONENT_POOL_SIZE": "20"
+          },
+          "source_scratch": "ctde_arena/data/runs_v3/exp2_seed3",
+          "seed": 3,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1894.8,
+          "domain_randomization": true,
+          "paradigm_rotation": 0,
+          "paradigms": {
+            "Team 1": "CTDE-VD",
+            "Team 2": "CTDE-CAC",
+            "Team 3": "CTDE-Comm"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": null,
+          "files": {
+            "team_1_ctde-vd.npz": {
+              "sha256": "954be396a20dd5e72d616bbd2032d15c5b9ab5310a64eefa42fe24d3f95231cd",
+              "bytes": 406075,
+              "hidden_dim": 182,
+              "actor_parameters": 71535
+            },
+            "team_2_ctde-cac.npz": {
+              "sha256": "964839906194f6e8181f92db680178cc4ba13b4a075af8896766f31669d60943",
+              "bytes": 402605,
+              "hidden_dim": 146,
+              "actor_parameters": 46875
+            },
+            "team_3_ctde-comm.npz": {
+              "sha256": "9013b8fb4ddde0bfd974c44a6e2e236dfa02e2d77f3e7145bec81a094eeb0054",
+              "bytes": 407213,
+              "hidden_dim": 128,
+              "actor_parameters": 59536
+            }
+          }
+        },
+        "exp2_seed4": {
+          "trained_as": {
+            "RL_GAE_PER_AGENT": "true",
+            "RL_UPDATE_MINIBATCHES": "16",
+            "RL_TARGET_KL": "0.02",
+            "RL_PARAM_TARGET": "-1",
+            "COMM_ROUNDS": "2",
+            "COMM_MASK_DEAD": "true",
+            "VD_LOCAL_CRITIC": "true",
+            "OBS_OBSTACLE_RAYS": "8",
+            "ARENA_LAYOUT": "symmetric",
+            "SPAWN_CYCLE_PER_MATCH": "true",
+            "RL_OPPONENT_POOL_PROB": "0.2",
+            "RL_OPPONENT_POOL_EVERY_MATCHES": "50",
+            "RL_OPPONENT_POOL_SIZE": "20"
+          },
+          "source_scratch": "ctde_arena/data/runs_v3/exp2_seed4",
+          "seed": 4,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1627.7,
+          "domain_randomization": true,
+          "paradigm_rotation": 1,
+          "paradigms": {
+            "Team 1": "CTDE-CAC",
+            "Team 2": "CTDE-Comm",
+            "Team 3": "CTDE-VD"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": null,
+          "files": {
+            "team_1_ctde-cac.npz": {
+              "sha256": "1ccb3d9568f835dbb2db09677744a67562241474991e1bad36e0efc61f1ec0ef",
+              "bytes": 402556,
+              "hidden_dim": 146,
+              "actor_parameters": 46875
+            },
+            "team_2_ctde-comm.npz": {
+              "sha256": "bda8d335ed16461ae204f4cb0f982ae2d2c2c62de2c6577874ce367b511d6675",
+              "bytes": 406967,
+              "hidden_dim": 128,
+              "actor_parameters": 59536
+            },
+            "team_3_ctde-vd.npz": {
+              "sha256": "eafd07639308bd5e0f351b8cd6c042f1f1a0c9140e76eb6558345e3a1985d8bb",
+              "bytes": 405756,
+              "hidden_dim": 182,
+              "actor_parameters": 71535
+            }
+          }
+        },
+        "exp2_seed5": {
+          "trained_as": {
+            "RL_GAE_PER_AGENT": "true",
+            "RL_UPDATE_MINIBATCHES": "16",
+            "RL_TARGET_KL": "0.02",
+            "RL_PARAM_TARGET": "-1",
+            "COMM_ROUNDS": "2",
+            "COMM_MASK_DEAD": "true",
+            "VD_LOCAL_CRITIC": "true",
+            "OBS_OBSTACLE_RAYS": "8",
+            "ARENA_LAYOUT": "symmetric",
+            "SPAWN_CYCLE_PER_MATCH": "true",
+            "RL_OPPONENT_POOL_PROB": "0.2",
+            "RL_OPPONENT_POOL_EVERY_MATCHES": "50",
+            "RL_OPPONENT_POOL_SIZE": "20"
+          },
+          "source_scratch": "ctde_arena/data/runs_v3/exp2_seed5",
+          "seed": 5,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 2190.0,
+          "domain_randomization": true,
+          "paradigm_rotation": 2,
+          "paradigms": {
+            "Team 1": "CTDE-Comm",
+            "Team 2": "CTDE-VD",
+            "Team 3": "CTDE-CAC"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": null,
+          "files": {
+            "team_1_ctde-comm.npz": {
+              "sha256": "7533f7602e34b07bb58b0dfd3c5fb0420aab8c3254bfd2d4e5a80f2f230a6d08",
+              "bytes": 407269,
+              "hidden_dim": 128,
+              "actor_parameters": 59536
+            },
+            "team_2_ctde-vd.npz": {
+              "sha256": "6a09eab6159ce85e5b7b48c8260151e9157915c46d39450e3962e35b99d95d53",
+              "bytes": 405745,
+              "hidden_dim": 182,
+              "actor_parameters": 71535
+            },
+            "team_3_ctde-cac.npz": {
+              "sha256": "887c377c3a25810e7504024b5305142f52a92441fdbb376127f92e03eb0a0d42",
+              "bytes": 402827,
+              "hidden_dim": 146,
+              "actor_parameters": 46875
+            }
+          }
+        },
+        "exp2_seed6": {
+          "trained_as": {
+            "RL_GAE_PER_AGENT": "true",
+            "RL_UPDATE_MINIBATCHES": "16",
+            "RL_TARGET_KL": "0.02",
+            "RL_PARAM_TARGET": "-1",
+            "COMM_ROUNDS": "2",
+            "COMM_MASK_DEAD": "true",
+            "VD_LOCAL_CRITIC": "true",
+            "OBS_OBSTACLE_RAYS": "8",
+            "ARENA_LAYOUT": "symmetric",
+            "SPAWN_CYCLE_PER_MATCH": "true",
+            "RL_OPPONENT_POOL_PROB": "0.2",
+            "RL_OPPONENT_POOL_EVERY_MATCHES": "50",
+            "RL_OPPONENT_POOL_SIZE": "20"
+          },
+          "source_scratch": "ctde_arena/data/runs_v3/exp2_seed6",
+          "seed": 6,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 2135.4,
+          "domain_randomization": true,
+          "paradigm_rotation": 0,
+          "paradigms": {
+            "Team 1": "CTDE-VD",
+            "Team 2": "CTDE-CAC",
+            "Team 3": "CTDE-Comm"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": null,
+          "files": {
+            "team_1_ctde-vd.npz": {
+              "sha256": "901a20e0cfc8f446fea9f5afefe1fbec2e385bc501979021cdb4177150add48a",
+              "bytes": 405802,
+              "hidden_dim": 182,
+              "actor_parameters": 71535
+            },
+            "team_2_ctde-cac.npz": {
+              "sha256": "d611f2039ab347ca1aa0a0eaa76c539ff919e6aa0f5ea6e7d2bfb82c14731847",
+              "bytes": 402387,
+              "hidden_dim": 146,
+              "actor_parameters": 46875
+            },
+            "team_3_ctde-comm.npz": {
+              "sha256": "bd0a98385b215323f6c5272d341f3d1e2194af8ee82b42063e92745c93dd444a",
+              "bytes": 406974,
+              "hidden_dim": 128,
+              "actor_parameters": 59536
+            }
+          }
+        },
+        "exp2_seed7": {
+          "trained_as": {
+            "RL_GAE_PER_AGENT": "true",
+            "RL_UPDATE_MINIBATCHES": "16",
+            "RL_TARGET_KL": "0.02",
+            "RL_PARAM_TARGET": "-1",
+            "COMM_ROUNDS": "2",
+            "COMM_MASK_DEAD": "true",
+            "VD_LOCAL_CRITIC": "true",
+            "OBS_OBSTACLE_RAYS": "8",
+            "ARENA_LAYOUT": "symmetric",
+            "SPAWN_CYCLE_PER_MATCH": "true",
+            "RL_OPPONENT_POOL_PROB": "0.2",
+            "RL_OPPONENT_POOL_EVERY_MATCHES": "50",
+            "RL_OPPONENT_POOL_SIZE": "20"
+          },
+          "source_scratch": "ctde_arena/data/runs_v3/exp2_seed7",
+          "seed": 7,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1991.9,
+          "domain_randomization": true,
+          "paradigm_rotation": 1,
+          "paradigms": {
+            "Team 1": "CTDE-CAC",
+            "Team 2": "CTDE-Comm",
+            "Team 3": "CTDE-VD"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": null,
+          "files": {
+            "team_1_ctde-cac.npz": {
+              "sha256": "a31e8b7f6f01fe73fc4e021ca0ef529473585503e63ac26aa860228e0b345614",
+              "bytes": 402691,
+              "hidden_dim": 146,
+              "actor_parameters": 46875
+            },
+            "team_2_ctde-comm.npz": {
+              "sha256": "9af80e63a980851ea9bb30d70f93c45519cd4f90f685ae585a410b7505ee67d1",
+              "bytes": 407268,
+              "hidden_dim": 128,
+              "actor_parameters": 59536
+            },
+            "team_3_ctde-vd.npz": {
+              "sha256": "5ef230b1eb0505216339fadcadfaddd30050614892da522986ef9de67a30eaa4",
+              "bytes": 405928,
+              "hidden_dim": 182,
+              "actor_parameters": 71535
+            }
+          }
+        },
+        "exp2_seed8": {
+          "trained_as": {
+            "RL_GAE_PER_AGENT": "true",
+            "RL_UPDATE_MINIBATCHES": "16",
+            "RL_TARGET_KL": "0.02",
+            "RL_PARAM_TARGET": "-1",
+            "COMM_ROUNDS": "2",
+            "COMM_MASK_DEAD": "true",
+            "VD_LOCAL_CRITIC": "true",
+            "OBS_OBSTACLE_RAYS": "8",
+            "ARENA_LAYOUT": "symmetric",
+            "SPAWN_CYCLE_PER_MATCH": "true",
+            "RL_OPPONENT_POOL_PROB": "0.2",
+            "RL_OPPONENT_POOL_EVERY_MATCHES": "50",
+            "RL_OPPONENT_POOL_SIZE": "20"
+          },
+          "source_scratch": "ctde_arena/data/runs_v3/exp2_seed8",
+          "seed": 8,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1870.0,
+          "domain_randomization": true,
+          "paradigm_rotation": 2,
+          "paradigms": {
+            "Team 1": "CTDE-Comm",
+            "Team 2": "CTDE-VD",
+            "Team 3": "CTDE-CAC"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": null,
+          "files": {
+            "team_1_ctde-comm.npz": {
+              "sha256": "6e490cc8b7606d3efddc25de47467ae991309bd6bf5c2614f4b7adb2a4bcffcd",
+              "bytes": 407086,
+              "hidden_dim": 128,
+              "actor_parameters": 59536
+            },
+            "team_2_ctde-vd.npz": {
+              "sha256": "51f2a0bf987d2be35be88ca9360d7a554f4ed14ed46e7df00af5a48608188e78",
+              "bytes": 405857,
+              "hidden_dim": 182,
+              "actor_parameters": 71535
+            },
+            "team_3_ctde-cac.npz": {
+              "sha256": "4eec5ff7a075cd29379d0128e3edef34fc787fae818e04db55eb1fa0d3fba289",
+              "bytes": 402587,
+              "hidden_dim": 146,
+              "actor_parameters": 46875
+            }
+          }
+        },
+        "exp2_seed9": {
+          "trained_as": {
+            "RL_GAE_PER_AGENT": "true",
+            "RL_UPDATE_MINIBATCHES": "16",
+            "RL_TARGET_KL": "0.02",
+            "RL_PARAM_TARGET": "-1",
+            "COMM_ROUNDS": "2",
+            "COMM_MASK_DEAD": "true",
+            "VD_LOCAL_CRITIC": "true",
+            "OBS_OBSTACLE_RAYS": "8",
+            "ARENA_LAYOUT": "symmetric",
+            "SPAWN_CYCLE_PER_MATCH": "true",
+            "RL_OPPONENT_POOL_PROB": "0.2",
+            "RL_OPPONENT_POOL_EVERY_MATCHES": "50",
+            "RL_OPPONENT_POOL_SIZE": "20"
+          },
+          "source_scratch": "ctde_arena/data/runs_v3/exp2_seed9",
+          "seed": 9,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1504.1,
+          "domain_randomization": true,
+          "paradigm_rotation": 0,
+          "paradigms": {
+            "Team 1": "CTDE-VD",
+            "Team 2": "CTDE-CAC",
+            "Team 3": "CTDE-Comm"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": null,
+          "files": {
+            "team_1_ctde-vd.npz": {
+              "sha256": "aac8234be5e5a4d54ae27331bd897e4d8514e462abe014ecb8adeed00d29f218",
+              "bytes": 405915,
+              "hidden_dim": 182,
+              "actor_parameters": 71535
+            },
+            "team_2_ctde-cac.npz": {
+              "sha256": "5b4cce3a7d05e8b7e929c49c743d6298321d80ee077ccc736f6a9d1f859a99fc",
+              "bytes": 402831,
+              "hidden_dim": 146,
+              "actor_parameters": 46875
+            },
+            "team_3_ctde-comm.npz": {
+              "sha256": "d07c6311cf4f9382f10933e59a188ed1d579f794f0da8c3c9e7983e481cbad49",
+              "bytes": 407172,
+              "hidden_dim": 128,
+              "actor_parameters": 59536
+            }
+          }
+        },
+        "exp2_seed10": {
+          "trained_as": {
+            "RL_GAE_PER_AGENT": "true",
+            "RL_UPDATE_MINIBATCHES": "16",
+            "RL_TARGET_KL": "0.02",
+            "RL_PARAM_TARGET": "-1",
+            "COMM_ROUNDS": "2",
+            "COMM_MASK_DEAD": "true",
+            "VD_LOCAL_CRITIC": "true",
+            "OBS_OBSTACLE_RAYS": "8",
+            "ARENA_LAYOUT": "symmetric",
+            "SPAWN_CYCLE_PER_MATCH": "true",
+            "RL_OPPONENT_POOL_PROB": "0.2",
+            "RL_OPPONENT_POOL_EVERY_MATCHES": "50",
+            "RL_OPPONENT_POOL_SIZE": "20"
+          },
+          "source_scratch": "ctde_arena/data/runs_v3/exp2_seed10",
+          "seed": 10,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1549.0,
+          "domain_randomization": true,
+          "paradigm_rotation": 1,
+          "paradigms": {
+            "Team 1": "CTDE-CAC",
+            "Team 2": "CTDE-Comm",
+            "Team 3": "CTDE-VD"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": null,
+          "files": {
+            "team_1_ctde-cac.npz": {
+              "sha256": "5b8cdaf4d5889c9a18d1f22438f27a6b4445cad09ec8b440ef91d5fa8e00df62",
+              "bytes": 402574,
+              "hidden_dim": 146,
+              "actor_parameters": 46875
+            },
+            "team_2_ctde-comm.npz": {
+              "sha256": "f6b881b7da893e4a2db0b110c6625a2eba7b27267fcd6b8258a14aae2e523ce4",
+              "bytes": 407268,
+              "hidden_dim": 128,
+              "actor_parameters": 59536
+            },
+            "team_3_ctde-vd.npz": {
+              "sha256": "b7b82aeecc715058e564abad3ae329c577cd15a3628d91f178e43efd0ccb98fd",
+              "bytes": 405879,
+              "hidden_dim": 182,
+              "actor_parameters": 71535
+            }
+          }
+        }
+      }
+    },
+    "spawn_cycle": {
+      "overrides": {
+        "SPAWN_CYCLE_PER_MATCH": "true"
+      },
+      "baseline": "results/study_jax",
+      "seeds": {
+        "exp1": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "exp2": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ]
+      },
+      "sets": {
+        "exp1_seed1": {
+          "trained_as": {
+            "SPAWN_CYCLE_PER_MATCH": "true"
+          },
+          "source_scratch": "data/runs_jax_spawn_cycle/exp1_seed1",
+          "seed": 1,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 603.3,
+          "domain_randomization": true,
+          "paradigm_rotation": 1,
+          "paradigms": {
+            "Team 1": "DTE",
+            "Team 2": "CTDE",
+            "Team 3": "CTE"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_dte.npz": {
+              "sha256": "1ccb658477bbd07873ea7e8317708b65ad895dc4d6becb6d8155195a3cbef1af",
+              "bytes": 133846,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_2_ctde.npz": {
+              "sha256": "f1e36d8e0a8b88f852b614f3f3fa2b0ca9fb0cc01b7383311d7205c9f70fc89a",
+              "bytes": 280366,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_3_cte.npz": {
+              "sha256": "0c7079a0ee3e0ea2d8ad5ddef7cffc18f8f8adc81889ea6b828ade56eedc459d",
+              "bytes": 297920,
+              "hidden_dim": 128,
+              "actor_parameters": 40328
+            }
+          }
+        },
+        "exp1_seed2": {
+          "trained_as": {
+            "SPAWN_CYCLE_PER_MATCH": "true"
+          },
+          "source_scratch": "data/runs_jax_spawn_cycle/exp1_seed2",
+          "seed": 2,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 603.0,
+          "domain_randomization": true,
+          "paradigm_rotation": 2,
+          "paradigms": {
+            "Team 1": "CTDE",
+            "Team 2": "CTE",
+            "Team 3": "DTE"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_ctde.npz": {
+              "sha256": "ca3511e2e39935caeea41bacd15d3f800751100461120e33639a34a93e29eb25",
+              "bytes": 280549,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_2_cte.npz": {
+              "sha256": "f5c312c553f4300a73d48e8eba897cccc9bc9fa70a6f3b549e84b9eefc316374",
+              "bytes": 297999,
+              "hidden_dim": 128,
+              "actor_parameters": 40328
+            },
+            "team_3_dte.npz": {
+              "sha256": "da60bba171edda7b26bb9d442f55b13abe62f26526c7d482421f3a2bf8445577",
+              "bytes": 133742,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            }
+          }
+        },
+        "exp1_seed3": {
+          "trained_as": {
+            "SPAWN_CYCLE_PER_MATCH": "true"
+          },
+          "source_scratch": "data/runs_jax_spawn_cycle/exp1_seed3",
+          "seed": 3,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 596.0,
+          "domain_randomization": true,
+          "paradigm_rotation": 0,
+          "paradigms": {
+            "Team 1": "CTE",
+            "Team 2": "DTE",
+            "Team 3": "CTDE"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_cte.npz": {
+              "sha256": "c051c0a9aeea95120ce8dbcb68e89e81e7391a088875ba80a034f605644a171c",
+              "bytes": 297824,
+              "hidden_dim": 128,
+              "actor_parameters": 40328
+            },
+            "team_2_dte.npz": {
+              "sha256": "d0d8ac8e94cedde87b6dd075256ff2f828b32fc248ce3a20a9f59bafd09c80cf",
+              "bytes": 133730,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_3_ctde.npz": {
+              "sha256": "084910b47626817b8e03ae58da113b58dd9bff87582df2af7898e8142ad48323",
+              "bytes": 280419,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            }
+          }
+        },
+        "exp1_seed4": {
+          "trained_as": {
+            "SPAWN_CYCLE_PER_MATCH": "true"
+          },
+          "source_scratch": "data/runs_jax_spawn_cycle/exp1_seed4",
+          "seed": 4,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 616.6,
+          "domain_randomization": true,
+          "paradigm_rotation": 1,
+          "paradigms": {
+            "Team 1": "DTE",
+            "Team 2": "CTDE",
+            "Team 3": "CTE"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_dte.npz": {
+              "sha256": "a0e941fe0b50f63fed3e5639ff56050e3d508e3ca9de50bbbdff5b55a50be20f",
+              "bytes": 133773,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_2_ctde.npz": {
+              "sha256": "8d98cab3a36eb8431e76a18fa68d2b159ff8b933e622de9e8401c1feec3a98da",
+              "bytes": 280497,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_3_cte.npz": {
+              "sha256": "cd0539cf6d7b59a93c1fdf136521b3a0a2151bf58fb52e3b414b16bd7ad3dd4b",
+              "bytes": 298006,
+              "hidden_dim": 128,
+              "actor_parameters": 40328
+            }
+          }
+        },
+        "exp1_seed5": {
+          "trained_as": {
+            "SPAWN_CYCLE_PER_MATCH": "true"
+          },
+          "source_scratch": "data/runs_jax_spawn_cycle/exp1_seed5",
+          "seed": 5,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 614.7,
+          "domain_randomization": true,
+          "paradigm_rotation": 2,
+          "paradigms": {
+            "Team 1": "CTDE",
+            "Team 2": "CTE",
+            "Team 3": "DTE"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_ctde.npz": {
+              "sha256": "56be41e7e042a5af4d6e11d1781002e508bea195165284768b7297f666c6467b",
+              "bytes": 280543,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_2_cte.npz": {
+              "sha256": "973853f44ce52f4608e78eed132236ca0aa68a154660b35fae484705b79e7a16",
+              "bytes": 298069,
+              "hidden_dim": 128,
+              "actor_parameters": 40328
+            },
+            "team_3_dte.npz": {
+              "sha256": "f0ddf66a2d398964aff286963d6bfa071dc8fde61b3021d4eccccda21582a42e",
+              "bytes": 133751,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            }
+          }
+        },
+        "exp1_seed6": {
+          "trained_as": {
+            "SPAWN_CYCLE_PER_MATCH": "true"
+          },
+          "source_scratch": "data/runs_jax_spawn_cycle/exp1_seed6",
+          "seed": 6,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 631.0,
+          "domain_randomization": true,
+          "paradigm_rotation": 0,
+          "paradigms": {
+            "Team 1": "CTE",
+            "Team 2": "DTE",
+            "Team 3": "CTDE"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_cte.npz": {
+              "sha256": "2d9c631a05334f58a4de6a451415c2e9dd57ad20e37738e7dc7cc705e0e7d5a4",
+              "bytes": 297891,
+              "hidden_dim": 128,
+              "actor_parameters": 40328
+            },
+            "team_2_dte.npz": {
+              "sha256": "844dc6cb28564be857e9d15412b8362ca549cf15d9cb9d66250b7f38bb2a4563",
+              "bytes": 133669,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_3_ctde.npz": {
+              "sha256": "8d979588291277cf2695d882474ce7828770c1dbcb0d9f7d67642d8fcb1d590b",
+              "bytes": 280516,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            }
+          }
+        },
+        "exp1_seed7": {
+          "trained_as": {
+            "SPAWN_CYCLE_PER_MATCH": "true"
+          },
+          "source_scratch": "data/runs_jax_spawn_cycle/exp1_seed7",
+          "seed": 7,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 622.9,
+          "domain_randomization": true,
+          "paradigm_rotation": 1,
+          "paradigms": {
+            "Team 1": "DTE",
+            "Team 2": "CTDE",
+            "Team 3": "CTE"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_dte.npz": {
+              "sha256": "ce2fb2120aa3a10602586b5158032f0a332e7626c83bb36565d8b1bcfa2611e1",
+              "bytes": 133723,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_2_ctde.npz": {
+              "sha256": "3a00b15d5acfdfb16f57ed4a9f76ae590237033609ac0b577aee90012341d3d4",
+              "bytes": 280513,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_3_cte.npz": {
+              "sha256": "00f0776590a8b4ddbc1600d12895ad8408603f5115a56fffcf4042b99bfd5eec",
+              "bytes": 297944,
+              "hidden_dim": 128,
+              "actor_parameters": 40328
+            }
+          }
+        },
+        "exp1_seed8": {
+          "trained_as": {
+            "SPAWN_CYCLE_PER_MATCH": "true"
+          },
+          "source_scratch": "data/runs_jax_spawn_cycle/exp1_seed8",
+          "seed": 8,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 608.5,
+          "domain_randomization": true,
+          "paradigm_rotation": 2,
+          "paradigms": {
+            "Team 1": "CTDE",
+            "Team 2": "CTE",
+            "Team 3": "DTE"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_ctde.npz": {
+              "sha256": "8e361314c2fbdf8b34f1e478c39b60ec4a264adec6e105623c41978af6bfd4a1",
+              "bytes": 280513,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_2_cte.npz": {
+              "sha256": "1dc4e77b7cdd8180a0443370e6eb88016d46586f081b578f08c4dcb670bda428",
+              "bytes": 297962,
+              "hidden_dim": 128,
+              "actor_parameters": 40328
+            },
+            "team_3_dte.npz": {
+              "sha256": "6245242be4903a508e38e05e6e7e8541d8047e6f11690f06e2ef7b60fbf05785",
+              "bytes": 133753,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            }
+          }
+        },
+        "exp1_seed9": {
+          "trained_as": {
+            "SPAWN_CYCLE_PER_MATCH": "true"
+          },
+          "source_scratch": "data/runs_jax_spawn_cycle/exp1_seed9",
+          "seed": 9,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 628.8,
+          "domain_randomization": true,
+          "paradigm_rotation": 0,
+          "paradigms": {
+            "Team 1": "CTE",
+            "Team 2": "DTE",
+            "Team 3": "CTDE"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_cte.npz": {
+              "sha256": "4b63b95f0c9a94345b546e5d20e05e49a5dfad165c2af18adec1819426c2d865",
+              "bytes": 297973,
+              "hidden_dim": 128,
+              "actor_parameters": 40328
+            },
+            "team_2_dte.npz": {
+              "sha256": "398f021307100f4968fff3d30bf2ffa062125b76d751422e73da9bdc6d4d8d95",
+              "bytes": 133773,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_3_ctde.npz": {
+              "sha256": "92c4b457be2780a504b1a73b233fc1403b87f39e90796d29365883e096f68f4a",
+              "bytes": 280362,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            }
+          }
+        },
+        "exp1_seed10": {
+          "trained_as": {
+            "SPAWN_CYCLE_PER_MATCH": "true"
+          },
+          "source_scratch": "data/runs_jax_spawn_cycle/exp1_seed10",
+          "seed": 10,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 638.2,
+          "domain_randomization": true,
+          "paradigm_rotation": 1,
+          "paradigms": {
+            "Team 1": "DTE",
+            "Team 2": "CTDE",
+            "Team 3": "CTE"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_dte.npz": {
+              "sha256": "32874991fcf525d94e88a6f5242eb70a5b125d190e43c7239adc83b07cfacbcf",
+              "bytes": 133805,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_2_ctde.npz": {
+              "sha256": "cbeb90099e8f79eb4b15c1a9545285c7e6fa12f7b9ef51899e4c973b40b2c24c",
+              "bytes": 280536,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_3_cte.npz": {
+              "sha256": "d69b3f70853031736e3856caf6dd4bdc4d5c3095b4d8d9f6259671584d468181",
+              "bytes": 297994,
+              "hidden_dim": 128,
+              "actor_parameters": 40328
+            }
+          }
+        },
+        "exp2_seed1": {
+          "trained_as": {
+            "SPAWN_CYCLE_PER_MATCH": "true"
+          },
+          "source_scratch": "ctde_arena/data/runs_jax_spawn_cycle/exp2_seed1",
+          "seed": 1,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 665.9,
+          "domain_randomization": true,
+          "paradigm_rotation": 1,
+          "paradigms": {
+            "Team 1": "CTDE-CAC",
+            "Team 2": "CTDE-Comm",
+            "Team 3": "CTDE-VD"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_ctde-cac.npz": {
+              "sha256": "1ad678573669e0ff6c589d404174bfdac68c0efeb958fc06ac38ea576e5a6dd2",
+              "bytes": 280226,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_2_ctde-comm.npz": {
+              "sha256": "e069822a9adb6a4e3a63e1f8191fb3e0193b73979a1295c15d14aa06360e4047",
+              "bytes": 289429,
+              "hidden_dim": 128,
+              "actor_parameters": 37644
+            },
+            "team_3_ctde-vd.npz": {
+              "sha256": "5e1f9e567a8db5ffbc4833f15fd319a869bf5d505da205443a54ba3742a35545",
+              "bytes": 199563,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            }
+          }
+        },
+        "exp2_seed2": {
+          "trained_as": {
+            "SPAWN_CYCLE_PER_MATCH": "true"
+          },
+          "source_scratch": "ctde_arena/data/runs_jax_spawn_cycle/exp2_seed2",
+          "seed": 2,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 651.5,
+          "domain_randomization": true,
+          "paradigm_rotation": 2,
+          "paradigms": {
+            "Team 1": "CTDE-Comm",
+            "Team 2": "CTDE-VD",
+            "Team 3": "CTDE-CAC"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_ctde-comm.npz": {
+              "sha256": "bc0493a15ade31c40a5cd6592d8a74530e68987aabb6ae040d7ec658b830b8ff",
+              "bytes": 289372,
+              "hidden_dim": 128,
+              "actor_parameters": 37644
+            },
+            "team_2_ctde-vd.npz": {
+              "sha256": "c44879ac68b27e61d1d97fce23ef5f59ab30c4956959b33103f4e99ccb53a15b",
+              "bytes": 199637,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_3_ctde-cac.npz": {
+              "sha256": "02d6e025eeeebf57b43267bc0a1207a816177d9e19392df80e34ffe8d6072368",
+              "bytes": 280365,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            }
+          }
+        },
+        "exp2_seed3": {
+          "trained_as": {
+            "SPAWN_CYCLE_PER_MATCH": "true"
+          },
+          "source_scratch": "ctde_arena/data/runs_jax_spawn_cycle/exp2_seed3",
+          "seed": 3,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 684.8,
+          "domain_randomization": true,
+          "paradigm_rotation": 0,
+          "paradigms": {
+            "Team 1": "CTDE-VD",
+            "Team 2": "CTDE-CAC",
+            "Team 3": "CTDE-Comm"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_ctde-vd.npz": {
+              "sha256": "3bdc467451cbc81ed6ea5b754e2008c532801eef0680c0376a3f7a3eca7b0377",
+              "bytes": 199532,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_2_ctde-cac.npz": {
+              "sha256": "1ac67ac770218b340db1bec504cc209d8615c9029848e9748074bd8f862a88b1",
+              "bytes": 280489,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_3_ctde-comm.npz": {
+              "sha256": "ffc3967cc92cf43d7347208d22666bcc93c879f34509090b56deab3ec1188648",
+              "bytes": 289318,
+              "hidden_dim": 128,
+              "actor_parameters": 37644
+            }
+          }
+        },
+        "exp2_seed4": {
+          "trained_as": {
+            "SPAWN_CYCLE_PER_MATCH": "true"
+          },
+          "source_scratch": "ctde_arena/data/runs_jax_spawn_cycle/exp2_seed4",
+          "seed": 4,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 720.3,
+          "domain_randomization": true,
+          "paradigm_rotation": 1,
+          "paradigms": {
+            "Team 1": "CTDE-CAC",
+            "Team 2": "CTDE-Comm",
+            "Team 3": "CTDE-VD"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_ctde-cac.npz": {
+              "sha256": "2a3ec371c5db813ec4aa33b9e37ce64959c48ba4c773457c143b414ff44d27be",
+              "bytes": 280457,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_2_ctde-comm.npz": {
+              "sha256": "eec8c7d9bba7641e50829bb791e4c1954ddb8b7dec81b7aeda62a8a6dd19a973",
+              "bytes": 289246,
+              "hidden_dim": 128,
+              "actor_parameters": 37644
+            },
+            "team_3_ctde-vd.npz": {
+              "sha256": "3e5a1ea073cad23fc14edd74b750bc5d2261c3df24d5fce5de0b050162b673a8",
+              "bytes": 199625,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            }
+          }
+        },
+        "exp2_seed5": {
+          "trained_as": {
+            "SPAWN_CYCLE_PER_MATCH": "true"
+          },
+          "source_scratch": "ctde_arena/data/runs_jax_spawn_cycle/exp2_seed5",
+          "seed": 5,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 858.9,
+          "domain_randomization": true,
+          "paradigm_rotation": 2,
+          "paradigms": {
+            "Team 1": "CTDE-Comm",
+            "Team 2": "CTDE-VD",
+            "Team 3": "CTDE-CAC"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_ctde-comm.npz": {
+              "sha256": "d87b6155ac66f36b835035dc1c575e7df11de563a3ce266b40a94208d9a79f7f",
+              "bytes": 289375,
+              "hidden_dim": 128,
+              "actor_parameters": 37644
+            },
+            "team_2_ctde-vd.npz": {
+              "sha256": "86513272df5e39a60a92076376a78790b75f198ce2daa423066aa0226ca07376",
+              "bytes": 199597,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_3_ctde-cac.npz": {
+              "sha256": "167d88563d5f8c113f25d5a4addc34d47570ede3ca8a918d60feff5614f023a4",
+              "bytes": 280329,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            }
+          }
+        },
+        "exp2_seed6": {
+          "trained_as": {
+            "SPAWN_CYCLE_PER_MATCH": "true"
+          },
+          "source_scratch": "ctde_arena/data/runs_jax_spawn_cycle/exp2_seed6",
+          "seed": 6,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 901.1,
+          "domain_randomization": true,
+          "paradigm_rotation": 0,
+          "paradigms": {
+            "Team 1": "CTDE-VD",
+            "Team 2": "CTDE-CAC",
+            "Team 3": "CTDE-Comm"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_ctde-vd.npz": {
+              "sha256": "cad827ad7144c9c44280982d9bcdb45feb3ca3267179398d1433cacbfa4b056e",
+              "bytes": 199487,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_2_ctde-cac.npz": {
+              "sha256": "a009d60b1f6aa201f5644782ee9fe43ea80cf07cd0e6f9520bbc62a1413971e4",
+              "bytes": 280204,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_3_ctde-comm.npz": {
+              "sha256": "e9ffa8354125d056ec9fa450508a0354c585784e56d18ea209022d0c108112f1",
+              "bytes": 289329,
+              "hidden_dim": 128,
+              "actor_parameters": 37644
+            }
+          }
+        },
+        "exp2_seed7": {
+          "trained_as": {
+            "SPAWN_CYCLE_PER_MATCH": "true"
+          },
+          "source_scratch": "ctde_arena/data/runs_jax_spawn_cycle/exp2_seed7",
+          "seed": 7,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1206.2,
+          "domain_randomization": true,
+          "paradigm_rotation": 1,
+          "paradigms": {
+            "Team 1": "CTDE-CAC",
+            "Team 2": "CTDE-Comm",
+            "Team 3": "CTDE-VD"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_ctde-cac.npz": {
+              "sha256": "7f0aa7c75578d96657e7e5690b963089d0f9ab48adbfa8b2674dbc17459bd0d2",
+              "bytes": 280247,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_2_ctde-comm.npz": {
+              "sha256": "6b3ecf898755fd1f0fdabe36470960500880775d9451059e67ecfb2156f9ccad",
+              "bytes": 289137,
+              "hidden_dim": 128,
+              "actor_parameters": 37644
+            },
+            "team_3_ctde-vd.npz": {
+              "sha256": "9bc8cff97effe37843ea6b6886862028c68341259a99d5bc36743431a49db0da",
+              "bytes": 199538,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            }
+          }
+        },
+        "exp2_seed8": {
+          "trained_as": {
+            "SPAWN_CYCLE_PER_MATCH": "true"
+          },
+          "source_scratch": "ctde_arena/data/runs_jax_spawn_cycle/exp2_seed8",
+          "seed": 8,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1308.5,
+          "domain_randomization": true,
+          "paradigm_rotation": 2,
+          "paradigms": {
+            "Team 1": "CTDE-Comm",
+            "Team 2": "CTDE-VD",
+            "Team 3": "CTDE-CAC"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_ctde-comm.npz": {
+              "sha256": "04cb608105dad9671128e011b5e50f835a8640c08da8eef07d55330a86c15a8d",
+              "bytes": 289365,
+              "hidden_dim": 128,
+              "actor_parameters": 37644
+            },
+            "team_2_ctde-vd.npz": {
+              "sha256": "6b86f94e6bf05256bf334cb7472c0b2e6895864362d2d8a2b170c82c44c17102",
+              "bytes": 199473,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_3_ctde-cac.npz": {
+              "sha256": "630c0eb979ddb221780d57bd96ba27968410d4dff70a427bea87029336a6a6e7",
+              "bytes": 280342,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            }
+          }
+        },
+        "exp2_seed9": {
+          "trained_as": {
+            "SPAWN_CYCLE_PER_MATCH": "true"
+          },
+          "source_scratch": "ctde_arena/data/runs_jax_spawn_cycle/exp2_seed9",
+          "seed": 9,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1152.4,
+          "domain_randomization": true,
+          "paradigm_rotation": 0,
+          "paradigms": {
+            "Team 1": "CTDE-VD",
+            "Team 2": "CTDE-CAC",
+            "Team 3": "CTDE-Comm"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_ctde-vd.npz": {
+              "sha256": "114dbb05be82b7f514454aa51f09d42fdc717b9a78e4f314129e17567146f611",
+              "bytes": 199593,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_2_ctde-cac.npz": {
+              "sha256": "48d7ff2328bcd1c9fdc330a22374f764325e88431afcabf5ce0d62b3c2659ad5",
+              "bytes": 280651,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_3_ctde-comm.npz": {
+              "sha256": "a18beb9bffe1ba85113107040cac13f1e9432570803dd327f3c915a766db510c",
+              "bytes": 289243,
+              "hidden_dim": 128,
+              "actor_parameters": 37644
+            }
+          }
+        },
+        "exp2_seed10": {
+          "trained_as": {
+            "SPAWN_CYCLE_PER_MATCH": "true"
+          },
+          "source_scratch": "ctde_arena/data/runs_jax_spawn_cycle/exp2_seed10",
+          "seed": 10,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1121.7,
+          "domain_randomization": true,
+          "paradigm_rotation": 1,
+          "paradigms": {
+            "Team 1": "CTDE-CAC",
+            "Team 2": "CTDE-Comm",
+            "Team 3": "CTDE-VD"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_ctde-cac.npz": {
+              "sha256": "a82f7389c211f9b0b32668f9aa03f88aa539aa0251dfb4eb02bb9b1ce672e380",
+              "bytes": 280347,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_2_ctde-comm.npz": {
+              "sha256": "108ac083beed3d9039b62f000d520340b79e6ceba852373c47654f000d9e33ae",
+              "bytes": 289380,
+              "hidden_dim": 128,
+              "actor_parameters": 37644
+            },
+            "team_3_ctde-vd.npz": {
+              "sha256": "20f3e78494f50b15d646676ed5173b91d611a97042018c711ea928d2b4a3847d",
+              "bytes": 199664,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            }
+          }
+        }
+      }
+    },
+    "symmetric": {
+      "overrides": {
+        "ARENA_LAYOUT": "symmetric"
+      },
+      "baseline": "results/study_jax",
+      "seeds": {
+        "exp1": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "exp2": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ]
+      },
+      "sets": {
+        "exp1_seed1": {
+          "trained_as": {
+            "ARENA_LAYOUT": "symmetric"
+          },
+          "source_scratch": "data/runs_jax_symmetric/exp1_seed1",
+          "seed": 1,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1391.2,
+          "domain_randomization": true,
+          "paradigm_rotation": 1,
+          "paradigms": {
+            "Team 1": "DTE",
+            "Team 2": "CTDE",
+            "Team 3": "CTE"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_dte.npz": {
+              "sha256": "b08abc59f7b9a4d478e0e7a781cc750da8e02dfde4cfa59079432c041a06cd71",
+              "bytes": 133784,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_2_ctde.npz": {
+              "sha256": "dce2d0081217273bc6793d7b83f74f94f9fe4fcdb9c49f6ba27d332ce4bdb547",
+              "bytes": 280467,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_3_cte.npz": {
+              "sha256": "46db8b0134fe947018c0be67442c3b1e33c2abb84595f0f54e6b68e41d28a308",
+              "bytes": 297980,
+              "hidden_dim": 128,
+              "actor_parameters": 40328
+            }
+          }
+        },
+        "exp1_seed2": {
+          "trained_as": {
+            "ARENA_LAYOUT": "symmetric"
+          },
+          "source_scratch": "data/runs_jax_symmetric/exp1_seed2",
+          "seed": 2,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1403.3,
+          "domain_randomization": true,
+          "paradigm_rotation": 2,
+          "paradigms": {
+            "Team 1": "CTDE",
+            "Team 2": "CTE",
+            "Team 3": "DTE"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_ctde.npz": {
+              "sha256": "e255609c3cf8aa73c770f2d2f101773b8fef35007bb6c34952353fcbcfb9ca39",
+              "bytes": 280490,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_2_cte.npz": {
+              "sha256": "2f9e995f70c17ed48fcfb2323ca8facd6fe61eca839d7efede76303587c4500e",
+              "bytes": 297823,
+              "hidden_dim": 128,
+              "actor_parameters": 40328
+            },
+            "team_3_dte.npz": {
+              "sha256": "0e8f7df3e2735bdcdeeb74404eb4c3464a97a84f2d18d8c05999e1623b43acc5",
+              "bytes": 133759,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            }
+          }
+        },
+        "exp1_seed3": {
+          "trained_as": {
+            "ARENA_LAYOUT": "symmetric"
+          },
+          "source_scratch": "data/runs_jax_symmetric/exp1_seed3",
+          "seed": 3,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1416.9,
+          "domain_randomization": true,
+          "paradigm_rotation": 0,
+          "paradigms": {
+            "Team 1": "CTE",
+            "Team 2": "DTE",
+            "Team 3": "CTDE"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_cte.npz": {
+              "sha256": "d1a46c05e16d59f1492b18ce7af8f55c5026f301a103f171b040a2c174092e87",
+              "bytes": 297986,
+              "hidden_dim": 128,
+              "actor_parameters": 40328
+            },
+            "team_2_dte.npz": {
+              "sha256": "7e684bfed885f281aa9a944c37ce81274a860bc1ed13b39e44f944d29fc300c2",
+              "bytes": 133744,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_3_ctde.npz": {
+              "sha256": "e02d37fe4184db092c0c480c0960e360a89b4484f39eec59f85c68d8e9a46f0e",
+              "bytes": 280534,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            }
+          }
+        },
+        "exp1_seed4": {
+          "trained_as": {
+            "ARENA_LAYOUT": "symmetric"
+          },
+          "source_scratch": "data/runs_jax_symmetric/exp1_seed4",
+          "seed": 4,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1417.3,
+          "domain_randomization": true,
+          "paradigm_rotation": 1,
+          "paradigms": {
+            "Team 1": "DTE",
+            "Team 2": "CTDE",
+            "Team 3": "CTE"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_dte.npz": {
+              "sha256": "75412928725dfb0d93a51fd7913368b3917acfc1ff49e9c5e4ffe122ed17a804",
+              "bytes": 133757,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_2_ctde.npz": {
+              "sha256": "ccb80e9731dfc5c49aa942923950eec44492ec93daef6ddc9f66b68604bd8c16",
+              "bytes": 280622,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_3_cte.npz": {
+              "sha256": "9462d642feddd1963a34f7cf289c4db31e56c6876eb9c7d01e82d080f6b86487",
+              "bytes": 297907,
+              "hidden_dim": 128,
+              "actor_parameters": 40328
+            }
+          }
+        },
+        "exp1_seed5": {
+          "trained_as": {
+            "ARENA_LAYOUT": "symmetric"
+          },
+          "source_scratch": "data/runs_jax_symmetric/exp1_seed5",
+          "seed": 5,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1258.8,
+          "domain_randomization": true,
+          "paradigm_rotation": 2,
+          "paradigms": {
+            "Team 1": "CTDE",
+            "Team 2": "CTE",
+            "Team 3": "DTE"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_ctde.npz": {
+              "sha256": "43c38df96d6ab9beac495e5deacc1268bf6ea54039b267c2a4a3b33853165774",
+              "bytes": 280347,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_2_cte.npz": {
+              "sha256": "2b46bc746195e7bd30298948e299ba3a0d7db13c2e5952b9bbb477aaab1bb5ac",
+              "bytes": 297913,
+              "hidden_dim": 128,
+              "actor_parameters": 40328
+            },
+            "team_3_dte.npz": {
+              "sha256": "d1b4aaf372f91a6d12f247139e86f6bb771a06b21758d7a0953068382120a830",
+              "bytes": 133766,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            }
+          }
+        },
+        "exp1_seed6": {
+          "trained_as": {
+            "ARENA_LAYOUT": "symmetric"
+          },
+          "source_scratch": "data/runs_jax_symmetric/exp1_seed6",
+          "seed": 6,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1275.5,
+          "domain_randomization": true,
+          "paradigm_rotation": 0,
+          "paradigms": {
+            "Team 1": "CTE",
+            "Team 2": "DTE",
+            "Team 3": "CTDE"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_cte.npz": {
+              "sha256": "f163ffb38b0d3d002e38c766aa1e3c1780ae8f4810260b4958afeaedc167712b",
+              "bytes": 297871,
+              "hidden_dim": 128,
+              "actor_parameters": 40328
+            },
+            "team_2_dte.npz": {
+              "sha256": "ddc1b203b511cc04235614453fad110c12b9f8f34b953529e2aa82d313110d72",
+              "bytes": 133857,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_3_ctde.npz": {
+              "sha256": "f01802853cc709b0ef990b956866db3e58125febaa15efc204f9ad7877c6e035",
+              "bytes": 280348,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            }
+          }
+        },
+        "exp1_seed7": {
+          "trained_as": {
+            "ARENA_LAYOUT": "symmetric"
+          },
+          "source_scratch": "data/runs_jax_symmetric/exp1_seed7",
+          "seed": 7,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1269.4,
+          "domain_randomization": true,
+          "paradigm_rotation": 1,
+          "paradigms": {
+            "Team 1": "DTE",
+            "Team 2": "CTDE",
+            "Team 3": "CTE"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_dte.npz": {
+              "sha256": "2968fd5c00f139a80c86c3a5e0c4f7b4f9f81e0b5a184dd3d92238093f74b74c",
+              "bytes": 133777,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_2_ctde.npz": {
+              "sha256": "16f8947d63fc65d7486ab5b828183b4256e8231f2a54fffa8fb8b013487cb573",
+              "bytes": 280354,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_3_cte.npz": {
+              "sha256": "2474f57e8aeeccdd9f028d24362f6a30b4c9465c95a6e36b4e9667f62cfef6e7",
+              "bytes": 298034,
+              "hidden_dim": 128,
+              "actor_parameters": 40328
+            }
+          }
+        },
+        "exp1_seed8": {
+          "trained_as": {
+            "ARENA_LAYOUT": "symmetric"
+          },
+          "source_scratch": "data/runs_jax_symmetric/exp1_seed8",
+          "seed": 8,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1287.7,
+          "domain_randomization": true,
+          "paradigm_rotation": 2,
+          "paradigms": {
+            "Team 1": "CTDE",
+            "Team 2": "CTE",
+            "Team 3": "DTE"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_ctde.npz": {
+              "sha256": "931929a85d82d830755966452d425d6a5c1e6efbf9bf656c89db5f5b7ec43909",
+              "bytes": 280428,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_2_cte.npz": {
+              "sha256": "f779bb9904dd5ccb347a9d9a3cf4274f7c30dd59cbd29b3f2e55754ae1b9531f",
+              "bytes": 298005,
+              "hidden_dim": 128,
+              "actor_parameters": 40328
+            },
+            "team_3_dte.npz": {
+              "sha256": "53310ba39390d395aca3593673f40136ab4399b37582177de8295049d8e86df8",
+              "bytes": 133776,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            }
+          }
+        },
+        "exp1_seed9": {
+          "trained_as": {
+            "ARENA_LAYOUT": "symmetric"
+          },
+          "source_scratch": "data/runs_jax_symmetric/exp1_seed9",
+          "seed": 9,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1185.8,
+          "domain_randomization": true,
+          "paradigm_rotation": 0,
+          "paradigms": {
+            "Team 1": "CTE",
+            "Team 2": "DTE",
+            "Team 3": "CTDE"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_cte.npz": {
+              "sha256": "00655b47eb5d557cff119e711e17a02127ecffdc8d55bd71b7036f58334f00c9",
+              "bytes": 297947,
+              "hidden_dim": 128,
+              "actor_parameters": 40328
+            },
+            "team_2_dte.npz": {
+              "sha256": "aca749443be84953b553ba172ebf614d3cf3e553079ed4a3938ab81312487758",
+              "bytes": 133758,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_3_ctde.npz": {
+              "sha256": "41f75adb908db629c59a61fb6d21a018af904b5204584b24fb7a12c75315bafc",
+              "bytes": 280612,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            }
+          }
+        },
+        "exp1_seed10": {
+          "trained_as": {
+            "ARENA_LAYOUT": "symmetric"
+          },
+          "source_scratch": "data/runs_jax_symmetric/exp1_seed10",
+          "seed": 10,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1261.2,
+          "domain_randomization": true,
+          "paradigm_rotation": 1,
+          "paradigms": {
+            "Team 1": "DTE",
+            "Team 2": "CTDE",
+            "Team 3": "CTE"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_dte.npz": {
+              "sha256": "55b47389ee0ec2fa7a6bd54ce58eda4425c57f5078b79d3a53121863015214a9",
+              "bytes": 133781,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_2_ctde.npz": {
+              "sha256": "db977d69b16437d66984cd2b0230d8313770a81a9a532b9b25eab72c1ee4c420",
+              "bytes": 280578,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_3_cte.npz": {
+              "sha256": "33e2abf55dd0a48d481e4e21719cfb985e0fb4c82e21ca42a5ee2c9dc4540318",
+              "bytes": 297949,
+              "hidden_dim": 128,
+              "actor_parameters": 40328
+            }
+          }
+        },
+        "exp2_seed1": {
+          "trained_as": {
+            "ARENA_LAYOUT": "symmetric"
+          },
+          "source_scratch": "ctde_arena/data/runs_jax_symmetric/exp2_seed1",
+          "seed": 1,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1473.2,
+          "domain_randomization": true,
+          "paradigm_rotation": 1,
+          "paradigms": {
+            "Team 1": "CTDE-CAC",
+            "Team 2": "CTDE-Comm",
+            "Team 3": "CTDE-VD"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_ctde-cac.npz": {
+              "sha256": "2852cbf2d0b2b9750e638b33fa591995da029fb4dc9c4315033b56b834932066",
+              "bytes": 280360,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_2_ctde-comm.npz": {
+              "sha256": "85681c8cce57d48337ff8f3328afad53a224ea529fd291087d6188a738a6c43b",
+              "bytes": 289401,
+              "hidden_dim": 128,
+              "actor_parameters": 37644
+            },
+            "team_3_ctde-vd.npz": {
+              "sha256": "49f18348bec946c68afeeb60c9ecca7b751189f44686143c41689ab83c1ac3f1",
+              "bytes": 199649,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            }
+          }
+        },
+        "exp2_seed2": {
+          "trained_as": {
+            "ARENA_LAYOUT": "symmetric"
+          },
+          "source_scratch": "ctde_arena/data/runs_jax_symmetric/exp2_seed2",
+          "seed": 2,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1568.2,
+          "domain_randomization": true,
+          "paradigm_rotation": 2,
+          "paradigms": {
+            "Team 1": "CTDE-Comm",
+            "Team 2": "CTDE-VD",
+            "Team 3": "CTDE-CAC"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_ctde-comm.npz": {
+              "sha256": "ad7246bbd8dc8b46c9f60cdab7187daf37a144ebe8d692afe0f87f6bc98a56d0",
+              "bytes": 289282,
+              "hidden_dim": 128,
+              "actor_parameters": 37644
+            },
+            "team_2_ctde-vd.npz": {
+              "sha256": "784b35828e667823399d8d2dbf0bc01324c2aa341372481109dbb6af2275cd4a",
+              "bytes": 199536,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_3_ctde-cac.npz": {
+              "sha256": "3322293536f9c42a3001c6b57761460d60106a2baeb5cb54168d9646e8c4fdf2",
+              "bytes": 280381,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            }
+          }
+        },
+        "exp2_seed3": {
+          "trained_as": {
+            "ARENA_LAYOUT": "symmetric"
+          },
+          "source_scratch": "ctde_arena/data/runs_jax_symmetric/exp2_seed3",
+          "seed": 3,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1745.9,
+          "domain_randomization": true,
+          "paradigm_rotation": 0,
+          "paradigms": {
+            "Team 1": "CTDE-VD",
+            "Team 2": "CTDE-CAC",
+            "Team 3": "CTDE-Comm"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_ctde-vd.npz": {
+              "sha256": "f2c8eb75ae77acd2001942aa296bf70d86cc8be726d7240301109e33a864c4c6",
+              "bytes": 199500,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_2_ctde-cac.npz": {
+              "sha256": "59c10fd5c329b57b73e15d1013526cc0c35a970cce0d1f2c879955e9ae4edac5",
+              "bytes": 280586,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_3_ctde-comm.npz": {
+              "sha256": "9a1bc3da04a25b64fc51927aba78a66b8e5a779a1c8df3211cb0455e9bec79fd",
+              "bytes": 289252,
+              "hidden_dim": 128,
+              "actor_parameters": 37644
+            }
+          }
+        },
+        "exp2_seed4": {
+          "trained_as": {
+            "ARENA_LAYOUT": "symmetric"
+          },
+          "source_scratch": "ctde_arena/data/runs_jax_symmetric/exp2_seed4",
+          "seed": 4,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1781.0,
+          "domain_randomization": true,
+          "paradigm_rotation": 1,
+          "paradigms": {
+            "Team 1": "CTDE-CAC",
+            "Team 2": "CTDE-Comm",
+            "Team 3": "CTDE-VD"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_ctde-cac.npz": {
+              "sha256": "eaccbe62759f76a5f6e2f813924621cfd2123ef0957a997a5d66f7ab404d4e3f",
+              "bytes": 280316,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_2_ctde-comm.npz": {
+              "sha256": "86c377a5926cd55dd8bdc807deb089e28915a0004e0f4a56fa17880baf5f7f5c",
+              "bytes": 289330,
+              "hidden_dim": 128,
+              "actor_parameters": 37644
+            },
+            "team_3_ctde-vd.npz": {
+              "sha256": "9cacc24759b0c0165dfa7c4d536f7189a0c5ab2a89bb63b029065661006e9b19",
+              "bytes": 199575,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            }
+          }
+        },
+        "exp2_seed5": {
+          "trained_as": {
+            "ARENA_LAYOUT": "symmetric"
+          },
+          "source_scratch": "ctde_arena/data/runs_jax_symmetric/exp2_seed5",
+          "seed": 5,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1670.5,
+          "domain_randomization": true,
+          "paradigm_rotation": 2,
+          "paradigms": {
+            "Team 1": "CTDE-Comm",
+            "Team 2": "CTDE-VD",
+            "Team 3": "CTDE-CAC"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_ctde-comm.npz": {
+              "sha256": "be0c3370b3c437a1ca5b327badf468819ccf5992833325dce1ed73195847a349",
+              "bytes": 289280,
+              "hidden_dim": 128,
+              "actor_parameters": 37644
+            },
+            "team_2_ctde-vd.npz": {
+              "sha256": "bad9f2097c9cfecf57c104f3ac71b5003fd26d65964d56945a011eece1718946",
+              "bytes": 199374,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_3_ctde-cac.npz": {
+              "sha256": "7d46c6865deab4898f1e0fb67f032a705caace922e9d38e6ae54b4c9f4ba5519",
+              "bytes": 280414,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            }
+          }
+        },
+        "exp2_seed6": {
+          "trained_as": {
+            "ARENA_LAYOUT": "symmetric"
+          },
+          "source_scratch": "ctde_arena/data/runs_jax_symmetric/exp2_seed6",
+          "seed": 6,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1656.7,
+          "domain_randomization": true,
+          "paradigm_rotation": 0,
+          "paradigms": {
+            "Team 1": "CTDE-VD",
+            "Team 2": "CTDE-CAC",
+            "Team 3": "CTDE-Comm"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_ctde-vd.npz": {
+              "sha256": "022381eec647dd7e010581f20cf260bd1950f57bb86eaee5a56cc7b9eaaedbdc",
+              "bytes": 199561,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_2_ctde-cac.npz": {
+              "sha256": "c786c2a3b670600a01ec2b9171d3a49f22fef70b3783207f1e98c2befbefec85",
+              "bytes": 280344,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_3_ctde-comm.npz": {
+              "sha256": "d016e779bfd5d64b91e6b61848bd16eafd9ed0fba74d3b48abed0bc428823436",
+              "bytes": 289448,
+              "hidden_dim": 128,
+              "actor_parameters": 37644
+            }
+          }
+        },
+        "exp2_seed7": {
+          "trained_as": {
+            "ARENA_LAYOUT": "symmetric"
+          },
+          "source_scratch": "ctde_arena/data/runs_jax_symmetric/exp2_seed7",
+          "seed": 7,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1443.8,
+          "domain_randomization": true,
+          "paradigm_rotation": 1,
+          "paradigms": {
+            "Team 1": "CTDE-CAC",
+            "Team 2": "CTDE-Comm",
+            "Team 3": "CTDE-VD"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_ctde-cac.npz": {
+              "sha256": "dfeeca20a15e9506fd8ca5dc53998b35cd180d6b98eee4028cbcacea9ec13321",
+              "bytes": 280308,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_2_ctde-comm.npz": {
+              "sha256": "98186454aed5c009fc84bb2d1960c1a5dcc9f36a6bb0dacf34b64f452e45570f",
+              "bytes": 289401,
+              "hidden_dim": 128,
+              "actor_parameters": 37644
+            },
+            "team_3_ctde-vd.npz": {
+              "sha256": "eb2928298c690cbfee18baf8d084de22ecdf9f2732a6a00bc36fc2fd5cef3685",
+              "bytes": 199620,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            }
+          }
+        },
+        "exp2_seed8": {
+          "trained_as": {
+            "ARENA_LAYOUT": "symmetric"
+          },
+          "source_scratch": "ctde_arena/data/runs_jax_symmetric/exp2_seed8",
+          "seed": 8,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1371.8,
+          "domain_randomization": true,
+          "paradigm_rotation": 2,
+          "paradigms": {
+            "Team 1": "CTDE-Comm",
+            "Team 2": "CTDE-VD",
+            "Team 3": "CTDE-CAC"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_ctde-comm.npz": {
+              "sha256": "dddd5daf257a6c2c2a6993f5a9b048a485217cc524247737bfdad1fea257b0b5",
+              "bytes": 289269,
+              "hidden_dim": 128,
+              "actor_parameters": 37644
+            },
+            "team_2_ctde-vd.npz": {
+              "sha256": "9d055373630e24a463f2875cb5b3b2e895985c3ec900c197089695173e03a4f3",
+              "bytes": 199448,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_3_ctde-cac.npz": {
+              "sha256": "987d7d580512db7784eaef88ae5325b8d7e903a47d3096729f7c42211b8bd21a",
+              "bytes": 280146,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            }
+          }
+        },
+        "exp2_seed9": {
+          "trained_as": {
+            "ARENA_LAYOUT": "symmetric"
+          },
+          "source_scratch": "ctde_arena/data/runs_jax_symmetric/exp2_seed9",
+          "seed": 9,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1252.9,
+          "domain_randomization": true,
+          "paradigm_rotation": 0,
+          "paradigms": {
+            "Team 1": "CTDE-VD",
+            "Team 2": "CTDE-CAC",
+            "Team 3": "CTDE-Comm"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_ctde-vd.npz": {
+              "sha256": "efd9efbe2be83437a96a8b4bfb7f2fba9647d3e2807befcb7dc864c3773c6598",
+              "bytes": 199541,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_2_ctde-cac.npz": {
+              "sha256": "a87a626d27672f43b92d3fbf31a634fcbf93aeff3fc7f64386059edecc45996c",
+              "bytes": 280460,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_3_ctde-comm.npz": {
+              "sha256": "73176c7426818e86442d2995dd480c7cf63992df6b9611d395d5e819a0171e40",
+              "bytes": 289252,
+              "hidden_dim": 128,
+              "actor_parameters": 37644
+            }
+          }
+        },
+        "exp2_seed10": {
+          "trained_as": {
+            "ARENA_LAYOUT": "symmetric"
+          },
+          "source_scratch": "ctde_arena/data/runs_jax_symmetric/exp2_seed10",
+          "seed": 10,
+          "completed_steps": 500000,
+          "target_steps": 500000,
+          "train_seconds": 1334.5,
+          "domain_randomization": true,
+          "paradigm_rotation": 1,
+          "paradigms": {
+            "Team 1": "CTDE-CAC",
+            "Team 2": "CTDE-Comm",
+            "Team 3": "CTDE-VD"
+          },
+          "held_out_greedy_matches": 150,
+          "hidden_dim": 128,
+          "files": {
+            "team_1_ctde-cac.npz": {
+              "sha256": "15cb95a1cec893ab7e1d2a697fab88325f6fd5d3933ae1dfe50c0de9a8ed00db",
+              "bytes": 280378,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
+            },
+            "team_2_ctde-comm.npz": {
+              "sha256": "91b15853f64ca2d98fee264ae628649db2b8b2a3d476a60b3abfabf4a61897f1",
+              "bytes": 289467,
+              "hidden_dim": 128,
+              "actor_parameters": 37644
+            },
+            "team_3_ctde-vd.npz": {
+              "sha256": "83f99e969e8fab833f0f978850c4da9975e12d4df014397300e2f55303dbf0f8",
+              "bytes": 199663,
+              "hidden_dim": 128,
+              "actor_parameters": 35465
             }
           }
         }
