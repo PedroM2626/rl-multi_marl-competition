@@ -1,14 +1,14 @@
 # RL Multi MARL Competition
 
 A 3D battle arena with **nine agents — three teams of three** — where each team is trained with PPO
-using JAX, while Rust handles batched movement and collision checks. The versioned study results were
-produced by the earlier PyTorch runtime; the current JAX/Rust runtime has not yet been used to rerun that
-study. The architectures compete against each other inside one engine, so the competitive outcome is
+using JAX, while Rust handles batched movement and collision checks. The headline study was
+produced by the earlier PyTorch runtime; the current JAX/Rust runtime has since re-trained it twice — once
+unchanged and once with every docs/10 remedy on ([§ 8.14](docs/08_results.md#v3)). The architectures compete against each other inside one engine, so the competitive outcome is
 itself the measurement.
 
 > **Full technical documentation lives in [`docs/`](docs/README.md)** — system model, MDP
 > formalisation, architectures, optimisation, protocol, results with confidence intervals and power
-> analysis, reproducibility, limitations, and a 48-item code audit. This file is the quick start.
+> analysis, reproducibility, limitations, and a 54-item code audit. This file is the quick start.
 
 ## Documentation
 
@@ -57,13 +57,13 @@ Honest summary of what is finished and what is not:
 | Arena-v2 re-measurement | 10 seeds × 500k steps under a decayed alive bonus and draw-on-cap ([§ 8.12](docs/08_results.md#arena-v2)) | same |
 | Configuration ablations | `no_dr` at 10 seeds × both experiments (the control's full replication), `narrow_64` and `wide_256` at 3 on PyTorch and at 10 on JAX ([§ 8.13](docs/08_results.md#capacity-ten)); `no_dr` also on the random pool ([§ 8.13](docs/08_results.md#no-dr-absolute)) | same |
 | Study re-measured at the shipped step budget | the same twenty replicates trained to 3,000,000 steps instead of 500,000: the lead changes hands in **both** experiments (CTDE 0.429 overtakes DTE; CTDE-Comm 0.395 takes first while CTDE-VD falls to last) and no paired comparison clears the corrected bar ([§ 8.13](docs/08_results.md#budget-3m)) | same |
-| Historical dependency audit | The measured PyTorch lock has recorded advisories; the current runtime requirements use JAX and retain the old lock for historical reproduction ([§ 9.10](docs/09_reproducibility.md#dependency-audit)) | same |
+| Dependency audit | The measured PyTorch lock has recorded advisories and is kept for historical reproduction ([§ 9.10](docs/09_reproducibility.md#dependency-audit)); the runtime requirements are audited and CI-gated too, with 0 advised pins since `python-dotenv`, `pytest` and `mlflow` were upgraded ([§ 9.10](docs/09_reproducibility.md#runtime-dependency-audit)) | same |
 | Gameplay clips of the trained policies | yes (`docs/assets/`) | yes |
 | Current tests<!--auto:readme-status--> | 215 passed, 1 skipped, **90 %** statements / **80 %** branches | 90 passed, 1 skipped, **79 %** statements / **66 %** branches |
 | Continuous integration | both suites on Ubuntu (Python 3.10 and 3.11) and Windows, a Rust parity job that cannot skip, a Docker build, tree parity, documentation links, inventory and pooled/absolute re-derivation, artefact-path portability, campaign-script syntax — and the re-derivation gate is what caught [A-42](docs/11_code_audit.md#a-committed-artefact-recorded-windows-paths) ([§ 9.4](docs/09_reproducibility.md#continuous-integration)) | same jobs |
 | Docker | n/a | built and import-smoke-tested in CI; **no end-to-end training run recorded** |
 
-Six defects documented in the audit were **fixed** during this work, and each changed what the results
+Seven defects documented in the audit were **fixed** during this work, and each changed what the results
 mean:
 
 * **A-1** — the low-level heading controller computed its bearing from the vertical axis, so turning was
@@ -83,13 +83,19 @@ mean:
   half-size — which also means the old checkpoints no longer load, and are labelled as historical.
 * **A-27** — paradigm-to-slot assignment was fixed, so a slot effect was indistinguishable from an
   architecture effect even across seeds. It is now rotated by `seed % 3`.
+* **A-53** — the study launcher passed experiment 1's `.env` to experiment 2's child processes, so the first
+  pass of every JAX study trained experiment 1's arms under experiment 2's labels. The 40 affected runs were
+  re-trained and collection now refuses such a run
+  ([details](docs/11_code_audit.md#the-study-launcher-leaked-one-trees-configuration-into-the-other)).
 
 Still open, and load-bearing for how the results may be read: the study is **underpowered by a wide
 margin** (~47 to ~939 replicates, [§ 8.1](docs/08_results.md#power-analysis)), a quarter of replicates
 decide matches on the 90 s clock rather than by eliminations
 ([§ 8.1](docs/08_results.md#two-regimes)), one replicate in sixty reads out as a never-fires policy
 ([§ 8.1](docs/08_results.md#leave-one-out)), and the `ctde_arena/` Docker image is built and
-import-smoke-tested in CI but has no end-to-end training run recorded.
+import-smoke-tested in CI but has no end-to-end training run recorded. v3's variance reduction is a bundle
+of remedies, and which one does it is not yet measured; nor have the v3 checkpoints been played in any
+opponent pool ([docs/11 open work, item 16](docs/11_code_audit.md)).
 
 ## The two experiments
 
@@ -147,14 +153,16 @@ but the render path is not covered by the test suite, so treat a failure there a
 command writes the sidecar beside the clip in the same run, so a regenerated clip cannot lose the record that
 makes its caption checkable.
 
-Each experiment is self-contained: its own `marl_arena` package, `.env`, `requirements.txt` and `data/`.
-Run all commands **from the experiment's own directory**.
+Both experiments run on one engine (`src/marl_arena`; `ctde_arena/src` is a shim onto it), but each keeps its
+own `.env`, `requirements.txt` and `data/`, and the `.env` is what picks the arms. Run all commands **from
+the experiment's own directory**.
 
 ## Results at a glance
 
 Held-out greedy win rate, 10 independent replicates per experiment at 500,000 steps, 150 evaluation matches
-each, with the paradigm-to-slot assignment rotated across seeds. Full analysis:
-[§ Results](docs/08_results.md#replicated-study).
+each, with the paradigm-to-slot assignment rotated across seeds, trained on the PyTorch runtime. Full analysis:
+[§ Results](docs/08_results.md#replicated-study); its JAX re-training and the v3 study, which change the leader
+in both experiments, are in [§ 8.14](docs/08_results.md#v3).
 
 | Experiment | Paradigm | Mean win rate | Between-seed SD | Pooled 95 % CI | Best in |
 |---|---|---:|---:|---|---:|
@@ -292,6 +300,7 @@ checkout holds pointer files and nothing that loads a policy will run.
 | `python scripts/plot_study.py` | root | `results/study/learning_curves.png` |
 | `python scripts/random_baseline.py --matches 300 --policy uniform` | either | Untrained reference point |
 | `python scripts/promote_run.py --experiment exp1 --seed median` | root | Copy one replicate into the versioned `data/` |
+| `bash scripts/run_v3_campaign.sh` | root | The JAX replication, v3, the ten-seed capacity arms and the scripted / `no_dr` scales, resumable phase by phase ([§ 8.14](docs/08_results.md#v3)) |
 | `mlflow ui --backend-store-uri file:./mlruns` | `ctde_arena/` | Tracking UI |
 
 ```bash
@@ -379,6 +388,8 @@ and a positive value samples the policy's softmax at that temperature
 │   ├── plot_study.py           # learning-curve figure
 │   ├── random_baseline.py      # untrained reference point (greedy / uniform)
 │   ├── promote_run.py          # copy one replicate into the versioned data/
+│   ├── run_cross_arena.py      # the cross-experiment round-robin; run_absolute_eval.py plays random / scripted opponents
+│   ├── run_*_campaign.sh       # each campaign the docs quote, resumable
 │   └── plot_metrics.py         # summary.json -> CSV/PNG (needs pandas)
 ├── src/marl_arena/
 │   ├── config.py               # .env -> ArenaConfig (incl. PARADIGM_CYCLE and the docs/10 switches), seed_all()
@@ -391,7 +402,12 @@ and a positive value samples the policy's softmax at that temperature
 ├── data/                       # experiment 1: promoted replicate + historical_100k/ + PROVENANCE.json
 ├── results/
 │   ├── study/                  # per_seed_metrics.csv, analysis.json, learning_curves.png
-│   └── baseline/               # random_baseline_{greedy,uniform}.json
+│   ├── study_jax/  study_v3/   # the JAX re-training and the v3 study (§ 8.14)
+│   ├── study_v2/  study_3m/    # arena v2 and the 3 M-step budget
+│   ├── ablation_*/             # configuration ablations, PyTorch and JAX (§ 8.13)
+│   ├── cross_arena*/           # round-robin pools and their per-run records
+│   ├── absolute*/  scripted_ten/  # strength against random and scripted opponents
+│   └── baseline*/              # untrained reference points, committed and symmetric arena
 ├── exports/metrics/            # derived charts
 ├── docs/                       # the full documentation set, 12 chapters
 └── ctde_arena/                 # experiment 2: same engine, CTDE variants + MLflow
@@ -419,6 +435,7 @@ Both trees ship the same layout; `exp. 1` and `exp. 2` below mean "in each tree'
 | `data/historical_100k/` | the superseded single-seed artefacts behind [§ 8.2](docs/08_results.md#historical-single-seed-runs), incl. its `training_log.json` | yes, both |
 | `data/mlflow_export/` | the 48 metric points that reached MLflow | exp. 2 |
 | `results/study/` | the 20-replicate study's aggregate CSV, JSON and figure | yes |
+| `results/study_jax/`, `results/study_v3/` | the same aggregates for the JAX re-training and the v3 study | yes |
 | `results/baseline/` | the untrained reference points, greedy and uniform | yes |
 | `data/runs/` | per-replicate scratch (checkpoints, per-step CSVs, `evaluation/run_summary.json`) | **no** — see [§ 9.8](docs/09_reproducibility.md#the-versioning-asymmetry) |
 | `data/demo/` | what `python main.py` records when a demo match ends; never study evidence | **no** — git-ignored |
